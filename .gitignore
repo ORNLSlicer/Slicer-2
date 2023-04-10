@@ -1,0 +1,85 @@
+# Temporary Files
+*.swp
+*.bak
+*.tmp
+*.tmp.diff
+*.tmp.patch
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+*.ko
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Build folder
+build/
+
+# Single Path Library
+contrib/single_path
+
+*.pro.user
+*.autosave
+CMakeLists.txt.user
+CMakeCache.txt
+cmake-build-debug/
+cmake-build-release/
+cmake-build-relwithdebinfo/
+.idea/
+
+# Binary files we don't want to accidentally track
+*.3ds
+*.blend
+*.dae
+*.dxf
+*.fbx
+*.zip
+*.ilk
+*.pdb
+
+# No files with caps please, rename them instead
+*.3DS
+*.JPG
+*.GIF
+*.ZIP
+*.STL
+.vs/
