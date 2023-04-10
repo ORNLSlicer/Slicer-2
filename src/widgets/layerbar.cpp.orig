@@ -1,0 +1,1255 @@
+// Header
+#include "widgets/layerbar.h"
+
+// Local
+#include "managers/settings_manager.h"
+#include "managers/session_manager.h"
+#include "widgets/layerdot.h"
+#include "utilities/mathutils.h"
+#include "geometry/plane.h"
+
+namespace ORNL {
+    LayerBar::LayerBar(QWidget *parent) : QWidget(parent) {
+        m_layers = 0;
+        m_position.resize(m_layers);
+        m_part = nullptr;
+        //m_active = nullptr;
+        m_skip = 1;
+        m_potentialHighlightChange = nullptr;
+        originalY = 0;
+
+        this->setupActions();
+
+        this->setCursor(Qt::PointingHandCursor);
+    }
+
+    LayerBar::~LayerBar() {
+        for (auto dot_set : m_dots) {
+            qDeleteAll(dot_set);
+        }
+
+        for (auto range_set : m_ranges) {
+            qDeleteAll(range_set);
+        }
+        for (auto group_set : m_groups) {
+            qDeleteAll(group_set);
+        }
+    }
+
+    QSize LayerBar::sizeHint() const {
+        return QSize(40, 200);
+    }
+
+    int LayerBar::getLayerCount() {
+        return m_layers;
+    }
+
+    void LayerBar::addSingle(int layer) {
+        this->addDot(layer);
+        this->update();
+    }
+
+    void LayerBar::addRange(int lower, int upper) {
+        if (!this->layerValid(lower) || !this->layerValid(upper)) return;
+
+        LayerDot* a = this->addDot(lower);
+        LayerDot* b = this->addDot(upper);
+
+        dot_range* range = new dot_range;
+
+        range->a = a;
+        range->b = b;
+        a->setRange(range);
+        b->setRange(range);
+
+        m_ranges[m_part].push_back(range);
+
+        this->update();
+    }
+
+    void LayerBar::changePart(QSharedPointer<Part> part) {
+        // Hide all the previous dots.
+        if (m_part != nullptr) {
+            for (LayerDot* dot : m_dots[m_part]) {
+                dot->hide();
+            }
+        }
+
+        // Clear out the various tracking containers.
+        m_position.clear();
+        //m_active = nullptr;
+
+        m_part = part;
+
+        if(m_part != nullptr && m_part->root_mesh()->isClippingMesh())
+        {
+            m_part = nullptr;
+            this->updateLayers();
+            m_position.resize(m_layers);
+            this->resizeEvent(nullptr);
+            this->update();
+            return;
+        }
+
+        this->updateLayers();
+        m_position.resize(m_layers);
+
+        // Show all the new dots.
+        for (LayerDot* dot : m_dots[part]) {
+            dot->show();
+            // Reset the position.
+            m_position[dot->getLayer()] = dot;
+        }
+
+        this->resizeEvent(nullptr);
+        this->update();
+    }
+
+    void LayerBar::removePart(QSharedPointer<Part> part) {
+        this->clearSelection();
+       // m_active = nullptr;
+
+        qDeleteAll(m_dots[part]);
+        m_part = nullptr;
+    }
+
+    void LayerBar::deleteSelection() {
+        for (LayerDot* dot : m_selection) {
+            this->deleteSingle(dot);
+        }
+
+        m_selection.clear();
+        this->update();
+        return;
+    }
+
+    void LayerBar::setLayer() {
+        bool ok;
+        LayerDot* dot = m_selection.back();
+        int new_layer = QInputDialog::getInt(this, "Layer Entry", "Enter new layer for selection:",
+                        dot->getLayer(), 1, m_layers + 1, 1, &ok);
+
+        for (;;) {
+            // If the user gives a bad layer, ask for another value until we get it right.
+            if (!ok) break;
+            if (!this->moveDotToLayer(dot, new_layer - 1)) {
+                new_layer = QInputDialog::getInt(this, "Layer Entry",
+                            "Could not create selection because the specified layer already contains a selection. Please enter another value:",
+                            new_layer, 1, m_layers + 1, 1, &ok);
+                continue;
+            }
+            break;
+        }
+
+        return;
+    }
+
+    void LayerBar::addSelection() {
+        bool ok;
+        LayerDot* dot;
+        int new_layer = QInputDialog::getInt(this, "Add New Layer Selection", "Enter the layer you wish to select:",
+            1, 1, m_layers, 1, &ok);
+
+         //If the user gives a bad layer, ask for another value until we get it right.
+        for(;;) {
+            if (!layerValid(new_layer - 1) && ok) {
+                new_layer = QInputDialog::getInt(this, "Add New Layer Selection",
+                    "Could not create selection because the specified layer already contains a selection. Please enter another value:",
+                    1, 1, m_layers, 1, &ok);
+                continue;
+            }
+            break;
+        }
+        if(ok)
+        {
+            dot = this->addDot(new_layer - 1);
+            dot->show();
+        }
+        return;
+    }
+
+
+    /* ************************************************* */
+    /*                ADD GROUP FUNCTION                 */
+    /*   apply settings to all odd or even layers, etc   */
+    /* ************************************************* */
+
+    void LayerBar::addGroup() {
+        // Dialog prompt to get user input for adding a group of dots. 
+        QDialog dialog(this);
+        QFormLayout form(&dialog);
+        dialog.setWindowTitle("Add Layer Selection Group");
+
+        // Radiobuttons for selecting odds/evens or making a custom selection group
+        QRadioButton* selectOdds = new QRadioButton("Select all odd layers.", &dialog);
+        QRadioButton* selectEvens = new QRadioButton("Select all even layers.", &dialog);
+        QRadioButton* selectCustom = new QRadioButton("Make a custom selection group.", &dialog);
+
+        // ButtonGroup to make the buttons exclusive
+        QButtonGroup* chooseSelection = new QButtonGroup(&dialog);
+        chooseSelection->addButton(selectOdds, 1);
+        chooseSelection->addButton(selectEvens, 2);
+        chooseSelection->addButton(selectCustom, 3);
+
+        // Inputs for a custom selection group
+        QDoubleSpinBox* grpStart = new QDoubleSpinBox(&dialog); // first layer in the group
+        grpStart->setRange(1, m_layers - 2); // minimum of 1, maximum of 2nd to last layer of the part
+        grpStart->setDecimals(0); // no decimals
+        QDoubleSpinBox* grpEnd = new QDoubleSpinBox(&dialog); //last layer in the group
+        grpEnd->setRange(3,m_layers); // minimum of 3, maximum of last layer
+        grpEnd->setValue(m_layers); // default is last layer
+        grpEnd->setDecimals(0); // no decimals
+        QDoubleSpinBox* interval = new QDoubleSpinBox(&dialog); // number of layers to skip between selections
+        interval->setRange(1,m_layers / 2); // minimum of 1, maximum of 1/2 total number of layers
+        interval->setDecimals(0); // no decimals
+        QLineEdit* name = new QLineEdit(&dialog);
+        name->setText("New Group");
+
+        // Groupbox to group the inputs together and enable/disable them based on radiobutton selection
+        QGroupBox* groupBox = new QGroupBox(tr("Custom Selection Group"));
+        QGridLayout* grid = new QGridLayout;
+        grid->addWidget(new QLabel("Start at layer"), 1, 1);
+        grid->addWidget(new QLabel("Stop at layer"), 2, 1);
+        grid->addWidget(new QLabel("Interval*"), 3, 1);
+        QLabel* intDef = new QLabel("*Indicate how many layers to skip between selections; an interval of 1 selects every other layer.");
+        intDef->setWordWrap(true);
+        intDef->setIndent(1);
+        grid->addWidget(new QLabel("Group Name"), 5, 1);
+        grid->addWidget(grpStart, 1, 2);
+        grid->addWidget(grpEnd, 2, 2);
+        grid->addWidget(interval, 3, 2);
+        grid->addWidget(intDef, 4, 1, 1, 2);
+        grid->addWidget(name, 5, 2);
+        grid->setColumnStretch(2, 2);
+        groupBox->setLayout(grid);
+        groupBox->setEnabled(false);
+
+        // Groupbox is only enabled if the user indicates they want to make a custom selection group
+        connect(chooseSelection, QOverload<QAbstractButton*>::of(&QButtonGroup::buttonClicked),
+            [=](QAbstractButton* button) { if (chooseSelection->checkedId() == 3) groupBox->setEnabled(true); else groupBox->setEnabled(false); });
+
+        // Populate the form
+        form.addRow(selectOdds);
+        form.addRow(selectEvens);
+        form.addRow(selectCustom);
+        form.addRow(groupBox);
+
+        // Add some standard buttons (Cancel/Ok) at the bottom of the dialog
+        QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+            Qt::Horizontal, &dialog);
+        form.addRow(&buttonBox);
+        QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+        QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+        // Show the dialog as modal
+        if (dialog.exec() == QDialog::Accepted) {
+            // If the user didn't dismiss the dialog, add dots at the appropriate layers
+            // Default values: select all odd layers
+            int start = 0;
+            int end = m_layers;
+            int skip = 2;
+            QString grpName ="Odd Layers";
+            if (chooseSelection->checkedId() == 2) {
+                // If user wants to select even layers
+                grpName = "Even Layers";
+                start = 1;
+            }
+            else if (chooseSelection->checkedId() == 3) {
+                // If user wants to make a custom selection group
+                start = grpStart->value() - 1;
+                end = grpEnd->value();
+                skip = interval->value() + 1;
+                grpName = name->text();
+            }
+            // Make the dot group
+            dot_group* group = new dot_group;
+            m_groups[m_part].append(group);
+            int grp_num = m_groups[m_part].indexOf(group);
+            group->part = m_part;
+            group->group_name = grpName;
+
+            for (int i = start; i < end; i = i + skip) {
+                // Add dots on the appropriate layers and add them to the dot group
+                if(layerValid(i)) {
+                    LayerDot* dot = addDot(i);
+                    group->grouped.append(dot);
+                    dot->setGroup(m_groups[m_part].value(grp_num));
+                    dot->show();
+                    emit setSelectedLayerSettings(nullptr);
+                    emit rangeCreated(m_part, dot->getLayer(), dot->getLayer());
+                }
+            }
+        }
+    }
+
+    // Group selected dots together
+    void LayerBar::groupDots() {
+        // Make a new group
+        dot_group* group = new dot_group;
+        m_groups[m_part].append(group);
+        int grp_num = m_groups[m_part].indexOf(group);
+        group->part = m_part;
+        group->group_name = "New Group";
+
+        for (LayerDot* dot : m_selection) {
+        //Check that the selected dot is not already in a group or pair
+            if (dot->getGroup() == nullptr && dot->getPair() == nullptr) {
+                // Add selected dots to the group
+                group->grouped.append(dot);
+                dot->setGroup(m_groups[m_part].value(grp_num));
+            }
+            else { continue; }
+        }
+    }
+
+    // Ungroup a group of dots
+    void LayerBar::ungroupDots() {
+        dot_group* group = new dot_group;
+        for (LayerDot* dot : m_selection) {
+            if (dot->getGroup() != nullptr) {
+                group = dot->getGroup();
+                group->grouped.removeAt(group->grouped.indexOf(dot));
+                dot->setGroup(nullptr);
+            }
+        }
+        this->deleteGroup(group);
+        this->clearSelection();
+    }
+
+    // Delete a group 
+    void LayerBar::deleteGroup(dot_group* group) {
+        m_groups[m_part].removeOne(group);
+        delete group;
+    }
+
+    // Makes a pair of the first two selected dots.
+    void LayerBar::makePair() {
+        auto dot_it = m_selection.begin();
+
+        // Get access to the two dots.
+        LayerDot* a = *dot_it;
+        LayerDot* b = *(dot_it + 1);
+
+        dot_range* range = new dot_range;
+
+        range->a = a;
+        range->b = b;
+        a->setRange(range);
+        b->setRange(range);
+
+        m_ranges[m_part].push_back(range);
+
+        emit rangeDeleted(m_part, a->getLayer(), a->getLayer());
+        emit rangeDeleted(m_part, b->getLayer(), b->getLayer());
+        emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>>());
+
+        emit rangeCreated(m_part, a->getLayer(), b->getLayer());
+
+        this->clearSelection();
+        this->update();
+    }
+
+    void LayerBar::splitPair() {
+        // Get access to the two dots.
+        dot_range* range = m_selection.back()->getRange();
+        this->splitRange(range);
+
+        this->clearSelection();
+        this->update();
+    }
+
+    void LayerBar::paintEvent(QPaintEvent *event) {
+        QPainter painter(this);
+
+        painter.setRenderHint(QPainter::Antialiasing);
+        this->paintDivisions(&painter);
+        this->paintRanges(&painter);
+    }
+
+    /* ****************************************** */
+    /*             MOUSE PRESS EVENTS             */
+    /*       selecting & deselecting dots         */
+    /* ****************************************** */
+
+    void LayerBar::mousePressEvent(QMouseEvent *event) {
+        if (m_part == nullptr || m_layers <= 0) return;
+
+        // Get the dot underneath the cursor.
+        LayerDot* dot = qobject_cast<LayerDot*>(this->childAt(event->pos()));
+
+        // If there's no dot underneath
+        if (dot == nullptr) {
+            // If the right/mid mouse button was clicked, deselect all.
+            if (event->button() == Qt::RightButton || event->button() == Qt::MiddleButton) {
+                this->mouseReleaseEvent(event);
+                this->clearSelection();
+                emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>>());
+                return;
+            }
+
+            // If there is no dot underneath the cursor and
+            // the user does not want to clear the selction, make a new dot if possible.
+            else if(event->button() == Qt::LeftButton)
+            {
+
+                dot = this->addDot(this->getLayerFromPosition(event->y()));
+                if (dot == nullptr) return;
+
+                dot->show();
+                return;
+            }
+
+        }
+        // If there is a dot underneath
+        else
+        {
+            if(event->button() == Qt::RightButton)
+            {
+                //context menu event instead
+            }
+            else if(event->button() == Qt::MiddleButton)
+            {
+                //deselect dot
+                if (dot->getSelectionStatus() && event->button() == Qt::MiddleButton) {
+                    if (dot->getGroup() == nullptr) {
+                        dot->setSelection(false);
+                        m_selection.removeAt(m_selection.indexOf(dot));
+
+<<<<<<< HEAD
+                    if(m_selection.size() > 0)
+                    {
+                        if(m_selection.back()->getRange() == nullptr)
+                            emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>> { GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getLayer()) });
+                        else
+                            emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>> { GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getPair()->getLayer()) });
+                    }
+                    else {
+                        emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>>());
+=======
+                        if (m_selection.size() > 0)
+                        {
+                            if (m_selection.back()->getRange() == nullptr)
+                                emit setSelectedLayerSettings(GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getLayer()));
+                            else
+                                emit setSelectedLayerSettings(GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getPair()->getLayer()));
+                        }
+                        else {
+                            emit setSelectedLayerSettings(nullptr);
+                        }
+                        // m_active = nullptr;
+    //                    emit selectionChanged(&m_selection);
+
+                        return;
+                    }
+                    else {
+                        this->removeFromGrp(dot);
+>>>>>>> origin/Abby
+                    }
+                }
+            }
+            // Any mouse button other than middle and right
+            else 
+            {
+                // If there is already a dot selected and shift is held, select all
+                // dots between the last selection and this one.
+                if (QGuiApplication::queryKeyboardModifiers() == Qt::ShiftModifier) {
+                    if(m_selection.size() > 0)
+                    {
+                        int min = qMin(m_selection.back()->getLayer(), dot->getLayer());
+                        int max = qMax(m_selection.back()->getLayer(), dot->getLayer());
+                        this->selectOnInterval(min, max);
+                    }
+                }
+                // Select multiple dots when Ctrl and Alt are held
+                else if(QGuiApplication::queryKeyboardModifiers() == Qt::AltModifier || QGuiApplication::queryKeyboardModifiers() == Qt::ControlModifier)
+                {
+                    if (!dot->getSelectionStatus()) {
+                        if (dot->getGroup() != nullptr) {
+                            for (int i = 0; i < dot->getGroup()->grouped.size(); i++) {
+                                this->selectDot(dot->getGroup()->grouped[i]);
+                            }
+                        }
+                        else {
+                            this->selectDot(dot);
+                       }
+                    }
+                    else {
+                        if (dot->getGroup() != nullptr) {
+                            this->removeFromGrp(dot);
+                        }
+                        else {
+                            dot->setSelection(false);
+                            m_selection.removeAt(m_selection.indexOf(dot));
+
+                            if (m_selection.back()->getRange() == nullptr)
+                                emit setSelectedLayerSettings(GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getLayer()));
+                            else
+                                emit setSelectedLayerSettings(GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getPair()->getLayer()));
+
+<<<<<<< HEAD
+                    if(m_selection.back()->getRange() == nullptr)
+                        emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>> { GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getLayer()) });
+                    else
+                        emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>> { GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getPair()->getLayer()) });
+=======
+                        }
+                    }
+                    //If the dot is part of a pair, select both dots.
+                    if (dot->getPair() != nullptr && !dot->getPair()->getSelectionStatus()) {
+                        this->selectDot(dot->getPair());
+                    }
+>>>>>>> origin/Abby
+                }
+                else
+                {
+                    if(!dot->getSelectionStatus())
+                    {
+                        this->clearSelection();
+                        m_potentialHighlightChange = dot;
+                    }
+                    else if(m_potentialHighlightChange == nullptr)
+                    {
+                        m_potentialHighlightChange = dot;
+                    }
+                }
+            }
+        }
+    }
+
+    /* ******************************************** */
+    /*             MOUSE RELEASE EVENTS             */
+    /*       moving dots & applying settings        */
+    /* ******************************************** */
+
+    void LayerBar::mouseReleaseEvent(QMouseEvent *event) {
+        if(event->button() == Qt::LeftButton && QGuiApplication::keyboardModifiers() == Qt::NoModifier)
+        {
+            bool any_moved = false;
+
+            QVector<LayerDot*> selectionCopy = m_selection;
+
+            trackChange = false;
+
+            if(m_potentialHighlightChange != nullptr && selectionCopy.size() > 1)
+            {
+                if(m_potentialHighlightChange->y() - originalY > 0)
+                    qSort(selectionCopy.begin(), selectionCopy.end(), [](LayerDot* a, LayerDot* b) { return a->getLayer() < b->getLayer(); });
+                else
+                    qSort(selectionCopy.begin(), selectionCopy.end(), [](LayerDot* a, LayerDot* b) { return a->getLayer() > b->getLayer(); });
+            }
+            // Upon release, calculate each dot's new position.
+            for (LayerDot* dot : selectionCopy) {
+            //for (LayerDot* dot : m_selection) {
+                // Retain old layer info for emission if required.
+                int old_a, old_b;
+                old_a = old_b = dot->getLayer();
+                if (dot->getRange()) old_b = dot->getPair()->getLayer();
+
+                //LayerDot originalDot = *dot;
+
+                if (this->moveDotToNextLayer(dot)) {
+                    any_moved = true;
+
+                    // Collect new layer info.
+                    int a, b;
+                    a = b = dot->getLayer();
+                    if (dot->getRange()) {
+                        dot->getPair()->updateTooltip();
+                        b = dot->getPair()->getLayer();
+                    }
+                    if(dot == m_potentialHighlightChange)
+                        m_potentialHighlightChange = nullptr;
+
+                    emit rangeChanged(m_part, old_a, old_b, a, b);
+                }
+            }
+            if(m_potentialHighlightChange != nullptr)
+            {
+<<<<<<< HEAD
+                //m_potentialHighlightChange->setSelection(!m_potentialHighlightChange->getSelectionStatus());
+                if(m_potentialHighlightChange->getSelectionStatus())
+                {
+                    m_potentialHighlightChange->setSelection(false);
+                    m_selection.removeAt(m_selection.indexOf(m_potentialHighlightChange));
+
+                    if(m_selection.size() > 0)
+                    {
+                        if(m_selection.back()->getRange() == nullptr)
+                            emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>> { GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getLayer()) });
+                        else
+                            emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>> { GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getPair()->getLayer()) });
+                    }
+                    else {
+                        emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>>());
+                    }
+                }
+                else
+                {
+                    this->selectDot(m_potentialHighlightChange);
+
+                    if(m_selection.back()->getRange() == nullptr)
+                        emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>> { GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getLayer()) });
+                    else
+                        emit setSelectedLayerSettings(QList<QSharedPointer<SettingsRange>> { GSM->getRange(m_part, m_selection.back()->getLayer(), m_selection.back()->getPair()->getLayer()) });
+=======
+                this->selectDot(m_potentialHighlightChange);
+                LayerDot* dot = m_selection.back();
+                if (dot->getRange() == nullptr) {
+                    //If the dot is in a group, select all the dots in the group.
+                    if (dot->getGroup() != nullptr) {
+                        dot_group* group = dot->getGroup();
+                        int grpSize = group->grouped.size();
+                        for (int i = 0; i < grpSize; i++) {
+                            this->selectDot(group->grouped[i]);
+                            emit setSelectedLayerSettings(GSM->getRange(m_part, group->grouped[i]->getLayer(), group->grouped[i]->getLayer()));
+                        }
+                    }
+                    else {
+                        emit setSelectedLayerSettings(GSM->getRange(m_part, dot->getLayer(), dot->getLayer()));
+                    }
+                }
+                else {
+                    emit setSelectedLayerSettings(GSM->getRange(m_part, dot->getLayer(), dot->getPair()->getLayer()));
+                    //If the dot is part of a pair, select both dots.
+                    if (dot->getPair() != nullptr && !dot->getPair()->getSelectionStatus()) {
+                        this->selectDot(dot->getPair());
+                    }
+>>>>>>> origin/Abby
+                }
+                m_potentialHighlightChange = nullptr;
+            }
+        }
+    }
+
+    void LayerBar::mouseMoveEvent(QMouseEvent *event) {
+        if (!m_selection.size()) return;
+        if(event->buttons() & Qt::LeftButton && QGuiApplication::keyboardModifiers() == Qt::NoModifier)
+        {
+
+            //int relative_origin = m_selection.back()->y();
+            int relative_origin = m_potentialHighlightChange->y();
+
+            if (!trackChange)
+            {
+                originalY = relative_origin;
+                trackChange = true;
+            }
+            // For each selected dot, try to move them to the appropriate location.
+            for (LayerDot* dot : m_selection) {
+
+                int y_coord = event->y() + (dot->y() - relative_origin) - 10;
+                int layer = this->getLayerFromPosition(y_coord);
+
+                if (y_coord > this->getPositionFromLayer(0)) {
+                    dot->move(dot->x(), this->getPositionFromLayer(0));
+                    dot->setDisplayLayer(0);
+                    continue;
+                }
+                if (y_coord < this->getPositionFromLayer(m_layers - 1)) {
+                    dot->move(dot->x(), this->getPositionFromLayer(m_layers - 1));
+                    dot->setDisplayLayer(m_layers - 1);
+                    continue;
+                }
+
+                dot->move(dot->x(), y_coord);
+                dot->setDisplayLayer(layer);
+            }
+            // If the dot is too small have a number float the number in a tooltip.
+            if (m_potentialHighlightChange->m_shrink >= 4) {
+                QToolTip::showText(event->screenPos().toPoint(), QString::number(m_potentialHighlightChange->getDisplayLayer() + 1));
+            }
+
+            //        if (m_selection.back()->m_shrink >= 4) {
+            //            QToolTip::showText(event->screenPos().toPoint(), QString::number(m_selection.back()->getDisplayLayer() + 1));
+            //        }
+
+            this->update();
+        }
+    }
+
+    void LayerBar::contextMenuEvent(QContextMenuEvent *event) {
+        QMenu menu(this);
+
+        if (m_selection.size() > 1) {
+            if (m_selection.size() == 2) {
+                auto dot_it = m_selection.begin();
+
+                // Get access to the two dots.
+                LayerDot* a = *dot_it;
+                LayerDot* b = *(dot_it + 1);
+
+                // If both dots have no pair or group, then they are canidates for joining.
+                if (a->getPair() == nullptr && b->getPair() == nullptr && a->getGroup() == nullptr && b->getGroup() == nullptr) {
+                    menu.addAction(m_join_act);
+                }
+                // If the dots are in a pair, then add the split action.
+                else if (a->getRange() == b->getRange()) {
+                    menu.addAction(m_split_act);
+                }
+            }
+            // Keep track to make sure no dots in the selection are part of a pair or group
+            bool checkGrp = false;
+            bool checkPair = false;
+            for (LayerDot* dot : m_selection) {
+                if (dot->getGroup() != nullptr) { 
+                    // if a dot is part of a group, change the check to true
+                    checkGrp = true; 
+                }
+                else if (dot->getPair() != nullptr) {
+                    // if a dot is part of a pair change the check to true
+                    checkPair = true;
+                }
+            }
+            // Add the option to group as long as no dots are already grouped or paired
+            if (checkGrp == false && checkPair == false) {
+                menu.addAction(m_group_dots);
+            }
+            else if (checkGrp == true) {
+                menu.addAction(m_ungroup_dots);
+            }
+            menu.addSeparator();
+        }
+        else if (m_selection.size() == 1) {
+            menu.addAction(m_set_layer_act);
+            menu.addSeparator();
+        }
+
+        if (m_selection.size())
+        {
+            menu.addAction(m_delete_act);
+            menu.addAction(m_clear_act);
+            menu.addSeparator();
+        }
+
+//        menu.addAction(m_select_all);
+        menu.addAction(m_add_act);
+        menu.addAction(m_add_group);
+
+        menu.exec(event->globalPos());
+        this->clearSelection();
+    }
+
+    void LayerBar::resizeEvent(QResizeEvent *event) {
+        // Recalculate the following to use in movement.
+        m_px_divs = ((float)(this->height() - (m_layers * 3) - 6) / (m_layers + 1)) + 1;
+        m_px_divs_inc = m_px_divs + 2;
+
+        if (m_px_divs < 30) m_skip = static_cast<int>(30 / m_px_divs);
+
+        // Update all dots to their correct position.
+        for (auto dot_set : m_dots) {
+            for (LayerDot* dot : dot_set) {
+                int y = this->getPositionFromLayer(dot->getLayer());
+
+                dot->move(dot->x(), y);
+                dot->setShrink(m_skip);
+            }
+        }
+    }
+
+    // Paint the tick marks for the background.
+    void LayerBar::paintDivisions(QPainter *painter) {
+        const int maj_hz_pad = 3;
+        const int min_hz_pad = 7;
+        const int bar_size = 3;
+        painter->setPen(Qt::black);
+
+        // m_px_divs = size BETWEEN divisions, m_px_divs_inc = size INCLUDING divisions
+        m_px_divs = ((float)(this->height() - (m_layers * bar_size) - (bar_size * 2)) / (m_layers + 1)) + 1;
+        m_px_divs_inc = m_px_divs + 2;
+
+        // Adjust the skip value based on the available room.
+        if (m_px_divs < 30) m_skip = static_cast<int>(30 / m_px_divs);
+        else m_skip = 1;
+
+        // Draw the divisions lines.
+        float loc = 2;
+        for (int i = 0; i < m_layers; i++) {
+            if (i % m_skip) {
+                // Draw the minor line.
+                painter->setPen(Qt::lightGray);
+                loc += m_px_divs;
+                painter->drawLine(min_hz_pad, loc + 0.5, this->width() - min_hz_pad, loc + 0.5);
+                painter->setPen(Qt::black);
+
+                loc += 2;
+                continue;
+            }
+            // Draw the major line.
+            loc += m_px_divs;
+            painter->drawLine(maj_hz_pad, loc + 0.5, this->width() - maj_hz_pad, loc + 0.5);
+
+            // Increment to get to beginning of next section.
+            loc += 2;
+
+            // Draw the layer text.
+            if ((this->height() - loc) > 15 ) {
+                painter->setPen(Qt::darkGray);
+                painter->drawText(QRect(this->width() / 2 + 2, loc + 4, this->width() / 2 - 2, 10),
+                                  Qt::AlignCenter, QString::number(m_layers - i));
+                painter->setPen(Qt::black);
+            }
+        }
+
+        // Draw the middle.
+        painter->drawLine(this->width() / 2, 0, this->width() / 2, this->height());
+    }
+
+    // Paint the ranges for the dots, if there are any.
+    void LayerBar::paintRanges(QPainter *painter) {
+        // Setup fill pattern.
+        QColor fill_color(Qt::darkBlue);
+        fill_color.setAlpha(50);
+        QBrush filler(fill_color, Qt::SolidPattern);
+
+        if(m_ranges.contains(m_part))
+        {
+            for (int i = 0; i < m_ranges[m_part].size(); i++) {
+                dot_range* range = m_ranges[m_part][i];
+
+                // Determine edges of ranges.
+                QPoint a_point, b_point;
+                a_point.setX(range->a->x());
+                a_point.setY(range->a->y() + range->a->height() / 2);
+                b_point.setX(range->b->x() + range->b->width());
+                b_point.setY(range->b->y() + range->b->height() / 2);
+                QRect range_area(a_point, b_point);
+
+                // Draw the range.
+                painter->setBrush(filler);
+                painter->setPen(Qt::NoPen);
+                painter->drawRect(range_area);
+
+                // At the half way point in the range, draw the priority.
+                painter->setBrush(Qt::NoBrush);
+                painter->setPen(Qt::white);
+
+                painter->drawText(range_area, Qt::AlignCenter, QString::number(i));
+            }
+        }
+    }
+
+    LayerDot* LayerBar::addDot(int layer) {
+        LayerDot* dot = new LayerDot(this, layer);
+        dot->move((this->width() / 2) - (dot->width() / 2), -20);
+
+        // If dot cannot be moved to layer, backtrack.
+        if (!this->moveDotToLayer(dot, layer)) {
+            delete dot;
+            return nullptr;
+        }
+
+        this->clearSelection();
+
+        // Insert the dot into the appropriate set and position.
+        m_dots[m_part].insert(dot);
+        dot->setShrink(m_skip);
+
+        emit rangeCreated(m_part, dot->getLayer(), dot->getLayer());
+
+        return dot;
+    }
+
+    void LayerBar::deleteSingle(LayerDot* dot) {
+        // Remove the dot from internal containers.
+        int layer = dot->getLayer();
+        m_dots[m_part].remove(dot);
+        m_position[layer] = nullptr;
+
+        // When the animation finishes, delete the dot.
+        connect(dot->m_move_ani, &QPropertyAnimation::finished, dot, &LayerDot::deleteLater);
+
+        dot->smoothMove(dot->x(), this->height());
+
+        // If this dot is in a range, delete it.
+        if (dot->getRange() != nullptr) {
+            dot_range* range = dot->getRange();
+
+            // When a dot in a range is deleted, this makes a new single and deletes a range.
+            emit rangeDeleted(m_part, range->a->getLayer(), range->b->getLayer());
+            emit rangeCreated(m_part, dot->getPair()->getLayer(), dot->getPair()->getLayer());
+
+            // Remove the range.
+            dot->getPair()->setRange(nullptr);
+            m_ranges[m_part].removeOne(range);
+            delete range;
+        }
+        else if (dot->getGroup() != nullptr) {
+            dot_group* group = dot->getGroup();
+            group->grouped.removeAt(group->grouped.indexOf(dot));
+            emit rangeDeleted(m_part, dot->getLayer(), dot->getLayer());
+            if (group->grouped.size() < 1) {
+                this->deleteGroup(group);
+            }
+        }
+        else {
+            emit rangeDeleted(m_part, dot->getLayer(), dot->getLayer());
+        }
+    }
+    void LayerBar::removeFromGrp(LayerDot* dot) {
+        QMessageBox msgRemove;
+        msgRemove.setText("Remove this layer selection from the group?");
+        msgRemove.setInformativeText("You have attempted to deselect a specific layer in a group, which will remove it from the group.");
+        msgRemove.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        msgRemove.setDefaultButton(QMessageBox::Cancel);
+        int ret = msgRemove.exec();
+        switch (ret) {
+        case QMessageBox::Ok:
+            // Remove was clicked
+            dot->getGroup()->grouped.removeAt(dot->getGroup()->grouped.indexOf(dot));
+            dot->setGroup(nullptr);
+            dot->setSelection(false);
+            m_selection.removeAt(m_selection.indexOf(dot));
+        case QMessageBox::Cancel:
+            // Cancel was clicked
+            break;
+        default:
+            // should never be reached
+            break;
+        }
+    }
+
+    void LayerBar::updateRanges() {
+        QSharedPointer<Part> sel_part = m_part;
+        this->clear();
+
+        for (auto part : CSM->parts()) {
+            // Temp set m_part so all ranges are added to the correct part.
+            this->changePart(part);
+            for (auto range : GSM->getRanges(part)) {
+                //TODO Fix ranges from GSM.
+//                uint low = range->getLow()->layerNumber();
+//                uint high = range->getHigh()->layerNumber();
+
+//                if (low == high) this->addSingle(low);
+//                else this->addRange(low, high);
+            }
+        }
+
+        if (sel_part != nullptr) this->changePart(sel_part);
+        else {
+            m_part = nullptr;
+            m_layers = 0;
+        }
+        this->update();
+    }
+
+    void LayerBar::updateLayers(){
+        if (m_part.isNull())
+        {
+            m_layers = 0;
+            return;
+        }
+
+        Point part_min = m_part->root_mesh()->getMin();
+        Point part_max = m_part->root_mesh()->getMax();
+        Plane slicing_plane(part_min, QVector3D(0, 0, 1)); //default plane
+
+        //get slicing settings and adjust plane
+        Axis slicing_axis = static_cast<Axis>(GSM->getGlobal()->setting<int>(Constants::MaterialSettings::Experimental::kSlicingAxis));
+        Angle slicing_plane_pitch = GSM->getGlobal()->setting<Angle>(Constants::MaterialSettings::Experimental::kStackingDirectionPitch);
+        Angle slicing_plane_yaw   = GSM->getGlobal()->setting<Angle>(Constants::MaterialSettings::Experimental::kStackingDirectionYaw);
+        Angle slicing_plane_roll  = GSM->getGlobal()->setting<Angle>(Constants::MaterialSettings::Experimental::kStackingDirectionRoll);
+        QQuaternion quaternion = MathUtils::CreateQuaternion(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
+        slicing_plane.rotate(quaternion);
+
+        //if the slicing axis is parallel to the slicing plane, the config is invalid
+        //invalid configs will create an infinite loop when trying to count layers
+        QVector3D slicing_axis_vector;
+        if (slicing_axis == Axis::kX)
+            slicing_axis_vector = QVector3D(1, 0, 0);
+        else if (slicing_axis == Axis::kY)
+            slicing_axis_vector = QVector3D(0, 1, 0);
+        else //slicing_axis == Axis::kZ
+            slicing_axis_vector = QVector3D(0, 0, 1);
+
+        //dot product is zero when vectors are perpendicular
+        float product = QVector3D::dotProduct(slicing_plane.normal(), slicing_axis_vector);
+        //invert the slicing plane normal if necessary
+        if (product < 0)
+            slicing_plane.normal(slicing_plane.normal() * -1);
+
+        if (product != 0) //if valid config ( normal and axis not perpendicular)
+        {
+            //find the min & max vertices on the part, not the bounding box
+            float minDistance = slicing_plane.distanceToPoint(part_max); //farthest a vertex can be from the plane is the max of the bounding box
+            float maxDistance = 0;
+            for( MeshVertex vertex : m_part->root_mesh()->vertices()){
+                float distance = slicing_plane.distanceToPoint(vertex.location);
+                if (distance < minDistance){
+                    minDistance = distance;
+                    part_min = vertex.location;
+                }
+                else if(distance > maxDistance)
+                {
+                    maxDistance = distance;
+                    part_max = vertex.location;
+                }
+            }
+            //move slicing plane to start at min on the part
+            slicing_plane.point(part_min);
+
+            QList<QSharedPointer<SettingsRange>> ranges = GSM->getRanges(m_part);
+            int newLayerNum = 0;
+
+            Distance start = GSM->getGlobal()->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
+            Distance layer = GSM->getGlobal()->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
+
+            if(start == 0 || layer == 0)
+                return;
+
+            if (start >= layer)
+                start = start - layer / 2;
+            else
+                start /= 2;
+
+            //move the slicing plane to the first layer
+            if (slicing_axis == Axis::kX)
+                slicing_plane.shiftX(start());
+            else if (slicing_axis == Axis::kY)
+                slicing_plane.shiftY(start());
+            else //slicing_axis == Axis::kZ
+                slicing_plane.shiftZ(start());
+
+            //while the max point is above the slicing plane
+            while(slicing_plane.evaluatePoint(part_max) > 0)
+            {
+                bool foundLayerSetting = false;
+                for(QSharedPointer<SettingsRange> range : ranges)
+                {
+                    if(range->getLow() <= newLayerNum && newLayerNum <= range->getHigh())
+                    {
+                        if(range->contains(Constants::ProfileSettings::Layer::kLayerHeight))
+                        {
+                            int multiple = range->getHigh() - range->getLow() + 1;
+                            Distance combined_layers = (multiple * range->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight));
+
+                            //shift the plane by the layer distance along the slicing axis
+                            if (slicing_axis == Axis::kX)
+                                slicing_plane.shiftX(combined_layers());
+                            else if (slicing_axis == Axis::kY)
+                                    slicing_plane.shiftY(combined_layers());
+                            else //slicing_axis == Axis::kZ
+                                    slicing_plane.shiftZ(combined_layers());
+
+                            foundLayerSetting = true;
+                            newLayerNum += multiple;
+                            break;
+                        }
+                    }
+                }
+                if(!foundLayerSetting)
+                {
+                    //shift the slicing plane by one layer of globally-defined size
+                    if (slicing_axis == Axis::kX)
+                        slicing_plane.shiftX(layer());
+                    else if (slicing_axis == Axis::kY)
+                        slicing_plane.shiftY(layer());
+                    else //slicing_axis == Axis::kZ
+                        slicing_plane.shiftZ(layer());
+
+                    newLayerNum++;
+                }
+            }
+
+            if(newLayerNum < m_position.size())
+            {
+                for(int i = m_position.size() - 1; i >= newLayerNum; i--)
+                {
+                    if(m_position[i] != nullptr)
+                    {
+                        deleteSingle(m_position[i]);
+                    }
+                }
+            }
+            m_layers = newLayerNum;
+        }
+        else
+            m_layers = 0;
+
+        m_position.resize(m_layers);
+        this->resizeEvent(nullptr);
+        this->update();
+    }
+
+    void LayerBar::clear() {
+        m_ranges.clear();
+        m_selection.clear();
+        m_position.clear();
+        m_dots.clear();
+        m_part = nullptr;
+
+        this->update();
+    }
+
+    void LayerBar::deleteRange(LayerBar::dot_range *range) {
+        range->a->setRange(nullptr);
+        range->b->setRange(nullptr);
+        m_ranges[m_part].removeOne(range);
+
+        emit rangeDeleted(m_part, range->a->getLayer(), range->b->getLayer());
+
+        delete range;
+    }
+
+    void LayerBar::splitRange(LayerBar::dot_range *range) {
+        range->a->setRange(nullptr);
+        range->b->setRange(nullptr);
+        m_ranges[m_part].removeOne(range);
+
+        emit rangeSplit(m_part, range->a->getLayer(), range->b->getLayer());
+
+        delete range;
+        int temp = 0;
+    }
+
+    void LayerBar::handleModifiedSetting(QString key)
+    {
+        if(key == Constants::ProfileSettings::Layer::kLayerHeight
+                || key == Constants::MaterialSettings::Experimental::kSlicingAxis
+                || key == Constants::MaterialSettings::Experimental::kStackingDirectionPitch
+                || key == Constants::MaterialSettings::Experimental::kStackingDirectionYaw
+                || key == Constants::MaterialSettings::Experimental::kStackingDirectionRoll)
+        {
+            updateLayers();
+        }
+    }
+
+    bool LayerBar::layerValid(int layer) {
+        // Check to be sure that layer is in bounds.
+        if (layer < 0 || layer >= m_layers) return false;
+        // Check that layer is not occupied.
+        if (m_position[layer] == nullptr) return true;
+        // If the layer is not nullptr, there is a dot there already.
+        return false;
+    }
+
+    int LayerBar::getLayerFromPosition(int y_coord) {
+        int coord_layer = static_cast<int>((y_coord + (m_px_divs_inc / 2) + 10) / m_px_divs_inc);
+        // The coordinate system QT uses is downward as negative.
+        // Therefore, the actual layer is the total number of layers minus the calculated layer.
+        return m_layers - coord_layer;
+    }
+
+    int LayerBar::getPositionFromLayer(int layer) {
+        // Constant -10 here to shift dots 1/2 of their heights up. This allows them to fall on the correct line.
+        return static_cast<int>(((m_layers - layer) * m_px_divs_inc) - 10);
+    }
+
+    bool LayerBar::moveDotToLayer(LayerDot *dot, int layer) {
+        bool tempBool = this->layerValid(layer);
+        bool tempBool2 = this->onLayer(dot, layer);
+        if (!this->layerValid(layer) && !this->onLayer(dot, layer)) return false;
+
+        m_position[dot->getLayer()] = nullptr;
+        m_position[layer] = dot;
+
+
+        int x = (this->width() / 2) - (dot->width() / 2);
+        int y = this->getPositionFromLayer(layer);
+
+        dot->smoothMove(x, y);
+        dot->setLayer(layer);
+
+        this->update();
+
+        return true;
+    }
+
+    bool LayerBar::moveDotToNextLayer(LayerDot *dot) {
+        return this->moveDotToNextLayer(dot, this->getLayerFromPosition(dot->y()));
+    }
+
+    bool LayerBar::moveDotToNextLayer(LayerDot *dot, int layer) {
+        int check_dist = 0;
+        int init_layer = dot->getLayer();
+
+        for (;;) {
+            // Check up then down for each check distance.
+            if (this->moveDotToLayer(dot, layer + check_dist)) break;
+            if (this->moveDotToLayer(dot, layer - check_dist)) break;
+
+            check_dist++;
+        }
+
+        // If the dot wasn't actually moved, return false.
+        if (dot->getLayer() != init_layer) return true;
+        return false;
+    }
+
+    bool LayerBar::onLayer(LayerDot* dot, int layer) {
+        if (layer < 0 || layer >= m_layers) return false;
+        if (m_position[layer] != dot) return false;
+
+        return true;
+    }
+
+    void LayerBar::clearSelection() {
+        for (LayerDot* curr_dot : m_selection) curr_dot->setSelection(false);
+        m_selection.clear();
+    }
+
+    // THIS IS NOT WORKING AND I CAN'T FIGURE OUT WHY
+    void LayerBar::selectAll() {
+        //for (auto dot_set : m_dots) {
+        //    for (LayerDot* dot : dot_set) {
+        //        this->selectDot(dot);
+        //    }
+        //}
+        int max = this->getLayerCount();
+        this->selectOnInterval(0, (max - 1));
+    }
+
+    void LayerBar::selectOnInterval(int min, int max) {
+        for (int i = min; i <= max; i++) {
+            if (m_position[i] == nullptr) { continue; }
+            this->selectDot(m_position[i]);
+            //If the dot is part of a pair, select both dots.
+            if (m_position[i]->getPair() != nullptr && !m_position[i]->getPair()->getSelectionStatus()) {
+                this->selectDot(m_position[i]->getPair());
+            }
+            else if (m_position[i]->getGroup() != nullptr) {
+                for (int j = 0; j < m_position[i]->getGroup()->grouped.size(); j++) {
+                    if (!m_position[i]->getGroup()->grouped[j]->getSelectionStatus()) {
+                        this->selectDot(m_position[i]->getGroup()->grouped[j]);
+                    }
+                }
+            }
+        }
+    }
+
+    void LayerBar::selectDot(LayerDot *dot) {
+        if (!dot->getSelectionStatus())
+        {
+            dot->setSelection(true);
+            m_selection.append(dot);
+        }
+    }
+
+    void LayerBar::setupActions() {
+        // Setup actions.
+        m_set_layer_act = new QAction("Set Layer", this);
+        m_delete_act = new QAction("Delete Selection", this);
+        m_add_act = new QAction("Add Selection", this);
+        m_add_group = new QAction("Add Selection Group", this);
+        m_join_act = new QAction("Make Pair", this);
+        m_split_act = new QAction("Split Pair", this);
+        m_clear_act = new QAction("Clear Selection", this);
+        m_group_dots = new QAction("Group Selections", this);
+        m_ungroup_dots = new QAction("Ungroup Selections", this);
+ //       m_select_all = new QAction("Select All", this);
+
+        // Connect our actions to our signals.
+        connect(m_set_layer_act, &QAction::triggered, this, &LayerBar::setLayer);
+        connect(m_delete_act, &QAction::triggered, this, &LayerBar::deleteSelection);
+        connect(m_add_act, &QAction::triggered, this, &LayerBar::addSelection);
+        connect(m_add_group, &QAction::triggered, this, &LayerBar::addGroup);
+        connect(m_join_act, &QAction::triggered, this, &LayerBar::makePair);
+        connect(m_split_act, &QAction::triggered, this, &LayerBar::splitPair);
+        connect(m_clear_act, &QAction::triggered, this, &LayerBar::clearSelection);
+        connect(m_group_dots, &QAction::triggered, this, &LayerBar::groupDots);
+        connect(m_ungroup_dots, &QAction::triggered, this, &LayerBar::ungroupDots);
+ //       connect(m_select_all, &QAction::triggered, this, &LayerBar::selectAll);
+    }
+
+} // ORNL Namespace

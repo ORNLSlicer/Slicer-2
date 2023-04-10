@@ -1,0 +1,1002 @@
+// Main Module
+#include "threading/slicers/polymer_slicer.h"
+
+// Qt
+#include <QSharedPointer>
+#include <QDir>
+
+// Local
+#include "managers/settings/settings_manager.h"
+#include "managers/session_manager.h"
+#include "slicing/slicing_utilities.h"
+#include "slicing/preprocessor.h"
+#include "slicing/buffered_slicer.h"
+#include "step/layer/island/polymer_island.h"
+#include "step/layer/island/support_island.h"
+#include "step/layer/island/wire_feed_island.h"
+#include "step/layer/regions/ironing.h"
+#include "step/layer/regions/skin.h"
+#include "utilities/mathutils.h"
+#include "optimizers/multi_nozzle_optimizer.h"
+#include "slicing/layer_additions.h"
+#include "optimizers/layer_order_optimizer.h"
+
+namespace ORNL {
+
+    PolymerSlicer::PolymerSlicer(QString gcodeLocation) : TraditionalAST(gcodeLocation) {}
+
+    void PolymerSlicer::preProcess(nlohmann::json opt_data)
+    {
+        Preprocessor pp;
+
+        pp.addInitialProcessing([this](const Preprocessor::Parts& parts,  const QSharedPointer<SettingsBase>& global_settings){
+            // Alter settings
+            global_settings->makeGlobalAdjustments();
+
+            // Check for overlaps of settings parts and prevent them
+            if(SlicingUtilities::doPartsOverlap(parts.settings_parts, Plane(Point(1,1,1), QVector3D(0, 0, 1))))
+                return true; // Cancel Slicing
+
+            if(global_settings->setting<bool>(Constants::ExperimentalSettings::SlicingAngle::kEnableMultiBranch))
+                SlicingUtilities::SegmentRoot(global_settings, CSM->parts());
+
+            return false; // No error, so continune slicing
+        });
+
+        pp.addPartProcessing([this](QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb){
+           m_saved_layer_settings.clear();
+
+           // If rafts are being used, clear the part and start from scratch
+           if(part_sb->setting<bool>(Constants::MaterialSettings::PlatformAdhesion::kRaftEnable))
+                   part->clearSteps();
+
+           return false;
+        });
+
+        pp.addMeshProcessing([this](QSharedPointer<MeshBase> mesh, QSharedPointer<SettingsBase> part_sb){
+            // Clip meshes
+            auto clipping_meshes = SlicingUtilities::GetMeshesByType(CSM->parts(), MeshType::kClipping);
+            SlicingUtilities::ClipMesh(mesh, clipping_meshes);
+
+            return false; // No error, so continune slicing
+        });
+
+        pp.addStepBuilder([this](QSharedPointer<BufferedSlicer::SliceMeta> next_layer_meta, Preprocessor::ActivePartMeta& meta){
+            // Save settings
+            m_saved_layer_settings.push_back(next_layer_meta->settings);
+
+            // must add new
+            if(next_layer_meta->number >= meta.steps_processed)
+            {
+                QSharedPointer<Layer> layer = QSharedPointer<Layer>::create(next_layer_meta->number + 1, next_layer_meta->settings);
+                layer->setSettingsPolygons(next_layer_meta->settings_polygons);
+
+                // add data from cross-sectioning to a layer
+                layer->setGeometry(next_layer_meta->geometry, next_layer_meta->average_normal);
+
+                layer->setOrientation(next_layer_meta->plane, next_layer_meta->shift_amount + next_layer_meta->additional_shift);
+                meta.part->appendStep(layer);
+
+                // Create the islands from the geometry.
+                QVector<PolygonList> split_geometry = next_layer_meta->geometry.splitIntoParts();
+
+                //If user wanted polygons manipulated by settings regions, use those instead of original
+                if(!(next_layer_meta->modified_geometry.isEmpty() || next_layer_meta->setting_bounded_geometry.isEmpty()))
+                {
+                    split_geometry = next_layer_meta->modified_geometry.splitIntoParts();
+                    split_geometry += next_layer_meta->setting_bounded_geometry.splitIntoParts();
+                }
+
+                //If wire feeding is turned on, have to create special island combinations
+                if(next_layer_meta->settings->setting<bool>(Constants::ExperimentalSettings::WireFeed::kWireFeedEnable))
+                {
+              //    LayerAdditions::createWireFeedIslands(layer, next_layer_meta, true);
+                    for (const PolygonList& island_geometry : split_geometry) {
+                        // Polymer builds use polymer islands.
+                        QSharedPointer<WireFeedIsland> poly_isl = QSharedPointer<WireFeedIsland>::create(island_geometry, next_layer_meta->settings,
+                                                                                                       next_layer_meta->settings_polygons, next_layer_meta->single_grid);
+                        layer->addIsland(IslandType::kWireFeed, poly_isl);
+                    }
+                }
+                //Else, normal polymer islands
+                else
+                {
+                    for (const PolygonList& island_geometry : split_geometry) {
+                        // Polymer builds use polymer islands.
+                        QSharedPointer<PolymerIsland> poly_isl = QSharedPointer<PolymerIsland>::create(island_geometry, next_layer_meta->settings,
+                                                                                                       next_layer_meta->settings_polygons, next_layer_meta->single_grid);
+                        layer->addIsland(IslandType::kPolymer, poly_isl);
+                    }
+                }
+            }
+            else
+            {
+                QSharedPointer<Layer> layer = meta.part->step(next_layer_meta->number + meta.part_start, StepType::kLayer).dynamicCast<Layer>();
+                layer->flagIfDirtySettings(next_layer_meta->settings);
+                layer->flagIfDirtySettingsPolygons(next_layer_meta->settings_polygons);
+
+                //if already dirty, must be because of user manipulation of geometry
+                //otherwise, check if settings have changed
+                //if either is true, need new layer
+                //TODO: make dirty recalc less restrictive
+                if(layer->isDirty())
+                {
+                    QSharedPointer<Layer> newLayer = QSharedPointer<Layer>::create(next_layer_meta->number + 1, next_layer_meta->settings);
+                    //add data from cross-sectioning to a layer
+                    newLayer->setGeometry(next_layer_meta->geometry, next_layer_meta->average_normal);
+                    newLayer->setSettingsPolygons(next_layer_meta->settings_polygons);
+                    newLayer->setOrientation(next_layer_meta->plane, next_layer_meta->shift_amount + next_layer_meta->additional_shift);
+                    meta.part->replaceStep(next_layer_meta->number + meta.part_start, newLayer);
+
+                    // Create the islands from the geometry.
+                    QVector<PolygonList> split_geometry = next_layer_meta->geometry.splitIntoParts();
+
+                    //If user wanted polygons manipulated by settings regions, use those instead of original
+                    if(!(next_layer_meta->modified_geometry.isEmpty() || next_layer_meta->setting_bounded_geometry.isEmpty()))
+                    {
+                        split_geometry = next_layer_meta->modified_geometry.splitIntoParts();
+                        split_geometry += next_layer_meta->setting_bounded_geometry.splitIntoParts();
+                    }
+
+                    //If wire feeding is turned on, have to create special island combinations
+                    if(next_layer_meta->settings->setting<bool>(Constants::ExperimentalSettings::WireFeed::kWireFeedEnable))
+                    {
+                        //LayerAdditions::createWireFeedIslands(newLayer, next_layer_meta, false);
+                        QVector<QSharedPointer<IslandBase>> newIslands;
+                        for (const PolygonList& island_geometry : split_geometry) {
+                            // Polymer builds use polymer islands.
+                            QSharedPointer<WireFeedIsland> poly_isl = QSharedPointer<WireFeedIsland>::create(island_geometry, next_layer_meta->settings,
+                                                                                                           next_layer_meta->settings_polygons, next_layer_meta->single_grid);
+                            newIslands.append(poly_isl);
+                        }
+                        newLayer->updateIslands(IslandType::kWireFeed, newIslands);
+                    }
+                    else
+                    {
+                        QVector<QSharedPointer<IslandBase>> newIslands;
+                        for (const PolygonList& island_geometry : split_geometry) {
+                            // Polymer builds use polymer islands.
+                            QSharedPointer<PolymerIsland> poly_isl = QSharedPointer<PolymerIsland>::create(island_geometry, next_layer_meta->settings,
+                                                                                                           next_layer_meta->settings_polygons, next_layer_meta->single_grid);
+                            newIslands.append(poly_isl);
+                        }
+                        newLayer->updateIslands(IslandType::kPolymer, newIslands);
+                    }
+                }
+            }
+
+            return false; // No error, so continune slicing
+        });
+
+        pp.addCrossSectionProcessing([this](Preprocessor::ActivePartMeta& meta){
+            // If fewer layers than last slice, remove all steps from that layer onwards
+            meta.part->clearStepsFromIndex(meta.last_step_count + meta.part_start);
+
+            //! If skins are enabled, give each skin its upper and lower geometry
+            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Skin::kEnable))
+                processSkin(meta.part, meta.part_start, meta.last_step_count);
+
+            //! If ironing for top layers is enabled
+            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable) &&
+                    meta.part_sb->setting<bool>(Constants::ExperimentalSettings::Ironing::kEnable) &&
+                    meta.part_sb->setting<bool>(Constants::ExperimentalSettings::Ironing::kTop))
+                processGeometryAboveIroning(meta.part, meta.part_start, meta.last_step_count);
+
+            //! If supports are enabled, find overhangs and add support_islands to layer below overhangs
+            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Support::kEnable))
+                if(meta.last_step_count > 0)
+                    processSupport(meta.part, meta.last_step_count, meta.part_start);
+
+            // Layer Additions
+            processRaft(meta.part, meta.part_start, meta.part_sb);
+            processBrim(meta.part, meta.part_sb);
+            processSkirt(meta.part, meta.part_sb);
+            processLaserScan(meta.part, meta.part_sb);
+            processThermalScan(meta.part, meta.part_sb);
+            processAnchors(meta.part, meta.part_sb);
+
+            // Update max steps
+            if(meta.part->countStepPairs() > this->getMaxSteps())
+                this->setMaxSteps(meta.part->countStepPairs());
+
+            return false; // No error, so continune slicing
+        });
+
+        pp.addStatusUpdate([this](double percentage){
+            emit statusUpdate(StatusUpdateStepType::kPreProcess, percentage);
+        });
+
+        pp.addFinalProcessing([this](const Preprocessor::Parts& parts,  const QSharedPointer<SettingsBase>& global_settings){
+            // Compute and populate global layers
+            processGlobalLayers(parts.build_parts, global_settings);
+
+            // Assign pathing to nozzles
+            assignNozzles(global_settings);
+
+            // Adds thread links for single path zippering and exclusion
+            processLayerLinks(parts.build_parts);
+
+            return false; // No error, so continune slicing
+        });
+
+        pp.processAll();
+    }
+
+    void PolymerSlicer::processGeometryAboveIroning(QSharedPointer<Part> part, int part_start, int last_layer_count)
+    {
+        for (int layer_nr = part_start; layer_nr < last_layer_count - 1; layer_nr++)
+        {
+            QSharedPointer<Layer> layer = part->step(layer_nr, StepType::kLayer).dynamicCast<Layer>();
+            QSharedPointer<Layer> next_layer = part->step(layer_nr + 1, StepType::kLayer).dynamicCast<Layer>();
+
+            if(layer->isDirty() || next_layer->isDirty()){
+                for (QSharedPointer<IslandBase> isl : layer->getIslands()){
+                    QSharedPointer<Ironing> ironing = isl->getRegion(RegionType::kIroning).dynamicCast<Ironing>();
+                    if(ironing.isNull()) continue;
+                    ironing->addUpperGeometry(next_layer->getGeometry());
+                }
+            }
+        }
+    }
+
+    void PolymerSlicer::processSkin(QSharedPointer<Part> part, int part_start, int last_layer_count)
+    {
+        for (int layer_nr = part_start; layer_nr < last_layer_count; layer_nr++)
+        {
+            if(layer_nr < part->countStepPairs())
+            {
+                QSharedPointer<Layer> layer = part->step(layer_nr, StepType::kLayer).dynamicCast<Layer>();
+
+                if(layer->isDirty())
+                {
+                    int gradual_steps = 0;
+                    if(layer->getSb()->setting<bool>(Constants::ProfileSettings::Skin::kInfillEnable))
+                        gradual_steps = layer->getSb()->setting<int>(Constants::ProfileSettings::Skin::kInfillSteps);
+
+                    //! Gather skin counts
+                    int bottom_count = layer->getSb()->setting<int>(Constants::ProfileSettings::Skin::kBottomCount);
+                    int top_count = layer->getSb()->setting<int>(Constants::ProfileSettings::Skin::kTopCount);
+
+                    //! Set bounds
+                    int upper_bound = qMin(layer_nr + top_count, last_layer_count + part_start - 1);
+                    int lower_bound = qMax(layer_nr - bottom_count, part_start);
+                    int gradual_bound = qMin(upper_bound + gradual_steps, last_layer_count + part_start - 1);
+
+                    //! Determine if upper and lower ranges include top and bottom layer respectively
+                    bool top {upper_bound == last_layer_count + part_start - 1};
+                    bool bottom {lower_bound == part_start};
+                    bool gradual = (gradual_bound == last_layer_count + part_start - 1) ? true : false;
+
+                    //! Gather upper and lower geometries
+                    for (QSharedPointer<IslandBase> isl : layer->getIslands())
+                    {
+                        QSharedPointer<Skin> skin = isl->getRegion(RegionType::kSkin).dynamicCast<Skin>();
+                        skin->setGeometryIncludes(top, bottom, gradual);
+
+                        //! Upper geometry
+                        for (int i = layer_nr + 1; i <= upper_bound; ++i)
+                            skin->addUpperGeometry(part->step(i, StepType::kLayer).dynamicCast<Layer>()->getGeometry());
+
+                        //! Gradual geometry
+                        for(int i = upper_bound + 1; i <= gradual_bound; ++i)
+                            skin->addGradualGeometry(part->step(i, StepType::kLayer).dynamicCast<Layer>()->getGeometry());
+
+                        //! Lower geometry
+                        for (int i = lower_bound; i < layer_nr; ++i)
+                            skin->addLowerGeometry(part->step(i, StepType::kLayer).dynamicCast<Layer>()->getGeometry());
+                    }
+                }
+            }
+        }
+    }
+
+    void PolymerSlicer::processRaft(QSharedPointer<Part> part, int part_start, QSharedPointer<SettingsBase> part_sb)
+    {
+        if(!part->steps(StepType::kLayer).empty())
+        {
+            if(part_sb->setting<bool>(Constants::MaterialSettings::PlatformAdhesion::kRaftEnable))
+            {
+                int raft_layers = part_sb->setting<int>(Constants::MaterialSettings::PlatformAdhesion::kRaftLayers);
+                Distance height_offset = 0.0;
+
+                auto steps = part->steps(StepType::kLayer);
+                auto first_layer = steps.first().dynamicCast<Layer>();
+                QVector<QSharedPointer<Layer>> new_raft_layers;
+                for(int i = 0; i < raft_layers; ++i)
+                {
+                    auto raft_layer = LayerAdditions::createRaft(first_layer);
+
+                    // Offset raft height based on how many layers have been completed
+                    raft_layer->setRaftShift(first_layer->getSlicingPlane().normal() * height_offset());
+                    new_raft_layers.push_back(raft_layer);
+
+                    height_offset += raft_layer->getSb()->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
+                }
+
+                // Offset steps based on height added by raft layers
+                for(auto step : steps)
+                    step->setRaftShift(first_layer->getSlicingPlane().normal() * height_offset());
+
+                // Add new raft steps
+                for(int i = new_raft_layers.size() - 1; i >= 0; --i)
+                    part->prependStep(new_raft_layers[i]);
+            }
+            else
+            {
+                if(part_start != 0)
+                {
+                    for(int i = 0; i < part_start; ++i)
+                    {
+                        part->removeStepAtIndex(0);
+                    }
+                }
+            }
+        }
+    }
+
+    void PolymerSlicer::processBrim(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb)
+    {
+        if (part_sb->setting<bool>(Constants::MaterialSettings::PlatformAdhesion::kBrimEnable))
+        {
+            QList<QSharedPointer<Step>> steps = part->steps(StepType::kLayer);
+            for(int i = 0, end = steps.size(); i < end; ++i)
+            {
+                if(i < part_sb->setting<int>(Constants::MaterialSettings::PlatformAdhesion::kBrimLayers))
+                    LayerAdditions::addBrim(steps[i].dynamicCast<Layer>());
+            }
+        }
+    }
+
+    void PolymerSlicer::processSkirt(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb)
+    {
+        if (part_sb->setting<bool>(Constants::MaterialSettings::PlatformAdhesion::kSkirtEnable))
+        {
+            QList<QSharedPointer<Step>> steps = part->steps(StepType::kLayer);
+            for(int i = 0, end = steps.size(); i < end; ++i)
+            {
+                if(i < part_sb->setting<int>(Constants::MaterialSettings::PlatformAdhesion::kSkirtLayers))
+                    LayerAdditions::addSkirt(steps[i].dynamicCast<Layer>());
+            }
+        }
+    }
+
+    void PolymerSlicer::processThermalScan(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb)
+    {
+        if (part_sb->setting<bool>(Constants::ProfileSettings::ThermalScanner::kThermalScanner))
+        {
+            int first_layer = 0;
+
+            // If bed scan is enabled for laser scan, the first layer for the thermal scan is layer 1
+            if (part_sb->setting<bool>(Constants::ProfileSettings::LaserScanner::kLaserScanner) &&
+                    part_sb->setting<bool>(Constants::ProfileSettings::LaserScanner::kEnableBedScan))
+                first_layer = 1;
+
+            int total_layers = part->countStepPairs();
+            for (int current_layer = first_layer; current_layer < total_layers; ++current_layer)
+            {
+                LayerAdditions::addThermalScan(part->step(current_layer, StepType::kLayer).dynamicCast<Layer>());
+            }
+        }
+    }
+
+    void PolymerSlicer::processLaserScan(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb)
+    {
+        if (!m_saved_layer_settings.isEmpty() && m_saved_layer_settings.first()->setting<bool>(Constants::ProfileSettings::LaserScanner::kLaserScanner) && !part->steps().isEmpty())
+        {
+            if (m_saved_layer_settings.first()->setting<bool>(Constants::ProfileSettings::LaserScanner::kLaserScanner))
+            {
+                double scan_height_total = 0;
+                if(m_saved_layer_settings.first()->setting<bool>(Constants::ProfileSettings::LaserScanner::kEnableBedScan))
+                {
+                    LayerAdditions::addLaserScan(part, 0, 0, part->step(0, StepType::kLayer), m_temp_gcode_dir);
+                }
+                else
+                {
+                    part->removeStepFromGroup(0, StepType::kScan);
+                }
+
+                int scan_layer_skip = m_saved_layer_settings.first()->setting<int>(Constants::ProfileSettings::LaserScanner::kScanLayerSkip);
+                for (int current_layer = 1, layer_count = part->countStepPairs(); current_layer < layer_count; ++current_layer)
+                {
+                    QSharedPointer<Layer> previousLayer = part->step(current_layer - 1, StepType::kLayer).dynamicCast<Layer>();
+                    scan_height_total += previousLayer->getSb()->setting<double>(Constants::ProfileSettings::Layer::kLayerHeight);
+
+                    if((current_layer - 1) % scan_layer_skip != 0)
+                        part->removeStepFromGroup(current_layer, StepType::kScan);
+                    else
+                        LayerAdditions::addLaserScan(part, current_layer, scan_height_total, part->step(current_layer, StepType::kLayer), m_temp_gcode_dir);
+                }
+            }
+            else
+            {
+                for(int i = part->countStepPairs() - 1; i >= 0; --i)
+                {
+                    part->removeStepFromGroup(i, StepType::kScan);
+                }
+            }
+        }
+    }
+
+    void PolymerSlicer::processAnchors(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb)
+    {
+        if(part_sb->setting<bool>(Constants::ExperimentalSettings::WireFeed::kAnchorEnable))
+        {
+            int total_layers = part->countStepPairs();
+            for (int current_layer = 0; current_layer < total_layers; ++current_layer)
+                LayerAdditions::addAnchors(part->step(current_layer, StepType::kLayer).dynamicCast<Layer>());
+        }
+    }
+
+    void PolymerSlicer::processGlobalLayers(QVector<QSharedPointer<Part>> parts, const QSharedPointer<SettingsBase>& settings)
+    {
+        if(anythingDirty())
+        {
+            // create global layers from all the part layers
+            m_global_layers = LayerOrderOptimizer::populateSteps(settings, parts);
+        }
+    }
+
+    void PolymerSlicer::assignNozzles(const QSharedPointer<SettingsBase> &settings_base)
+    {
+        int tool_count = settings_base->setting<int>(Constants::ExperimentalSettings::MultiNozzle::kNozzleCount);
+        if (tool_count == 1)
+        {
+            //default, set every island to extruder 0
+            for (auto g_layer : m_global_layers)
+            {
+                QVector<QSharedPointer<IslandBase>> layer_islands = g_layer->getIslands();
+                for (auto island : layer_islands)
+                    island->setExtruder(0);
+            }
+        }
+        // more than one nozzle & nozzles are independent
+        else if (settings_base->setting<bool>(Constants::ExperimentalSettings::MultiNozzle::kEnableIndependentNozzles))
+        {
+            NozzleAssignmentMethod assignment_method = settings_base->setting<NozzleAssignmentMethod>(Constants::ExperimentalSettings::MultiNozzle::kNozzleAssignmentMethod);
+
+            //iterate through global layers and assign nozzles
+            for (auto global_layer : m_global_layers)
+            {
+                QVector<QSharedPointer<IslandBase>> layer_islands = global_layer->getIslands();
+                switch(assignment_method)
+                {
+                    case NozzleAssignmentMethod::kXLocation:
+                        MultiNozzleOptimizer::assignByAxisLocation(layer_islands, tool_count, Axis::kX);
+                        break;
+                    case NozzleAssignmentMethod::kYLocation:
+                        MultiNozzleOptimizer::assignByAxisLocation(layer_islands, tool_count, Axis::kY);
+                        break;
+                    case NozzleAssignmentMethod::kArea:
+                        MultiNozzleOptimizer::assignByArea(layer_islands, tool_count);
+                        break;
+                }
+            }
+        }
+    }
+
+    void PolymerSlicer::processLayerLinks(QVector<QSharedPointer<Part>> parts)
+    {
+        for(auto& part : parts)
+        {
+            auto part_sb = QSharedPointer<SettingsBase>::create(*GSM->getGlobal()); // Copy global
+            part_sb->populate(part->getSb()); // Fill with part overrides
+            bool enable_single_path = part_sb->setting<bool>(Constants::ExperimentalSettings::SinglePath::kEnableSinglePath);
+            bool enable_exclusion = part_sb->setting<bool>(Constants::ExperimentalSettings::SinglePath::kEnableBridgeExclusion);
+            bool enable_zippering = part_sb->setting<bool>(Constants::ExperimentalSettings::SinglePath::kEnableZippering);
+
+            // Link layer threads for zippering/ exclusion
+            if(enable_single_path)
+            {
+                auto sync = part->getSync();
+                sync->clearLinks();
+                for(auto step : part->steps())
+                {
+                    QSharedPointer<Layer> layer = step.dynamicCast<Layer>();
+                    int layer_num = layer->getLayerNumber();
+
+                    // Exclusion links links
+                    if(enable_exclusion && (layer_num + 1 <= part->steps().size()))
+                    {
+                        for(auto island : layer->getIslands())
+                        {
+                            // Add a link to next layer
+                            sync->addLink(layer_num, layer_num + 1, LinkType::kPreviousLayerExclusionPerimeter);
+                            sync->addLink(layer_num, layer_num + 1, LinkType::kPreviousLayerExclusionInset);
+                        }
+                    }
+
+
+                    // Zipper links
+                    if(enable_zippering && (layer_num + 2 < part->steps().size()))
+                    {
+                        for(auto island : layer->getIslands())
+                        {
+                            // Add a link to prev zipper layer
+                            sync->addLink(layer_num, layer_num + 2, LinkType::kZipperingPerimeter);
+                            sync->addLink(layer_num, layer_num + 2, LinkType::kZipperingInset);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    bool PolymerSlicer::anythingDirty()
+    {
+        bool anything_dirty = false;
+        for(QSharedPointer<Part> curr_part : CSM->parts().values())
+        {
+            if(curr_part->isPartDirty())
+            {
+                anything_dirty = true;
+                break;
+            }
+        }
+        return anything_dirty;
+    }
+
+    //Because of possible non-zero xy_offset and non-zero layer_offset, the original code that "added the overhangs
+    // to lower_layer and use the modified lower_layer as upper_layer for the next layer down" no longer works
+    //The new approach breaks down the implementation in two loops iterating layers from top to bottom:
+    //1. First loop, get overhangs defined for each layer without considering xy_offset and layer_offset
+    //2. Second loop, apply the overhangs to each layer considering layer_offset and xy_offset
+    //layer_offet will be considered first, then xy_offset:
+    //If layer_offset=m, support at layer #N will be calculated as the difference between
+    //layer #N+1+m and layer #N+m, or the overhang of layer #N+1+m over the one below #N+m
+    //The calculated overhang is then applied to layer #N
+    //Get the overlap between the overhang and (layer #N with xy_offset)
+    //If the overlap > 0, remove the overlap from the overhang, and add the result to layer #N
+    void PolymerSlicer::processSupport(QSharedPointer<Part> part, int layer_count, int partStart)
+    {
+        if(!part->steps().isEmpty())
+        {
+            auto part_sb = QSharedPointer<SettingsBase>::create(*GSM->getGlobal()); // Copy global
+            part_sb->populate(part->getSb()); // Fill with part overrides
+            //! Determine the offset distance that should be used for support creation
+            Distance support_xy_distance = part_sb->setting<Distance>(Constants::ProfileSettings::Support::kXYDistance);
+            Angle support_threshold_angle = part_sb->setting<Angle>(Constants::ProfileSettings::Support::kThresholdAngle);
+            Distance layer_height = part_sb->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
+            Distance horizontal_offset = max(support_xy_distance, Distance(layer_height * tan(support_threshold_angle)));
+            int layer_offset = part_sb->setting<int>(Constants::ProfileSettings::Support::kLayerOffset);
+
+            //! If tapering is enabled, set taper distance
+            Distance taper = 0;
+            if (part_sb->setting<bool>(Constants::ProfileSettings::Support::kTaper))
+                taper = part_sb->setting<Distance>(Constants::ProfileSettings::Layer::kBeadWidth) / 2;
+
+            Area minimum_support_area = part_sb->setting<Area>(Constants::ProfileSettings::Support::kMinArea);
+
+            // Compare each layer to the one below it looking for overhangs
+            QVector<PolygonList> layers_overhangs; //for all but top layer, count = layer_count - 1
+
+            //Layer #N, if XY offset > 0, there will be a gap between the part contour and the support region
+            //When calculating the support next layer down (layer #N-1), the gap in the upper_layer (layer #N)
+            //must be eliminated. Therefore,
+            //upper_layer_islands is introduced to represent the upper layer with the gap eliminated
+            //It is initialized as the very top layer, and will be updated each time for each layer
+            PolygonList upper_layer_islands;
+            QSharedPointer<Layer> upper_layer0 = part->step(layer_count + partStart - 1, StepType::kLayer).dynamicCast<Layer>();
+            for (QSharedPointer<IslandBase> island : upper_layer0->getIslands())
+            {
+                if(taper > 0)
+                    upper_layer_islands += island->getGeometry().offset(-taper);
+                else
+                    upper_layer_islands += island->getGeometry();
+            }
+            //First iteration, without considering either XY_offset or layer_offset
+            //this will populate vector layers_overhangs[]
+            for (int current_layer = layer_count + partStart - 1; current_layer > partStart; --current_layer)
+            {
+                QSharedPointer<Layer> upper_layer = part->step(current_layer, StepType::kLayer).dynamicCast<Layer>();
+                QSharedPointer<Layer> lower_layer = part->step(current_layer - 1, StepType::kLayer).dynamicCast<Layer>();
+                if (upper_layer->isDirty())
+                {
+                    PolygonList lower_layer_islands;
+                    PolygonList overhangs;
+
+                    //! Gather lower layer island geometries
+                    for (QSharedPointer<IslandBase> island : lower_layer->getIslands())
+                    {
+                        lower_layer_islands += island->getGeometry();
+                    }
+
+                    //overhangs is to be added to the lower_layer_island
+                    //which is then served as the upper_layer_islands for the next layer down
+                    overhangs = upper_layer_islands - lower_layer_islands;
+                    layers_overhangs.push_front(overhangs);
+
+                    //prepare upper_layer_islands for the next layer down, initialize as lower_layer
+                    upper_layer_islands = lower_layer_islands;
+
+                    //add overhangs to upper_layer_islands only if overhangs is not null
+                    if(overhangs.count() > 0)
+                    {
+                        QVector<PolygonList> support_islands = overhangs.splitIntoParts();
+
+                        //Remove support island geometries that are smaller than the minimum support area
+                        //overhangs >= real overhangs considering xy_offset, so no issue on applying the criteria here
+                        for(int i = support_islands.size() - 1; i >= 0; --i)
+                        {
+                            if (support_islands[i].netArea() < minimum_support_area)
+                                support_islands.remove(i);
+                        }
+
+                        for (const PolygonList& island: support_islands)
+                        {
+                            upper_layer_islands += island;
+                        }
+                    }
+                    //consider tapering
+                    if(taper > 0)
+                    {
+                        upper_layer_islands = upper_layer_islands.offset(-taper);
+                    }
+                }
+            }
+
+            //Second top down iteration, assign already calculated overhangs[] to each layer
+            //layer_offset determines which item is used: overhangs[layerId + layer_offset]
+            //Also consider XY_offset by deleting any overlap between the assigned overhangs and the layer
+            //Apply the modified overhangs to the layer
+            for (int current_layer = layer_count + partStart - 1; current_layer > partStart; --current_layer)
+            {
+                QSharedPointer<Layer> upper_layer = part->step(current_layer, StepType::kLayer).dynamicCast<Layer>();
+                QSharedPointer<Layer> lower_layer = part->step(current_layer - 1, StepType::kLayer).dynamicCast<Layer>();
+                if (upper_layer->isDirty())
+                {
+                    //apply layers_overhangs[] to the lower layer, considering layer_offset
+                    //create support islands and add them to lower_layer only if layers_overhangs[layer_offset] is not null
+                    int overhangIndex = current_layer - 1 + layer_offset;
+
+                    if((overhangIndex < layer_count - 1) && (layers_overhangs[overhangIndex].size() > 0))
+                    {
+                        //delete the overlap of layers_overhangs[layer_offset] and lower_layer_islands_offset
+                        PolygonList lower_layer_islands_offset;
+                        for (QSharedPointer<IslandBase> island : lower_layer->getIslands())
+                        {
+                            lower_layer_islands_offset += island->getGeometry().offset(horizontal_offset);
+                        }
+                        PolygonList overlap = layers_overhangs[overhangIndex] & lower_layer_islands_offset;
+                        layers_overhangs[overhangIndex] = layers_overhangs[overhangIndex] - overlap;
+
+                        QVector<PolygonList> support_islands = layers_overhangs[overhangIndex].splitIntoParts();
+
+                        //Remove support island geometries that are smaller than the minimum support area
+                        for(int i = support_islands.size() - 1; i >= 0; --i)
+                        {
+                            if (support_islands[i].netArea() < minimum_support_area)
+                                support_islands.remove(i);
+                        }
+
+                        if(support_islands.size() > 0)
+                        {
+                            //if upper_layer == layer #1 of the part, lower_layer, if needed as the support underneath the part, is still empty
+                            //SettingsBase must come from upper_layer
+                            //Furthermore, if two or more support layers are underneath the part, upper_layer can be a newly added support layer without a kPolymer type island
+                            QSharedPointer<SettingsBase> currentLocalSettings;
+                            if(lower_layer->getIslands().count() > 0)
+                                currentLocalSettings = QSharedPointer<SettingsBase>::create(*lower_layer->getIslands(IslandType::kPolymer)[0]->getSb());
+                            else {
+                                if(upper_layer->getIslands(IslandType::kPolymer).count() > 0)
+                                    currentLocalSettings = QSharedPointer<SettingsBase>::create(*upper_layer->getIslands(IslandType::kPolymer)[0]->getSb());
+                                else if(upper_layer->getIslands(IslandType::kSupport).count() > 0)
+                                    currentLocalSettings = QSharedPointer<SettingsBase>::create(*upper_layer->getIslands(IslandType::kSupport)[0]->getSb());
+                                else {
+                                    qDebug() << "Error: cannot get SettingsBase from 1. lower_layer kPolymer island, 2. upper_layer kPolymer island, 3. upper_layer kSupport island";
+                                    continue;
+                                }
+                            }
+
+                            // Create support islands and add them to the lower layer
+                            for (const PolygonList& island: support_islands)
+                            {
+                                QSharedPointer<SupportIsland> support_island = QSharedPointer<SupportIsland>::create(island, currentLocalSettings, QVector<SettingsPolygon>());
+                                lower_layer->addIsland(IslandType::kSupport, support_island);
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+
+    void PolymerSlicer::postProcess(nlohmann::json opt_data)
+    {
+        if(anythingDirty())
+        {
+            QSharedPointer<SettingsBase> global_sb = QSharedPointer<SettingsBase>::create(*GSM->getGlobal());
+            global_sb->makeGlobalAdjustments();
+
+            // set up the start points, first region indicies, and previous region list for each tool
+            // used by island and path order optimizer to generate travels
+            // in these vectors, index 0 corresponds to tool 0, index 1 to tool 1, etc.
+            QVector<Point> current_points;
+            QVector<int> start_indices;
+            QVector<QVector<QSharedPointer<RegionBase>>> previous_regions_list;
+
+            int num_nozzles = global_sb->setting<int>(Constants::ExperimentalSettings::MultiNozzle::kNozzleCount);
+            for (int i = 0; i < num_nozzles; ++i)
+            {
+                current_points.push_back(Point(0, 0, 0));
+                start_indices.push_back(-1);
+                previous_regions_list.push_back(QVector<QSharedPointer<RegionBase>>());
+            }
+
+            for (int g_layer_num = 0, max_layers = m_global_layers.size(); g_layer_num < max_layers; ++g_layer_num)
+            {
+                m_global_layers[g_layer_num]->unorient();
+
+                // if there are multiple nozzles that are NOT independent
+                if ( global_sb->setting<int>(Constants::ExperimentalSettings::MultiNozzle::kNozzleCount) > 1
+                     && !global_sb->setting<bool>(Constants::ExperimentalSettings::MultiNozzle::kEnableIndependentNozzles) )
+                {
+                     m_global_layers[g_layer_num]->adjustFixedMultiNozzle();
+                }
+
+                // current_points, start_indices, & previous_regions_list are updated during method execution
+                // so that each layer starts where the last layer ended
+                 m_global_layers[g_layer_num]->connectPaths(global_sb, current_points, start_indices, previous_regions_list);
+
+                 m_global_layers[g_layer_num]->calculateModifiers(global_sb, current_points);
+
+                 m_global_layers[g_layer_num]->reorient();
+
+                // update status in UI
+                emit statusUpdate(StatusUpdateStepType::kPostProcess, (g_layer_num + 1) / max_layers * 100);
+            }
+
+            if (global_sb->setting<bool>(Constants::ExperimentalSettings::DirectedPerimeter::kEnableLayerSpiralization))
+            {
+                spiralizeLayers(global_sb);
+                exportSpiralVisFiles();
+
+                //! Link spiral paths
+                Point current_loc(0, 0, 0);
+                PathOrderOptimizer poo(current_loc, 0, global_sb);
+                poo.linkSpiralPaths3D(m_spiral_paths);
+            }
+        }
+        else
+        {
+            // Mark layerbar as done
+            emit statusUpdate(StatusUpdateStepType::kPostProcess, 100);
+        }
+    }
+
+    void PolymerSlicer::spiralizeLayers(QSharedPointer<SettingsBase> global_sb)
+    {
+        m_spiral_paths.clear();
+
+        //! Collect paths innermost to outermost
+        //! \note Assumes 1 island per layer - could be extended for multiple islands if needed
+        QVector<QVector<Path>> shells;
+        for (QSharedPointer<GlobalLayer> &layer : m_global_layers)
+        {
+            for (QSharedPointer<IslandBase> &island : layer->getIslands())
+            {
+                QVector<Path> paths;
+                for (const QSharedPointer<RegionBase> &region : island->getRegions())
+                {
+                    for (Path& path : region->getPaths())
+                    {
+                        //! Remove non-printing segments
+                        path.getSegments().erase(
+                                    std::remove_if(
+                                        path.getSegments().begin(), path.getSegments().end(),
+                                        [] (QSharedPointer<SegmentBase> &segment) { return !segment->isPrintingSegment();}), path.getSegments().end());
+
+                        //! Only closed paths can be spiralized
+                        if (path.isClosed())
+                        {
+                            //! Orient path CCW
+                            if (!path.getCCW())
+                            {
+                                path.reverseSegments();
+                                path.setCCW(true);
+                            }
+
+                            paths += path;
+                        }
+                    }
+                }
+
+                if (paths.size() > shells.size())
+                    shells.resize(paths.size());
+
+                //! Add paths to appropriate shell
+                std::for_each(paths.begin(), paths.end(), [&, i = 0] (auto& path) mutable {shells[i++].push_back(path);});
+            }
+        }
+
+
+        //! Spiralize shells
+        //! \note Upper path of shell not added to spiral shell - distinct policy needed - should possibly act as tip wipe
+        for (QVector<Path>& paths : shells)
+        {
+            //! Spiralize shell
+            Path spiral_shell;
+            for (uint i = 0, max = paths.size() - 1; i < max; ++i)
+            {
+                //! Identify lower/upper paths and compute dz shift rate
+                Path &lower_path = paths[i], &upper_path = paths[i + 1];
+                float dz = qFabs(upper_path.front()->start().z() - lower_path.front()->start().z()) / lower_path.calculateLength()();
+
+                Point endpoint = lower_path.front()->start(), endpoint_target;
+                uint target_idx;
+
+                //! Spiralize lower path
+                float length_travelled {0};
+                for (QSharedPointer<SegmentBase> &lower_segment : lower_path)
+                {
+                    //! Used for segment normal computation
+                    Point midpoint = lower_segment->midpoint(), midpoint_target;
+
+                    length_travelled += lower_segment->length()();
+                    lower_segment->setStart(endpoint);
+                    endpoint = lower_segment->end();
+
+                    //! Find nearest endpoint target and midpoint target on upper path
+                    //! If nearest target is the endpoint of a segment, preference is given to startpoint of next segment
+                    float endpoint_target_dist {std::numeric_limits<float>::max()}, midpoint_target_dist {std::numeric_limits<float>::max()};
+                    for (QSharedPointer<SegmentBase> &upper_segment : upper_path)
+                    {
+                        Point target;
+                        float dist;
+
+                        //! Endpoint target
+                        std::tie(dist, target) = MathUtils::findClosestPointOnSegment(upper_segment->start(), upper_segment->end(), endpoint);
+                        if (dist < endpoint_target_dist && target != upper_segment->end())
+                        {
+                            endpoint_target = target;
+                            endpoint_target_dist = dist;
+                            target_idx = upper_path.getSegments().indexOf(upper_segment);
+                        }
+
+                        //! Midpoint target
+                        std::tie(dist, target) = MathUtils::findClosestPointOnSegment(upper_segment->start(), upper_segment->end(), midpoint);
+                        if (dist < midpoint_target_dist && target != upper_segment->end())
+                        {
+                            midpoint_target = target;
+                            midpoint_target_dist = dist;
+                        }
+                    }
+
+                    //! Shift segment end toward end_target
+                    QVector3D shift_vector = (endpoint_target - endpoint).toQVector3D();
+                    float shift_dist = (length_travelled * dz) * shift_vector.length() / (endpoint_target.z() - endpoint.z());
+                    lower_segment->setEnd(Point::round(endpoint + shift_vector.normalized() * shift_dist));
+
+                    //! Compute segment normal
+                    QVector3D fwd_tan = (lower_segment->end() - lower_segment->start()).toQVector3D();
+                    QVector3D vrt_tan = (midpoint_target - midpoint).toQVector3D();
+                    QVector3D norm = QVector3D::crossProduct(fwd_tan, vrt_tan).normalized();
+                    lower_segment->getSb()->setSetting(Constants::SegmentSettings::kTilt, QVector<QVector3D>{norm, norm});
+
+                    spiral_shell.append(lower_segment);
+                    endpoint = lower_segment->end();
+                }
+
+                //! Reorder upper path segments so that target segment is first and adjust path start/end points
+                std::rotate(upper_path.begin(), upper_path.begin() + target_idx, upper_path.end());
+                upper_path.front()->setStart(endpoint_target);
+                upper_path.back()->setEnd(endpoint_target);
+            }
+
+            m_spiral_paths += spiral_shell;
+        }
+
+        //! Ensure spiral paths are in order of accessibility (inner to outer)
+        Direction gen_dir = static_cast<Direction>(global_sb->setting<int>(Constants::ExperimentalSettings::DirectedPerimeter::kGenerationDirection));
+        if (gen_dir == Direction::kInward)
+            std::reverse(m_spiral_paths.begin(), m_spiral_paths.end());
+    }
+
+    void PolymerSlicer::exportSpiralVisFiles()
+    {
+        QDir dir = m_temp_gcode_dir;
+        dir.mkdir("Spiral_Visualization_Files");
+        dir.cd("Spiral_Visualization_Files");
+
+        QFile points_file(dir.absoluteFilePath("points.dat"));
+        QFile types_file(dir.absoluteFilePath("types.dat"));
+        QFile widths_file(dir.absoluteFilePath("widths.dat"));
+        QFile normals_file(dir.absoluteFilePath("normals.dat"));
+
+        if (points_file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)
+                && types_file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)
+                && widths_file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)
+                && normals_file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+        {
+            QTextStream pfs(&points_file);
+            QTextStream tfs(&types_file);
+            QTextStream wfs(&widths_file);
+            QTextStream nfs(&normals_file);
+
+            for (Path &path : m_spiral_paths)
+            {
+                if (!path.getSegments().isEmpty())
+                {
+                    for (auto& segment : path.getSegments())
+                    {
+                        pfs << segment->start().x() << " " << segment->start().y() << " " << segment->start().z() << " ";
+                        tfs << (int)segment->getSb()->setting<RegionType>(Constants::SegmentSettings::kRegionType) << " ";
+                        wfs << segment->getSb()->setting<Distance>(Constants::SegmentSettings::kWidth)() << " ";
+                        QVector3D normal = segment->getSb()->setting<QVector<QVector3D>>(Constants::SegmentSettings::kTilt)[0];
+                        nfs << normal.x() << " " << normal.y() << " " << normal.z() << " ";
+                    }
+
+                    auto segment = path.getSegments().last();
+                    pfs << segment->end().x() << " " << segment->end().y() << " " << segment->end().z() << " ";
+                    QVector3D normal = segment->getSb()->setting<QVector<QVector3D>>(Constants::SegmentSettings::kTilt)[0];
+                    nfs << normal.x() << " " << normal.y() << " " << normal.z() << " ";
+
+                    pfs << "\n";
+                    tfs << "\n";
+                    wfs << "\n";
+                    nfs << "\n";
+                }
+            }
+        }
+
+        points_file.close();
+        types_file.close();
+        widths_file.close();
+        normals_file.close();
+    }
+
+    void PolymerSlicer::writeSpiralGCode()
+    {
+        QTextStream stream(&m_temp_gcode_output_file);
+
+        //! Write before
+        stream << m_base->writeLayerChange(0); // Layer 0
+        stream << m_base->writeBeforeLayer(m_spiral_paths.front().getMinZ(), GSM->getGlobal());
+        stream << m_base->writeCommentLine("Nozzle 0"); // Tool 0
+        stream << m_base->writeBeforeIsland();
+        stream << m_base->writeBeforeRegion(RegionType::kPerimeter);
+        stream << m_base->writeBeforePath(RegionType::kPerimeter);
+
+        //! Write path
+        for (QSharedPointer<SegmentBase>& segment : m_spiral_paths.first().getSegments())
+            stream << segment->writeGCode(m_base);
+
+        //! Write after
+        stream << m_base->writeAfterPath(RegionType::kPerimeter);
+        stream << m_base->writeAfterRegion(RegionType::kPerimeter);
+        stream << m_base->writeAfterIsland();
+        stream << m_base->writeAfterLayer();
+
+        emit statusUpdate(StatusUpdateStepType::kGcodeGeneraton, 100);
+    }
+
+    void PolymerSlicer::writeGCode()
+    {
+        if (!m_spiral_paths.isEmpty())
+        {
+            writeSpiralGCode();
+        }
+        else
+        {
+            QTextStream stream(&m_temp_gcode_output_file);
+
+            // for updating status window
+            double current_layer = 0;
+            double num_layers = m_global_layers.size();
+
+            // have each layer write its own gcode
+            for (auto g_layer : m_global_layers)
+            {
+                stream << m_base->writeLayerChange(current_layer);
+                stream << m_base->writeBeforeLayer(g_layer->getMinZ(), GSM->getGlobal());
+
+                stream << g_layer->writeGCode(m_base);
+                g_layer->setDirtyBit(false);
+                stream << m_base->writeAfterLayer();
+
+                emit statusUpdate(StatusUpdateStepType::kGcodeGeneraton, (current_layer + 1) / num_layers * 100);
+                ++current_layer;
+            }
+        }
+    }
+}

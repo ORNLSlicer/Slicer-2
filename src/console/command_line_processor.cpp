@@ -1,0 +1,411 @@
+// Header
+#include "console/command_line_processor.h"
+
+// Qt
+#include <QHostAddress>
+
+// Local
+#include "managers/session_manager.h"
+#include "threading/gcode_RPBF_saver.h"
+
+namespace ORNL {
+
+    CommandLineConverter::CommandLineConverter() {
+        m_master = QSharedPointer<SettingsBase>::create();
+        QFile master_file(":/configs/master.conf");
+        master_file.open(QIODevice::ReadOnly);
+
+        QString master_data = master_file.readAll();
+        m_master->json(json::parse(master_data.toStdString()));
+    }
+
+    void CommandLineConverter::setupCommandLineParser(QCommandLineParser& parser) {
+
+        //parser in-built options
+        parser.addHelpOption();
+
+        //custom options needed for loading/slicing
+        parser.addOption({Constants::ConsoleOptionStrings::kInputProjectFile, "Run Slicer 2 using project file at <directory>.", "directory", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kInputStlFiles, "List of STLs to load for slicing. Parameter can be specified multiple times.", "file-list", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kInputGlobalSettings, "Valid settings file to extract global settings from.", "file", ""});
+        //parser.addOption({Constants::ConsoleOptionStrings::kInputLocalSettings, "Comma separated pair: index,file. Where index is 0-based id for STL reference and file is the settings file to apply.", "index,file pair", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kInputSTLTransform, "File containing stl transforms.", "file", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kOutputLocation, "File to write out Gcode to.", "directory", ""});
+
+        //preference option
+        parser.addOption({Constants::ConsoleOptionStrings::kShiftPartsOnLoad, "Specifies whether or not to shift STLs after load. Default is true."});
+        //parser.addOption({Constants::ConsoleOptionStrings::kCenterPartsOnLoad, "Specifies whether or not to center STLs after load.  Default is true."});
+
+        //control options for gcode export
+        parser.addOption({Constants::ConsoleOptionStrings::kOverwriteOutputFile, "Specifies whether output will overwrite existing files.  Default is true."});
+        parser.addOption({Constants::ConsoleOptionStrings::kIncludeAuxiliaryFiles, "Specifies whether to save auxiliary files with the Gcode output.  Default is true."});
+        parser.addOption({Constants::ConsoleOptionStrings::kIncludeProjectFile, "Specifies whether to save a copy of the project file with the Gcode output.  Default is false."});
+        parser.addOption({Constants::ConsoleOptionStrings::kBundleOutput, "Specifies creation of specific folder to bundle output.", "directory", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kHeaderSlicedBy, "Define Operator (Sliced by) header text. Default is empty.", "text", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kHeaderDescription, "Define description header text. Default is empty.", "text", ""});
+
+        //options for maincontrol behavior
+        parser.addOption({Constants::ConsoleOptionStrings::kSliceBounds, "Comma separated pair: low,high. 0-based indicies specifying layers to slice (inclusive).", "low,high pair", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kRealTimeMode, "Keeps slicing instance running and generates Gcode for each layer. Requires network communication. Default is false."});
+        parser.addOption({Constants::ConsoleOptionStrings::kRecoveryFilePath, "If using real time mode, slicing will continue from a recovery file position.", "Recovery file path",""});
+        parser.addOption({Constants::ConsoleOptionStrings::kOpenLoop, "If using real time mode, open loop will not wait for signals before compute the next layer. Default is false."});
+        parser.addOption({Constants::ConsoleOptionStrings::kRealTimeCommunicationMode, "0 - file, 1 - network. Specifies whether to write Gcode to file or socket."
+                           " In the case of file, Gcode will be written to the location specified by output_location option and completion signal will be sent to "
+                           " real_time_network_address. In the case of network, Gcode will be sent directly to real_time_network_address. Default is 0.",
+                           "0/1",""});
+        parser.addOption({Constants::ConsoleOptionStrings::kRealTimeNetworkAddress, "Comma separated pair: IP Address,Port. Specifies connection information for real-time mode. Default is localhost/12345.", "IP Address,Port pair", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kRealTimePrinter, "The name of the printer to stream commands and gcode to over the network. This is set in Sensor Control 2. Default is \"Default\"", "Printer Name", ""});
+
+//        for(auto& el : m_master->json().items())
+//        {
+//            parser.addOption({QString::fromStdString(el.key()), QString::fromStdString(el.value()[Constants::Settings::Master::kToolTip]),
+//                              "value", ""});
+//        }
+    }
+
+    bool CommandLineConverter::checkRequiredSettings(QCommandLineParser& parser, QSharedPointer<SettingsBase> options)
+    {
+        //either both or neither stls/project file were specified.  Must have one or the other.
+        if(parser.isSet(Constants::ConsoleOptionStrings::kInputStlFiles) == parser.isSet(Constants::ConsoleOptionStrings::kInputProjectFile))
+        {
+            qInfo() << "Either stls or a project file must be specified as input";
+            return false;
+        }
+
+        bool validProject = false;
+        if(parser.isSet(Constants::ConsoleOptionStrings::kInputProjectFile))
+        {
+            validProject = isValid(parser.value(Constants::ConsoleOptionStrings::kInputProjectFile), "s2p");
+            options->setSetting(Constants::ConsoleOptionStrings::kInputProjectFile, parser.value(Constants::ConsoleOptionStrings::kInputProjectFile));
+        }
+
+        bool validSTL = false;
+        if(parser.isSet(Constants::ConsoleOptionStrings::kInputStlFiles))
+        {
+            QStringList stlList = parser.values(Constants::ConsoleOptionStrings::kInputStlFiles);
+            for(int i = 0, end = stlList.size(); i < end; ++i)
+            {
+                validSTL = isValid(stlList[i], "stl");
+                if(!validSTL)
+                    return false;
+
+                options->setSetting(Constants::ConsoleOptionStrings::kInputStlFiles, stlList[i], i);
+            }
+            options->setSetting(Constants::ConsoleOptionStrings::kInputStlCount, stlList.size());
+        }
+        else
+            options->setSetting(Constants::ConsoleOptionStrings::kInputStlCount, 0);
+
+        if(!validProject && !validSTL)
+        {
+            qInfo() << "No valid project or stl file was specified";
+            return false;
+        }
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kInputGlobalSettings) && parser.isSet(Constants::ConsoleOptionStrings::kInputProjectFile))
+        {
+            qInfo() << "Cannot specify global settings and project file";
+            return false;
+        }
+
+        bool validSettings = true;
+        if(parser.isSet(Constants::ConsoleOptionStrings::kInputGlobalSettings))
+        {
+            validSettings = isValid(parser.value(Constants::ConsoleOptionStrings::kInputGlobalSettings), "s2c");
+            if(validSettings)
+                options->setSetting<QString>(Constants::ConsoleOptionStrings::kInputGlobalSettings, parser.value(Constants::ConsoleOptionStrings::kInputGlobalSettings));
+            else
+                return false;
+        }
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kInputSTLTransform))
+        {
+            if(!parser.isSet(Constants::ConsoleOptionStrings::kInputStlFiles))
+            {
+                qInfo() << "No stls specified for transform application.";
+                return false;
+            }
+            options->setSetting<QString>(Constants::ConsoleOptionStrings::kInputSTLTransform, parser.value(Constants::ConsoleOptionStrings::kInputSTLTransform));
+            //CSM->loadPartsJson()
+        }
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kOutputLocation))
+        {
+            QDir().mkpath(parser.value(Constants::ConsoleOptionStrings::kOutputLocation));
+            options->setSetting<QString>(Constants::ConsoleOptionStrings::kOutputLocation, parser.value(Constants::ConsoleOptionStrings::kOutputLocation));
+        }
+        else
+        {
+            qInfo() << "Output location must be specified";
+            return false;
+        }
+
+        return true;
+    }
+
+
+    bool CommandLineConverter::checkOptionalPartSettingsAndPreferences(QCommandLineParser& parser, QSharedPointer<SettingsBase> options)
+    {
+//         if(parser.isSet(Constants::ConsoleOptionStrings::kInputLocalSettings))
+//         {
+//             if(parser.isSet(Constants::ConsoleOptionStrings::kInputStlFiles))
+//             {
+//                QStringList stlList = parser.values(Constants::ConsoleOptionStrings::kInputStlFiles);
+//                QStringList localSettingsList = parser.values(Constants::ConsoleOptionStrings::kInputLocalSettings);
+
+//                for(QString str : localSettingsList)
+//                {
+//                    QStringList values = str.split(',');
+//                    if(values[0].toInt() < stlList.size() - 1)
+//                    {
+//                        try
+//                        {
+//                            QFile local_setting_file(values[1]);
+//                            local_setting_file.open(QIODevice::ReadOnly);
+
+//                            QString local_settings_data = local_setting_file.readAll();
+//                            json input = json::parse(local_settings_data.toStdString());
+
+//                            for(auto& range_json : input)
+//                            {
+//                                int low = range_json[Constants::Settings::Session::Range::kLow];
+//                                int high = range_json[Constants::Settings::Session::Range::kHigh];
+//                                QString group = range_json[Constants::Settings::Session::Range::kName];
+//                                auto sb = QSharedPointer<SettingsBase>::create();
+//                                sb->json(range_json[Constants::Settings::Session::Range::kSettings]);
+//                            }
+//                        }
+//                        catch(...)
+//                        {
+//                            qInfo() << "Local Settings File" << values[1] << "is not a valid settings file";
+//                            return false;
+//                        }
+
+//                        options->setSetting<QString>(Constants::ConsoleOptionStrings::kInputLocalSettings + "_" + values[0], values[1]);
+//                    }
+//                    else
+//                    {
+//                        qInfo() << "Local Settings File: Invalid index.";
+//                        return false;
+//                    }
+//                }
+//             }
+//             else
+//             {
+//                 qInfo() << "Cannot parse local settings. No STL files provided.";
+//                 return false;
+//             }
+//         }
+
+//         if(parser.isSet(Constants::ConsoleOptionStrings::kInputSTLTransform))
+//         {
+//             if(parser.isSet(Constants::ConsoleOptionStrings::kInputStlFiles))
+//             {
+//                QStringList stlList = parser.values(Constants::ConsoleOptionStrings::kInputStlFiles);
+//                QStringList localTransformList = parser.values(Constants::ConsoleOptionStrings::kInputLocalSettings);
+
+//                for(QString str : localTransformList)
+//                {
+//                    QStringList values = str.split(',');
+//                    if(values[0].toInt() < stlList.size() - 1)
+//                    {
+//                        try
+//                        {
+//                            QFile local_transform_file(values[1]);
+//                            local_transform_file.open(QIODevice::ReadOnly);
+
+//                            QString local_transform_data = local_transform_file.readAll();
+//                            QMatrix4x4 mtrx = json::parse(local_transform_data.toStdString());
+//                        }
+//                        catch(...)
+//                        {
+//                            qInfo() << "Local Transform File" << values[1] << "is not a valid transform file";
+//                            return false;
+//                        }
+//                        options->setSetting<QString>(Constants::ConsoleOptionStrings::kInputSTLTransform + "_" + values[0], values[1]);
+//                    }
+//                    else
+//                    {
+//                        qInfo() << "Local Transform File: Invalid index.";
+//                        return false;
+//                    }
+//                }
+//             }
+//             else
+//             {
+//                 qInfo() << "Cannot parse local transform. No STL files provided.";
+//                 return false;
+//             }
+//         }
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kShiftPartsOnLoad))
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kShiftPartsOnLoad, QVariant(parser.value(Constants::ConsoleOptionStrings::kShiftPartsOnLoad)).toBool());
+        else
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kShiftPartsOnLoad, true);
+
+        return true;
+    }
+
+    bool CommandLineConverter::checkOptionalExportOptions(QCommandLineParser& parser, QSharedPointer<SettingsBase> options)
+    {
+        if(parser.isSet(Constants::ConsoleOptionStrings::kOverwriteOutputFile))
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kOverwriteOutputFile, QVariant(parser.value(Constants::ConsoleOptionStrings::kOverwriteOutputFile)).toBool());
+        else
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kOverwriteOutputFile, true);
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kIncludeAuxiliaryFiles))
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kIncludeAuxiliaryFiles, QVariant(parser.value(Constants::ConsoleOptionStrings::kIncludeAuxiliaryFiles)).toBool());
+        else
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kIncludeAuxiliaryFiles, true);
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kIncludeProjectFile))
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kIncludeProjectFile, QVariant(parser.value(Constants::ConsoleOptionStrings::kIncludeProjectFile)).toBool());
+        else
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kIncludeProjectFile, false);
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kBundleOutput))
+            options->setSetting<QString>(Constants::ConsoleOptionStrings::kBundleOutput, Constants::ConsoleOptionStrings::kBundleOutput);
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kHeaderSlicedBy))
+            options->setSetting<QString>(Constants::ConsoleOptionStrings::kHeaderSlicedBy, Constants::ConsoleOptionStrings::kHeaderSlicedBy);
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kHeaderDescription))
+            options->setSetting<QString>(Constants::ConsoleOptionStrings::kHeaderDescription, Constants::ConsoleOptionStrings::kHeaderDescription);
+
+        return true;
+    }
+
+    bool CommandLineConverter::checkAdvancedOptions(QCommandLineParser& parser, QSharedPointer<SettingsBase> options)
+    {
+        if(parser.isSet(Constants::ConsoleOptionStrings::kSliceBounds))
+        {
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kOverwriteOutputFile, QVariant(parser.value(Constants::ConsoleOptionStrings::kOverwriteOutputFile)).toBool());
+        }
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kRealTimeMode))
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kRealTimeMode, true);
+        else
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kRealTimeMode, false);
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kRecoveryFilePath))
+        {
+            QString value = parser.value(Constants::ConsoleOptionStrings::kRecoveryFilePath);
+            if(!value.isEmpty())
+                options->setSetting<QString>(Constants::ConsoleOptionStrings::kRecoveryFilePath, value);
+            else
+            {
+                qInfo() << "Not a valid value for " << Constants::ConsoleOptionStrings::kRecoveryFilePath;
+                return false;
+            }
+        }
+        else
+            options->setSetting<QString>(Constants::ConsoleOptionStrings::kRecoveryFilePath, "");
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kOpenLoop))
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kOpenLoop, true);
+        else
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kOpenLoop, false);
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kRealTimeCommunicationMode))
+        {
+            bool ok;
+            int value = QVariant(parser.value(Constants::ConsoleOptionStrings::kRealTimeCommunicationMode)).toInt(&ok);
+            if(ok)
+                options->setSetting<int>(Constants::ConsoleOptionStrings::kRealTimeCommunicationMode, value);
+            else
+            {
+                qInfo() << "Not a valid value for real_time_communication_mode";
+                return false;
+            }
+        }
+        else
+        {
+             if(parser.isSet(Constants::ConsoleOptionStrings::kRealTimeMode))
+                 options->setSetting<int>(Constants::ConsoleOptionStrings::kRealTimeCommunicationMode, 0);
+        }
+
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kRealTimeNetworkAddress))
+        {
+            QStringList ipAndPort = parser.value(Constants::ConsoleOptionStrings::kRealTimeNetworkAddress).split(',');
+            if(ipAndPort.size() != 2)
+            {
+                qInfo() << "IP Address/Port must be a comma-separated pair";
+                return false;
+            }
+
+            QHostAddress address(ipAndPort[0]);
+            if (QAbstractSocket::IPv4Protocol != address.protocol() && QAbstractSocket::IPv6Protocol != address.protocol())
+            {
+                qInfo() << "Not a valid IP Address";
+                return false;
+            }
+
+            bool ok;
+            int port = QVariant(ipAndPort[1]).toInt(&ok);
+            if(port < 1 || port > 65535)
+            {
+                qInfo() << "Not a valid port";
+                return false;
+            }
+
+            options->setSetting<QString>(Constants::ConsoleOptionStrings::kRealTimeNetworkIP, ipAndPort[0]);
+            options->setSetting<int>(Constants::ConsoleOptionStrings::kRealTimeNetworkPort, port);
+        }
+        else
+        {
+            if(parser.isSet(Constants::ConsoleOptionStrings::kRealTimeMode))
+            {
+                options->setSetting<QString>(Constants::ConsoleOptionStrings::kRealTimeNetworkIP, "localhost");
+                options->setSetting<int>(Constants::ConsoleOptionStrings::kRealTimeNetworkPort, 12345);
+            }
+        }
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kRealTimePrinter))
+        {
+            QString name = parser.value(Constants::ConsoleOptionStrings::kRealTimePrinter);
+            options->setSetting<QString>(Constants::ConsoleOptionStrings::kOutputLocation, name);
+        }
+        else
+        {
+            options->setSetting<QString>(Constants::ConsoleOptionStrings::kRealTimePrinter, "Default");
+        }
+
+        return true;
+    }
+
+    bool CommandLineConverter::convertOptions(QCommandLineParser& parser, QSharedPointer<SettingsBase> options)
+    {
+        if(!checkRequiredSettings(parser, options) || !checkOptionalPartSettingsAndPreferences(parser, options)
+                || !checkOptionalExportOptions(parser, options) || !checkAdvancedOptions(parser, options))
+            return false;
+
+//        for(auto& el : m_master->json().items())
+//        {
+//            QString key = QString::fromStdString(el.key());
+//            if(parser.isSet(key))
+//                GSM->getGlobal()->setSetting(key, parser.value(key));
+//            else
+//                GSM->getGlobal()->setSetting(key, el.value()[Constants::Settings::Master::kDefault]);
+//        }
+
+        return true;
+    }
+
+    bool CommandLineConverter::isValid(QString path, QString suffix)
+    {
+        QFileInfo info(path);
+        if(!info.exists())
+        {
+            qInfo() << "Input: " + path + " does not exist";
+            return false;
+        }
+        if(info.completeSuffix().toLower() != suffix)
+        {
+            qInfo() << "Input: " + path + " does not have an " + suffix + " extension";
+            return false;
+        }
+        return true;
+    }
+}
+
