@@ -1,6 +1,6 @@
 ---
 name: Custom issue template
-about: Describe this issue template's purpose here.
+about: Custom issue template for Slicer 2.
 title: ''
 labels: ''
 assignees: ''
