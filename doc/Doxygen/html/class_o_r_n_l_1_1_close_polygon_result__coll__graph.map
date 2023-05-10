@@ -1,0 +1,4 @@
+<map id="ORNL::ClosePolygonResult" name="ORNL::ClosePolygonResult">
+<area shape="rect" id="node1" title="The result of trying to find a point on a closed polygon line. This gives back the point index,..." alt="" coords="5,96,187,123"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_point.html" title="Point class that converts to variable other 2d objects." alt="" coords="49,5,143,32"/>
+</map>

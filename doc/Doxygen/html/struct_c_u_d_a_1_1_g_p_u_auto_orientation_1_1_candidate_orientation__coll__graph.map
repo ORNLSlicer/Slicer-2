@@ -1,0 +1,4 @@
+<map id="CUDA::GPUAutoOrientation::CandidateOrientation" name="CUDA::GPUAutoOrientation::CandidateOrientation">
+<area shape="rect" id="node1" title="a potential orientation for an object to be printed in" alt="" coords="5,96,189,139"/>
+<area shape="rect" id="node2" href="$class_c_u_d_a_1_1_g_p_u_plane.html" title="a plane class that is GPU&#45;safe" alt="" coords="34,5,160,32"/>
+</map>

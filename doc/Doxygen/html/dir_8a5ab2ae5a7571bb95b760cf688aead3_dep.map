@@ -1,0 +1,32 @@
+<map id="C:/Code/ORNL&#45;Slicer&#45;2&#45;dev/include/widgets" name="C:/Code/ORNL&#45;Slicer&#45;2&#45;dev/include/widgets">
+<area shape="rect" id="node1" href="dir_2bd17f33640b2a1db4cb845f6b3156d2.html" title="managers" alt="" coords="121,213,199,240"/>
+<area shape="rect" id="node2" href="dir_3072a4720761ccad50945d065d33b9f0.html" title="graphics" alt="" coords="26,213,97,240"/>
+<area shape="rect" id="node3" href="dir_38ae51cab1379885e787fb6bebb19a06.html" title="part" alt="" coords="224,213,267,240"/>
+<area shape="rect" id="node4" href="dir_3f46b8a6ac8d2930e1bda3fdcc230ca5.html" title="windows" alt="" coords="245,139,315,165"/>
+<area shape="rect" id="node5" href="dir_49da7ff2270644de7aa33e94cdadbdb7.html" title="configs" alt="" coords="621,139,683,165"/>
+<area shape="rect" id="node6" href="dir_51dd89ba81459f062032cb666254d11c.html" title="geometry" alt="" coords="340,139,415,165"/>
+<area shape="rect" id="node7" href="dir_59213c3c8b1f3d9f0106096c84cd9019.html" title="utilities" alt="" coords="292,213,354,240"/>
+<area shape="rect" id="node8" href="dir_832de795fd0d2cd96551fe53116cdafa.html" title="units" alt="" coords="466,139,515,165"/>
+<area shape="rect" id="node9" href="dir_c46cf51ecd2d1aa577163a3cc156eb85.html" title="gcode" alt="" coords="540,139,596,165"/>
+<area shape="rect" id="edge1-headlabel" href="dir_000103_000045.html" title="5" alt="" coords="111,189,118,205"/>
+<area shape="rect" id="edge2-headlabel" href="dir_000103_000036.html" title="5" alt="" coords="54,185,61,201"/>
+<area shape="rect" id="edge4-headlabel" href="dir_000103_000062.html" title="7" alt="" coords="284,213,291,229"/>
+<area shape="rect" id="edge5-headlabel" href="dir_000103_000105.html" title="1" alt="" coords="231,115,238,131"/>
+<area shape="rect" id="edge6-headlabel" href="dir_000103_000006.html" title="3" alt="" coords="601,122,608,138"/>
+<area shape="rect" id="edge7-headlabel" href="dir_000103_000028.html" title="3" alt="" coords="320,120,327,136"/>
+<area shape="rect" id="edge8-headlabel" href="dir_000103_000099.html" title="5" alt="" coords="276,189,283,205"/>
+<area shape="rect" id="edge9-headlabel" href="dir_000103_000097.html" title="1" alt="" coords="447,123,454,139"/>
+<area shape="rect" id="edge10-headlabel" href="dir_000103_000026.html" title="1" alt="" coords="520,121,527,137"/>
+<area shape="rect" id="node11" href="dir_36a9a90a9be46cffaf623d1e4b8c610a.html" title="part_widget" alt="" coords="107,139,194,165"/>
+<area shape="rect" id="edge3-headlabel" href="dir_000103_000066.html" title="11" alt="" coords="131,110,145,126"/>
+<area shape="rect" id="edge11-headlabel" href="dir_000066_000045.html" title="1" alt="" coords="161,186,168,202"/>
+<area shape="rect" id="edge12-headlabel" href="dir_000066_000036.html" title="4" alt="" coords="93,200,100,216"/>
+<area shape="rect" id="edge13-headlabel" href="dir_000066_000062.html" title="5" alt="" coords="216,187,223,203"/>
+<area shape="rect" id="edge14-headlabel" href="dir_000066_000099.html" title="1" alt="" coords="274,191,281,207"/>
+<area shape="rect" id="node12" href="dir_d58c9b08ef33336a491af37bfdbe3b28.html" title="settings" alt="" coords="157,64,224,91"/>
+<area shape="rect" id="edge15-headlabel" href="dir_000075_000045.html" title="1" alt="" coords="119,188,126,204"/>
+<area shape="rect" id="edge16-headlabel" href="dir_000075_000006.html" title="2" alt="" coords="601,122,608,138"/>
+<area shape="rect" id="edge17-headlabel" href="dir_000075_000099.html" title="1" alt="" coords="369,227,376,243"/>
+<area shape="rect" id="clust2" href="dir_8a5ab2ae5a7571bb95b760cf688aead3.html" alt="" coords="56,53,235,176"/>
+<area shape="rect" id="clust1" href="dir_c0bd9cd2864eb784207baf0e43fba62d.html" title="include" alt="" coords="16,16,720,251"/>
+</map>

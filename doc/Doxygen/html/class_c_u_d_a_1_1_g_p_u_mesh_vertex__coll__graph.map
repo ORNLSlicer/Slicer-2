@@ -1,0 +1,5 @@
+<map id="CUDA::GPUMeshVertex" name="CUDA::GPUMeshVertex">
+<area shape="rect" id="node1" title="a GPU safe MeshVertex" alt="" coords="65,96,229,123"/>
+<area shape="rect" id="node2" href="$class_c_u_d_a_1_1_g_p_u_point.html" title="point class that exists on the GPU" alt="" coords="5,5,129,32"/>
+<area shape="rect" id="node3" href="$class_c_u_d_a_1_1_g_p_u_vector3_d.html" title="3D vector class that exists on the GPU" alt="" coords="153,5,301,32"/>
+</map>

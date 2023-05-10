@@ -1,0 +1,4 @@
+<map id="ORNL::SearchCell" name="ORNL::SearchCell">
+<area shape="rect" id="node1" title="object representing a square cell used to find the pole of inaccessibility" alt="" coords="5,128,133,155"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_point.html" title="Point class that converts to variable other 2d objects." alt="" coords="22,5,116,32"/>
+</map>

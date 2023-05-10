@@ -1,0 +1,4 @@
+<map id="ORNL::GCodeLoader" name="ORNL::GCodeLoader">
+<area shape="rect" id="node1" title="Threaded class that loads gcode, invokes appropriate parser, and generates visualization." alt="" coords="5,80,149,107"/>
+<area shape="rect" id="node2" title=" " alt="" coords="42,5,112,32"/>
+</map>

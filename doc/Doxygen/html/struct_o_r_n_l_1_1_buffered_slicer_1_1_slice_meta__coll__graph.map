@@ -1,0 +1,8 @@
+<map id="ORNL::BufferedSlicer::SliceMeta" name="ORNL::BufferedSlicer::SliceMeta">
+<area shape="rect" id="node1" title="Contains a snapshot of various variables when taking a slice." alt="" coords="227,224,372,267"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_polygon_list.html" title="A class that contains multiple individual Polygons." alt="" coords="9,99,142,125"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,146,32"/>
+<area shape="rect" id="node4" href="$class_o_r_n_l_1_1_plane.html" title="an object for the point, normal representation of a plane" alt="" coords="192,99,290,125"/>
+<area shape="rect" id="node5" href="$class_o_r_n_l_1_1_point.html" title="Point class that converts to variable other 2d objects." alt="" coords="355,5,449,32"/>
+<area shape="rect" id="node6" href="$struct_o_r_n_l_1_1_single_external_grid_info.html" title="A plain old data structure for external grid information. Holds each layer&#39;s individual grid and as w..." alt="" coords="453,99,645,125"/>
+</map>

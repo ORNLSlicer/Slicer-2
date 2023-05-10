@@ -1,0 +1,4 @@
+<map id="ORNL::GcodeTextBoxWidget" name="ORNL::GcodeTextBoxWidget">
+<area shape="rect" id="node1" title="This class implements the Gcode textbox seen on the gcodetab within the GUI." alt="" coords="5,80,197,107"/>
+<area shape="rect" id="node2" title=" " alt="" coords="47,5,155,32"/>
+</map>

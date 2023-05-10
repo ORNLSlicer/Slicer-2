@@ -1,0 +1,52 @@
+<map id="C:/Code/ORNL&#45;Slicer&#45;2&#45;dev/src/threading/traditional_ast.cpp" name="C:/Code/ORNL&#45;Slicer&#45;2&#45;dev/src/threading/traditional_ast.cpp">
+<area shape="rect" id="node1" title=" " alt="" coords="1192,5,1336,64"/>
+<area shape="rect" id="node2" href="$traditional__ast_8h.html" title=" " alt="" coords="1008,112,1142,155"/>
+<area shape="rect" id="node21" href="$session__manager_8h.html" title=" " alt="" coords="1167,120,1362,147"/>
+<area shape="rect" id="node48" href="$slicing__utilities_8h.html" title=" " alt="" coords="1488,120,1646,147"/>
+<area shape="rect" id="node3" href="$abs__slicing__thread_8h.html" title=" " alt="" coords="1006,203,1149,245"/>
+<area shape="rect" id="node4" title=" " alt="" coords="778,392,849,419"/>
+<area shape="rect" id="node5" title=" " alt="" coords="707,565,776,592"/>
+<area shape="rect" id="node6" href="$step__thread_8h.html" title=" " alt="" coords="830,301,987,328"/>
+<area shape="rect" id="node7" href="$gcode__parser_8h.html" title=" " alt="" coords="1011,301,1160,328"/>
+<area shape="rect" id="node8" href="$enums_8h.html" title=" " alt="" coords="1145,715,1261,741"/>
+<area shape="rect" id="node18" href="$external__grid_8h.html" title=" " alt="" coords="2241,475,2389,517"/>
+<area shape="rect" id="node9" title=" " alt="" coords="1138,864,1268,891"/>
+<area shape="rect" id="node10" title=" " alt="" coords="1292,864,1386,891"/>
+<area shape="rect" id="node11" href="$qt__json__conversion_8h.html" title=" " alt="" coords="1409,789,1597,816"/>
+<area shape="rect" id="node12" title=" " alt="" coords="1410,864,1505,891"/>
+<area shape="rect" id="node13" title=" " alt="" coords="1606,864,1672,891"/>
+<area shape="rect" id="node14" title=" " alt="" coords="1805,864,1894,891"/>
+<area shape="rect" id="node15" title=" " alt="" coords="1696,864,1782,891"/>
+<area shape="rect" id="node16" title=" " alt="" coords="2015,864,2084,891"/>
+<area shape="rect" id="node17" title=" " alt="" coords="1528,864,1582,891"/>
+<area shape="rect" id="node19" href="$point_8h.html" title=" " alt="" coords="1788,565,1906,592"/>
+<area shape="rect" id="node20" href="$settings__base_8h.html" title=" " alt="" coords="1489,640,1647,667"/>
+<area shape="rect" id="node22" title=" " alt="" coords="1426,211,1478,237"/>
+<area shape="rect" id="node23" title=" " alt="" coords="363,211,480,237"/>
+<area shape="rect" id="node24" title=" " alt="" coords="505,211,552,237"/>
+<area shape="rect" id="node25" href="$part_8h.html" title=" " alt="" coords="1255,392,1335,419"/>
+<area shape="rect" id="node33" href="$island__base_8h.html" title=" " alt="" coords="1848,293,2003,336"/>
+<area shape="rect" id="node38" href="$mesh__loader_8h.html" title=" " alt="" coords="421,301,585,328"/>
+<area shape="rect" id="node44" href="$part__meta__model_8h.html" title=" " alt="" coords="1175,203,1351,245"/>
+<area shape="rect" id="node46" title=" " alt="" coords="763,211,854,237"/>
+<area shape="rect" id="node47" title=" " alt="" coords="877,211,982,237"/>
+<area shape="rect" id="node26" title=" " alt="" coords="808,483,878,509"/>
+<area shape="rect" id="node27" title=" " alt="" coords="1004,483,1061,509"/>
+<area shape="rect" id="node28" href="$mesh__base_8h.html" title=" " alt="" coords="1252,475,1399,517"/>
+<area shape="rect" id="node29" href="$sync__manager_8h.html" title=" " alt="" coords="1085,475,1227,517"/>
+<area shape="rect" id="node30" href="$range_8h.html" title=" " alt="" coords="1240,565,1350,592"/>
+<area shape="rect" id="node31" href="$scan__layer_8h.html" title=" " alt="" coords="2010,483,2166,509"/>
+<area shape="rect" id="node32" href="$polygon__list_8h.html" title=" " alt="" coords="1970,565,2129,592"/>
+<area shape="rect" id="node34" title=" " alt="" coords="1883,392,1973,419"/>
+<area shape="rect" id="node35" href="$region__base_8h.html" title=" " alt="" coords="1537,384,1661,427"/>
+<area shape="rect" id="node36" href="$settings__polygon_8h.html" title=" " alt="" coords="1474,483,1662,509"/>
+<area shape="rect" id="node37" href="$path__order__optimizer_8h.html" title=" " alt="" coords="1738,475,1884,517"/>
+<area shape="rect" id="node39" title=" " alt="" coords="5,392,78,419"/>
+<area shape="rect" id="node40" href="$closed__mesh_8h.html" title=" " alt="" coords="1360,384,1513,427"/>
+<area shape="rect" id="node41" title=" " alt="" coords="102,392,251,419"/>
+<area shape="rect" id="node42" title=" " alt="" coords="276,392,389,419"/>
+<area shape="rect" id="node43" title=" " alt="" coords="413,392,553,419"/>
+<area shape="rect" id="node45" href="$part__meta__item_8h.html" title=" " alt="" coords="1235,293,1400,336"/>
+<area shape="rect" id="node49" href="$mesh__skeleton_8h.html" title=" " alt="" coords="1656,293,1825,336"/>
+<area shape="rect" id="node50" href="$global__layer_8h.html" title=" " alt="" coords="1814,211,1944,237"/>
+</map>

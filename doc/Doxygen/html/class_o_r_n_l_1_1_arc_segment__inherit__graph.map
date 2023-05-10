@@ -1,0 +1,4 @@
+<map id="ORNL::ArcSegment" name="ORNL::ArcSegment">
+<area shape="rect" id="node1" title="Segment type for arc movements." alt="" coords="10,80,147,107"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_segment_base.html" title="Base class for all movements." alt="" coords="5,5,152,32"/>
+</map>

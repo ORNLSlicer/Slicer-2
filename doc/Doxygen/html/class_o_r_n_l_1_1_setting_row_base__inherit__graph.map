@@ -1,0 +1,20 @@
+<map id="ORNL::SettingRowBase" name="ORNL::SettingRowBase">
+<area shape="rect" id="node1" title="Base class for widgets that holds additional information such as dependency logic and json...." alt="" coords="5,284,166,311"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_setting_check_box.html" title="Widget to provide custom checkbox. Supports boolean setting type." alt="" coords="228,132,394,159"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_setting_combo_box.html" title="Widget to provide custom combo box Based on QComboBox with overridden wheelEvent functionality Suppor..." alt="" coords="226,183,396,209"/>
+<area shape="rect" id="node4" href="$class_o_r_n_l_1_1_setting_double_spin_box.html" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="214,233,408,260"/>
+<area shape="rect" id="node15" href="$class_o_r_n_l_1_1_setting_line_edit.html" title="Widget to provide custom line edit Supports the string setting type." alt="" coords="235,284,387,311"/>
+<area shape="rect" id="node16" href="$class_o_r_n_l_1_1_setting_numbered_list.html" title="Widget to provide custom numbered list Based on table widget with overridden drag/drop functionality ..." alt="" coords="218,335,404,361"/>
+<area shape="rect" id="node17" href="$class_o_r_n_l_1_1_setting_plain_text_edit.html" title="Widget to provide custom plain text edit Supports multiline_text setting type." alt="" coords="220,385,402,412"/>
+<area shape="rect" id="node18" href="$class_o_r_n_l_1_1_setting_spin_box.html" title="Widget to provide custom spin box. Based on QSpinBox with overridden wheelEvent functionality...." alt="" coords="234,436,388,463"/>
+<area shape="rect" id="node5" href="$class_o_r_n_l_1_1_setting_accel_spin_box.html" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="465,5,652,32"/>
+<area shape="rect" id="node6" href="$class_o_r_n_l_1_1_setting_ang_vel_spin_box.html" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="461,56,657,83"/>
+<area shape="rect" id="node7" href="$class_o_r_n_l_1_1_setting_angle_spin_box.html" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="465,107,652,133"/>
+<area shape="rect" id="node8" href="$class_o_r_n_l_1_1_setting_area_spin_box.html" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="468,157,649,184"/>
+<area shape="rect" id="node9" href="$class_o_r_n_l_1_1_setting_density_spin_box.html" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="460,208,658,235"/>
+<area shape="rect" id="node10" href="$class_o_r_n_l_1_1_setting_distance_spin_box.html" title="Widget to provide custom double spin box. Based on QDoubleSpinBox with overridden wheelEvent function..." alt="" coords="456,259,661,285"/>
+<area shape="rect" id="node11" href="$class_o_r_n_l_1_1_setting_speed_spin_box.html" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="463,309,654,336"/>
+<area shape="rect" id="node12" href="$class_o_r_n_l_1_1_setting_temperature_spin_box.html" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="470,360,647,403"/>
+<area shape="rect" id="node13" href="$class_o_r_n_l_1_1_setting_time_spin_box.html" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="468,427,650,453"/>
+<area shape="rect" id="node14" href="$class_o_r_n_l_1_1_setting_voltage_spin_box.html" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="460,477,658,504"/>
+</map>

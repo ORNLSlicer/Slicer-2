@@ -1,0 +1,6 @@
+<map id="ORNL::ToroidalPrinterObject" name="ORNL::ToroidalPrinterObject">
+<area shape="rect" id="node1" title="Printer that uses cylindrical coordinates and has a non&#45;printable surface in the middle." alt="" coords="5,245,191,272"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_printer_object.html" title="The base class for printer graphics." alt="" coords="28,171,168,197"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_graphics_object.html" title="Underlying representation of any drawn 3D object. Base class for a number of different graphics types..." alt="" coords="21,96,175,123"/>
+<area shape="rect" id="node4" title=" " alt="" coords="15,5,181,48"/>
+</map>

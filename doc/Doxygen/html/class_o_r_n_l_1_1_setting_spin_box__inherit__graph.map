@@ -1,0 +1,5 @@
+<map id="ORNL::SettingSpinBox" name="ORNL::SettingSpinBox">
+<area shape="rect" id="node1" title="Widget to provide custom spin box. Based on QSpinBox with overridden wheelEvent functionality...." alt="" coords="40,80,195,107"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,86,32"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_setting_row_base.html" title="Base class for widgets that holds additional information such as dependency logic and json...." alt="" coords="109,5,270,32"/>
+</map>

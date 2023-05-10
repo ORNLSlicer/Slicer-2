@@ -1,0 +1,52 @@
+<map id="C:/Code/ORNL&#45;Slicer&#45;2&#45;dev/src/step/layer/regions/inset.cpp" name="C:/Code/ORNL&#45;Slicer&#45;2&#45;dev/src/step/layer/regions/inset.cpp">
+<area shape="rect" id="node1" title=" " alt="" coords="647,5,791,64"/>
+<area shape="rect" id="node2" href="$inset_8h.html" title=" " alt="" coords="1171,112,1296,155"/>
+<area shape="rect" id="node43" href="$line_8h.html" title=" " alt="" coords="572,120,743,147"/>
+<area shape="rect" id="node44" href="$path__order__optimizer_8h.html" title=" " alt="" coords="703,203,849,245"/>
+<area shape="rect" id="node45" href="$path__modifier_8h.html" title=" " alt="" coords="144,384,312,411"/>
+<area shape="rect" id="node46" href="$mathutils_8h.html" title=" " alt="" coords="1043,616,1173,643"/>
+<area shape="rect" id="node48" href="$curve__fitting_8h.html" title=" " alt="" coords="453,301,611,328"/>
+<area shape="rect" id="node3" href="$region__base_8h.html" title=" " alt="" coords="1481,203,1605,245"/>
+<area shape="rect" id="node4" title=" " alt="" coords="1917,301,1987,328"/>
+<area shape="rect" id="node5" href="$writer__base_8h.html" title=" " alt="" coords="181,608,315,651"/>
+<area shape="rect" id="node22" href="$settings__base_8h.html" title=" " alt="" coords="1448,872,1606,899"/>
+<area shape="rect" id="node30" href="$parameterization_8h.html" title=" " alt="" coords="1723,293,1893,336"/>
+<area shape="rect" id="node31" href="$polygon__list_8h.html" title=" " alt="" coords="1078,301,1237,328"/>
+<area shape="rect" id="node33" href="$path_8h.html" title=" " alt="" coords="342,459,458,485"/>
+<area shape="rect" id="node39" href="$settings__polygon_8h.html" title=" " alt="" coords="1358,301,1546,328"/>
+<area shape="rect" id="node41" href="$sync__manager_8h.html" title=" " alt="" coords="1630,864,1773,907"/>
+<area shape="rect" id="node42" href="$external__grid_8h.html" title=" " alt="" coords="1621,699,1768,741"/>
+<area shape="rect" id="node6" title=" " alt="" coords="419,1253,504,1280"/>
+<area shape="rect" id="node7" href="$segment__base_8h.html" title=" " alt="" coords="368,707,544,733"/>
+<area shape="rect" id="node25" href="$enums_8h.html" title=" " alt="" coords="667,955,784,981"/>
+<area shape="rect" id="node27" href="$constants_8h.html" title=" " alt="" coords="973,1029,1062,1056"/>
+<area shape="rect" id="node8" href="$unit_8h.html" title=" " alt="" coords="1127,1104,1212,1131"/>
+<area shape="rect" id="node15" href="$point_8h.html" title=" " alt="" coords="1136,789,1254,816"/>
+<area shape="rect" id="node9" title=" " alt="" coords="1570,1253,1635,1280"/>
+<area shape="rect" id="node10" title=" " alt="" coords="945,1253,1039,1280"/>
+<area shape="rect" id="node11" title=" " alt="" coords="1240,1253,1371,1280"/>
+<area shape="rect" id="node12" href="$qt__json__conversion_8h.html" title=" " alt="" coords="1277,1179,1464,1205"/>
+<area shape="rect" id="node13" title=" " alt="" coords="1685,1253,1774,1280"/>
+<area shape="rect" id="node14" title=" " alt="" coords="1825,1253,1895,1280"/>
+<area shape="rect" id="node16" title=" " alt="" coords="1261,872,1323,899"/>
+<area shape="rect" id="node17" title=" " alt="" coords="949,872,1019,899"/>
+<area shape="rect" id="node18" title=" " alt="" coords="1043,872,1128,899"/>
+<area shape="rect" id="node19" title=" " alt="" coords="1152,872,1237,899"/>
+<area shape="rect" id="node20" title=" " alt="" coords="494,872,578,899"/>
+<area shape="rect" id="node21" href="$mesh__types_8h.html" title=" " alt="" coords="705,864,874,907"/>
+<area shape="rect" id="node24" href="$derivative__units_8h.html" title=" " alt="" coords="1159,955,1310,981"/>
+<area shape="rect" id="node23" title=" " alt="" coords="1386,955,1499,981"/>
+<area shape="rect" id="node26" title=" " alt="" coords="524,1029,631,1056"/>
+<area shape="rect" id="node28" href="$theme__tool_8h.html" title=" " alt="" coords="655,1029,796,1056"/>
+<area shape="rect" id="node29" href="$exceptions_8h.html" title=" " alt="" coords="1338,1104,1500,1131"/>
+<area shape="rect" id="node32" href="$polygon_8h.html" title=" " alt="" coords="1259,384,1394,411"/>
+<area shape="rect" id="node36" href="$polyline_8h.html" title=" " alt="" coords="884,789,1018,816"/>
+<area shape="rect" id="node37" href="$search__cell_8h.html" title=" " alt="" coords="1010,459,1166,485"/>
+<area shape="rect" id="node38" href="$cell__comparator_8h.html" title=" " alt="" coords="1002,384,1185,411"/>
+<area shape="rect" id="node34" title=" " alt="" coords="359,533,412,560"/>
+<area shape="rect" id="node35" href="$travel_8h.html" title=" " alt="" coords="153,533,335,560"/>
+<area shape="rect" id="node40" href="$plane_8h.html" title=" " alt="" coords="1070,707,1191,733"/>
+<area shape="rect" id="node47" title=" " alt="" coords="986,707,1046,733"/>
+<area shape="rect" id="node49" href="$arc_8h.html" title=" " alt="" coords="589,616,758,643"/>
+<area shape="rect" id="node50" href="$bezier_8h.html" title=" " alt="" coords="438,384,624,411"/>
+</map>

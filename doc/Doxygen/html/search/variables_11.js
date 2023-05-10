@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['scan_5flayer_0',['scan_layer',['../struct_o_r_n_l_1_1_part_1_1_step_pair.html#aa657d9ffbf8d9129e943919996cd156b',1,'ORNL::Part::StepPair']]],
+  ['seams_5fshown_1',['seams_shown',['../class_o_r_n_l_1_1_part_view.html#ae4c6fa64a5fcb58ceb30fb80afbb70a7',1,'ORNL::PartView']]],
+  ['searches_5fper_5fmagnitude_2',['SEARCHES_PER_MAGNITUDE',['../namespace_o_r_n_l.html#ac47b5494cd4627db7c4f01770714a6fe',1,'ORNL']]],
+  ['selected_5fpart_3',['selected_part',['../class_o_r_n_l_1_1_part_widget.html#a387fedca36a3a5369075bab36d7888d6',1,'ORNL::PartWidget']]],
+  ['setting_5fbounded_5fgeometry_4',['setting_bounded_geometry',['../struct_o_r_n_l_1_1_buffered_slicer_1_1_slice_meta.html#aac98b6cabc9849bd6e70f6c8470f09d7',1,'ORNL::BufferedSlicer::SliceMeta']]],
+  ['settings_5',['settings',['../struct_o_r_n_l_1_1_buffered_slicer_1_1_slice_meta.html#af7946e2832409c9ee70c6b4e7c8819be',1,'ORNL::BufferedSlicer::SliceMeta']]],
+  ['settings_5fparts_6',['settings_parts',['../struct_o_r_n_l_1_1_preprocessor_1_1_parts.html#a817a8ec96a3c3e1d460a93a39854ec9d',1,'ORNL::Preprocessor::Parts']]],
+  ['settings_5fpolygons_7',['settings_polygons',['../struct_o_r_n_l_1_1_buffered_slicer_1_1_slice_meta.html#a9df2cc23e03397bfdb8b25b6aedcc663',1,'ORNL::BufferedSlicer::SliceMeta']]],
+  ['shift_8',['shift',['../struct_c_u_d_a_1_1_g_p_u_cross_sectioner_1_1_g_p_u___intersection.html#aca7be1a17b81d6b2b724425db59fa13f',1,'CUDA::GPUCrossSectioner::GPU_Intersection']]],
+  ['shift_5famount_9',['shift_amount',['../struct_o_r_n_l_1_1_buffered_slicer_1_1_slice_meta.html#a731c1113ac74ed21f9f9b13c127bc83c',1,'ORNL::BufferedSlicer::SliceMeta']]],
+  ['showing_5fghosts_10',['showing_ghosts',['../class_o_r_n_l_1_1_g_code_view.html#a373f8bc1ddc0d37e0e468579f3344ddc',1,'ORNL::GCodeView']]],
+  ['single_5fgrid_11',['single_grid',['../struct_o_r_n_l_1_1_buffered_slicer_1_1_slice_meta.html#aa7a4248bcc821933d0adb9c91809bf88',1,'ORNL::BufferedSlicer::SliceMeta']]],
+  ['size_12',['size',['../struct_o_r_n_l_1_1_session_manager_1_1model__data.html#a3709892dd6bd75b43fa52028807a99d2',1,'ORNL::SessionManager::model_data::size()'],['../struct_o_r_n_l_1_1_mesh_loader_1_1_mesh_data.html#adf3e63cbbe0485e8be9fd7cc866e153c',1,'ORNL::MeshLoader::MeshData::size()']]],
+  ['speed_13',['speed',['../struct_o_r_n_l_1_1_segment_base_1_1_segment_info_meta.html#accb81a280d48b981b28cb1064bd70067',1,'ORNL::SegmentBase::SegmentInfoMeta']]],
+  ['sqrt_5f2_14',['SQRT_2',['../namespace_o_r_n_l.html#ac726182d3b00e82646b786ffc12103c8',1,'ORNL']]],
+  ['sqrt_5f3_15',['SQRT_3',['../namespace_o_r_n_l.html#a871cd51a46eb3292394009702a6b9863',1,'ORNL']]],
+  ['stacking_5faxis_16',['stacking_axis',['../struct_c_u_d_a_1_1_g_p_u_auto_orientation_1_1_g_p_u_volume_calculator_1_1_support_volume.html#aa8e1d112686a4b49cfd11beb9439de31',1,'CUDA::GPUAutoOrientation::GPUVolumeCalculator::SupportVolume']]],
+  ['start_17',['start',['../class_o_r_n_l_1_1_cross_section_segment.html#aa0872cb4214d075abc91554108dcbbf0',1,'ORNL::CrossSectionSegment::start()'],['../class_c_u_d_a_1_1_g_p_u_cross_section_segment.html#a73d32c4c380eb144640d6ab062e11491',1,'CUDA::GPUCrossSectionSegment::start()'],['../struct_c_u_d_a_1_1_g_p_u_curve_fitting_1_1_arc.html#afb3bee4f2fd772024a5cc7edd0d0622b',1,'CUDA::GPUCurveFitting::Arc::start()'],['../struct_o_r_n_l_1_1_segment_base_1_1_segment_info_meta.html#a05970d9292f3f907c3c3c7c149b8d918',1,'ORNL::SegmentBase::SegmentInfoMeta::start()']]],
+  ['start_5fangle_18',['start_angle',['../struct_o_r_n_l_1_1_sector_information.html#af3f27b9c734aca873a5babb9f00a5b57',1,'ORNL::SectorInformation']]],
+  ['start_5fvector_19',['start_vector',['../struct_o_r_n_l_1_1_sector_information.html#a80574f2cc54874a2273654a1097b392a',1,'ORNL::SectorInformation']]],
+  ['steps_5fprocessed_20',['steps_processed',['../struct_o_r_n_l_1_1_preprocessor_1_1_active_part_meta.html#abe625883bda4fe963116f1ccb2caf7dc',1,'ORNL::Preprocessor::ActivePartMeta']]],
+  ['support_5fvolume_21',['support_volume',['../struct_o_r_n_l_1_1_auto_orientation_1_1_candidate_orientation.html#a7cfcc1f3f7b41235b27384d5fbe2cb9d',1,'ORNL::AutoOrientation::CandidateOrientation::support_volume()'],['../struct_c_u_d_a_1_1_g_p_u_auto_orientation_1_1_candidate_orientation.html#a8b9408feba08b34baf02e1714da1e037',1,'CUDA::GPUAutoOrientation::CandidateOrientation::support_volume()']]]
+];

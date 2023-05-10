@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$class_o_r_n_l_1_1_algorithm_base.html" title="Abstract base class for algorithms. Provides a foundation for algorithms to implement in a uniform ma..." alt="" coords="5,31,155,57"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_tsp_brute.html" title="Provides access to both CPU and GPU implementation of a brute&#45;force traveling salesman problem solver..." alt="" coords="203,5,319,32"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1k_n_n.html" title="Provides access to both a CPU and GPU implementation of a K nearest neighbors algorithm...." alt="" coords="216,56,306,83"/>
+</map>

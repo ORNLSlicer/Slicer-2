@@ -1,0 +1,8 @@
+<map id="CUDA::GPUAutoOrientation::GPUVolumeCalculator::SupportVolume" name="CUDA::GPUAutoOrientation::GPUVolumeCalculator::SupportVolume">
+<area shape="rect" id="node1" title="Operator call to compute the support a specific face will required." alt="" coords="289,187,472,245"/>
+<area shape="rect" id="node2" href="$class_c_u_d_a_1_1_g_p_u_vector3_d.html" title="3D vector class that exists on the GPU" alt="" coords="5,5,153,32"/>
+<area shape="rect" id="node3" href="$class_c_u_d_a_1_1_g_p_u_mesh_vertex.html" title="a GPU safe MeshVertex" alt="" coords="172,96,335,123"/>
+<area shape="rect" id="node4" href="$class_c_u_d_a_1_1_g_p_u_point.html" title="point class that exists on the GPU" alt="" coords="192,5,315,32"/>
+<area shape="rect" id="node5" href="$class_c_u_d_a_1_1_g_p_u_plane.html" title="a plane class that is GPU&#45;safe" alt="" coords="360,96,486,123"/>
+<area shape="rect" id="node6" href="$class_c_u_d_a_1_1_g_p_u_quaternion.html" title="a GPU safe quaternion class" alt="" coords="510,96,667,123"/>
+</map>

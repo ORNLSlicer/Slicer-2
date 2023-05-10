@@ -1,0 +1,4 @@
+<map id="ORNL::PowderSectorIsland" name="ORNL::PowderSectorIsland">
+<area shape="rect" id="node1" title="Island that RPBF builds use. Metal powder system with pathing divided into rotating sectors." alt="" coords="5,80,185,107"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_island_base.html" title="Base class for islands." alt="" coords="31,5,159,32"/>
+</map>

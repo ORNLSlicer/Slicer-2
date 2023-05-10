@@ -1,0 +1,22 @@
+<map id="C:/Code/ORNL&#45;Slicer&#45;2&#45;dev/include/graph/halfedge.h" name="C:/Code/ORNL&#45;Slicer&#45;2&#45;dev/include/graph/halfedge.h">
+<area shape="rect" id="node1" title=" " alt="" coords="631,5,775,64"/>
+<area shape="rect" id="node2" href="$circlepack_8h.html" title=" " alt="" coords="365,539,523,597"/>
+<area shape="rect" id="node6" href="$dcelgraphio_8h.html" title=" " alt="" coords="899,432,1043,491"/>
+<area shape="rect" id="node8" href="$face_8h.html" title=" " alt="" coords="445,112,590,171"/>
+<area shape="rect" id="node9" href="$faceedgeiterator_8h.html" title=" " alt="" coords="155,219,299,277"/>
+<area shape="rect" id="node10" href="$graph_8h.html" title=" " alt="" coords="547,325,691,384"/>
+<area shape="rect" id="node16" href="$vertex_8h.html" title=" " alt="" coords="769,112,914,171"/>
+<area shape="rect" id="node17" href="$vertexedgeiterator_8h.html" title=" " alt="" coords="1067,219,1211,277"/>
+<area shape="rect" id="node20" href="$halfedge_8cpp.html" title=" " alt="" coords="1437,120,1627,163"/>
+<area shape="rect" id="node3" href="$savepolygonstofile_8h.html" title=" " alt="" coords="235,645,440,704"/>
+<area shape="rect" id="node5" href="$circlepack_8cpp.html" title=" " alt="" coords="464,645,640,704"/>
+<area shape="rect" id="node4" href="$savepolygonstofile_8cpp.html" title=" " alt="" coords="249,752,426,811"/>
+<area shape="rect" id="node7" href="$dcelgraphio_8cpp.html" title=" " alt="" coords="888,547,1096,589"/>
+<area shape="rect" id="node15" href="$face_8cpp.html" title=" " alt="" coords="373,227,539,269"/>
+<area shape="rect" id="node14" href="$faceedgeiterator_8cpp.html" title=" " alt="" coords="43,333,277,376"/>
+<area shape="rect" id="node11" href="$field_8h.html" title=" " alt="" coords="731,432,875,491"/>
+<area shape="rect" id="node13" href="$graph_8cpp.html" title=" " alt="" coords="532,440,706,483"/>
+<area shape="rect" id="node12" href="$field_8cpp.html" title=" " alt="" coords="699,547,864,589"/>
+<area shape="rect" id="node19" href="$vertex_8cpp.html" title=" " alt="" coords="816,227,992,269"/>
+<area shape="rect" id="node18" href="$vertexedgeiterator_8cpp.html" title=" " alt="" coords="1118,333,1362,376"/>
+</map>

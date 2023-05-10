@@ -1,0 +1,58 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" title=" " alt="" coords="5,309,172,336"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_graph.html" title="A graph is representation of a set of objects where some pairs of objects are connected by links...." alt="" coords="270,208,369,235"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_graphics_object.html" title="Underlying representation of any drawn 3D object. Base class for a number of different graphics types..." alt="" coords="242,259,397,285"/>
+<area shape="rect" id="node20" href="$class_o_r_n_l_1_1_half_edge.html" title="HalfEdge of a graph is a connection between to vertices pointing in one direction." alt="" coords="261,309,378,336"/>
+<area shape="rect" id="node21" href="$class_o_r_n_l_1_1_part.html" title="Class for parts. A part contains both meshes(used to generate pathing) and steps(used the store pathi..." alt="" coords="275,360,364,387"/>
+<area shape="rect" id="node22" href="$class_o_r_n_l_1_1_part_meta_item.html" title="The core of the PartMetaModel: PartMetaItem." alt="" coords="248,461,391,488"/>
+<area shape="rect" id="node23" href="$class_o_r_n_l_1_1_part_meta_model.html" title="A model that allows related UI classes to access the same information. Think of it as a simpilfied ve..." alt="" coords="243,411,396,437"/>
+<area shape="rect" id="node24" href="$class_o_r_n_l_1_1_vertex.html" title="Vertex of a graph is each individual object in it." alt="" coords="268,157,371,184"/>
+<area shape="rect" id="node4" href="$class_o_r_n_l_1_1_arrow_object.html" title="A arrow drawn using GL_LINES. Mostly used to draw parenting relationships between parts." alt="" coords="477,461,612,488"/>
+<area shape="rect" id="node5" href="$class_o_r_n_l_1_1_axes_object.html" title="Object that draws a set of coordinate arrows in the XYZ directions. A very commonly used object." alt="" coords="478,5,610,32"/>
+<area shape="rect" id="node6" href="$class_o_r_n_l_1_1_cube_object.html" title="Simple cube object. Supports textures." alt="" coords="478,56,610,83"/>
+<area shape="rect" id="node8" href="$class_o_r_n_l_1_1_cylinder_object.html" title="Simple graphics object for rendering a cylinder." alt="" coords="470,107,619,133"/>
+<area shape="rect" id="node10" href="$class_o_r_n_l_1_1_g_code_object.html" title="Graphics that renders GCode as a single object." alt="" coords="473,157,615,184"/>
+<area shape="rect" id="node11" href="$class_o_r_n_l_1_1_grid_object.html" title="Displays a grid on a plane." alt="" coords="481,208,607,235"/>
+<area shape="rect" id="node12" href="$class_o_r_n_l_1_1_part_object.html" title="Displays a part in an OpenGL view." alt="" coords="481,259,607,285"/>
+<area shape="rect" id="node13" href="$class_o_r_n_l_1_1_printer_object.html" title="The base class for printer graphics." alt="" coords="474,309,614,336"/>
+<area shape="rect" id="node17" href="$class_o_r_n_l_1_1_sphere_object.html" title="A simple object class that draws a sphere." alt="" coords="473,360,616,387"/>
+<area shape="rect" id="node19" href="$class_o_r_n_l_1_1_text_object.html" title="A graphic that renders a cube with a text texture. The object billboards to the camera if enabled." alt="" coords="481,411,608,437"/>
+<area shape="rect" id="node7" href="$class_o_r_n_l_1_1_plane_object.html" title="A simple plane. Derived from CubeObject with an enforced minimal height." alt="" coords="701,56,837,83"/>
+<area shape="rect" id="node9" href="$class_o_r_n_l_1_1_cylinder_plane_object.html" title="A plane object that is a circle." alt="" coords="678,107,860,133"/>
+<area shape="rect" id="node14" href="$class_o_r_n_l_1_1_cartesian_printer_object.html" title="Printer that uses cartesian coordinates." alt="" coords="671,261,867,288"/>
+<area shape="rect" id="node15" href="$class_o_r_n_l_1_1_cylindrical_printer_object.html" title="Printer that uses cylindrical coordinates." alt="" coords="688,312,850,355"/>
+<area shape="rect" id="node16" href="$class_o_r_n_l_1_1_toroidal_printer_object.html" title="Printer that uses cylindrical coordinates and has a non&#45;printable surface in the middle." alt="" coords="676,211,862,237"/>
+<area shape="rect" id="node18" href="$class_o_r_n_l_1_1_seam_object.html" title="Wrapper derived class for the sphere object with a default radius / mode." alt="" coords="701,379,837,405"/>
+<area shape="rect" id="node25" title=" " alt="" coords="54,689,123,716"/>
+<area shape="rect" id="node26" href="$class_o_r_n_l_1_1_abstract_slicing_thread.html" title="Defines the abstract implementation of the slicing thread." alt="" coords="224,563,415,589"/>
+<area shape="rect" id="node37" href="$class_o_r_n_l_1_1_authenticity_checker.html" title="checks registry and time to make sure the program is operating in a valid environment" alt="" coords="229,613,410,640"/>
+<area shape="rect" id="node38" href="$class_o_r_n_l_1_1_gcode_command.html" title="A plain old data structure class for a GCode command." alt="" coords="239,664,400,691"/>
+<area shape="rect" id="node39" href="$class_o_r_n_l_1_1_main_control.html" title="The main control thread when running from console." alt="" coords="253,715,386,741"/>
+<area shape="rect" id="node40" href="$class_o_r_n_l_1_1_parser_base.html" title="This class implements the core functionality for parsing Gcodecommands that are character delimted wi..." alt="" coords="253,765,386,792"/>
+<area shape="rect" id="node52" href="$class_o_r_n_l_1_1_preferences_manager.html" title="Manager for preferences." alt="" coords="228,816,411,843"/>
+<area shape="rect" id="node53" href="$class_o_r_n_l_1_1_session_manager.html" title="Singleton manager class that contains data about the current session." alt="" coords="239,867,400,893"/>
+<area shape="rect" id="node54" href="$class_o_r_n_l_1_1_settings_manager.html" title="Singleton manager class that contains all currently active settings." alt="" coords="238,917,401,944"/>
+<area shape="rect" id="node55" href="$class_o_r_n_l_1_1_sheet_lamination_parser.html" title=" " alt="" coords="220,968,419,995"/>
+<area shape="rect" id="node56" href="$class_o_r_n_l_1_1_step_thread.html" title="Thread that Step objects are computed on." alt="" coords="254,512,385,539"/>
+<area shape="rect" id="node27" href="$class_o_r_n_l_1_1_real_time_a_s_t.html" title="Defines the abstract implementation of the real slicing thread." alt="" coords="473,512,616,539"/>
+<area shape="rect" id="node30" href="$class_o_r_n_l_1_1_traditional_a_s_t.html" title="Defines the abstract implementation of the slicing thread." alt="" coords="470,653,618,680"/>
+<area shape="rect" id="node28" href="$class_o_r_n_l_1_1_real_time_polymer_slicer.html" title="A slicer that computes single layers at a time, waiting for feedback from sensors." alt="" coords="669,451,869,477"/>
+<area shape="rect" id="node29" href="$class_o_r_n_l_1_1_real_time_r_p_b_f_slicer.html" title="A slicer that computes single layers at a time, waiting for feedback from sensors." alt="" coords="676,501,862,528"/>
+<area shape="rect" id="node31" href="$class_o_r_n_l_1_1_conformal_slicer.html" title="The ConformalSlicer builds regions on top of a surface." alt="" coords="691,552,847,579"/>
+<area shape="rect" id="node32" href="$class_o_r_n_l_1_1_hybrid_slicer.html" title="Implementation of SlicingThread for hybrid slices." alt="" coords="702,603,836,629"/>
+<area shape="rect" id="node33" href="$class_o_r_n_l_1_1_polymer_slicer.html" title="Implementation of SlicingThread for polymer slices." alt="" coords="696,653,842,680"/>
+<area shape="rect" id="node34" href="$class_o_r_n_l_1_1_r_p_b_f_slicer.html" title="The RPBFSlicer supports unique build constraints: multi&#45;nozzle metal powder with circular,..." alt="" coords="703,704,835,731"/>
+<area shape="rect" id="node35" href="$class_o_r_n_l_1_1_sheet_lamination_slicer.html" title=" " alt="" coords="672,755,866,781"/>
+<area shape="rect" id="node36" href="$class_o_r_n_l_1_1_skeleton_slicer.html" title="A slicer that works with open meshes. This slicer prints only open contours. If a polygon results fro..." alt="" coords="695,805,843,832"/>
+<area shape="rect" id="node41" href="$class_o_r_n_l_1_1_common_parser.html" title="This class implements a common parsing configuration for 3D printers. This configuration can be chang..." alt="" coords="467,1059,621,1085"/>
+<area shape="rect" id="node42" href="$class_o_r_n_l_1_1_aero_basic_parser.html" title="This class implements the GCode parsing configuration for the AeroBasic 3D printer(s)." alt="" coords="688,1059,850,1085"/>
+<area shape="rect" id="node43" href="$class_o_r_n_l_1_1_beam_parser.html" title="This class implements the GCode parsing configuration for the Beam 3D printer(s)." alt="" coords="701,1109,837,1136"/>
+<area shape="rect" id="node44" href="$class_o_r_n_l_1_1_cincinnati_parser.html" title="This class implements the GCode parsing configuration for the Cincinnati 3D printer(s)." alt="" coords="689,1160,849,1187"/>
+<area shape="rect" id="node45" href="$class_o_r_n_l_1_1_g_k_n_parser.html" title=" " alt="" coords="704,1211,834,1237"/>
+<area shape="rect" id="node46" href="$class_o_r_n_l_1_1_ingersoll_parser.html" title="This class implements the GCode parsing configuration for the Ingersoll 3D printer(s)." alt="" coords="694,1261,844,1288"/>
+<area shape="rect" id="node47" href="$class_o_r_n_l_1_1_m_v_p_parser.html" title="This class implements the GCode parsing configuration for the MVP 3D printer(s)." alt="" coords="703,1312,835,1339"/>
+<area shape="rect" id="node48" href="$class_o_r_n_l_1_1_marlin_parser.html" title="This class implements the GCode parsing configuration for the Marlin 3D printer(s)." alt="" coords="700,856,838,883"/>
+<area shape="rect" id="node49" href="$class_o_r_n_l_1_1_mazak_parser.html" title="This class implements the GCode parsing configuration for the Mazak 3D printer(s)." alt="" coords="698,907,840,933"/>
+<area shape="rect" id="node50" href="$class_o_r_n_l_1_1_r_p_b_f_parser.html" title="This class implements the GCode parsing configuration for the GKN 3D printer(s)." alt="" coords="700,957,838,984"/>
+<area shape="rect" id="node51" href="$class_o_r_n_l_1_1_siemens_parser.html" title="This class implements the GCode parsing configuration for the Siemens 3D printer(s)." alt="" coords="692,1008,846,1035"/>
+</map>

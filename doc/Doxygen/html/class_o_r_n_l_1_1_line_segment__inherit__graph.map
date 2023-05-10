@@ -1,0 +1,4 @@
+<map id="ORNL::LineSegment" name="ORNL::LineSegment">
+<area shape="rect" id="node1" title="Segment type for linear movements." alt="" coords="8,80,149,107"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_segment_base.html" title="Base class for all movements." alt="" coords="5,5,152,32"/>
+</map>

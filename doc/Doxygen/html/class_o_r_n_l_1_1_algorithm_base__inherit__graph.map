@@ -1,0 +1,5 @@
+<map id="ORNL::AlgorithmBase" name="ORNL::AlgorithmBase">
+<area shape="rect" id="node1" title="Abstract base class for algorithms. Provides a foundation for algorithms to implement in a uniform ma..." alt="" coords="52,5,201,32"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_tsp_brute.html" title="Provides access to both CPU and GPU implementation of a brute&#45;force traveling salesman problem solver..." alt="" coords="5,80,122,107"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1k_n_n.html" title="Provides access to both a CPU and GPU implementation of a K nearest neighbors algorithm...." alt="" coords="146,80,235,107"/>
+</map>

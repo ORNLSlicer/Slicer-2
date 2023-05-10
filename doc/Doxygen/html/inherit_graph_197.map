@@ -1,0 +1,7 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" title=" " alt="" coords="5,81,74,108"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_q_clickable_frame.html" title="is a clickable frame that handles mouse press event" alt="" coords="122,5,286,32"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_setting_header.html" title="Widget that defines the header on the tab (the rounded box you click on)." alt="" coords="131,56,277,83"/>
+<area shape="rect" id="node4" href="$class_o_r_n_l_1_1_toolbar_align_input.html" title="Provides a list of buttons in a box to align the part." alt="" coords="122,107,286,133"/>
+<area shape="rect" id="node5" href="$class_o_r_n_l_1_1_toolbar_input.html" title="a box that animates open to display part controls" alt="" coords="137,157,271,184"/>
+</map>

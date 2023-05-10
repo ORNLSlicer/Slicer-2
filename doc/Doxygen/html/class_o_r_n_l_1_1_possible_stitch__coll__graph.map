@@ -1,0 +1,4 @@
+<map id="ORNL::PossibleStitch" name="ORNL::PossibleStitch">
+<area shape="rect" id="node1" title="Represents a possible stitch between two polylines." alt="" coords="5,112,154,139"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_terminus.html" title="This class represents the location of an end point of a polyline in a polyline vector." alt="" coords="21,5,138,32"/>
+</map>

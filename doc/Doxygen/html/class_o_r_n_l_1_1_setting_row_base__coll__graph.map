@@ -1,0 +1,4 @@
+<map id="ORNL::SettingRowBase" name="ORNL::SettingRowBase">
+<area shape="rect" id="node1" title="Base class for widgets that holds additional information such as dependency logic and json...." alt="" coords="8,96,169,123"/>
+<area shape="rect" id="node2" href="$struct_o_r_n_l_1_1_dependency_node.html" title="Struct that holds dependency information." alt="" coords="5,5,172,32"/>
+</map>

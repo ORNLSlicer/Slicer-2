@@ -1,0 +1,6 @@
+<map id="ORNL::LineSegment" name="ORNL::LineSegment">
+<area shape="rect" id="node1" title="Segment type for linear movements." alt="" coords="8,295,149,321"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_segment_base.html" title="Base class for all movements." alt="" coords="5,219,152,245"/>
+<area shape="rect" id="node3" href="$struct_o_r_n_l_1_1_segment_base_1_1_segment_info_meta.html" title="Segment info metadata." alt="" coords="100,112,254,155"/>
+<area shape="rect" id="node4" href="$class_o_r_n_l_1_1_point.html" title="Point class that converts to variable other 2d objects." alt="" coords="6,5,100,32"/>
+</map>

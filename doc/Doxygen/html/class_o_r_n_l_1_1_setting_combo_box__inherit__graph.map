@@ -1,0 +1,5 @@
+<map id="ORNL::SettingComboBox" name="ORNL::SettingComboBox">
+<area shape="rect" id="node1" title="Widget to provide custom combo box Based on QComboBox with overridden wheelEvent functionality Suppor..." alt="" coords="44,80,214,107"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,101,32"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_setting_row_base.html" title="Base class for widgets that holds additional information such as dependency logic and json...." alt="" coords="125,5,285,32"/>
+</map>

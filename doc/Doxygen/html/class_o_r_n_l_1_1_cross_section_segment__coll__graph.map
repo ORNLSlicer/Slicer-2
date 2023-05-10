@@ -1,0 +1,5 @@
+<map id="ORNL::CrossSectionSegment" name="ORNL::CrossSectionSegment">
+<area shape="rect" id="node1" title="Basic struct that holds information about vertices and face indicies for cross sectioning." alt="" coords="25,112,219,139"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_point.html" title="Point class that converts to variable other 2d objects." alt="" coords="5,5,100,32"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_mesh_vertex.html" title="MeshVertex type to be used in a Mesh." alt="" coords="124,5,258,32"/>
+</map>

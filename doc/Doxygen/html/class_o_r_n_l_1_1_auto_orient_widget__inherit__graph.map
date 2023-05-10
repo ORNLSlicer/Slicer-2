@@ -1,0 +1,4 @@
+<map id="ORNL::AutoOrientWidget" name="ORNL::AutoOrientWidget">
+<area shape="rect" id="node1" title="a widget to display data from and control the auto orient algorithm" alt="" coords="5,80,173,107"/>
+<area shape="rect" id="node2" title=" " alt="" coords="53,5,125,32"/>
+</map>

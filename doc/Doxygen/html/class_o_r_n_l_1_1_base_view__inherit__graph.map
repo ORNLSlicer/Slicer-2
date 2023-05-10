@@ -1,0 +1,9 @@
+<map id="ORNL::BaseView" name="ORNL::BaseView">
+<area shape="rect" id="node1" title="Base class for all OpenGL views in Slicer2." alt="" coords="248,80,370,107"/>
+<area shape="rect" id="node4" href="$class_o_r_n_l_1_1_emboss_view.html" title="View that allows for parts to be translated across a base object&#39;s surface." alt="" coords="5,155,146,181"/>
+<area shape="rect" id="node5" href="$class_o_r_n_l_1_1_g_code_view.html" title="View that displays generated GCode and provides interactivity with it." alt="" coords="169,155,302,181"/>
+<area shape="rect" id="node6" href="$class_o_r_n_l_1_1_part_view.html" title="The main part manipulation view in Slicer2." alt="" coords="325,155,442,181"/>
+<area shape="rect" id="node7" href="$class_o_r_n_l_1_1_preview_view.html" title="A simple view that displays a single part and optionally its slicing plane." alt="" coords="466,155,602,181"/>
+<area shape="rect" id="node2" title=" " alt="" coords="173,5,293,32"/>
+<area shape="rect" id="node3" title=" " alt="" coords="317,5,453,32"/>
+</map>

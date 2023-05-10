@@ -1,0 +1,8 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" title=" " alt="" coords="5,107,73,133"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_cs_debug_dialog.html" title="Debugger dialog to view the cross sectional geometry of any loaded part in any plane." alt="" coords="137,5,290,32"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_emboss_dialog.html" title="Dialog that allows user to setup an emboss build." alt="" coords="139,56,288,83"/>
+<area shape="rect" id="node4" href="$class_o_r_n_l_1_1_slice_dialog.html" title="Dialog that shows the current slice progress." alt="" coords="149,107,278,133"/>
+<area shape="rect" id="node5" href="$class_o_r_n_l_1_1_template_layer_dialog.html" title=" " alt="" coords="121,157,306,184"/>
+<area shape="rect" id="node6" href="$class_o_r_n_l_1_1_template_save_dialog.html" title="Allows a group of settings to be saved in the settings manager." alt="" coords="123,208,304,235"/>
+</map>

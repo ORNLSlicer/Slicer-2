@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['name_0',['name',['../class_o_r_n_l_1_1_mesh_base.html#a1d00d043520cc921e4f6e6f5636150b6',1,'ORNL::MeshBase::name()'],['../class_o_r_n_l_1_1_part_object.html#a39624e24020f001d11489fa32b85ef53',1,'ORNL::PartObject::name()'],['../class_o_r_n_l_1_1_part.html#ae7033c945bb4a7b5086194c74fcee007',1,'ORNL::Part::name()'],['../class_o_r_n_l_1_1_template_save_dialog.html#a34981cf72e97be3fc0c7927b4b8c1cd5',1,'ORNL::TemplateSaveDialog::name()']]],
+  ['nameoffirstpart_1',['nameOfFirstPart',['../class_o_r_n_l_1_1_part_control.html#a8f88f218236c521056e385da7b917d97',1,'ORNL::PartControl']]],
+  ['nearcollinear_2',['nearCollinear',['../namespace_o_r_n_l_1_1_math_utils.html#ac181470d1ddf82f1f979f157c6d7b6d4',1,'ORNL::MathUtils']]],
+  ['neighbors_3',['neighbors',['../class_o_r_n_l_1_1_vertex.html#a8dc1c42c49c8a8cda23a958e024c11b0',1,'ORNL::Vertex']]],
+  ['netarea_4',['netArea',['../class_o_r_n_l_1_1_polygon_list.html#aa3d7138e4f9e364d53a4bcb4a43a3328',1,'ORNL::PolygonList']]],
+  ['newitem_5',['newItem',['../class_o_r_n_l_1_1_part_meta_model.html#ad705bdc3b19a02c9b683287f8807bcf9',1,'ORNL::PartMetaModel']]],
+  ['newlayerbartemplatesaved_6',['newLayerBarTemplateSaved',['../class_o_r_n_l_1_1_settings_manager.html#a96aec228adef3fae8b8efc504c976360',1,'ORNL::SettingsManager']]],
+  ['newmesh_7',['newMesh',['../class_o_r_n_l_1_1_mesh_loader.html#af3f347c41bccb19640b0584410f6da9d',1,'ORNL::MeshLoader']]],
+  ['newtab_8',['newTab',['../class_o_r_n_l_1_1_setting_pane.html#a1c53bed355b06013821aaa1af939bc79',1,'ORNL::SettingPane']]],
+  ['next_9',['next',['../class_o_r_n_l_1_1_half_edge.html#a9d79a8e9a807334c944cd4f4ece30ad9',1,'ORNL::HalfEdge::next()'],['../class_o_r_n_l_1_1_half_edge.html#aacc49f17b59a5baddfafdf96e611b254',1,'ORNL::HalfEdge::next(QSharedPointer&lt; HalfEdge &gt; next)']]],
+  ['nextcheckstate_10',['nextCheckState',['../class_o_r_n_l_1_1_programmatic_check_box.html#a824fd7d8bcd012761c31079c9b4542ab',1,'ORNL::ProgrammaticCheckBox']]],
+  ['nextedge_11',['nextEdge',['../class_o_r_n_l_1_1_face_edge_iterator.html#a442b44fce39b3dd15ef4a480a91c7e23',1,'ORNL::FaceEdgeIterator::nextEdge()'],['../class_o_r_n_l_1_1_vertex_edge_iterator.html#ae4be37cef7c03c3159f6943a7a0b9a34',1,'ORNL::VertexEdgeIterator::nextEdge()'],['../class_o_r_n_l_1_1_vertex_edge_iterator.html#a97900f109d0d41ed1a8ccfa9b6f65c5c',1,'ORNL::VertexEdgeIterator::nextEdge(QSharedPointer&lt; HalfEdge &gt; nextEdge)'],['../class_o_r_n_l_1_1_face_edge_iterator.html#a2067792a51e3210a48bbc1edf87838f4',1,'ORNL::FaceEdgeIterator::nextEdge()']]],
+  ['nistdone_12',['nistDone',['../class_o_r_n_l_1_1_main_window.html#aa08551e03f1bf26d33991c919b7fdede',1,'ORNL::MainWindow']]],
+  ['no_5fprecondition_13',['no_precondition',['../class_o_r_n_l_1_1_sparse_grid.html#a102dc6853215e5b9e586c27faa185649',1,'ORNL::SparseGrid']]],
+  ['nofitpolygon_14',['noFitPolygon',['../class_o_r_n_l_1_1_polygon.html#a479b316d9818550e2b3bf7879fd2b9e8',1,'ORNL::Polygon']]],
+  ['nonzero_5fsign_15',['nonzero_sign',['../class_o_r_n_l_1_1_sparse_grid.html#aa5c694adfbc4eb8847cf909a14383da8',1,'ORNL::SparseGrid']]],
+  ['normal_16',['normal',['../class_c_u_d_a_1_1_g_p_u_plane.html#ad1eb6096de04d29aabf42316e1807bf7',1,'CUDA::GPUPlane::normal()'],['../class_o_r_n_l_1_1_plane.html#a9edb9814d9e99c32ea0a396bda902c50',1,'ORNL::Plane::normal()'],['../class_o_r_n_l_1_1_plane.html#a7c03e4cbf0ed80907526e8db2ab53e4d',1,'ORNL::Plane::normal() const'],['../class_o_r_n_l_1_1_plane.html#a4b399b8c91474bd0dce8c68195ae5858',1,'ORNL::Plane::normal(const QVector3D normal)'],['../class_o_r_n_l_1_1_point.html#aef87ac9c0f59909d43e19fc566758dc4',1,'ORNL::Point::normal()']]],
+  ['normalize_17',['normalize',['../class_c_u_d_a_1_1_g_p_u_vector3_d.html#aab71f325091e69d01d0ed7e11b1ac2cb',1,'CUDA::GPUVector3D']]],
+  ['normalized_18',['normalized',['../class_c_u_d_a_1_1_g_p_u_vector3_d.html#a250b702c60ef155b1a7bb0fab375d7d8',1,'CUDA::GPUVector3D']]],
+  ['normalizefield_19',['normalizeField',['../class_o_r_n_l_1_1_field.html#a4650f1631ff1f28aa4e3746ed62c894f',1,'ORNL::Field']]],
+  ['normalizewidgetpos_20',['normalizeWidgetPos',['../class_o_r_n_l_1_1_base_view.html#ad1dea52e70e3871937a312b846748941',1,'ORNL::BaseView']]],
+  ['normals_21',['normals',['../class_o_r_n_l_1_1_graphics_object.html#af58ae0f988f83188b044b4dbf3e6c4c2',1,'ORNL::GraphicsObject']]],
+  ['notequals_22',['notEquals',['../namespace_o_r_n_l_1_1_math_utils.html#a70e07cebd1635fd5676cccbdafeb449b',1,'ORNL::MathUtils']]]
+];

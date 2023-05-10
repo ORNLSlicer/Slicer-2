@@ -1,0 +1,5 @@
+<map id="ORNL::SettingNumberedList" name="ORNL::SettingNumberedList">
+<area shape="rect" id="node1" title="Widget to provide custom numbered list Based on table widget with overridden drag/drop functionality ..." alt="" coords="42,80,227,107"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,109,32"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_setting_row_base.html" title="Base class for widgets that holds additional information such as dependency logic and json...." alt="" coords="133,5,293,32"/>
+</map>

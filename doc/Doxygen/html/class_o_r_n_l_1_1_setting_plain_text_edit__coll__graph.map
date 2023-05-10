@@ -1,0 +1,6 @@
+<map id="ORNL::SettingPlainTextEdit" name="ORNL::SettingPlainTextEdit">
+<area shape="rect" id="node1" title="Widget to provide custom plain text edit Supports multiline_text setting type." alt="" coords="5,172,188,199"/>
+<area shape="rect" id="node2" title=" " alt="" coords="26,96,135,123"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_setting_row_base.html" title="Base class for widgets that holds additional information such as dependency logic and json...." alt="" coords="159,96,319,123"/>
+<area shape="rect" id="node4" href="$struct_o_r_n_l_1_1_dependency_node.html" title="Struct that holds dependency information." alt="" coords="156,5,322,32"/>
+</map>

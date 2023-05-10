@@ -1,0 +1,4 @@
+<map id="ORNL::ThermalScanIsland" name="ORNL::ThermalScanIsland">
+<area shape="rect" id="node1" title="Island that thermal scans are composed of." alt="" coords="5,80,180,107"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_island_base.html" title="Base class for islands." alt="" coords="28,5,157,32"/>
+</map>

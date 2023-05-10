@@ -1,0 +1,4 @@
+<map id="ORNL::kNN" name="ORNL::kNN">
+<area shape="rect" id="node1" title="Provides access to both a CPU and GPU implementation of a K nearest neighbors algorithm...." alt="" coords="35,80,125,107"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_algorithm_base.html" title="Abstract base class for algorithms. Provides a foundation for algorithms to implement in a uniform ma..." alt="" coords="5,5,155,32"/>
+</map>

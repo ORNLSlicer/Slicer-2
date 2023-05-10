@@ -1,0 +1,7 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" title=" " alt="" coords="5,56,75,83"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_polygon.html" title="An individual polygon." alt="" coords="133,5,245,32"/>
+<area shape="rect" id="node4" href="$class_o_r_n_l_1_1_polygon_list.html" title="A class that contains multiple individual Polygons." alt="" coords="123,56,255,83"/>
+<area shape="rect" id="node5" href="$class_o_r_n_l_1_1_polyline.html" title="List of line segments that form an open path." alt="" coords="134,107,244,133"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_settings_polygon.html" title="is a polygon that contains a settings. It is a cross&#45;section of a settings mesh with part range info" alt="" coords="303,5,462,32"/>
+</map>

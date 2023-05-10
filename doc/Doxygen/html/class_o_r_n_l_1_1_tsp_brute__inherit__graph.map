@@ -1,0 +1,4 @@
+<map id="ORNL::TspBrute" name="ORNL::TspBrute">
+<area shape="rect" id="node1" title="Provides access to both CPU and GPU implementation of a brute&#45;force traveling salesman problem solver..." alt="" coords="22,80,138,107"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_algorithm_base.html" title="Abstract base class for algorithms. Provides a foundation for algorithms to implement in a uniform ma..." alt="" coords="5,5,155,32"/>
+</map>

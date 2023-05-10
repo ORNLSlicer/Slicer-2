@@ -1,0 +1,4 @@
+<map id="CUDA::GPUCurveFitting::Arc" name="CUDA::GPUCurveFitting::Arc">
+<area shape="rect" id="node1" title="a slimmed&#45;down arc type to be stored on the GPU" alt="" coords="5,128,195,155"/>
+<area shape="rect" id="node2" href="$class_c_u_d_a_1_1_g_p_u_point.html" title="point class that exists on the GPU" alt="" coords="38,5,162,32"/>
+</map>

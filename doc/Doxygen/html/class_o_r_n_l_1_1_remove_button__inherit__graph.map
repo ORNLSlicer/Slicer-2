@@ -1,0 +1,4 @@
+<map id="ORNL::RemoveButton" name="ORNL::RemoveButton">
+<area shape="rect" id="node1" title="Widget that defines the hide/delete button on the top&#45;right of the header. Qt does not signal transit..." alt="" coords="5,80,154,107"/>
+<area shape="rect" id="node2" title=" " alt="" coords="30,5,129,32"/>
+</map>

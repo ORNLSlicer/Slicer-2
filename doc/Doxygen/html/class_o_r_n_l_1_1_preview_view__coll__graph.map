@@ -1,0 +1,6 @@
+<map id="ORNL::PreviewView" name="ORNL::PreviewView">
+<area shape="rect" id="node1" title="A simple view that displays a single part and optionally its slicing plane." alt="" coords="73,155,210,181"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_base_view.html" title="Base class for all OpenGL views in Slicer2." alt="" coords="80,80,203,107"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,126,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="149,5,286,32"/>
+</map>

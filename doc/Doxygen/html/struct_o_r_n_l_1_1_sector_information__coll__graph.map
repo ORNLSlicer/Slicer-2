@@ -1,0 +1,6 @@
+<map id="ORNL::SectorInformation" name="ORNL::SectorInformation">
+<area shape="rect" id="node1" title="Convenience struct to hold layer information. Each layer is divided into sectors." alt="" coords="29,172,194,199"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_point.html" title="Point class that converts to variable other 2d objects." alt="" coords="5,81,100,108"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_polygon_list.html" title="A class that contains multiple individual Polygons." alt="" coords="124,81,256,108"/>
+<area shape="rect" id="node4" title=" " alt="" coords="120,5,260,32"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" title=" " alt="" coords="5,56,142,83"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_base_view.html" title="Base class for all OpenGL views in Slicer2." alt="" coords="190,81,312,108"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_emboss_view.html" title="View that allows for parts to be translated across a base object&#39;s surface." alt="" coords="360,5,500,32"/>
+<area shape="rect" id="node4" href="$class_o_r_n_l_1_1_g_code_view.html" title="View that displays generated GCode and provides interactivity with it." alt="" coords="364,56,496,83"/>
+<area shape="rect" id="node5" href="$class_o_r_n_l_1_1_part_view.html" title="The main part manipulation view in Slicer2." alt="" coords="372,107,488,133"/>
+<area shape="rect" id="node6" href="$class_o_r_n_l_1_1_preview_view.html" title="A simple view that displays a single part and optionally its slicing plane." alt="" coords="362,157,498,184"/>
+<area shape="rect" id="node7" title=" " alt="" coords="13,107,134,133"/>
+</map>

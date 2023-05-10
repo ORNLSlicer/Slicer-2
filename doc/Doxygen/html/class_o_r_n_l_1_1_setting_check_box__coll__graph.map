@@ -1,0 +1,6 @@
+<map id="ORNL::SettingCheckBox" name="ORNL::SettingCheckBox">
+<area shape="rect" id="node1" title="Widget to provide custom checkbox. Supports boolean setting type." alt="" coords="14,172,179,199"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,96,97,123"/>
+<area shape="rect" id="node3" href="$class_o_r_n_l_1_1_setting_row_base.html" title="Base class for widgets that holds additional information such as dependency logic and json...." alt="" coords="120,96,281,123"/>
+<area shape="rect" id="node4" href="$struct_o_r_n_l_1_1_dependency_node.html" title="Struct that holds dependency information." alt="" coords="117,5,284,32"/>
+</map>

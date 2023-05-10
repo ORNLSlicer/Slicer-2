@@ -1,0 +1,27 @@
+<map id="C:/Code/ORNL&#45;Slicer&#45;2&#45;dev/include/managers" name="C:/Code/ORNL&#45;Slicer&#45;2&#45;dev/include/managers">
+<area shape="rect" id="node1" href="dir_192b8186550032f354c0c0aea3e03bc8.html" title="external_files" alt="" coords="431,139,529,165"/>
+<area shape="rect" id="node2" href="dir_49da7ff2270644de7aa33e94cdadbdb7.html" title="configs" alt="" coords="708,139,770,165"/>
+<area shape="rect" id="node3" href="dir_28a75761365bd82fdc5579db723f7989.html" title="step" alt="" coords="125,139,171,165"/>
+<area shape="rect" id="node4" href="dir_38ae51cab1379885e787fb6bebb19a06.html" title="part" alt="" coords="640,139,683,165"/>
+<area shape="rect" id="node5" href="dir_4d24f17730532749539f77fa045349ca.html" title="threading" alt="" coords="27,139,101,165"/>
+<area shape="rect" id="node6" href="dir_59213c3c8b1f3d9f0106096c84cd9019.html" title="utilities" alt="" coords="553,139,615,165"/>
+<area shape="rect" id="node7" href="dir_832de795fd0d2cd96551fe53116cdafa.html" title="units" alt="" coords="195,139,245,165"/>
+<area shape="rect" id="node8" href="dir_8a5ab2ae5a7571bb95b760cf688aead3.html" title="widgets" alt="" coords="269,139,334,165"/>
+<area shape="rect" id="node9" href="dir_a6f9b90835ae9df1bb246e52e10ab6d2.html" title="cuda" alt="" coords="358,139,407,165"/>
+<area shape="rect" id="edge1-headlabel" href="dir_000045_000024.html" title="1" alt="" coords="471,110,478,126"/>
+<area shape="rect" id="edge2-headlabel" href="dir_000045_000087.html" title="1" alt="" coords="188,138,195,154"/>
+<area shape="rect" id="edge3-headlabel" href="dir_000045_000062.html" title="2" alt="" coords="621,121,628,137"/>
+<area shape="rect" id="edge4-headlabel" href="dir_000045_000095.html" title="1" alt="" coords="118,138,125,154"/>
+<area shape="rect" id="edge5-headlabel" href="dir_000045_000099.html" title="5" alt="" coords="544,114,551,130"/>
+<area shape="rect" id="edge6-headlabel" href="dir_000045_000097.html" title="1" alt="" coords="262,137,269,153"/>
+<area shape="rect" id="edge7-headlabel" href="dir_000045_000103.html" title="1" alt="" coords="343,130,350,146"/>
+<area shape="rect" id="edge8-headlabel" href="dir_000045_000014.html" title="1" alt="" coords="409,122,416,138"/>
+<area shape="rect" id="node11" href="dir_e352b5380b80d358f4038087e16bf1f1.html" title="settings" alt="" coords="584,64,651,91"/>
+<area shape="rect" id="edge10-headlabel" href="dir_000074_000006.html" title="2" alt="" coords="703,114,710,130"/>
+<area shape="rect" id="edge9-headlabel" href="dir_000074_000062.html" title="1" alt="" coords="648,110,655,126"/>
+<area shape="rect" id="edge11-headlabel" href="dir_000074_000099.html" title="1" alt="" coords="602,117,609,133"/>
+<area shape="rect" id="node12" href="dir_1549251b078ba922e960da6886b5f308.html" title="sync" alt="" coords="510,64,559,91"/>
+<area shape="rect" id="edge12-headlabel" href="dir_000093_000099.html" title="1" alt="" coords="569,111,576,127"/>
+<area shape="rect" id="clust2" href="dir_2bd17f33640b2a1db4cb845f6b3156d2.html" alt="" coords="397,53,661,101"/>
+<area shape="rect" id="clust1" href="dir_c0bd9cd2864eb784207baf0e43fba62d.html" title="include" alt="" coords="16,16,780,176"/>
+</map>

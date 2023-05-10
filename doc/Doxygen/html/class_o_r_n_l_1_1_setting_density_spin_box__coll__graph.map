@@ -1,0 +1,7 @@
+<map id="ORNL::SettingDensitySpinBox" name="ORNL::SettingDensitySpinBox">
+<area shape="rect" id="node1" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="16,248,214,275"/>
+<area shape="rect" id="node2" href="$class_o_r_n_l_1_1_setting_double_spin_box.html" title="Widget to provide custom double spin box Based on QDoubleSpinBox with overridden wheelEvent functiona..." alt="" coords="18,172,212,199"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,96,126,123"/>
+<area shape="rect" id="node4" href="$class_o_r_n_l_1_1_setting_row_base.html" title="Base class for widgets that holds additional information such as dependency logic and json...." alt="" coords="149,96,310,123"/>
+<area shape="rect" id="node5" href="$struct_o_r_n_l_1_1_dependency_node.html" title="Struct that holds dependency information." alt="" coords="146,5,313,32"/>
+</map>
