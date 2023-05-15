@@ -10,8 +10,9 @@
 #include "windows/gcode_export.h"
 #include "managers/session_manager.h"
 #include "managers/settings/settings_manager.h"
-#include "threading/gcode_RPBF_saver.h"
+#include "threading/gcode_rpbf_saver.h"
 #include "threading/gcode_meld_saver.h"
+#include "threading/gcode_tormach_saver.h"
 
 namespace ORNL
 {
@@ -290,13 +291,22 @@ namespace ORNL
                 connect(saver, &GCodeRPBFSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
-            else if(m_most_recent_meta == GcodeMetaList::MeldMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::MeldOutput::kMeldCompanionOutput))
+            else if(m_most_recent_meta == GcodeMetaList::MeldMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kMeldCompanionOutput))
             {
                 bool ok;
 
                 GCodeMeldSaver* saver = new GCodeMeldSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
                 connect(saver, &GCodeMeldSaver::finished, saver, &GCodeMeldSaver::deleteLater);
                 connect(saver, &GCodeMeldSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
+                saver->start();
+            }
+            else if(m_most_recent_meta == GcodeMetaList::ORNLMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kTormachPython))
+            {
+                bool ok;
+
+                GCodeTormachSaver* saver = new GCodeTormachSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
+                connect(saver, &GCodeTormachSaver::finished, saver, &GCodeTormachSaver::deleteLater);
+                connect(saver, &GCodeTormachSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
             else

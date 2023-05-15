@@ -1,0 +1,32 @@
+/* Tool bar */
+QToolBar {
+    border-radius:2px;
+    border: 1px solid #4d5557;
+}
+
+
+/* Tool Buttons */
+QToolButton {
+    padding: 3px;
+    border-radius:4px;
+    padding: 3px;
+    margin: 2px;
+}
+
+QToolButton:checked, QToolButton:hover {
+    border-bottom: 0px solid #000000;
+    color: #ffffff;
+}
+
+QToolButton:!checked {
+    border-bottom: 0px solid #000000;
+    color: #757575;
+}
+
+QToolTip {
+    background-color: #84B641;
+    border: 1px solid #2b3234;
+    color: #2b3234;
+    padding: 0;   /*remove padding, for fix combo box tooltip*/
+    opacity: 230; /*reducing transparency to read better*/
+}

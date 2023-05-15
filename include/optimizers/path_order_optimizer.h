@@ -39,7 +39,7 @@ namespace ORNL {
             //! \param paths: Already existing paths to consider for intersection. Used by infill/skin patterns
             //! to determine whether to insert travels or build moves between paths.
             //! \return Linked path with travel
-            Path linkNextPath(QVector<Path>& paths = QVector<Path>());
+            Path linkNextPath(QVector<Path> paths = QVector<Path>());
 
             //! \brief Set paths to evaluate
             //! \param paths Copy of paths to evaluate

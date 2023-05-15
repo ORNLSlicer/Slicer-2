@@ -159,18 +159,18 @@ namespace ORNL
             rv += writeExtruderOn(region_type, rpm);
         }
 
+        if (rpm != m_current_rpm)
+        {
+            rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("UPDATE EXTRUDER RPM");
+            m_current_rpm = rpm;
+        }
+
         rv += m_G1;
         if (getFeedrate() != speed || m_layer_start)
         {
             setFeedrate(speed);
-            rv += m_f % QString::number(speed.to(GcodeMetaList::SkyBaamMeta.m_velocity_unit));
+            rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
             m_layer_start = false;
-        }
-
-        if (rpm != m_current_rpm)
-        {
-            rv += m_s % QString::number(output_rpm);
-            m_current_rpm = rpm;
         }
 
         //writes XYZ to destination
@@ -273,7 +273,7 @@ namespace ORNL
     QString MVPWriter::writeDwell(Time time)
     {
         if (time > 0)
-            return m_G4 % m_p % QString::number(time.to(m_meta.m_time_unit), 'f', 4) % commentSpaceLine("DWELL");
+            return m_G4 % m_f % QString::number(time.to(m_meta.m_time_unit), 'f', 4) % commentSpaceLine("DWELL");
         else
             return {};
     }
@@ -290,11 +290,7 @@ namespace ORNL
         {
             output_rpm = m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio) * m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed);
 
-            // Only update the current rpm if not using feedrate scaling. An updated rpm value here could prevent the S parameter
-            // from being issued during the first G1 motion of the path and thus the extruder rate won't properly scale
-            if(!(m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime) &&
-                 m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod) == (int)ForceMinimumLayerTime::kSlow_Feedrate))
-                m_current_rpm = m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed);
+            m_current_rpm = m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed);
 
             rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("TURN EXTRUDER ON");
 
@@ -328,11 +324,7 @@ namespace ORNL
         {
             output_rpm = m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio) * rpm;
             rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("TURN EXTRUDER ON");
-            // Only update the current rpm if not using feedrate scaling. An updated rpm value here could prevent the S parameter
-            // from being issued during the first G1 motion of the path and thus the extruder rate won't properly scale
-            if(!(m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime) &&
-                 m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod) == (int)ForceMinimumLayerTime::kSlow_Feedrate))
-                m_current_rpm = rpm;
+            m_current_rpm = rpm;
         }
 
         return rv;
@@ -361,7 +353,7 @@ namespace ORNL
         //write vertical coordinate only if there was a change in Z
         Distance z_offset = m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset);
 
-        Distance target_z = destination.z() + z_offset;
+        Distance target_z = (-1 * destination.z()) + z_offset;
         if(qAbs(target_z - m_last_z) > 10)
         {
             rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);

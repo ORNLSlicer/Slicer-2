@@ -54,6 +54,9 @@
 # Build folder
 build/
 
+# VCPKG folder
+contrib/vcpkg
+
 # Single Path Library
 contrib/single_path
 
@@ -79,7 +82,6 @@ cmake-build-relwithdebinfo/
 # No files with caps please, rename them instead
 *.3DS
 *.JPG
-*.GIF
 *.ZIP
 *.STL
 .vs/

@@ -1,0 +1,80 @@
+QFrame#tool_bar_input_frame{
+    background: #eeeeee;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    min-height: 45px;
+    border: 1px solid #bdbdbd;
+}
+
+QLabel{
+    font-size: 10pt;
+    font-weight: 350;
+    min-height: 25px;
+    border: 0px;
+}
+
+QDoubleSpinBox{
+    background: #eeeeee;
+    border: 1px solid #eeeeee;
+    border-bottom: 1px solid #9e9e9e;
+    min-height: 15px;
+    font-size: 10pt;
+    padding-right: 15px;
+}
+
+QDoubleSpinBox:selected, QDoubleSpinBox:hover{
+    border-bottom: 1px solid #000000;
+}
+
+QDoubleSpinBox:!selected{
+    border-bottom: 1px solid #9e9e9e;
+}
+
+QDoubleSpinBox::up-arrow {
+    image: url(:/icons/up_black.png);
+    width: 18px;
+    height: 18px;
+}
+
+QDoubleSpinBox::down-arrow {
+    image: url(:/icons/down_black.png);
+    width: 18px;
+    height: 18px;
+}
+
+QDoubleSpinBox::down-button {
+
+    border-width: 0px;
+}
+
+QDoubleSpinBox::up-button {
+
+    border-width: 0px;
+}
+
+/* Tool Buttons */
+QToolButton {
+    background: #eeeeee;
+    padding: 3px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    margin: 2px;
+}
+
+QToolButton:checked, QToolButton:hover {
+    background: #bdbdbd;
+    border-bottom: 0px solid #000000;
+    color: #000000;
+}
+
+QToolButton:!checked {
+    border-bottom: 0px solid #000000;
+    color: #757575;
+}
+

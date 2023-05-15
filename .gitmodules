@@ -1,0 +1,6 @@
+[submodule "contrib/psimpl"]
+	path = contrib/psimpl
+	url = ../psimpl.git
+[submodule "contrib/qtxlsxwriter"]
+	path = contrib/qtxlsxwriter
+	url = ../QtXlsxWriter.git

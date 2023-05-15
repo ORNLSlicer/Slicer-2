@@ -1,0 +1,42 @@
+QWidget {
+    background: #eeeeee;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    border: 1px solid #bdbdbd;
+    border-style: outset;
+    padding: 2px;
+}
+
+QFrame {
+        background-color: #e0e0e0;
+        border-width: 1px;
+        border-style:outset;
+        border-color: #999;
+        margin:5px 0px 5px 0px;
+        padding:0px 10px 0px 5px;
+        color: #005834;
+        font-weight:500;
+        font-size:10pt;
+}
+
+QFrame > QFrame {
+        margin:0px;
+        border-style:inset;
+        border-width:1px;
+        width: 1px;
+        padding:0px;
+}
+
+QFrame::hover {
+        background-color: #f0f0f0;
+        border-color: #b9b9b9;
+}
+
+QFrame > QLabel {
+        border: 0px;
+        background-color: transparent;
+        height:35px;
+        max-height:35px;
+}

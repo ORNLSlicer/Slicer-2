@@ -60,7 +60,16 @@ namespace ORNL {
     {
         PM->importPreferences();
         GSM->loadAllGlobals(qApp->applicationDirPath() + "/templates/");
-        GSM->loadAllGlobals(CSM->getMostRecentSettingFolderLocation());
+
+        QString tmp = CSM->getMostRecentSettingFolderLocation();
+
+#ifndef WIN32
+        if (tmp == QStandardPaths::writableLocation(QStandardPaths::HomeLocation)) {
+            tmp = "/tmp/";
+        }
+#endif
+
+        GSM->loadAllGlobals(tmp);
         GSM->constructActiveGlobal(CSM->getMostRecentSettingHistory());
         GSM->loadLayerBarTemplate(qApp->applicationDirPath() + "/layerbartemplates");
         GSM->loadLayerBarTemplate(CSM->getMostRecentLayerBarSettingFolderLocation());
@@ -712,8 +721,8 @@ namespace ORNL {
         connect(m_actions["pref"].action, &QAction::triggered, m_pref_window, [this] { m_pref_window->raise(); m_pref_window->showNormal(); });
 
         connect(m_actions["manual"].action, &QAction::triggered, this, [this] { QDesktopServices::openUrl(QUrl::fromLocalFile(qApp->applicationDirPath() + "/Slicer_2_User_Guide.pdf")); });
-        connect(m_actions["repo"].action, &QAction::triggered, this, [this] { QDesktopServices::openUrl(QUrl("https://github.com/mdfbaam/ORNL-Slicer-2")); });
-        connect(m_actions["bug"].action, &QAction::triggered, this, [this] { QDesktopServices::openUrl(QUrl("https://github.com/mdfbaam/ORNL-Slicer-2-Issue-Tracker/issues")); });
+        connect(m_actions["repo"].action, &QAction::triggered, this, [this] { QDesktopServices::openUrl(QUrl("https://github.com/ORNLSlicer/Slicer-2")); });
+        connect(m_actions["bug"].action, &QAction::triggered, this, [this] { QDesktopServices::openUrl(QUrl("https://github.com/ORNLSlicer/Slicer-2/issues")); });
         connect(m_actions["about_s2"].action, &QAction::triggered, m_about_window, [this] { m_about_window->raise(); m_about_window->showNormal(); });
         connect(m_actions["about_qt"].action, &QAction::triggered, qApp, &QApplication::aboutQt);
 

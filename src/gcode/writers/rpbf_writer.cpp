@@ -1,6 +1,6 @@
 #include <QStringBuilder>
 
-#include "gcode/writers/RPBF_writer.h"
+#include "gcode/writers/rpbf_writer.h"
 #include "utilities/enums.h"
 #include "utilities/mathutils.h"
 

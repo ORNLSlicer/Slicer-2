@@ -1,0 +1,5 @@
+#translate_input, #rotate_input, #scale_input, #align_input {
+    background-color: rgba(40, 40, 80, 40);
+    border: 0px; 
+    border-radius: 2px;
+}

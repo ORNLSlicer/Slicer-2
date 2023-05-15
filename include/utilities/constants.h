@@ -990,11 +990,12 @@ namespace ORNL
                 static const QString kEnableLayerSpiralization;
             };
             
-			class MeldOutput
+            class FileOutput
             {
             public:
                 static const QString kMeldCompanionOutput;
                 static const QString kMeldDiscrete;
+                static const QString kTormachPython;
             };
 
             class RotationOrigin

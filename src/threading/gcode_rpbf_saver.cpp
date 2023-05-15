@@ -9,7 +9,7 @@
 #include <geometry/point.h>
 
 #include "managers/settings/settings_manager.h"
-#include "threading/gcode_RPBF_saver.h"
+#include "threading/gcode_rpbf_saver.h"
 
 namespace ORNL
 {

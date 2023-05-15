@@ -42,6 +42,7 @@ namespace ORNL
         , m_current_line(0)
         , m_current_end_line(m_lines.size() - 1)
         , m_should_cancel(false)
+        , m_negate_z_value(false)
     {
         setBlockCommentDelimiters(meta.m_comment_starting_delimiter, meta.m_comment_ending_delimiter);
 
@@ -49,6 +50,9 @@ namespace ORNL
 
         if(meta == GcodeMetaList::SkyBaamMeta)
             m_g4_prefix = "G4 S";
+
+        if(meta == GcodeMetaList::MVPMeta)
+            m_negate_z_value = true;
 
         m_insertions = 0;
 
@@ -917,6 +921,10 @@ namespace ORNL
                 case ('z'):
                     if (z_not_used)
                     {
+                        if (m_negate_z_value)
+                        {
+                            current_value = current_value * -1;
+                        }
                         current_value *= m_distance_unit();
                         setZPos(current_value);
                         z_not_used = false;
@@ -1924,7 +1932,7 @@ namespace ORNL
         QString custom_code = sb->setting< QString >(Constants::MaterialSettings::Cooling::kPostPauseCode);
         if(!(custom_code.isNull() || custom_code.isEmpty())) {
             m_lines.insert(insertIndex, custom_code);
-            ++m_insertions;
+            m_insertions += custom_code.count('\n') + 1;
         }
 
         QString dwell = m_g4_prefix % QString::number(dwellTime, 'f', 1) % m_space % getCommentStartDelimiter()
@@ -1935,7 +1943,7 @@ namespace ORNL
         custom_code = sb->setting< QString >(Constants::MaterialSettings::Cooling::kPrePauseCode);
         if(!(custom_code.isNull() || custom_code.isEmpty())) {
            m_lines.insert(insertIndex, custom_code);
-           ++m_insertions;
+           m_insertions += custom_code.count('\n') + 1;
         }
     }
 

@@ -1,5 +1,5 @@
 // Main Module
-#include "threading/slicers/real_time_RPBF_slicer.h"
+#include "threading/slicers/real_time_rpbf_slicer.h"
 
 // Qt
 #include <QSharedPointer>

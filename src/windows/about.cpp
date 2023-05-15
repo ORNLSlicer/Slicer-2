@@ -74,7 +74,7 @@ namespace ORNL
         connect(lblContact, &QLabel::linkActivated, [](const QString &link) { QDesktopServices::openUrl(QUrl(link));});
         layout->addWidget(lblContact, 4, 0, 1, 2, Qt::AlignCenter);
 
-        QLabel *bugReport = new QLabel("<a href='https://github.com/mdfbaam/ORNL-Slicer-2-Issue-Tracker/issues'>Bug report?</a>");
+        QLabel *bugReport = new QLabel("<a href='https://github.com/ORNLSlicer/Slicer-2/issues'>Bug report?</a>");
         connect(bugReport, &QLabel::linkActivated, [](const QString &link) { QDesktopServices::openUrl(QUrl(link));});
         layout->addWidget(bugReport, 6, 0, 1, 2, Qt::AlignCenter);
 

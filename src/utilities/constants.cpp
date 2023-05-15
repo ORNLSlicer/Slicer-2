@@ -838,9 +838,10 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::WireFeed::kAnchorObjectDistanceLeft = "anchor_object_distance_left";
     const QString Constants::ExperimentalSettings::WireFeed::kAnchorObjectDistanceRight = "anchor_object_distance_right";
 
- 	//Meld Output
-    const QString Constants::ExperimentalSettings::MeldOutput::kMeldCompanionOutput = "additional_meld_output";
-    const QString Constants::ExperimentalSettings::MeldOutput::kMeldDiscrete = "meld_discrete_feed_commands";
+    //File Output
+    const QString Constants::ExperimentalSettings::FileOutput::kMeldCompanionOutput = "additional_meld_output";
+    const QString Constants::ExperimentalSettings::FileOutput::kMeldDiscrete = "meld_discrete_feed_commands";
+    const QString Constants::ExperimentalSettings::FileOutput::kTormachPython = "tormach_python_output";
 
     //Rotation Origin
     const QString Constants::ExperimentalSettings::RotationOrigin::kXOffset = "rotation_origin_offset_x";

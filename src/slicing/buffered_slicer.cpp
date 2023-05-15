@@ -30,8 +30,8 @@ namespace ORNL
 
         std::tie(m_slicing_plane, m_mesh_min, m_mesh_max) = SlicingUtilities::GetDefaultSlicingAxis(m_settings, m_mesh, m_skeleton);
 
-        if(m_mesh_min.z() != 0)
-            m_additional_shift.z(m_mesh_min.z());
+        //if(m_mesh_min.z() != 0)
+        //    m_additional_shift.z(m_mesh_min.z());
 
         #ifdef NVCC_FOUND
         // If NVCC is found on the system, compile with support for GPU accelerated cross-sectioning

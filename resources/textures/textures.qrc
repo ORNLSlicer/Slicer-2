@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/textures">
+        <file>gl_font.png</file>
+        <file>blank_texture.png</file>
+    </qresource>
+    <qresource prefix="/"/>
+</RCC>

@@ -1,0 +1,29 @@
+[
+    {
+        "low": 0,
+        "high": 0,
+        "settings": [
+            {
+                "perimeter_start-up": true,
+                "perimeter_start-up_distance": 76199.99715238812,
+                "perimeter_start-up_speed": 101599.99620318416,
+                "perimeter_start-up_extruder_speed": 8.0,
+                "perimeter_start-up_ramp-up": true,
+                "perimeter_start-up_steps": 5
+            }
+        ]
+    },
+    {
+        "low": 1,
+        "high": 2,
+        "settings": [
+            {
+                "perimeter_start-up": true,
+                "perimeter_start-up_distance": 76149.99715238812,
+                "layer_height": 130809.99511159961,
+                "default_width": 237235.991134435,
+                "minimum_extrude_length": 139699.9947793782
+            }
+        ]
+    }
+]

@@ -14,7 +14,7 @@
 #include "tcp_connection.h"
 #include "data_stream.h"
 
-#include "external_files/exporters/RPBF_exporter.h"
+#include "external_files/exporters/rpbf_exporter.h"
 
 namespace ORNL {
     class Step;

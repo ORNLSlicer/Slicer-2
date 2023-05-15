@@ -1,0 +1,163 @@
+QToolButton#sliceButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #90bb53, stop: 0.9 #5f832f, stop:1 #5f832f);
+    border: 0px;
+    color: #2b3234;
+    border-radius: 4px;
+    padding:3px;
+    font-weight:bold;
+    font-size: 11pt;
+    font-family: "arial black";
+    min-width: 60px;
+    min-height: 20px;
+    margin:4px;
+}
+
+QToolButton#sliceButton:disabled {
+    background-color: #353b3d;
+    border: 1px solid #4d5557;
+    color: #787878;
+    padding: 1px;
+}
+
+QToolButton#sliceButton::menu-indicator {
+    subcontrol-origin: padding;
+    subcontrol-position: bottom right;
+    bottom: 4px;
+}
+
+QToolButton#sliceButton:pressed {
+    background-color: #19232D;
+    border: 1px solid #405a1e;
+}
+
+QToolButton#sliceButton:hover,
+QToolButton#sliceButton:checked:hover{
+    border: 1px solid #90bb53;
+    color: #F0F0F0;
+    background-color: #5f832f;
+}
+
+QToolButton#sliceButton:pressed:hover{
+    border: 1px solid #1464A0;
+}
+
+#translate_input, #rotate_input, #scale_input, #align_input {
+    border: 0px; 
+    border-radius: 2px;
+}
+
+/* Tool bar */
+QToolBar {
+    border-radius:2px;
+    min-height: 40px;
+    border: 1px solid #4d5557;
+}
+
+QToolBar::separator {
+    width: 1px;
+    margin: 0px 3px;
+}
+
+
+/* Tabs for view */
+QTabBar {
+    background-color:transparent;
+}
+
+QTabBar::tab, QTabBar::tab:top {
+    min-height: 29px;
+    margin-top:0px;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    padding:4px 5px;
+    font-weight:400;
+    font-size: 9pt;
+}
+
+QTabBar::tab:selected, QTabBar::tab:hover {
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    border-bottom: 2px solid #ffffff;
+}
+
+QTabBar::tab:selected {
+    min-height: 29px;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    padding:4px 10px;
+    border-bottom:3px solid #84C446;
+}
+
+QTabBar::tab:!selected {
+    padding:3px 10px;
+    border-bottom: 0px;
+}
+
+QTabBar::tab:selected:QPushButton  {
+    color: #ffffff;
+}
+
+QTabBar::tab:!selected:QPushButton  {
+    color: #000000;
+}
+
+/* Tool Buttons */
+QToolButton#menuButton {
+    padding: 3px 12px 3px 0px;
+    border-radius:4px;
+    margin: 2px 2px;
+}
+
+QToolButton {
+    padding: 3px 2px;
+    border-radius:4px;
+    margin: 2px 2px;
+}
+
+QToolButton:checked, QToolButton:hover, QToolButton#menuButton:checked, QToolButton#menuButton:hover {
+    border-bottom: 0px solid #000000;
+    color: #ffffff;
+}
+
+QToolButton:!checked, QToolButton#menuButton:!checked {
+    border-bottom: 0px solid #000000;
+    color: #757575;
+}
+
+QComboBox{
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-right: 10px;
+    border: 1px solid #eeeeee;
+    border-bottom: 1px solid #bdbdbd;
+    font-weight:300;
+    font-size: 10pt;
+}
+
+QComboBox::down-arrow {
+    image: url(:/icons/drop_down_black.png);
+    height: 15px;
+    width: 15px;
+}
+
+QComboBox::drop-down {
+    border: 1px solid #eeeeee;
+}
+
+QMenu{
+    border-radius:10px;
+}
+
+QMenu::item:hover, QMenu::item:selected {
+    color: #84C446;
+    background-color:#3a4143;
+}
+
+QToolTip {
+    background-color: #84B641;
+    border: 1px solid #2b3234;
+    color: #2b3234;
+    padding: 0;   /*remove padding, for fix combo box tooltip*/
+    opacity: 230; /*reducing transparency to read better*/
+}

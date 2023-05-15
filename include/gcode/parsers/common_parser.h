@@ -579,6 +579,9 @@ namespace ORNL
         //! \brief Flag to indicate G1 line contains F command
         bool m_with_F_value;
 
+        //! \brief Flag to indicate Z value should be multiplied by negative one, used for MVP syntax
+        bool m_negate_z_value;
+
         //! \brief Line at which each layer start (used for visualization)
         QList<int> m_layer_start_lines;
 

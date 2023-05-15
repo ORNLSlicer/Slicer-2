@@ -1,0 +1,4 @@
+#translate_input, #rotate_input, #scale_input, #align_input {
+    border: 0px; 
+    border-radius: 2px;
+}

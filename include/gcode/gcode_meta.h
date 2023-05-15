@@ -207,14 +207,14 @@ namespace ORNL
                 GcodeSyntax::kMVP,
                 QString(";"), //starting_delim
                 QString(), //ending_delim
-                in, //distance
+                mm, //distance
                 s, //time
                 degree, //angle
-                lbm, //mass
-                in / minute, //velocity
-                in / s / s, //acceleration
+                g, //mass
+                mm / minute, //velocity
+                mm / s / s, //acceleration
                 rev / minute,  //angular velocity
-                ".gcode"
+                ".mpf"
         };
         static GcodeMeta MazakMeta = {
                 GcodeSyntax::kMazak,

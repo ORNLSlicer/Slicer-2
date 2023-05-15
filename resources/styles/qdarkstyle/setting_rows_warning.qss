@@ -1,0 +1,60 @@
+QLabel {
+    image: url(":/icons/warning.png");
+    image-position:left;
+    margin-left:5px;
+    margin-right:10px;
+    height:20px;
+    max-height:20px;
+}
+
+QDoubleSpinBox, QSpinBox, QComboBox,
+QLineEdit, QPlainTextEdit, QTableWidget {
+    background-color: #fed637;
+    color:red;
+}
+
+QComboBox {
+    border-style: solid;
+    border-width: 1px;
+    padding: 1px 4px 1px 3px;
+    color:red;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left-width: 0px;
+    color: black;
+}
+
+QComboBox::down-arrow {
+    image:url(:/icons/expand_arrow_gray.png);
+    width:12px;
+    height:12px;
+}
+
+QCheckBox::indicator {
+    margin-left: 4px;
+    width: 16px;
+    height: 16px;
+}
+
+QCheckBox::indicator:unchecked, QCheckBox::indicator:unchecked:pressed,
+QCheckBox::indicator:indeterminate, QCheckBox::indicator:indeterminate:pressed,
+QCheckBox::indicator:checked, QCheckBox::indicator:checked:pressed {
+    image: url(:/styles/qdarkstyle/rc/checkbox_warning.png);
+    border:none;
+}
+
+QCheckBox::indicator:unchecked:hover, 
+QCheckBox::indicator:indeterminate:hover,
+QCheckBox::indicator:checked:hover {
+    image: url(:/styles/qdarkstyle/rc/checkbox_warning_focus.png);
+    border:none;
+}
+
+QCheckBox::indicator:disabled {
+    image: url(:/styles/qdarkstyle/rc/checkbox_warning_disabled.png);
+    border:none;
+}

@@ -1,0 +1,95 @@
+/* Font Control ------------------------------------------------------------ */
+
+QCheckbox, QComboBox, QGroupBox, QSpinBox, QDoubleSpinBox,
+QFrame, QGroupBox, QLineEdit, QTabBar, QTextEdit, 
+QToolBar, QToolButton, QPushButton, QRadioButton, 
+QDockWidget, QTabBar, QTabWidget, 
+QLabel, QAbstractScrollArea {
+    font-weight:400;
+    font-size: 8pt;
+    font-family: "Segoe UI";
+}
+
+/* QSlider ----------------------------------------------------------------- */
+
+
+QSlider:disabled {
+    background: #f0f0f0;
+}
+
+QSlider:focus {
+    border: none;
+}
+
+QSlider::groove:horizontal {
+    background: #787878;
+    border: 0px;
+    height: 1px;
+    margin: 0px;
+    border-radius: 0px;
+}
+
+QSlider::sub-page:horizontal {
+    border: 0px;
+    height: 1px;
+    margin: 0px;
+    border-radius: 0px;
+}
+
+QSlider::sub-page:horizontal:disabled {
+    background: #cccccc;
+}
+
+QSlider::handle:horizontal {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #00834d, stop: 0.2 #00834d, stop:1 #005834);
+    border: 0px solid #00834d;
+    width: 10px;
+    height: 12px;
+    margin: -10px 0;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal:hover {
+    background: #009256;
+    border: 1px solid #005834;
+    width:8px;
+    height:10px;
+}
+
+QSlider::groove:vertical {
+    background: #d9d9d9;
+    border: 1px solid #f0f0f0;
+    width: 1px;
+    margin: 0px;
+    border-radius: 0px;
+}
+
+QSlider::sub-page:vertical {
+    background: #000000;
+    border: 1px solid #f0f0f0;
+    width: 1px;
+    margin: 0px;
+    border-radius: 0px;
+}
+
+QSlider::sub-page:vertical:disabled {
+    background: #cccccc;
+}
+
+QSlider::handle:vertical {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #00834d, stop: 0.2 #00834d, stop:1 #005834);
+    border: 0px solid #00834d;
+    width: 12px;
+    height: 10px;
+    margin: 0 -10px;
+    border-radius: 4px;
+}
+
+QSlider::handle:vertical:hover {
+    background: #009256;
+    border: 1px solid #005834;
+    width:10px;
+    height:8px;
+}

@@ -41,19 +41,22 @@ namespace ORNL {
         int num_nozzles = global_sb->setting<int>(Constants::ExperimentalSettings::MultiNozzle::kNozzleCount);
         for (int tool = 0; tool < num_nozzles; ++tool)
         {
-            QSharedPointer<IslandBase> firstIsland = m_island_order[tool].front();
-
-            if(firstIsland->getSb()->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable) &&
-                    firstIsland->getSb()->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableLeadIn))
+            if (!m_island_order[tool].isEmpty())
             {
-                Point leadIn = Point(firstIsland->getSb()->setting<Distance>(Constants::ProfileSettings::Perimeter::kEnableLeadInX),
-                                     firstIsland->getSb()->setting<Distance>(Constants::ProfileSettings::Perimeter::kEnableLeadInY),
-                                     0.0);
+                QSharedPointer<IslandBase> firstIsland = m_island_order[tool].front();
 
-                Q_ASSERT(firstIsland->getType() == IslandType::kPolymer);
-                QSharedPointer<RegionBase> firstRegion = (firstIsland->getRegions()).front();
+                if(firstIsland->getSb()->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable) &&
+                        firstIsland->getSb()->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableLeadIn))
+                {
+                    Point leadIn = Point(firstIsland->getSb()->setting<Distance>(Constants::ProfileSettings::Perimeter::kEnableLeadInX),
+                                         firstIsland->getSb()->setting<Distance>(Constants::ProfileSettings::Perimeter::kEnableLeadInY),
+                                         0.0);
 
-                PathModifierGenerator::GenerateLayerLeadIn(firstRegion->getPaths().front(), leadIn, global_sb);
+                    Q_ASSERT(firstIsland->getType() == IslandType::kPolymer);
+                    QSharedPointer<RegionBase> firstRegion = (firstIsland->getRegions()).front();
+
+                    PathModifierGenerator::GenerateLayerLeadIn(firstRegion->getPaths().front(), leadIn, global_sb);
+                }
             }
         }
 

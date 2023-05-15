@@ -385,7 +385,7 @@ namespace ORNL
         float output_rpm;
         output_rpm = m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio) * m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed);
 
-        if(!m_sb->setting< int >(Constants::ExperimentalSettings::MeldOutput::kMeldDiscrete))
+        if(!m_sb->setting< int >(Constants::ExperimentalSettings::FileOutput::kMeldDiscrete))
         {
             rv += "M4" % m_s % QString::number(output_rpm) % " @714" % commentSpaceLine("TURN SPINDLE ON");
             rv += "M34" % m_s % QString::number(output_rpm) % " @714" % commentSpaceLine("TURN EXTRUDER ON");
@@ -501,7 +501,7 @@ namespace ORNL
         }
         rv += m_M5 % commentSpaceLine("TURN EXTRUDER OFF");
         m_current_rpm = 0;*/
-        if (m_sb->setting< int >(Constants::ExperimentalSettings::MeldOutput::kMeldDiscrete))
+        if (m_sb->setting< int >(Constants::ExperimentalSettings::FileOutput::kMeldDiscrete))
         {
             rv += "M25" % commentSpaceLine("TURN ACTUATOR OFF");
             m_extruders_on[0] = false;

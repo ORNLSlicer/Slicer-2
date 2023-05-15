@@ -287,6 +287,7 @@ namespace ORNL
 
         QFile conf_file(path);
         QFileInfo fileInfo(conf_file);
+        conf_file.open(QIODevice::ReadOnly);
         QString settings_data = conf_file.readAll();
         conf_file.close();
         fifojson j = json::parse(settings_data.toStdString());

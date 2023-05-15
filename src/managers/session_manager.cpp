@@ -18,7 +18,7 @@
 #include "threading/slicers/conformal_slicer.h"
 #include "threading/slicers/rpbf_slicer.h"
 #include "threading/slicers/hybrid_slicer.h"
-#include "threading/slicers/real_time_RPBF_slicer.h"
+#include "threading/slicers/real_time_rpbf_slicer.h"
 #include "threading/session_loader.h"
 #include "utilities/mathutils.h"
 #include "configs/settings_base.h"

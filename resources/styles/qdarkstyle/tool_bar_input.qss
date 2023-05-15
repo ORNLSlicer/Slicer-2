@@ -1,0 +1,16 @@
+QFrame#tool_bar_input_frame{
+    border-top-right-radius: 2px;
+    border-bottom-right-radius: 2px;
+    min-height: 45px;
+    border: 1px solid #4d5557;
+    background-color: #3a4143;
+}
+
+QLabel{
+    font-size: 10pt;
+    font-weight: 350;
+    min-height: 25px;
+    border: 0px;
+}
+
+

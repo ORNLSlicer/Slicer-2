@@ -69,7 +69,7 @@ namespace ORNL
         m_override_used = true;
     }
 
-    Path PathOrderOptimizer::linkNextPath(QVector<Path> &paths)
+    Path PathOrderOptimizer::linkNextPath(QVector<Path> paths)
     {
 
         if(m_paths.size() > 0)

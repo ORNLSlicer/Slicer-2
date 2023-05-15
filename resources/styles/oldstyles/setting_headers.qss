@@ -1,0 +1,38 @@
+QFrame {
+/*	background-color: #e0e0e0; */
+	border-width: 1px;
+	border-style:outset;
+	border-color: #999;
+	margin:5px 0px 5px 0px;
+	padding:0px 10px 0px 5px;
+	color: #005834;
+	font-weight:500;
+}
+
+QFrame > QFrame {
+	margin:0px;
+	border-style:inset;
+	border-width:1px;
+	width: 1px;
+	padding:0px;
+}
+
+QFrame::hover {
+/*	background-color: #f0f0f0; */
+	border-color: #b9b9b9;
+}
+
+QFrame > QLabel {
+	border: 0px;
+	background-color: transparent;
+}
+
+QPushButton {
+	border-radius:4px;
+	width:28px;
+	height:28px;
+}
+
+QPushButton::hover {
+/*	background-color:#bdbdbd; */
+}

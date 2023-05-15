@@ -1,0 +1,162 @@
+QToolButton#sliceButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #00834d, stop: 0.8 #005834, stop:1 #005834);
+    border: 0px;
+    color: #f0f0f0;
+    border-radius: 4px;
+    font-size: 11pt;
+    font-weight:bold;
+    font-family:"arial black";
+    min-width: 60px;
+    min-height: 20px;
+    margin:4px;
+}
+
+QToolButton#sliceButton:disabled {
+    background-color: #cccccc;
+    border: 1px solid #bfbfbf;
+    color: #787878;
+    padding: 1px;
+}
+
+QToolButton#sliceButton::menu-indicator {
+    subcontrol-origin: padding;
+    subcontrol-position: bottom right;
+    bottom: 4px;
+}
+
+QToolButton#sliceButton:pressed {
+    background-color: #19232D;
+    border: 1px solid #19232D;
+}
+
+QToolButton#sliceButton:hover,
+QToolButton#sliceButton:checked:hover{
+    border: 1px solid #004428;
+    color: #F0F0F0;
+    background-color: #007042;
+}
+
+QToolButton#sliceButton:pressed:hover{
+    border: 1px solid #1464A0;
+}
+
+#translate_input, #rotate_input, #scale_input, #align_input {
+    background-color: rgba(40, 40, 80, 40); 
+    border: 0px; 
+    border-radius: 2px;
+}
+
+/* Tool bar */
+QToolBar {
+    background: #eeeeee;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+    min-height: 40px;
+    border: 1px solid #bdbdbd;
+}
+
+QToolBar::separator {
+    background-color: #bdbdbd;
+    width: 1px;
+    margin: 0px 3px;
+}
+
+
+/* Tabs for view */
+
+QTabBar::tab {
+    background: #eeeeee;
+    min-height: 30px;
+    padding: 3px;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    padding:4px 5px;
+    font-weight:400;
+    font-size: 9pt;
+}
+
+QTabBar::tab:selected, QTabBar::tab:hover {
+    background: #e0e0e0;
+    border-bottom: 2px solid #000000;
+}
+
+QTabBar::tab:selected {
+    border-bottom: 2px solid #000000;
+}
+
+QTabBar::tab:!selected {
+    border-bottom: 0px solid #000000;
+}
+
+QTabBar::tab:selected:QPushButton  {
+    color: #000000;
+}
+
+QTabBar::tab:!selected:QPushButton  {
+    color: #757575;
+}
+
+/* Tool Buttons */
+QToolButton#menuButton {
+    background: #eeeeee;
+    padding: 3px 12px 3px 0px;
+    border-radius:4px;
+    margin: 2px 2px;
+}
+
+QToolButton {
+    background: #eeeeee;
+    padding: 3px 2px;
+    border-radius:4px;
+    margin: 2px 2px;
+}
+
+QToolButton:checked, QToolButton:hover, QToolButton#menuButton:checked, QToolButton#menuButton:hover {
+    background: #bdbdbd;
+    border-bottom: 0px solid #000000;
+    color: #000000;
+}
+
+QToolButton:!checked, QToolButton#menuButton:!checked {
+    border-bottom: 0px solid #000000;
+    color: #757575;
+}
+
+QComboBox{
+    background: #eeeeee;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-right: 10px;
+    border: 1px solid #eeeeee;
+    border-bottom: 1px solid #bdbdbd;
+    font-weight:300;
+    font-size: 10pt;
+}
+
+QComboBox::down-arrow {
+    image: url(:/icons/drop_down_black.png);
+    height: 15px;
+    width: 15px;
+}
+
+QComboBox::drop-down {
+    border: 1px solid #eeeeee;
+}
+
+QMenu{
+    background: #eeeeee;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+QMenu::item:hover, QMenu::item:selected {
+    background: #e0e0e0;
+    color: #000000;
+}
+
+

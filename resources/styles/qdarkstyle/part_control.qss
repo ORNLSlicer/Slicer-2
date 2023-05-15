@@ -1,0 +1,18 @@
+QWidget {
+    border-radius:6px;
+    border: 1px solid #4d5557;
+}
+
+QTreeWidget::item:!selected{
+      border: 1px solid #bdbdbd;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+}
+
+QTreeWidget::item:selected {}
+
+QMenu::item:selected {
+    color: #000000;
+   background: #84C446;
+}

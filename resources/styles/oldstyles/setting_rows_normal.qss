@@ -1,0 +1,7 @@
+QLabel {
+	image: none;
+        margin-left:5px;
+	margin-right:10px;
+        height:20px;
+        max-height:20px;
+}

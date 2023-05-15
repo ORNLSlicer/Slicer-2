@@ -22,7 +22,7 @@
 #include <gcode/writers/mvp_writer.h>
 #include <gcode/writers/romi_fanuc_writer.h>
 #include <gcode/writers/siemens_writer.h>
-#include <gcode/writers/RPBF_writer.h>
+#include <gcode/writers/rpbf_writer.h>
 #include <gcode/writers/skybaam_writer.h>
 #include <gcode/writers/thermwood_writer.h>
 #include <gcode/writers/reprap_writer.h>
@@ -240,7 +240,8 @@ namespace ORNL {
     {
         QTextStream stream(&m_temp_gcode_output_file);
         stream << m_base->writeShutdown();
-        stream << m_base->writeSettingsFooter();
+        if (m_syntax != GcodeSyntax::kMVP)
+            stream << m_base->writeSettingsFooter();
         m_temp_gcode_output_file.close();
     }
 }
