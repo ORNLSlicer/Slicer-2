@@ -1,0 +1,91 @@
+/// \defgroup PkgConvexHull3Ref 3D Convex Hulls Reference
+
+/// \defgroup PkgConvexHull3Concepts Concepts
+/// \ingroup PkgConvexHull3Ref
+
+/// \defgroup PkgConvexHull3Traits Traits Classes
+/// \ingroup PkgConvexHull3Ref
+
+/*! \defgroup PkgConvexHull3Functions Convex Hull Functions
+   \ingroup PkgConvexHull3Ref
+The function `convex_hull_3()` computes the convex hull of a given set of
+three-dimensional points.
+
+Two versions of this function are available. The first can be used when it
+is known that the result will be a polyhedron and the second when a
+degenerate hull may also be possible.
+*/
+
+/// \defgroup PkgConvexityChecking Convexity Checking
+/// \ingroup PkgConvexHull3Ref
+
+/*!
+\addtogroup PkgConvexHull3Ref
+\todo fix or keep the `Default_traits`
+
+\cgalPkgDescriptionBegin{3D Convex Hulls,PkgConvexHull3}
+\cgalPkgPicture{Convex_hull_3/fig/bunny.png}
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Susan Hert and Stefan Schirra}
+\cgalPkgDesc{This package provides functions  for computing convex hulls in three dimensions as well as functions for checking if sets of points are strongly convex or not. One can compute the convex hull of a set of points in three dimensions in two ways: using a static algorithm or using a triangulation to get a fully dynamic computation.}
+\cgalPkgManuals{Chapter_3D_Convex_Hulls,PkgConvexHull3Ref}
+\cgalPkgSummaryEnd
+\cgalPkgShortInfoBegin
+\cgalPkgSince{1.1}
+\cgalPkgDependsOn{The dynamic algorithms depend on \ref PkgTriangulation3 "3D Triangulations".}
+\cgalPkgBib{cgal:hs-ch3}
+\cgalPkgLicense{\ref licensesGPL  "GPL"}
+\cgalPkgDemo{Polyhedron demo,polyhedron_3.zip}
+\cgalPkgShortInfoEnd
+\cgalPkgDescriptionEnd
+
+A subset \f$S \subseteq \mathbb{R}^3 \f$ is convex if for any two points `p` and `q`
+in the set the line segment with endpoints `p` and `q` is contained
+in \f$S\f$. The convex hull of a set \f$ S \f$ is the smallest convex set containing
+\f$ S \f$. The convex hull of a set of points `P` is a convex
+polytope with vertices in `P`.  A point in `P` is an extreme point
+(with respect to `P`) if it is a vertex of the convex hull of `P`.
+
+\cgal provides functions for computing convex hulls in two, three
+and arbitrary dimensions as well as functions for testing if a given set of
+points in is strongly convex or not.  This chapter describes the functions
+available for three dimensions.
+
+\cgalCRPSection{Assertions}
+The assertion flags for the convex hull and extreme point algorithms
+use `CH` in their names (<I>e.g.</I>, `CGAL_CH_NO_POSTCONDITIONS`).
+For the convex hull algorithms, the postcondition
+check tests only convexity (if not disabled), but not containment of the
+input points in the polygon or polyhedron defined by the output points.
+The latter is considered an expensive checking and can be enabled by
+defining `CGAL_CH_CHECK_EXPENSIVE`.
+
+\cgalClassifedRefPages
+
+\cgalCRPSection{Concepts}
+
+- `ConvexHullTraits_3`
+- `IsStronglyConvexTraits_3`
+
+\cgalCRPSection{Traits Classes}
+
+- `CGAL::Convex_hull_traits_3<R>`
+- `CGAL::Extreme_points_traits_adapter_3`
+
+\cgalCRPSection{Convex Hull Functions}
+
+- `CGAL::convex_hull_3`
+- `CGAL::extreme_points_3`
+- `CGAL::make_extreme_points_traits_adapter`
+
+\cgalCRPSection{Convexity Checking Function}
+
+- `CGAL::is_strongly_convex_3`
+
+\cgalCRPSection{Halfspace Intersection Functions}
+
+- `CGAL::halfspace_intersection_3()`
+- `CGAL::halfspace_intersection_with_constructions_3()`
+- `CGAL::halfspace_intersection_interior_point_3()`
+
+*/

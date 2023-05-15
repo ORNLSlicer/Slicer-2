@@ -1,0 +1,17 @@
+${CGAL_DATA_DIR}/meshes/cube.off
+${CGAL_DATA_DIR}/meshes/open_cube.off
+data/eight.off
+data/genus1.off
+${CGAL_DATA_DIR}/meshes/head.off
+${CGAL_DATA_DIR}/meshes/hedra.off
+${CGAL_DATA_DIR}/meshes/hedra_open.off
+data/helmet.off
+data/hexagon_open.off
+data/oct.off
+data/oni.off
+data/square_open.off
+${CGAL_DATA_DIR}/meshes/star.off
+data/tetra.off
+data/tetra_12f.off
+data/tetra_6f.off
+${CGAL_DATA_DIR}/meshes/triangular_hole.off

@@ -1,0 +1,78 @@
+/// \defgroup PkgPolygon2Ref 2D Polygon Reference
+
+/// \defgroup PkgPolygon2Concepts Concepts
+/// \ingroup PkgPolygon2Ref
+
+/// \defgroup PkgPolygon2Functions Global Functions
+/// \ingroup PkgPolygon2Ref
+
+/*!
+  \code
+   #include <CGAL/draw_polygon_2.h>
+  \endcode
+*/
+/// \defgroup PkgDrawPolygon2 Draw a 2D Polygon
+/// \ingroup PkgPolygon2Ref
+
+/*!
+  \code
+  #include <CGAL/draw_polygon_with_holes_2.h>
+  \endcode
+*/
+/// \defgroup PkgDrawPolygonWithHoles2 Draw a 2D Polygon with Holes
+/// \ingroup PkgPolygon2Ref
+
+/*!
+\addtogroup PkgPolygon2Ref
+
+\cgalPkgDescriptionBegin{2D Polygons,PkgPolygon2}
+\cgalPkgPicture{polygon.png}
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Geert-Jan Giezeman and Wieger Wesselink}
+\cgalPkgDesc{This package provides a 2D polygon class and operations on sequences of points, like bounding box, extremal points, signed area, simplicity and convexity test, orientation, and point location.  The demo includes operations on polygons, such as computing a convex  partition, and the straight skeleton.}
+\cgalPkgManuals{Chapter_2D_Polygon,PkgPolygon2Ref}
+\cgalPkgSummaryEnd
+\cgalPkgShortInfoBegin
+\cgalPkgSince{0.9}
+\cgalPkgBib{cgal:gw-p2}
+\cgalPkgLicense{\ref licensesLGPL "LGPL"}
+\cgalPkgDemo{Operations on Polygons,polygon.zip}
+\cgalPkgShortInfoEnd
+\cgalPkgDescriptionEnd
+
+\cgalCRPSection{Assertions}
+
+The assertion flags for the polygons and polygon operations use
+`POLYGON` in their names (<I>e.g.</I>, `CGAL_POLYGON_NO_ASSERTIONS`).
+
+\cgalClassifedRefPages
+
+\cgalCRPSection{Concepts}
+- `PolygonTraits_2`
+- `GeneralPolygonWithHoles_2`
+
+\cgalCRPSection{Classes}
+- `CGAL::Polygon_2<PolygonTraits_2, Container>`
+- `CGAL::Polygon_with_holes_2<PolygonTraits_2,Container>`
+- `CGAL::General_polygon_with_holes_2<Polygon>`
+
+\cgalCRPSection{Global Functions}
+- `CGAL::area_2()`
+- `CGAL::bottom_vertex_2()`
+- `CGAL::bounded_side_2()`
+- `CGAL::is_convex_2()`
+- `CGAL::is_simple_2()`
+- `CGAL::left_vertex_2()`
+- `CGAL::orientation_2()`
+- `CGAL::oriented_side_2()`
+- `CGAL::polygon_area_2()`
+- `CGAL::right_vertex_2()`
+- `CGAL::top_vertex_2()`
+
+\cgalCRPSection{Draw a Polygon_2}
+- \link  PkgDrawPolygon2 CGAL::draw<P>() \endlink
+
+\cgalCRPSection{Draw a Polygon_with_holes_2}
+- \link  PkgDrawPolygonWithHoles2 CGAL::draw<PH>() \endlink
+
+*/

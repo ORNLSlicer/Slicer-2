@@ -1,0 +1,54 @@
+# rrr 1
+is_between_cw 79 1 72 1 73 1 18 FALSE
+is_between_cw 79 1 73 1 72 1 18 TRUE
+is_between_cw 72 1 79 1 73 1 18 TRUE
+is_between_cw 73 1 79 1 72 1 18 FALSE
+is_between_cw 72 1 73 1 79 1 18 FALSE
+is_between_cw 73 1 72 1 79 1 18 TRUE
+## rrr overlap 7
+is_between_cw 72 1 72 1 72 1 18 FALSE
+is_between_cw 79 1 72 1 72 1 18 TRUE
+is_between_cw 72 1 79 1 72 1 18 FALSE
+is_between_cw 72 1 72 1 79 1 18 FALSE
+# lrr 11
+is_between_cw 76 0 79 1 73 1 18 FALSE
+is_between_cw 76 0 73 1 79 1 18 TRUE
+## lrr overlap 13
+is_between_cw 76 0 72 1 72 1 18 TRUE
+# rlr 14
+is_between_cw 79 1 76 0 73 1 18 TRUE
+is_between_cw 73 1 76 0 79 1 18 FALSE
+## rlr overlap 16
+is_between_cw 72 1 76 0 72 1 18 FALSE
+# rrl 17
+is_between_cw 79 1 73 1 76 0 18 FALSE
+is_between_cw 73 1 79 1 76 0 18 TRUE
+## rrl overlap 19
+is_between_cw 72 1 72 1 76 0 18 FALSE
+# rll 20
+is_between_cw 72 1 77 0 75 0 18 TRUE
+is_between_cw 72 1 75 0 77 0 18 FALSE
+## rll overlap 22
+is_between_cw 72 1 76 0 76 0 18 FALSE
+# lrl 23
+is_between_cw 75 0 72 1 77 0 18 TRUE
+is_between_cw 77 0 72 1 75 0 18 FALSE
+## lrl overlap 26
+is_between_cw 76 0 72 1 76 0 18 FALSE
+# llr 27
+is_between_cw 75 0 77 0 72 1 18 FALSE
+is_between_cw 77 0 75 0 72 1 18 TRUE
+## llr overlap 29
+is_between_cw 76 0 76 0 72 1 18 FALSE
+# lll 30
+s_between_cw 75 0 76 0 77 0 18 FALSE
+s_between_cw 75 0 77 0 76 0 18 TRUE
+s_between_cw 76 0 75 0 77 0 18 TRUE
+s_between_cw 77 0 75 0 76 0 18 FALSE
+s_between_cw 76 0 77 0 75 0 18 FALSE
+s_between_cw 77 0 76 0 75 0 18 TRUE
+# lll overlap 36
+s_between_cw 76 0 76 0 76 0 18 FALSE
+s_between_cw 75 0 77 0 77 0 18 TRUE
+s_between_cw 77 0 75 0 77 0 18 FALSE
+s_between_cw 77 0 77 0 75 0 18 FALSE

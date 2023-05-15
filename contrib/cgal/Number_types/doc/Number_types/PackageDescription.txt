@@ -1,0 +1,127 @@
+/// \defgroup PkgNumberTypesRef Number Types Reference
+
+/// \defgroup PkgNumberTypesConcepts Concepts
+/// \ingroup PkgNumberTypesRef
+
+/// \defgroup nt_builtin Built-in types
+/// \ingroup PkgNumberTypesRef
+
+/// \defgroup nt_core CORE
+/// \ingroup PkgNumberTypesRef
+
+/// \defgroup nt_leda LEDA
+/// \ingroup PkgNumberTypesRef
+
+/// \defgroup nt_gmp GMP
+/// \ingroup PkgNumberTypesRef
+
+/// \defgroup nt_cgal CGAL Number Types
+/// \ingroup PkgNumberTypesRef
+
+/// \defgroup nt_cgal CGAL Number Types
+/// \ingroup PkgNumberTypesRef
+
+/// \defgroup nt_rrational Relates Rational
+/// \ingroup PkgNumberTypesRef
+
+/// \defgroup nt_ralgebraic Relates Algebraic Extensions
+/// \ingroup PkgNumberTypesRef
+
+/// \defgroup nt_util Utilities
+/// \ingroup PkgNumberTypesRef
+
+
+/*!
+\addtogroup PkgNumberTypesRef
+\todo check generated documentation
+\cgalPkgDescriptionBegin{Number Types,PkgNumberTypes}
+\cgalPkgPicture{illustration.png}
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Michael Hemmer, Susan Hert, Sylvain Pion, and Stefan Schirra}
+\cgalPkgDesc{This package provides number type concepts as well as number type classes and wrapper classes for third party number type libraries. }
+\cgalPkgManuals{Chapter_Number_Types,PkgNumberTypesRef}
+\cgalPkgSummaryEnd
+\cgalPkgShortInfoBegin
+\cgalPkgSince{1.0}
+\cgalPkgBib{cgal:hhkps-nt}
+\cgalPkgLicense{\ref licensesLGPL "LGPL" }
+\cgalPkgShortInfoEnd
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+\cgalCRPSection{Number Type Classes and Concepts}
+
+- \link int.h `int` \endlink
+- \link int.h `short int` \endlink
+- \link int.h `long  int` \endlink
+- \link long_long.h `long  long int` \endlink
+- \link float.h `float` \endlink
+- \link double.h `double` \endlink
+- \link long_double.h `long double` \endlink
+
+\cgalCRPSubsection{%CORE}
+
+- `CORE::BigInt`
+- `CORE::BigRat`
+- `CORE::BigFloat`
+- `CORE::Expr`
+
+\cgalCRPSubsection{LEDA}
+
+- `leda_integer`
+- `leda_rational`
+- `leda_bigfloat`
+- `leda_real`
+
+\cgalCRPSubsection{GMP}
+
+- `mpz_class`
+- `mpq_class`
+- `CGAL::Mpzf`
+- `CGAL::Gmpz`
+- `CGAL::Gmpq`
+- `CGAL::Gmpzf`
+- `CGAL::Gmpfr`
+- `CGAL::Gmpfi`
+
+\cgalCRPSubsection{%CGAL}
+
+- `CGAL::MP_Float`
+- `CGAL::Interval_nt<Protected>`
+- `CGAL::Lazy_exact_nt<NT>`
+- `CGAL::Quotient<NT>`
+- `CGAL::Number_type_checker<NT1,NT2,Comparator>`
+- `CGAL::Exact_integer`
+- `CGAL::Exact_rational`
+
+\cgalCRPSection{Relates Rational}
+
+- `CGAL::Rational_traits<NT>`
+- `CGAL::simplest_rational_in_interval()`
+- `CGAL::to_rational()`
+
+\cgalCRPSection{Relates Algebraic Extensions}
+
+- `RootOf_2`
+- `CGAL::Root_of_traits<RT>`
+- `CGAL::make_root_of_2<RT>`
+- `CGAL::make_sqrt<RT>`
+- `CGAL::compute_roots_of_2<RT,OutputIterator>`
+- `CGAL::Sqrt_extension<NT,ROOT>`
+
+\cgalCRPSection{Utilities}
+
+- `CGAL::Min<T,Less>`
+- `CGAL::Max<T,Less>`
+- `CGAL::Is_valid<T>`
+- `CGAL::min()`
+- `CGAL::max()`
+- `CGAL::is_valid()`
+- `CGAL::Set_ieee_double_precision`
+- `CGAL::Protect_FPU_rounding<Protected>`
+
+
+\todo Document `CGAL_FE_TONEAREST` etc
+*/
+

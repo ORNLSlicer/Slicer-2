@@ -1,0 +1,44 @@
+/// \defgroup PkgSurfaceMeshSegmentationRef Triangulated Surface Mesh Segmentation Reference
+
+/// \defgroup PkgSurfaceMeshSegmentationConcepts Concepts
+/// \ingroup PkgSurfaceMeshSegmentationRef
+
+
+/*!
+\addtogroup PkgSurfaceMeshSegmentationRef
+
+\cgalPkgDescriptionBegin{Triangulated Surface Mesh Segmentation,PkgSurfaceMeshSegmentation}
+\cgalPkgPicture{segmentation_ico.png}
+
+\cgalPkgSummaryBegin
+\cgalPkgAuthor{Ilker %O. Yaz and Sébastien Loriot}
+\cgalPkgDesc{This package provides a method to generate a segmentation of
+              a triangulated surface mesh. The algorithm first computes the
+              <em>Shape Diameter Function</em> (SDF) for all facets and applies a
+              graph-cut based algorithm over these values. Low level functions are
+              provided to replace any intermediate step by a custom one. }
+\cgalPkgManuals{Chapter_3D_SurfaceSegmentation,PkgSurfaceMeshSegmentationRef}
+\cgalPkgSummaryEnd
+
+\cgalPkgShortInfoBegin
+\cgalPkgSince{4.4}
+\cgalPkgDependsOn{\ref PkgAABBTree}
+\cgalPkgBib{cgal:y-smsimpl}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgDemo{Polyhedron demo,polyhedron_3.zip}
+\cgalPkgShortInfoEnd
+
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+\cgalCRPSection{Concepts}
+- `#SegmentationGeomTraits`
+
+\cgalCRPSection{Main Functions}
+- `#CGAL::sdf_values()`
+- `#CGAL::sdf_values_postprocessing()`
+- `#CGAL::segmentation_from_sdf_values()`
+- `#CGAL::segmentation_via_sdf_values()`
+
+*/

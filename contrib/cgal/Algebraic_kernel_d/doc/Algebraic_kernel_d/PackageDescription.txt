@@ -1,0 +1,107 @@
+/// \defgroup PkgAlgebraicKernelDRef Algebraic Kernel Reference
+
+/// \defgroup PkgAlgebraicKernelDConcepts Concepts
+/// \ingroup PkgAlgebraicKernelDRef
+
+/// \defgroup PkgAlgebraicKernelDConceptsUni Univariate Algebraic Kernel
+/// \ingroup PkgAlgebraicKernelDConcepts
+
+/// \defgroup PkgAlgebraicKernelDConceptsBi Bivariate Algebraic Kernel
+/// \ingroup PkgAlgebraicKernelDConcepts
+
+
+/// \defgroup PkgAlgebraicKernelDModels Models
+/// \ingroup PkgAlgebraicKernelDRef
+
+
+/*!
+\addtogroup PkgAlgebraicKernelDRef
+\todo check generated documentation
+\cgalPkgDescriptionBegin{Algebraic Kernel,PkgAlgebraicKernelD}
+\cgalPkgPicture{Algebraic_kernel_d.png}
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Eric Berberich, Michael Hemmer, Michael Kerber, Sylvain Lazard, Luis Peñaranda, and Monique Teillaud}
+\cgalPkgDesc{Real solving of polynomials is a fundamental problem with a wide application range.  This package is targeted to provide black-box implementations of state-of-the-art  algorithms to determine, compare and approximate real roots of univariate polynomials and bivariate polynomial systems. Such a black-box is called an *Algebraic %Kernel*.  So far the package only provides models for the univariate kernel. Nevertheless,  it already defines concepts for the bivariate kernel, since this settles the interface for upcoming implementations.}
+\cgalPkgManuals{Chapter_Algebraic_Kernel,PkgAlgebraicKernelDRef}
+\cgalPkgSummaryEnd
+\cgalPkgShortInfoBegin
+\cgalPkgSince{3.6}
+\cgalPkgDependsOn{Some models depend on \ref thirdpartyRS3.}
+\cgalPkgBib{cgal:bht-ak}
+\cgalPkgLicense{\ref licensesLGPL "LGPL"}
+\cgalPkgShortInfoEnd
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+\cgalCRPSection{Concepts}
+
+\cgalCRPSubsection{Univariate Algebraic %Kernel}
+
+- `AlgebraicKernel_d_1`
+
+- `AlgebraicKernel_d_1::ConstructAlgebraicReal_1`
+- `AlgebraicKernel_d_1::ComputePolynomial_1`
+- `AlgebraicKernel_d_1::Isolate_1`
+- `AlgebraicKernel_d_1::IsSquareFree_1`
+- `AlgebraicKernel_d_1::MakeSquareFree_1`
+- `AlgebraicKernel_d_1::SquareFreeFactorize_1`
+- `AlgebraicKernel_d_1::IsCoprime_1`
+- `AlgebraicKernel_d_1::MakeCoprime_1`
+
+- `AlgebraicKernel_d_1::Solve_1`
+- `AlgebraicKernel_d_1::NumberOfSolutions_1`
+- `AlgebraicKernel_d_1::SignAt_1`
+- `AlgebraicKernel_d_1::IsZeroAt_1`
+- `AlgebraicKernel_d_1::Compare_1`
+- `AlgebraicKernel_d_1::BoundBetween_1`
+- `AlgebraicKernel_d_1::ApproximateAbsolute_1`
+- `AlgebraicKernel_d_1::ApproximateRelative_1`
+
+\cgalCRPSubsection{Bivariate Algebraic %Kernel}
+
+- `AlgebraicKernel_d_2`
+
+- `AlgebraicKernel_d_2::ConstructAlgebraicReal_2`
+- `AlgebraicKernel_d_2::ComputePolynomialX_2`
+- `AlgebraicKernel_d_2::ComputePolynomialY_2`
+- `AlgebraicKernel_d_2::Isolate_2`
+- `AlgebraicKernel_d_2::IsolateX_2`
+- `AlgebraicKernel_d_2::IsolateY_2`
+- `AlgebraicKernel_d_2::IsSquareFree_2`
+- `AlgebraicKernel_d_2::MakeSquareFree_2`
+- `AlgebraicKernel_d_2::SquareFreeFactorize_2`
+- `AlgebraicKernel_d_2::IsCoprime_2`
+- `AlgebraicKernel_d_2::MakeCoprime_2`
+
+- `AlgebraicKernel_d_2::Solve_2`
+- `AlgebraicKernel_d_2::NumberOfSolutions_2`
+
+- `AlgebraicKernel_d_2::SignAt_2`
+- `AlgebraicKernel_d_2::IsZeroAt_2`
+
+- `AlgebraicKernel_d_2::ComputeX_2`
+- `AlgebraicKernel_d_2::ComputeY_2`
+
+- `AlgebraicKernel_d_2::CompareX_2`
+- `AlgebraicKernel_d_2::CompareY_2`
+- `AlgebraicKernel_d_2::CompareXY_2`
+
+- `AlgebraicKernel_d_2::ApproximateAbsoluteX_2`
+- `AlgebraicKernel_d_2::ApproximateRelativeX_2`
+- `AlgebraicKernel_d_2::ApproximateAbsoluteY_2`
+- `AlgebraicKernel_d_2::ApproximateRelativeY_2`
+
+- `AlgebraicKernel_d_2::BoundBetweenX_2`
+- `AlgebraicKernel_d_2::BoundBetweenY_2`
+
+\cgalCRPSection{Models}
+
+- `CGAL::Algebraic_kernel_d_1<Coeff>`
+- `CGAL::Algebraic_kernel_d_2<Coeff>`
+
+- `CGAL::Algebraic_kernel_rs_gmpz_d_1`
+- `CGAL::Algebraic_kernel_rs_gmpq_d_1`
+
+*/
+

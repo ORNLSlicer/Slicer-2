@@ -1,0 +1,39 @@
+/// \defgroup MiscellanyRef Profiling Tools, Hash Map, Union-find, Modifiers Reference
+/// \defgroup MiscellanyConcepts Concepts
+/// \ingroup MiscellanyRef
+/*!
+\addtogroup MiscellanyRef
+\cgalPkgDescriptionBegin{Profiling tools\, Hash Map\, Union-find\, Modifiers,Miscellany}
+\cgalPkgPicture{stopwatch.png}
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Lutz Kettner, Sylvain Pion, and Michael Seel}
+\cgalPkgDesc{This package provides classes for profiling time and memory consumption, profiling macros,  a hash map, a union find data structure and a modifier.}
+\cgalPkgManuals{Chapter_Profiling_Tools_Hash_Map_Union-find_Modifiers,MiscellanyRef}
+\cgalPkgSummaryEnd
+\cgalPkgShortInfoBegin
+\cgalPkgSince{3.2}
+\cgalPkgBib{cgal:kps-pthum}
+\cgalPkgLicense{\ref licensesLGPL  "LGPL"}
+\cgalPkgShortInfoEnd
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+\cgalCRPSection{Concepts}
+- `UniqueHashFunction`
+
+\cgalCRPSection{Classes}
+- `CGAL::Timer`
+- `CGAL::Real_timer`
+- `CGAL::Memory_sizer`
+- `CGAL::Profile_counter`
+
+- `CGAL::Unique_hash_map<Key,Data,UniqueHashFunction>`
+- `CGAL::Handle_hash_function`
+
+- `CGAL::Union_find<T,A>`
+
+- `CGAL::Modifier_base<R>`
+
+*/
+

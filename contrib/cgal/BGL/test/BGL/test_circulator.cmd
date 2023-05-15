@@ -1,0 +1,1 @@
+${CGAL_DATA_DIR}/meshes/cube.off

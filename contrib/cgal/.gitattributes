@@ -1,0 +1,104 @@
+# Set default behaviour, in case users don't have core.autocrlf set.
+* text=auto
+
+# Explicitly declare text files we want to always be normalized and converted
+# to native line endings on checkout.
+*.cpp text
+*.c text
+*.h text linguist-language=C++
+*.hpp text
+*.tex text
+*.txt text
+*.cin text
+*.xpm text
+*.cmd text
+*.lua text
+*.py text
+*.xml text
+*.js text
+*.hmtl text
+*.bib text
+*.css text
+*.ui text
+*.qrc text
+*.off text
+*.inc text
+*.nef text
+*.nef3 text
+*.xyz text
+*.qhcp text
+*.qhp text
+*.pwn text linguist-detectable=false
+*.poly text
+*.rb text
+*.perl text
+*.pdb text
+
+# Nef_3 data files
+*.EH linguist-detectable=false
+*.SH linguist-detectable=false
+
+# Declare files that will always have LF line endings on checkout.
+*.sh text eol=lf
+Documentation/Doxyfile text eol=lf
+Documentation/pkglist_filter text eol=lf
+Installation/update_CHANGES text eol=lf
+Scripts/developer_scripts/autotest_cgal text eol=lf
+Scripts/developer_scripts/autotest_cgal_with_cmake text eol=lf
+Scripts/developer_scripts/cgal_build text eol=lf
+Scripts/developer_scripts/cgal_depend text eol=lf
+Scripts/developer_scripts/cgal_git_update_hooks_for_client text eol=lf
+Scripts/developer_scripts/cgal_test_with_cmake text eol=lf
+Scripts/developer_scripts/cgal2gml text eol=lf
+Scripts/developer_scripts/check_library_uses_no_gpl_files text eol=lf
+Scripts/developer_scripts/check_licenses text eol=lf
+Scripts/developer_scripts/check_macro_names text eol=lf
+Scripts/developer_scripts/check_no_CGAL_USE_without_includes_before text eol=lf
+Scripts/developer_scripts/check_svn_keywords text eol=lf
+Scripts/developer_scripts/create_cgal_test text eol=lf
+Scripts/developer_scripts/create_cgal_test_with_cmake text eol=lf
+Scripts/developer_scripts/create_internal_release text eol=lf
+Scripts/developer_scripts/create_macosx_installer text eol=lf
+Scripts/developer_scripts/create_new_release text eol=lf
+Scripts/developer_scripts/detect_files_with_mixed_eol_styles text eol=lf
+Scripts/developer_scripts/detect_packages_licenses text eol=lf
+Scripts/developer_scripts/licensecheck text eol=lf
+Scripts/developer_scripts/list_cgal_includes text eol=lf
+Scripts/developer_scripts/test_license_check text eol=lf
+Scripts/developer_scripts/test_testsuite_submission text eol=lf
+Scripts/developer_scripts/update_git_svn_clone text eol=lf
+Scripts/developer_scripts/clean_up_branch.sh text eol=lf
+Scripts/developer_scripts/create_demos_zip_files.sh text eol=lf
+Scripts/scripts/cgal_create_cmake_script text eol=lf
+Scripts/scripts/cgal_create_CMakeLists text eol=lf
+Scripts/scripts/cgal_create_assertions.sh text eol=lf
+
+# Declare files that will always have CRLF line endings on checkout.
+*.sln text eol=crlf
+*.bat text eol=crlf
+*.nsh text eol=crlf
+*.vcproj  text eol=crlf
+
+# Denote all files that are truly binary and should not be modified.
+*.png binary
+*.jpg binary
+*.gif binary
+*.bmp binary
+*.pdf binary
+*.jpeg binary
+*.doc binary
+*.mws binary
+*.odp binary
+*.ppt binary
+*.fig binary
+*.svg binary
+*.ipe binary
+*.rtf binary
+*.gz binary
+*.pcx binary
+*.ips binary
+*.suo binary
+*.ico binary
+*.inr binary
+*.zip binary
+*.xls binary

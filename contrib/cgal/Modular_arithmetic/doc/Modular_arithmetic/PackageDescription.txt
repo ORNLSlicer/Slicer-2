@@ -1,0 +1,32 @@
+/// \defgroup PkgModularArithmeticRef Modular Arithmetic Reference
+/// \defgroup PkgModularArithmeticConcepts Concepts
+/// \ingroup PkgModularArithmeticRef
+/*!
+\addtogroup PkgModularArithmeticRef
+\cgalPkgDescriptionBegin{Modular Arithmetic,PkgModularArithmetic}
+\cgalPkgPicture{Modular_arithmetic.png}
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Michael Hemmer and Sylvain Pion}
+\cgalPkgDesc{This package provides arithmetic over finite fields. The provided tools are in particular useful for filters based on  modular arithmetic and algorithms based on Chinese remainder. }
+\cgalPkgManuals{Chapter_Modular_Arithmetic,PkgModularArithmeticRef}
+\cgalPkgSummaryEnd
+\cgalPkgShortInfoBegin
+\cgalPkgSince{3.4}
+\cgalPkgBib{cgal:h-ma}
+\cgalPkgLicense{\ref licensesLGPL  "LGPL"}
+\cgalPkgShortInfoEnd
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+\cgalCRPSection{Concepts}
+- `Modularizable`
+- `ModularTraits`
+- `ModularTraits::ModularImage`
+- `ModularTraits::ModularImageRepresentative`
+
+\cgalCRPSection{Types}
+- `CGAL::Residue`
+- `CGAL::Modular_traits<T>`
+
+*/

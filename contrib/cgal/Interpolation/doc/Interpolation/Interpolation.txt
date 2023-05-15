@@ -1,0 +1,453 @@
+namespace CGAL {
+/*!
+
+\mainpage User Manual
+\anchor Chapter_2D_and_Surface_Function_Interpolation
+\anchor chapinterpolation
+\cgalAutoToc
+
+\authors Julia Fl&ouml;totto
+
+This package implements various neighbor coordinate computation functions
+as well as different methods for scattered data interpolation.
+Computation of natural and regular neighbor coordinates in 2D Euclidean space
+is described in Section \ref seccoordinates.
+Coordinate and neighbor computations on surfaces are discussed in Section \ref secsurface.
+Finally, we describe the different interpolation methods offered by this package
+in Section \ref secinterpolation.
+
+Scattered data interpolation solves the following problem: given
+measures of a function on a set of discrete data points, how to interpolate
+this function at an arbitrary query point.
+More formally, let \f$ \mathcal{P}=\{\mathbf{p_1},\ldots ,\mathbf{p_n}\}\f$ be a set of
+\f$ n\f$ points in \f$ \mathbb{R}^2\f$ or \f$ \mathbb{R}^3\f$ and \f$ \Phi\f$ be a scalar
+function defined on the convex hull of \f$ \mathcal{P}\f$. We assume that
+the function values are known at the points of \f$ \mathcal{P}\f$, i.e.\ to
+each \f$ \mathbf{p_i} \in \mathcal{P}\f$, we associate \f$ z_i =
+\Phi(\mathbf{p_i})\f$. Knowledge of the gradient of \f$ \Phi\f$ at \f$ \mathbf{p_i}\f$
+is also sometimes required. It is then denoted \f$ \mathbf{g_i}= \nabla
+\Phi(\mathbf{p_i})\f$. The interpolation is carried out at an arbitrary query point
+\f$ \mathbf{x}\f$ on the convex hull of \f$ \mathcal{P}\f$.
+
+\section seccoordinates Natural Neighbor Coordinates
+
+Most interpolation methods offered by this package rely on 2D natural and regular
+neighbor coordinates, which we describe in this section.
+
+\subsection InterpolationIntroduction Introduction
+
+Natural neighbor interpolation was introduced by Sibson
+\cgalCite{s-bdnni-81} to interpolate multivariate scattered data. Given
+a set of data points \f$ \mathcal{P}\f$, the natural neighbor coordinates
+associated to \f$ \mathcal{P}\f$ are defined from the Voronoi diagram of
+\f$ \mathcal{P}\f$. When simulating the insertion of a query point
+\f$ \mathbf{x}\f$ into the Voronoi diagram of \f$ \mathcal{P}\f$, the potential
+Voronoi cell of \f$ \mathbf{x}\f$ "steals" some parts from neighboring existing
+cells.
+
+\cgalFigureBegin{fignn_coords, nn_coords.svg}
+2D example: \f$ \mathbf{x}\f$ has five natural neighbors \f$ \mathbf{p_1},\ldots, \mathbf{p_5}\f$.
+The natural neighbor coordinate \f$ \lambda_3(\mathbf{x})\f$ is the ratio of the area of the purple
+polygon, \f$ \pi_3(\mathbf{x})\f$, over the area of the total highlighted zone.
+\cgalFigureEnd
+
+Let \f$ \pi(\mathbf{x})\f$ denote the volume of the potential Voronoi cell
+of \f$ \mathbf{x}\f$ and \f$ \pi_i(\mathbf{x})\f$ denote the volume of the
+sub-cell that would be stolen from the cell of \f$ \mathbf{p_i}\f$ by the
+cell of \f$ \mathbf{x}\f$. The natural neighbor coordinate of \f$ \mathbf{x}\f$
+with respect to the data point \f$ \mathbf{p_i}\in \mathcal{P}\f$ is defined by
+\f[
+\lambda_i(\mathbf{x}) =
+\frac{\pi_i(\mathbf{x})}{\pi(\mathbf{x})}. \f]
+A two-dimensional example
+is depicted in \cgalFigureRef{fignn_coords}.
+
+Various papers (\cgalCite{b-scaps-97}, \cgalCite{f-sodt-90}, \cgalCite{hs-vbihc-00},
+\cgalCite{cgal:p-plcbd-93}, \cgalCite{s-vidt-80}) show that
+the natural neighbor coordinates exhibit the following properties:
+- \f$ \mathbf{x} = \sum_{i=1}^n \lambda_i(\mathbf{x}) \mathbf{p_i}\f$
+(barycentric coordinate property).
+- For any \f$ i,j \leq n, \lambda_i(\mathbf{p_j}) =
+\delta_{ij}\f$, where \f$ \delta_{ij}\f$ is the Kronecker symbol.
+- \f$ \sum_{i=1}^n \lambda_i(\mathbf{x}) = 1\f$ (partition of unity
+property).
+
+When the query point x is located on the envelope of the convex hull of \f$ \mathcal{P}\f$,
+the potential Voronoi cell of x becomes infinite and:
+- \f$ \pi(\mathbf{x}) = \infty\f$
+- \f$ \lambda_i(\mathbf{x}) = 0 \f$, for all data point \f$ \mathbf{p_i}\f$ of \f$ \mathcal{P}\f$
+except for the two endpoints -- say \f$ \mathbf{p}\f$ and \f$ \mathbf{q}\f$ -- of the edge where \f$ x\f$ lies.
+
+The natural neighbor coordinate of \f$ \mathbf{x}\f$ with respect to these endpoints \f$ \mathbf{p}\f$
+and \f$ \mathbf{q}\f$ will be:
+- \f$ \lambda_p(\mathbf{x}) = \frac{\|\mathbf{x} - \mathbf{q}\| }{ \|\mathbf{q} - \mathbf{p}\|} \f$
+- \f$ \lambda_q(\mathbf{x}) = \frac{\|\mathbf{x} - \mathbf{p}\| }{ \|\mathbf{q} - \mathbf{p}\|} \f$
+
+Furthermore, Piper \cgalCite{cgal:p-plcbd-93} shows that the coordinate
+functions are continuous in the convex hull of \f$ \mathcal{P}\f$ and
+continuously differentiable except on the data points \f$ \mathcal{P}\f$.<BR>
+
+\subsection InterpolationIntroductionRegular Regular Neighbor Coordinates
+
+The previous definition naturally extends to weighted Voronoi diagrams. These
+diagrams, also known as <em>power diagrams</em>, are obtained by considering weighted points
+(the weight being a scalar) and considering a weighted distance, the <em>power distance</em>,
+defined between two weighted points \f$ (p, \omega_p) \f$ and \f$ (q, \omega_q) \f$ by
+\f$ \Pi( (p, \omega_p), (q, \omega_q) ) = pq^2 - \omega_p - \omega_q \f$.
+See \ref Subsection_2D_Triangulations_Regular_Description "this section"
+of the package \ref PkgTriangulation2 for an in-depth description of power diagrams.
+
+\cgalFigureBegin{figrn_coords, rn_coords.svg}
+Illustration of regular neighbor coordinates. The point set is the same
+as in \cgalFigureRef{fignn_coords} but weights have been added. These weights
+are shown using circles, with the radius of each circle being equal to the
+square root of the weight of the point.
+\cgalFigureEnd
+
+\warning Contrary to Voronoi diagrams, a weighted point \f$ p_i\f$ does not necessarily
+possess a non-empty cell in the power diagram of \f$ \mathcal{P}\f$ (with
+\f$ p_i\in\mathcal{P}\f$). When this is the case, that point is then said to be <em>hidden</em>
+and all of its regular neighbor coordinates are null.
+
+\subsection InterpolationImplementation Implementation
+
+The interpolation package of \cgal provides functions to compute
+natural and regular neighbor coordinates for \f$ 2D\f$ points.
+Refer to the reference pages `natural_neighbor_coordinates_2()` and
+`regular_neighbor_coordinates_2()`.
+In addition, the package provides functions to compute natural
+neighbor coordinates on well sampled point set surfaces. See
+Section \ref secsurface and the reference page
+`surface_neighbor_coordinates_3()` for further information.
+
+\subsubsection InterpolationCoordinateComputationApproach Computation of the Coordinates
+
+Given a Delaunay triangulation or a regular triangulation, our implementation
+computes natural and regular neighbor coordinates in two steps.
+Firstly, the vertices in conflict with the query point (that is, the vertices
+from which the query point will "steal") are determined. Then, the areas
+\f$ \pi_i(\mathbf{x})\f$ are computed by triangulating the Voronoi
+sub-cells. The output is threefold:
+- points (or vertices) with a non-null coordinate along with these coordinates \f$ \pi_i(\mathbf{x})\f$,
+- the normalization factor \f$ \pi(\mathbf{x})\f$,
+- a Boolean indicator on whether the coordinate computation was successful
+(which is equivalent to a Boolean indicating whether the query point lies in the
+convex hull or not).
+
+Note that if the query point has already been located in the triangulation (for example using
+functions such as \link Triangulation_2::locate() locate()\endlink) and/or the boundary
+edges of the conflict zone are already determined, alternative functions
+allow to avoid the re-computation (see \ref PkgInterpolationNaturalNeighborCoordinates2
+and \ref PkgInterpolationRegularNeighborCoordinates2).
+
+\subsection InterpolationExampleforCoordinates Examples
+
+This section presents some examples of utilization of the natural and regular
+neighbor coordinates computation methods. Sections \ref InterpolationExampleforNaturalNeighborCoordinates
+and \ref InterpolationExampleforRegularNeighborCoordinates show basic examples
+of the computation of natural and regular neighbor coordinates.
+Section \ref InterpolationExampleforRegularNeighborCoordinates shows a more
+advanced use case of the API, where a functor is passed to change the output.
+
+\subsubsection InterpolationExampleforNaturalNeighborCoordinates Example for Natural Neighbor Coordinates
+
+The signature of all coordinate computation functions is about the
+same.
+\cgalExample{Interpolation/nn_coordinates_2.cpp}
+
+\subsubsection InterpolationExampleforRegularNeighborCoordinates Example for Regular Neighbor Coordinates
+
+For regular neighbor coordinates, it is sufficient to replace the name
+of the function and the type of triangulation passed as parameter, as shown
+in the example below:
+
+\cgalExample{Interpolation/rn_coordinates_2.cpp}
+
+\subsubsection InterpolationExampleforOutputFunctor Formatting the Output Coordinates
+
+Internally, natural or regular neighbor coordinates are associated to the vertices of
+the triangulation via objects of type `std::pair<Vertex_handle, Coord_type>`,
+where `Coord_type` is the number type of the coordinates.
+By default and for backward compatibility reasons, this output is converted
+into objects of type `std::pair<Point, Coord_type>`, where `Point` is a bare
+(weightless) point.
+
+It is however possible to collect the output as objects of any desired
+type, for example the simple `Point` type, by passing a functor as extra parameter
+of the coordinates computation function.
+The argument type of this functor must be `std::pair<Vertex_handle, Coord_type>`
+and the result type is chosen by the user, but must be consistent with the output iterator.
+Usage of this parameter is demonstrated in the example below, where the output is
+kept as objects of type `std::pair<Vertex_handle, Coord_type>`, which allows
+us to then store the coordinate in the vertex, using the class
+`CGAL::Triangulation_vertex_base_with_info_2`.
+
+\cgalExample{Interpolation/nn_coordinates_with_info_2.cpp}
+
+\section secsurface Surface Natural Neighbor Coordinates and Surface Neighbors
+
+This section introduces functions to compute natural neighbor
+coordinates and surface neighbors associated to a set of sample points
+issued from a surface \f$ \mathcal{S}\f$ and given a query point
+\f$ \mathbf{x}\f$ on \f$ \mathcal{S}\f$. We assume that \f$ \mathcal{S}\f$ is a
+closed and compact surface of \f$ \mathbb{R}^3\f$, and let \f$ \mathcal{P}=
+\{\mathbf{p_1}, \ldots,\mathbf{p_n}\}\f$ be an \f$ \epsilon\f$-sample of
+\f$ \mathcal{S}\f$ (refer to Amenta and Bern \cgalCite{ab-srvf-99}). The
+concepts are based on the definition of Boissonnat and Fl&ouml;totto
+\cgalCite{bf-lcss-02}, \cgalCite{cgal:f-csapc-03}. Both references
+contain a thorough description of the requirements and the
+mathematical properties.
+
+\subsection InterpolationIntroduction_1 Introduction
+
+Two observations lead to the definition of surface neighbors and
+surface neighbor coordinates: First, it is clear that the tangent
+plane \f$ \mathcal{T}_x\f$ of the surface \f$ \mathcal{S}\f$ at the point
+\f$ \mathbf{x} \in \mathcal{S}\f$ approximates \f$ \mathcal{S}\f$ in the
+neighborhood of \f$ \mathbf{x}\f$. It has been shown in \cgalCite{bf-lcss-02}
+that, if the surface \f$ \mathcal{S}\f$ is well sampled with respect to the
+curvature and the local thickness of \f$ \mathcal{S}\f$, i.e.\ it is an \f$ \epsilon\f$-sample,
+then the intersection of the tangent plane \f$ \mathcal{T}_x\f$ with the Voronoi cell of
+\f$ \mathbf{x}\f$ in the Voronoi diagram of \f$ \mathcal{P} \cup
+\{\mathbf{x}\}\f$ has a small diameter. Consequently, inside this
+Voronoi cell, the tangent plane \f$ \mathcal{T}_x\f$ is a reasonable
+approximation of \f$ \mathcal{S}\f$. Furthermore, the second observation
+allows to compute this intersection diagram easily: one can show using
+Pythagoras' Theorem that the intersection of a three-dimensional
+Voronoi diagram with a plane \f$ \mathcal{H}\f$ is a two-dimensional power
+diagram. The points defining the power diagram are the projections of
+the points in \f$ \mathcal{P}\f$ onto \f$ \mathcal{H}\f$, each point weighted
+with its negative square distance to \f$ \mathcal{H}\f$. Algorithms for the
+computation of power diagrams via the dual regular triangulation are
+well known and for example provided by \cgal in the class
+`Regular_triangulation_2<Gt, Tds>`.
+
+\subsection InterpolationImplementation_1 Implementation
+
+\subsubsection InterpolationVoronoiIntersectionDiagrams Voronoi Intersection Diagrams
+
+In \cgal, the regular triangulation dual to the intersection of a \f$ 3D\f$
+Voronoi diagram with a plane \f$ \mathcal{H}\f$ can be computed by
+instantiating the `Regular_triangulation_2<Gt, Tds>` class with
+the traits class `Voronoi_intersection_2_traits_3<K>`. This traits
+class contains a point and a vector as class member which define the
+plane \f$ \mathcal{H}\f$. All predicates and constructions used by
+`Regular_triangulation_2<Gt, Tds>` are replaced by the
+corresponding operators on three-dimensional points. For example, the
+power test predicate (which takes three weighted \f$ 2D\f$ points
+\f$ p'\f$, \f$ q'\f$, \f$ r'\f$ of the regular triangulation and tests the power
+distance of a fourth point \f$ t'\f$ with respect to the power circle orthogonal
+to \f$ p\f$, \f$ q\f$, \f$ r\f$) is replaced by a
+`Side_of_plane_centered_sphere_2_3` predicate that tests the
+position of a \f$ 3D\f$ point \f$ t\f$ with respect to the sphere centered on
+the plane \f$ \mathcal{H}\f$ passing through the \f$ 3D\f$ points \f$ p\f$, \f$ q\f$, \f$ r\f$.
+This approach allows to avoid the explicit construction of the
+projected points and the weights, operations which are very prone to rounding
+errors.
+
+\subsubsection InterpolationNaturalNeighborCoordinateson Natural Neighbor Coordinates on Surfaces
+
+The computation of natural neighbor coordinates on surfaces is based
+upon the computation of regular neighbor coordinates with respect to
+the regular triangulation that is dual to \f$ {\rm Vor}(\mathcal{P}) \cap
+\mathcal{T}_x\f$, the intersection of \f$ \mathcal{T}_x\f$ and the Voronoi
+diagram of \f$ \mathcal{P}\f$, via the function
+`regular_neighbor_coordinates_2()`.
+
+Of course, we might introduce all data points \f$ \mathcal{P}\f$ into this
+regular triangulation. However, this is not necessary because we are
+only interested in the cell of \f$ \mathbf{x}\f$. It is sufficient to
+guarantee that all surface neighbors of the query point \f$ \mathbf{x}\f$
+are among the input points that are passed as argument to the
+function. The sample points \f$ \mathcal{P}\f$ can be filtered for example
+by distance, e.g. using range search or \f$ k\f$-nearest neighbor queries,
+or with the help of the \f$ 3D\f$ Delaunay triangulation since the surface
+neighbors are necessarily a subset of the natural neighbors of the
+query point in this triangulation. \cgal provides a function that
+encapsulates the filtering based on the \f$ 3D\f$ Delaunay triangulation.
+For input points filtered by distance, functions are provided that
+indicate whether or not points that lie outside the input range (i.e.\
+points that are further from \f$ \mathbf{x}\f$ than the furthest input
+point) can still influence the result. This allows to iteratively
+enlarge the set of input points until the range is sufficient to
+certify the result.
+
+\subsubsection InterpolationSurfaceNeighbors Surface Neighbors
+
+The surface neighbors of the query point are its neighbors in the
+regular triangulation that is dual to \f$ {\rm Vor}(\mathcal{P}) \cap
+\mathcal{T}_x\f$, the intersection of \f$ \mathcal{T}_x\f$ and the Voronoi
+diagram of \f$ \mathcal{P}\f$. As for surface neighbor coordinates, this
+regular triangulation is computed and the same kind of filtering of
+the data points as well as the certification described above is
+provided.
+
+\subsection InterpolationExampleforSurfaceNeighborCoordinates Example for Surface Neighbor Coordinates
+
+The example below describes the usage of the function `CGAL::surface_neighbor_coordinates_3()`.
+
+\cgalExample{Interpolation/surface_neighbor_coordinates_3.cpp}
+
+\section secinterpolation Interpolation Methods
+
+We describe in this section the different interpolation methods offered by this package.
+These can be regrouped into two large classes: values and gradient interpolation
+methods.
+
+\subsection InterpolationIntroduction_2 Interpolation of Function Values
+
+The interpolation functions presented below are used to interpolate function values.
+
+\subsubsection InterpolationLinearPrecisionInterpolation Linear Precision Interpolation
+
+Sibson \cgalCite{s-bdnni-81} defines a very simple interpolant that
+re-produces linear functions exactly. The interpolation of
+\f$ \Phi(\mathbf{x})\f$ is given as the linear combination of the neighbors' function
+values weighted by the coordinates:
+\f[
+Z^0(\mathbf{x}) = \ccSum{i}{}{ \lambda_i(\mathbf{x}) z_i}.
+\f]
+Indeed, if \f$ z_i=a + \mathbf{b}^t \mathbf{p_i}\f$ for all natural
+neighbors of \f$ \mathbf{x}\f$, we have
+\f[ Z^0(\mathbf{x}) = \ccSum{i}{}{ \lambda_i(\mathbf{x}) (a + \mathbf{b}^t\mathbf{p_i})} = a+\mathbf{b}^t \mathbf{x} \f]
+by the barycentric coordinate property.
+
+This interpolation is implemented through the function `        CGAL::linear_interpolation()`.
+The first example in Subsection \ref subsecinterpol_examples shows how the function is
+called.
+
+\subsubsection InterpolationSibson Sibson's C^1 Continuous Interpolant
+
+In \cgalCite{s-bdnni-81}, Sibson describes a second interpolation method
+that relies also on the function gradient \f$ \mathbf{g_i}\f$ for all \f$ \mathbf{p_i} \in \mathcal{P}\f$. It is \f$ C^1\f$ continuous with gradient \f$ \mathbf{g_i}\f$ at
+\f$ \mathbf{p_i}\f$. Spherical quadrics of the form \f$ \Phi(\mathbf{x}) =a +
+\mathbf{b}^t \mathbf{x} +\gamma\ \mathbf{x}^t\mathbf{x}\f$ are reproduced
+exactly. The
+proof relies on the barycentric coordinate property of the natural
+neighbor coordinates and assumes that the gradient of \f$ \Phi\f$ at the
+data points is known or approximated from the function values as
+described in \cgalCite{s-bdnni-81} (see Section \ref sgradient_fitting).
+
+Sibson's \f$ Z^1\f$ interpolant is a combination of the linear interpolant
+\f$ Z^0\f$ and an interpolant \f$ \xi\f$ which is the weighted sum of the first
+degree functions
+\f[ \xi_i(\mathbf{x}) = z_i
++\mathbf{g_i}^t(\mathbf{x}-\mathbf{p_i}),\qquad \xi(\mathbf{x})= \frac{\ccSum{i}{}{ \frac{\lambda_i(\mathbf{x})}
+{\|\mathbf{x}-\mathbf{p_i}\|}\xi_i(\mathbf{x}) } }{\ccSum{i}{}{
+\frac{\lambda_i(\mathbf{x})}{\|\mathbf{x}-\mathbf{p_i}\|}}}. \f]
+Sibson observed that the combination of \f$ Z^0\f$ and \f$ \xi\f$ reconstructs exactly
+a spherical quadric if they are mixed as follows:
+\f[
+Z^1(\mathbf{x}) = \frac{\alpha(\mathbf{x}) Z^0(\mathbf{x}) +
+\beta(\mathbf{x}) \xi(\mathbf{x})}{\alpha(\mathbf{x}) +
+\beta(\mathbf{x})} \mbox{ where } \alpha(\mathbf{x}) =
+\frac{\ccSum{i}{}{ \lambda_i(\mathbf{x}) \frac{\|\mathbf{x} -
+\mathbf{p_i}\|^2}{f(\|\mathbf{x} - \mathbf{p_i}\|)}}}{\ccSum{i}{}{
+\frac{\lambda_i(\mathbf{x})} {f(\|\mathbf{x} - \mathbf{p_i}\|)}}}
+\mbox{ and } \beta(\mathbf{x})= \ccSum{i}{}{ \lambda_i(\mathbf{x})
+\|\mathbf{x} - \mathbf{p_i}\|^2}, \f]
+where in Sibson's original work,
+\f$ f(\|\mathbf{x} - \mathbf{p_i}\|) = \|\mathbf{x} - \mathbf{p_i}\|\f$.
+
+This interpolation method can be used by calling `CGAL::sibson_c1_interpolation()`.
+
+\cgal contains a second implementation using \f$ f(\|\mathbf{x} -
+\mathbf{p_i}\|) = \|\mathbf{x} - \mathbf{p_i}\|^2\f$, `CGAL::sibson_c1_interpolation_square()`,
+which is less demanding on the number type because it avoids the square-root
+computation needed to compute the distance \f$ \|\mathbf{x} -
+\mathbf{p_i}\|\f$. The theoretical guarantees are the same (see
+\cgalCite{cgal:f-csapc-03}). Simply, the smaller the slope of \f$ f\f$
+around \f$ f(0)\f$, the faster the interpolant approaches \f$ \xi_i\f$ as
+\f$ \mathbf{x} \f$ goes to \f$ \mathbf{p_i}\f$.
+
+\subsubsection InterpolationFarin Farin's C^1 Continuous Interpolant
+
+Farin \cgalCite{f-sodt-90} extended Sibson's work and realizes a \f$ C^1\f$
+continuous interpolant by embedding natural neighbor coordinates in
+the Bernstein-B&eacute;zier representation of a cubic simplex. If the
+gradient of \f$ \Phi\f$ at the data points is known, this interpolant
+reproduces quadratic functions exactly. The function gradient can be
+approximated from the function values by Sibson's method
+\cgalCite{s-bdnni-81} (see Section \ref sgradient_fitting) which is exact only
+for spherical quadrics.
+
+The Farin \f$ C^1\f$-continuous interpolant is implemented in the function
+`CGAL::farin_c1_interpolation()`.
+
+\subsubsection InterpolationQuadraticPrecisionInterpolants Quadratic Precision Interpolants
+
+Knowing the gradient \f$ \mathbf{g_i}\f$ for all \f$ \mathbf{p_i} \in
+\mathcal{P}\f$, we formulate a very simple interpolant that reproduces
+exactly quadratic functions. This interpolant is not \f$ C^1\f$ continuous
+in general. It is defined as follows:
+\f[
+I^1(\mathbf{x}) = \ccSum{i}{}{ \lambda_i(\mathbf{x})
+(z_i + \frac{1}{2} \mathbf{g_i}^t (\mathbf{x} - \mathbf{p_i}))}
+\f]
+
+This interpolation can be used with the method `CGAL::quadratic_interpolation()`.
+
+\subsection sgradient_fitting Gradient Fitting
+
+Sibson describes a method to approximate the gradient of the function
+\f$ f\f$ from the function values on the data sites. For the data point
+\f$ \mathbf{p_i}\f$, we determine
+\f[ \mathbf{g_i}
+= \min_{\mathbf{g}}
+\ccSum{j}{}{
+\frac{\lambda_j(\mathbf{p_i})}{\|\mathbf{p_i} - \mathbf{p_j}\|^2}
+\left( z_j - (z_i + \mathbf{g}^t (\mathbf{p_j} -\mathbf{p_i})) \right)},
+\f]
+where \f$ \lambda_j(\mathbf{p_i})\f$ is the natural neighbor coordinate
+of \f$ \mathbf{p_i}\f$ with respect to \f$ \mathbf{p_i}\f$ associated to
+\f$ \mathcal{P} \setminus \{\mathbf{p_i}\}\f$. For spherical quadrics, the result is exact.
+
+\cgal provides functions to approximate the gradients of all data
+points that are inside the convex hull. There is one function for each
+type of neighbor coordinates:
+- `natural_neighbor_coordinates_2()`: `CGAL::sibson_gradient_fitting_nn_2()`
+- `regular_neighbor_coordinates_2()`: `CGAL::sibson_gradient_fitting_rn_2()`.
+
+\subsection subsecinterpol_examples Example for Linear Interpolation
+
+The example below shows a typical example of the usage of `CGAL::linear_interpolation()`.
+Note the use of `CGAL::Data_access` to transform the `std::map` in a functor
+compatible with the function.
+
+\cgalExample{Interpolation/linear_interpolation_2.cpp}
+
+The next example shows the interpolation of non-scalar values, namely `Vector_3`.
+It may be any type `T` which provides a  multiplication operator with a scalar, and
+the addition operator for `T`.
+
+\cgalExample{Interpolation/linear_interpolation_of_vector_3.cpp}
+
+\subsection InterpolationExampleSibson Example for Sibson's C^1 Interpolation Scheme with Gradient Estimation
+
+\cgalExample{Interpolation/sibson_interpolation_2.cpp}
+
+The example \link Interpolation/interpolation_2.cpp interpolation_2.cpp \endlink
+compares numerically the errors of the different interpolation functions
+with respect to a known function.
+
+\subsection InterpolationExampleVertices Example for Storing Values and Gradients in Vertices
+
+In the previous examples, we have stored the values and gradients in a `std::map`
+and wrapped them in a `CGAL::Data_access` object. We can avoid this "external" storage by
+using the class `Triangulation_vertex_base_with_info_2` provided by the triangulation package:
+values and gradients can be stored directly in the vertices of the triangulation.
+Functors and output iterators requested by the gradient fitting and interpolation functions
+are then simply wrappers providing read/write accesses to the `info` member of the vertices.
+This approach is shown in the example below.
+
+\cgalExample{Interpolation/sibson_interpolation_vertex_with_info_2.cpp}
+
+\section Interpolation Design and Implementation History
+
+The original version was written by Julia Fl&ouml;totto, while working towards her PhD thesis at Inria.
+The possibility to use values and gradients in a `Triangulation_vertex_base_with_info_2` was introduced
+by Andreas Fabri and Mael Rouxel-Labb&eacute; working at GeometryFactory.
+
+*/
+} /* namespace CGAL */
+

@@ -1,0 +1,153 @@
+/// \defgroup PkgCircularKernel2Ref 2D Circular Geometry Kernel Reference
+
+/// \defgroup PkgCircularKernel2GeometricConcepts Geometric Concepts
+/// \ingroup PkgCircularKernel2Ref
+
+
+/// \defgroup PkgCircularKernel2GeometricClasses Geometric Kernel and Classes
+/// \ingroup PkgCircularKernel2Ref
+
+
+/// \defgroup PkgCircularKernel2GeometricFunctions Geometric Global Functions
+/// \ingroup PkgCircularKernel2Ref
+
+
+/// \defgroup PkgCircularKernel2AlgebraicConcepts Algebraic Concepts
+/// \ingroup PkgCircularKernel2Ref
+
+
+/// \defgroup PkgCircularKernel2AlgebraicClasses Algebraic Kernel and Classes
+/// \ingroup PkgCircularKernel2Ref
+
+
+/*!
+\addtogroup PkgCircularKernel2Ref
+\todo check generated documentation
+\cgalPkgDescriptionBegin{2D Circular Geometry Kernel,PkgCircularKernel2}
+\cgalPkgPicture{Boolean_operation_detail.png}
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Pedro Machado Manhães de Castro, Sylvain Pion, and Monique Teillaud}
+\cgalPkgDesc{This package is an extension of the linear \cgal kernel. It offers functionalities on circles, circular arcs and line segments in the plane.  }
+\cgalPkgManuals{Chapter_2D_Circular_Geometry_Kernel,PkgCircularKernel2Ref}
+\cgalPkgSummaryEnd
+\cgalPkgShortInfoBegin
+\cgalPkgSince{3.2}
+\cgalPkgBib{cgal:cpt-cgk2}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgDemo{Arrangement of Circular Arcs,circular_kernel.zip}
+\cgalPkgShortInfoEnd
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+\cgalCRPSection{Geometric Concepts}
+
+- `CircularKernel`
+
+\cgalCRPSubsection{Functors}
+
+- `CircularKernel::ConstructLine_2`
+- `CircularKernel::ConstructCircle_2`
+- `CircularKernel::ConstructCircularArcPoint_2`
+- `CircularKernel::ConstructLineArc_2`
+- `CircularKernel::ConstructCircularArc_2`
+- `CircularKernel::ComputeCircularX_2`
+- `CircularKernel::ComputeCircularY_2`
+- `CircularKernel::ConstructCircularMinVertex_2`
+- `CircularKernel::ConstructCircularMaxVertex_2`
+- `CircularKernel::ConstructCircularSourceVertex_2`
+- `CircularKernel::ConstructCircularTargetVertex_2`
+- `CircularKernel::ConstructBbox_2`
+- `CircularKernel::CompareX_2`
+- `CircularKernel::CompareY_2`
+- `CircularKernel::CompareXY_2`
+- `CircularKernel::Equal_2`
+- `CircularKernel::CompareYatX_2`
+- `CircularKernel::CompareYtoRight_2`
+- `CircularKernel::HasOn_2`
+- `CircularKernel::DoOverlap_2`
+- `CircularKernel::DoIntersect_2`
+- `CircularKernel::BoundedSide_2`
+- `CircularKernel::HasOnBoundedSide_2`
+- `CircularKernel::HasOnUnboundedSide_2`
+- `CircularKernel::InXRange_2`
+- `CircularKernel::IsVertical_2`
+- `CircularKernel::IsXMonotone_2`
+- `CircularKernel::IsYMonotone_2`
+- `CircularKernel::MakeXMonotone_2`
+- `CircularKernel::MakeXYMonotone_2`
+- `CircularKernel::Intersect_2`
+- `CircularKernel::Split_2`
+- `CircularKernel::GetEquation`
+
+\cgalCRPSection{Geometric Kernels and Classes}
+
+\cgalCRPSubsection{Kernels}
+
+- `CGAL::Circular_kernel_2<Kernel,AlgebraicKernelForCircles>`
+- `CGAL::Exact_circular_kernel_2`
+
+\cgalCRPSubsection{Points}
+
+- `CGAL::Circular_arc_point_2<CircularKernel>`
+
+\cgalCRPSubsection{Arcs}
+
+- `CGAL::Circular_arc_2<CircularKernel>`
+- `CGAL::Line_arc_2<CircularKernel>`
+
+\cgalCRPSection{Geometric Global Functions}
+
+- \link compare_x_circular_grp `CGAL::compare_x()` \endlink
+- \link compare_y_circular_grp `CGAL::compare_y()` \endlink
+- \link compare_xy_circular_grp `CGAL::compare_xy()` \endlink
+- \link compare_y_at_x_grp `CGAL::compare_y_at_x()` \endlink
+- `CGAL::compare_y_to_right()`
+- `CGAL::has_in_x_range()`
+- `CGAL::has_on()`
+- \link do_intersect_circular_grp `CGAL::do_intersect()` \endlink
+- \link intersection_circular_grp `CGAL::intersection()` \endlink
+- `CGAL::x_extremal_point()`
+- `CGAL::y_extremal_point()`
+- `CGAL::x_extremal_points()`
+- `CGAL::y_extremal_points()`
+- `CGAL::make_x_monotone()`
+- `CGAL::make_xy_monotone()`
+
+\cgalCRPSection{Algebraic Concepts}
+
+- `AlgebraicKernelForCircles`
+
+\cgalCRPSubsection{Functors}
+
+
+- `AlgebraicKernelForCircles::ConstructPolynomial_1_2`
+- `AlgebraicKernelForCircles::ConstructPolynomialForCircles_2_2`
+- `AlgebraicKernelForCircles::CompareX`
+- `AlgebraicKernelForCircles::CompareY`
+- `AlgebraicKernelForCircles::CompareXY`
+- `AlgebraicKernelForCircles::SignAt`
+- `AlgebraicKernelForCircles::XCriticalPoints`
+- `AlgebraicKernelForCircles::YCriticalPoints`
+- `AlgebraicKernelForCircles::Solve`
+
+\cgalCRPSection{Algebraic %Kernel and Classes}
+
+\cgalCRPSubsection{%Kernel}
+
+- `CGAL::Algebraic_kernel_for_circles_2_2<RT>`
+
+\cgalCRPSubsection{Polynomials}
+
+- `CGAL::Polynomial_1_2<RT>`
+- `CGAL::Polynomial_for_circles_2_2<FT>`
+
+\cgalCRPSubsection{Roots of Polynomials}
+
+- `CGAL::Sqrt_extension<NT,ROOT>`
+- `CGAL::Root_for_circles_2_2<FT>`
+- `CGAL::Root_of_traits<RT>`
+
+
+*/
+
