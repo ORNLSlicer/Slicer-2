@@ -202,7 +202,7 @@ if(Python_FOUND)
     option(GEN_MASTER_CONF "Generate master" ON)
     if(GEN_MASTER_CONF)
         message(STATUS "Generating master.conf file automatically")
-        execute_process(COMMAND py ./scripts/OdsToJson.py ${CMAKE_CURRENT_SOURCE_DIR}/mss_for_json.ods ${CMAKE_CURRENT_SOURCE_DIR}/resources/configs/master.conf
+        execute_process(COMMAND ${Python_EXECUTABLE} ./scripts/OdsToJson.py ${CMAKE_CURRENT_SOURCE_DIR}/mss_for_json.ods ${CMAKE_CURRENT_SOURCE_DIR}/resources/configs/master.conf
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         RESULT_VARIABLE GEN_OK)
         if (GEN_OK AND NOT STATUS EQUAL 0)

@@ -203,15 +203,15 @@ namespace ORNL
         }
 
         // Select part settings
-        if(item != nullptr && item->meshType() != MeshType::kClipping && item->isSelected() && (item->part()->getCurrentPartTemplate() == GSM->getCurrentTemplate()))
+        if(item != nullptr && item->meshType() != MeshType::kClipping && item->isSelected())
         {
             // Set selected settings to be part
             QList<QSharedPointer<SettingsBase>> ranges;
             ranges.append(item->part()->getSb());
             emit setSelectedSettings(qMakePair(item->part()->name(), ranges));
-        }
-        else
+        } else {
             emit setSelectedSettings(qMakePair(QString(""), QList<QSharedPointer<SettingsBase>>()));
+        }
         //Check if new part selected and if that part's template equals the currently selected template from drop down menu. If need to change part template.
         if(item != nullptr && item->meshType() == MeshType::kBuild && item->isSelected() && !(item->part()->getCurrentPartTemplate() == GSM->getCurrentTemplate())){
             m_part = item->part();

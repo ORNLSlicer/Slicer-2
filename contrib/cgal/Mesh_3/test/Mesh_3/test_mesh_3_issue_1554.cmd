@@ -1,1 +1,0 @@
-data/thepart-simplified.off

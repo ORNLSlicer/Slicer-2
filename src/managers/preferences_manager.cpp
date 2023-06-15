@@ -46,6 +46,8 @@ namespace ORNL
         , m_window_pos(-1, -1)
         , m_use_implicit_transforms(false)
         , m_always_drop_parts(false)
+        , m_layer_lag(100)
+        , m_segment_lag(10)
     {
         m_hidden_settings["Printer"] = std::list<std::string>();
         m_hidden_settings["Material"] = std::list<std::string>();
@@ -54,6 +56,8 @@ namespace ORNL
         m_tcp_port = 12345;
         m_tcp_server_autostart = false;
         m_step_connectivity = QVector<bool>(5, false);
+        m_katana_tcp_ip = "127.0.0.1";
+        m_katana_tcp_port = 12345;
     }
 
     QColor PreferencesManager::getVisualizationColor(VisualizationColors color){
@@ -89,20 +93,21 @@ namespace ORNL
         return false;
     }
 
-    std::unordered_map<std::string, QColor> PreferencesManager::getVisualizationColors() {
-        return m_visualization_qcolors;
+    std::map<std::string, QColor> PreferencesManager::getVisualizationColors() {
+        std::map<std::string, QColor> visualizationColors(m_visualization_qcolors.begin(), m_visualization_qcolors.end());
+        return visualizationColors;
     }
 
-    std::unordered_map<std::string, std::string> PreferencesManager::GetDefaultVisualizationColors(){
+    std::map<std::string, std::string> PreferencesManager::getVisualizationHexColors(){
         std::unordered_map<std::string, std::string> visualizationColorsHex;
-
         for(const auto& color : m_visualization_qcolors)
             visualizationColorsHex[color.first] = color.second.name().toStdString();
 
-        return visualizationColorsHex;
+        std::map<std::string, std::string> visualizationColors(visualizationColorsHex.begin(), visualizationColorsHex.end());
+        return visualizationColors;
     }
 
-    void PreferencesManager::SetDefaultVisualizationColors(std::unordered_map<std::string, std::string> visualizationColorsHex)
+    void PreferencesManager::setDefaultVisualizationColors(std::unordered_map<std::string, std::string> visualizationColorsHex)
     {
         m_visualization_qcolors.clear();
         int visualizationColorsLength = (int)VisualizationColors::Length;
@@ -147,6 +152,8 @@ namespace ORNL
             setVoltageUnit(j.value("voltage", m_voltage_unit));
             setMassUnit(j.value("mass", m_mass_unit));
             setTheme(j.value("theme", m_themeName));
+            setLayerLag(j.value("layer_lag", m_layer_lag));
+            setSegmentLag(j.value("segment_lag", m_segment_lag));
             m_project_shift_preference = j.value("shift", m_project_shift_preference);
             m_file_shift_preference = j.value("file_shift", m_file_shift_preference);
             m_align_preference = j.value("align", m_align_preference);
@@ -178,7 +185,7 @@ namespace ORNL
             std::unordered_map<std::string, std::string> visualizationColorsHex;
             if(j.find("visualization_colors") != j.end())
                 visualizationColorsHex = j.at("visualization_colors").get<std::unordered_map<std::string, std::string>>();
-            SetDefaultVisualizationColors(visualizationColorsHex);
+            setDefaultVisualizationColors(visualizationColorsHex);
 
             if(j.find("tcp_server_settings") != j.end())
             {
@@ -186,6 +193,13 @@ namespace ORNL
                 m_tcp_server_autostart = j["tcp_server_settings"]["auto_start"];
                 std::vector<bool> connectivities = j["tcp_server_settings"]["step_connectivity"];
                 m_step_connectivity = QVector<bool>::fromStdVector(connectivities);
+            }
+
+            if(j.find("katana_server_settings") != j.end())
+            {
+                setKatanaSendOutput(j["katana_server_settings"]["send_output"]);
+                setKatanaTCPIp(j["katana_server_settings"]["ip"]);
+                setKatanaTCPPort(j["katana_server_settings"]["port"]);
             }
 
             file.close();
@@ -213,7 +227,7 @@ namespace ORNL
     }
 
     fifojson PreferencesManager::json() {
-         fifojson j;
+        fifojson j;
 
         j["import_unit"]  = m_import_unit;
         j["distance"]     = m_distance_unit;
@@ -240,10 +254,15 @@ namespace ORNL
         j["window_pos"] = { m_window_pos.x(), m_window_pos.y() };
         j["use_implicit_transforms"] = m_use_implicit_transforms;
         j["always_drop_parts"] = m_always_drop_parts;
-        j["visualization_colors"] = GetDefaultVisualizationColors();
+        j["visualization_colors"] = getVisualizationHexColors();
         j["tcp_server_settings"]["port"] = m_tcp_port;
         j["tcp_server_settings"]["auto_start"] = m_tcp_server_autostart;
         j["tcp_server_settings"]["step_connectivity"] = m_step_connectivity;
+        j["katana_server_settings"]["send_output"] = m_katana_send_output;
+        j["katana_server_settings"]["ip"] = m_katana_tcp_ip;
+        j["katana_server_settings"]["port"] = m_katana_tcp_port;
+        j["layer_lag"] = m_layer_lag;
+        j["segment_lag"] = m_segment_lag;
 
         return j;
     }
@@ -424,6 +443,15 @@ namespace ORNL
     bool PreferencesManager::getAlwaysDropParts()
     {
         return m_always_drop_parts;
+    }
+
+    int PreferencesManager::getLayerLag()
+    {
+        return m_layer_lag;
+    }
+
+    int PreferencesManager::getSegmentLag(){
+        return m_segment_lag;
     }
 
     void PreferencesManager::setImportUnit(QString du)
@@ -738,6 +766,16 @@ namespace ORNL
         m_dirty = true;
     }
 
+    void PreferencesManager::setLayerLag(int lag)
+    {
+        m_layer_lag = lag;
+    }
+
+    void PreferencesManager::setSegmentLag(int lag)
+    {
+        m_segment_lag = lag;
+    }
+
     bool PreferencesManager::isDirty()
     {
         return m_dirty;
@@ -803,4 +841,34 @@ namespace ORNL
         return m_tcp_server_autostart;
     }
 
+
+    bool PreferencesManager::getKatanaSendOutput()
+    {
+        return m_katana_send_output;
+    }
+
+    void PreferencesManager::setKatanaSendOutput(bool send)
+    {
+        m_katana_send_output = send;
+    }
+
+    QString PreferencesManager::getKatanaTCPIp()
+    {
+        return m_katana_tcp_ip;
+    }
+
+    void PreferencesManager::setKatanaTCPIp(QString ipAddress)
+    {
+        m_katana_tcp_ip = ipAddress;
+    }
+
+    int PreferencesManager::getKatanaTCPPort()
+    {
+        return m_katana_tcp_port;
+    }
+
+    void PreferencesManager::setKatanaTCPPort(int port)
+    {
+        m_katana_tcp_port = port;
+    }
 }  // namespace ORNL

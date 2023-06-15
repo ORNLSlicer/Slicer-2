@@ -1,3 +1,0 @@
-are_mergeable 10 11 FALSE
-are_mergeable 12 13 TRUE
-merge 12 13 14

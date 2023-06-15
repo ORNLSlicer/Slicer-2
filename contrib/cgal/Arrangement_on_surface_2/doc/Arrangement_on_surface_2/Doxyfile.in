@@ -1,7 +1,0 @@
-@INCLUDE = ${CGAL_DOC_PACKAGE_DEFAULTS}
-
-PROJECT_NAME = "CGAL ${CGAL_DOC_VERSION} - 2D Arrangements"
-EXCLUDE_SYMBOLS           +=  Dcel         \
-                              FaceBase     \
-                              HalfedgeBase \
-                              VertexBase

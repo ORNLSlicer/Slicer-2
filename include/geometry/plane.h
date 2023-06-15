@@ -89,6 +89,12 @@ namespace ORNL
         MeshTypes::Plane_3 toCGALPlane();
         #endif
 
+        //! \brief Checks if two planes are equivalent to within a specified tolerance
+        //! \param rhs: plane to compare this plane to
+        //! \param epsilon: equivalence tolerance - the allowable distance between the two planes
+        //! \return the determination of equivalence
+        bool isEqual(const Plane& rhs, double epsilon);
+
         //! \brief Checks if two planes are equivalent
         bool operator==(const Plane& rhs);
 

@@ -39,6 +39,15 @@ namespace ORNL {
             //! \brief Shows up to high_layer.
             void showHigh(uint high_layer);
 
+            //! \brief Shows segments between low and high
+            //! \param low_segment: Low display.
+            //! \param high_segment: high_display.
+            void showSegments(uint low_segment, uint high_segment);
+            //! \brief Shows down to low_segment.
+            void showLowSegment(uint low_segment);
+            //! \brief Shows up to high_segment.
+            void showHighSegment(uint high_segment);
+
             //! \brief Selects the segment.
             //! \param line_number: line number of segment to select/change color
             void selectSegment(uint line_number);
@@ -114,6 +123,13 @@ namespace ORNL {
             uint m_low_layer = 0;
             //! \brief Highest layer shown.
             uint m_high_layer = 1;
+
+            //! \brief Lowest segment shown.
+            uint m_low_segment = 0;
+            //! \brief Highest segment shown.
+            uint m_high_segment = 1;
+            //! \brief Offset for lowest possible segment
+            uint m_segment_offset = 0;
 
             //! \brief Currently selected segment.
             QHash<int, QSharedPointer<SegmentDisplayMeta>> m_selected_segments;

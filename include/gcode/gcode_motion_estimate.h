@@ -89,7 +89,8 @@ namespace ORNL
         //! \param dy Change in distance y component
         //! \param dz Change in distance z component
         //! \param G1F_time G1 commands execution accumulated time estimates
-        static Time firstXYMove(Distance d, Distance dx, Distance dy, Distance dz, Time &G1F_time);
+        //! \param isFIncluded, if the current command statement include velocity / speed
+        static Time firstXYMove(Distance d, Distance dx, Distance dy, Distance dz, Time &G1F_time, bool isFIncluded);
 
         //! \brief Calculate time addition from continuous horizontal move
         //! \param theta angle between the two motion segments
@@ -98,7 +99,8 @@ namespace ORNL
         //! \param dy Change in distance y component
         //! \param dz Change in distance z component
         //! \param G1F_time G1 commands execution accumulated time estimates
-        static Time continuousXYMove(double theta, Distance d, Distance dx, Distance dy, Distance dz, Time &G1F_time);
+        //! \param isFIncluded, if the current command statement include velocity / speed
+        static Time continuousXYMove(double theta, Distance d, Distance dx, Distance dy, Distance dz, Time &G1F_time, bool isFIncluded);
 
         static bool m_previous_vertical; //Z or W move
 

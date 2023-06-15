@@ -171,7 +171,7 @@ namespace ORNL
             auto meshes = MeshLoader::LoadMeshes(filename, mt, mtrx, PM->getImportUnit());
             for(auto mesh_data : meshes)
             {
-                addPart(mesh_data.mesh, filename);
+                addPart(mesh_data.mesh, filename, mt);
                 if(!m_models.contains(file_info.fileName()))
                     m_models.insert(file_info.fileName(), {mesh_data.raw_data, mesh_data.size});
                 else
@@ -180,7 +180,7 @@ namespace ORNL
         }
         else
         {
-            MeshLoader* loader = new MeshLoader(filename, MeshType::kBuild, mtrx, PM->getImportUnit());
+            MeshLoader* loader = new MeshLoader(filename, mt, mtrx, PM->getImportUnit());
             connect(loader, &MeshLoader::finished, loader, &MeshLoader::deleteLater);
 
             connect(loader, &MeshLoader::error, this, [this](QString msg)
@@ -188,9 +188,9 @@ namespace ORNL
                 emit forwardStatusUpdate(msg);
             });
 
-            connect(loader, &MeshLoader::newMesh, this, [this, filename, file_info](MeshLoader::MeshData mesh_data)
+            connect(loader, &MeshLoader::newMesh, this, [this, filename, file_info, mt](MeshLoader::MeshData mesh_data)
             {
-                addPart(mesh_data.mesh, filename);
+                addPart(mesh_data.mesh, filename, mt);
                 if(!m_models.contains(file_info.fileName()))
                     m_models.insert(file_info.fileName(), {mesh_data.raw_data, mesh_data.size});
                 else
@@ -225,9 +225,9 @@ namespace ORNL
         m_load_mutex.unlock();
     }
 
-    void SessionManager::addPart(QSharedPointer<MeshBase> new_mesh, QString filename) {
+    void SessionManager::addPart(QSharedPointer<MeshBase> new_mesh, QString filename, MeshType mt) {
         m_load_mutex.lock();
-        QSharedPointer<Part> new_part = QSharedPointer<Part>::create(new_mesh, filename);
+        QSharedPointer<Part> new_part = QSharedPointer<Part>::create(new_mesh, filename, mt);
 
         // Try to find a name for this part.
         QString name = new_part->name();
@@ -256,7 +256,7 @@ namespace ORNL
 
         QFileInfo file_info(filename);
 
-        MeshLoader* loader = new MeshLoader(filename, MeshType::kBuild, QMatrix4x4(), PM->getImportUnit());
+        MeshLoader* loader = new MeshLoader(filename, pm->part()->getMeshType(), QMatrix4x4(), PM->getImportUnit());
 
         connect(loader, &MeshLoader::finished, loader, &MeshLoader::deleteLater);
 
@@ -460,6 +460,16 @@ namespace ORNL
         return true;
     }
 
+    bool SessionManager::isBuildMode()
+    {
+        for(auto part : m_parts){
+            if(part->getMeshType() == MeshType::kBuild)
+                return true;
+        }
+
+        return false;
+    }
+
     bool SessionManager::doSlice()
     {
         //check current syntax for file suffix that needs to be output
@@ -563,7 +573,7 @@ namespace ORNL
                                 PM->getStepConnectivity(StatusUpdateStepType::kGcodeGeneraton),
                                 PM->getStepConnectivity(StatusUpdateStepType::kGcodeParsing)};
 
-        qDebug() << PM->getStepConnectivity(StatusUpdateStepType::kGcodeGeneraton);
+        //qDebug() << PM->getStepConnectivity(StatusUpdateStepType::kGcodeGeneraton);
         if(PM->getTcpServerAutoStart())
             setServerInformation(PM->getTCPServerPort());
 

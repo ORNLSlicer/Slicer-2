@@ -93,11 +93,6 @@ namespace ORNL {
             //! \brief Initalizes the view with the printer and the associated objects.
             void initView() override;
 
-            //! \brief Handles the translation of the printer in the volume due to camera movement.
-            //! \param v: Translation vector
-            //! \param absolute: If this translation is relative to (0, 0, 0).
-            void translateCamera(QVector3D v, bool absolute) override;
-
             //! \brief Handles the following: Alignment selection, translation selection, deselection
             void handleLeftClick(QPointF mouse_ndc_pos) override;
             //! \brief Handles the following: Object selection

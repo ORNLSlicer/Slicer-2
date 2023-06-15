@@ -100,11 +100,12 @@ namespace ORNL
                     QSharedPointer<Step> current_step =  part->getStepPair(current_layer[part_id]).printing_layer;
 
                     Distance layer_height = current_step->getSb()->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
+                    Distance layer_grouping_tolerance = global_sb->setting<Distance>(Constants::ExperimentalSettings::PrinterConfig::kLayerGroupingTolerance);
                     Plane layer_plane = current_step->getSlicingPlane();
                     layer_plane.shiftAlongNormal(layer_height() / 2.0);
 
-                    // if this part's current layer is on the min plane, add it to the global layer
-                    if (layer_plane == min_plane)
+                    // if this part's current layer is equal to the min plane, add it to the global layer
+                    if (layer_plane.isEqual(min_plane, layer_grouping_tolerance()))
                     {
                         new_global_layer->addStepPair(part_id, part->getStepPair(current_layer[part_id]));
                         ++current_layer[part_id];

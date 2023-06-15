@@ -130,7 +130,8 @@ namespace ORNL {
             //! \brief Adds a part to the session.
             //! \note While a part can be externally generated and added, this slot is primarily used to add a part after a mesh loader thread has completed.
             //! \param filename the path to the file
-            void addPart(QSharedPointer<MeshBase> new_mesh, QString filename = "");
+            //! \param Mesh type mode, defaults to build
+            void addPart(QSharedPointer<MeshBase> new_mesh, QString filename = "", MeshType mt = MeshType::kBuild);
 
             //! \brief Reloads a part.
             void reloadPart(QSharedPointer<PartMetaItem> pm);
@@ -153,6 +154,9 @@ namespace ORNL {
             //!       This likely requires some change to be more consistent.
             //! \todo The session saving/loading mechanism needs some cleanup.
             bool loadPartsJson( fifojson j);
+
+            //! \brief Check if in build mode
+            bool isBuildMode();
 
             //! \brief Signals the internal slicing thread to begin computation.
             //! \note If the internal slicing thread is unset, this function assumes that it should be a polymer slice.

@@ -1,9 +1,0 @@
-#!/bin/sh
-
-[ -r CMakeLists.txt ] || cgal_create_cmake_script
-
-[ -r Makefile ] || cmake .
-
-if [ $? == 0 ]; then
-  make -f Makefile ${1+"$@"}
-fi

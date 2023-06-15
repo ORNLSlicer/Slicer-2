@@ -1,3 +1,0 @@
-/// \example Poisson_surface_reconstruction_3/poisson_reconstruction_function.cpp
-/// \example Poisson_surface_reconstruction_3/poisson_reconstruction_example.cpp
-

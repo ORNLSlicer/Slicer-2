@@ -45,6 +45,10 @@ namespace ORNL {
 
         PolygonList path_line = m_geometry.offset(-beadWidth / 2);
 
+        Distance overlap = m_sb->setting<Distance>(Constants::ProfileSettings::Inset::kOverlap);
+        if(overlap > 0)
+            path_line = path_line.offset(overlap);
+
         int ring_nr = 0;
         while (!path_line.isEmpty() && ring_nr < rings)
         {

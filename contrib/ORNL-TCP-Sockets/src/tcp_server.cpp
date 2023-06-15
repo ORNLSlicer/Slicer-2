@@ -40,7 +40,7 @@ namespace ORNL
         }
         else
         {
-            qInfo() << "Server started at port: " << port;
+            //qInfo() << "Server started at port: " << port;
             return true;
         }
     }
@@ -67,7 +67,7 @@ namespace ORNL
 
     void TCPServer::incomingConnection(qintptr socket_descriptor)
     {
-        qInfo() << "New TCP Connection";
+        //qInfo() << "New TCP Connection";
         TCPConnection *new_connection = new TCPConnection();
 
         m_connections.push_back(new_connection);

@@ -7,6 +7,7 @@
 #include <QRadioButton>
 #include <QMainWindow>
 #include <QGroupBox>
+#include <QSpinBox>
 
 #include "managers/preferences_manager.h"
 #include "utilities/constants.h"

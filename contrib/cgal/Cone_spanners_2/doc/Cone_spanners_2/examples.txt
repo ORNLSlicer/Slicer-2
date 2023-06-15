@@ -1,5 +1,0 @@
-/*!
-\example Cone_spanners_2/compute_cones.cpp
-\example Cone_spanners_2/theta_io.cpp
-\example Cone_spanners_2/dijkstra_theta.cpp
-*/

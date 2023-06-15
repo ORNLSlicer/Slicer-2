@@ -300,7 +300,7 @@ namespace ORNL
                 connect(saver, &GCodeMeldSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
-            else if(m_most_recent_meta == GcodeMetaList::ORNLMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kTormachPython))
+            else if(m_most_recent_meta == GcodeMetaList::ORNLMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kTormachOutput))
             {
                 bool ok;
 

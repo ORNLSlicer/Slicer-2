@@ -10,6 +10,7 @@
 
 #include "graphics/objects/gcode_object.h"
 #include "managers/settings/settings_manager.h"
+#include "managers/session_manager.h"
 
 #include "gcode/gcode_meta.h"
 #include "gcode/parsers/cincinnati_parser.h"
@@ -89,6 +90,112 @@ namespace ORNL
 
         m_color_space_conversion = 1.0 / 255.0;
         m_layer_pattern = QRegularExpression("W*(\\d+)W*");
+    }
+
+    QString GCodeLoader::additionalExportComments()
+    {
+        QString openingDelim = m_selected_meta.m_comment_starting_delimiter;
+        QString closingDelim = m_selected_meta.m_comment_ending_delimiter;
+
+        QString partMinTranslation;
+        QVector3D translationMin;
+        int index = 0;
+        for (QSharedPointer<Part> part : CSM->parts()) {
+            auto transformation = part->rootMesh()->transformation();
+            QVector3D translation, scale;
+            QQuaternion rotation;
+            std::tie(translation, rotation, scale) = MathUtils::decomposeTransformMatrix(transformation);
+            if(++index == 1 || translation.x() < translationMin.x() || translation.y() < translationMin.y())
+                translationMin = translation;
+        }
+        if(index > 0)
+            partMinTranslation = openingDelim % "Part Translation: X" %
+                    QString::number(translationMin.x()/1000000, 'f', 4) % ", Y" %
+                    QString::number(translationMin.y()/1000000, 'f', 4) % ", Z" %
+                    QString::number(translationMin.z()/1000000, 'f', 4) % " m" % closingDelim % "\n";
+
+        QString travelTypes  = openingDelim % "Travel Types:";
+        QString travelColors = openingDelim % "Travel Colors:";
+        for(const auto& color : PM->getVisualizationHexColors()){
+            travelTypes  = travelTypes  % " " % QString::fromStdString(color.first);
+            travelColors = travelColors % " " % QString::fromStdString(color.second).right(6);
+        }
+        travelTypes  = travelTypes  % closingDelim % "\n";
+        travelColors = travelColors % closingDelim % "\n";
+
+        return partMinTranslation % travelTypes % travelColors;
+    }
+
+    void GCodeLoader::savePartsModelObjFile()
+    {
+        QFileInfo info(m_filename);
+        QString strObjFile = info.absoluteDir().absolutePath() + "/" + info.baseName() + ".obj";
+        QFile::remove(strObjFile);
+        QFile objFile(strObjFile);
+        if (objFile.open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            QTextStream out(&objFile);
+
+            int vertIndex = 1;
+            for (QSharedPointer<Part> part : CSM->parts()) {
+                auto verts = part->rootMesh()->vertices();
+                auto faces = part->rootMesh()->faces();
+
+                out << "# Object name\no " << part->rootMesh()->name() << "\n" << "# Begin list of vertices\n";
+
+                for (MeshVertex& vertex : verts) {
+                    out << "v " << QString::number(vertex.location.x()/1000, 'f', 4) <<
+                           " "  << QString::number(vertex.location.y()/1000, 'f', 4) <<
+                           " "  << QString::number(vertex.location.z()/1000, 'f', 4) << " 1.0\n";
+                }
+
+                out << "# End list of vertices\n# Begin list of faces\n";
+
+                for(MeshFace& face : faces) {
+                    out << "f " << face.vertex_index[0] + vertIndex <<
+                           " "  << face.vertex_index[1] + vertIndex <<
+                           " "  << face.vertex_index[2] + vertIndex << "\n";
+                }
+
+                out << "# End list of faces\n# End Object " << part->rootMesh()->name() << "\n\n";
+
+                vertIndex += verts.length();
+            }
+
+            objFile.close();
+        }
+        else {
+            return;
+        }
+
+        if(PM->getKatanaSendOutput()){
+            QThread *thread = QThread::create(sendGcodeModelObjFile,
+                                          PM->getKatanaTCPIp(), PM->getKatanaTCPPort(),
+                                          toString(m_selected_meta.m_syntax_id), m_filename, strObjFile);
+
+            connect (thread, &QThread::finished, thread, &QThread::deleteLater);
+            thread->start();
+        }
+    }
+
+    void GCodeLoader::sendGcodeModelObjFile(QString host, int port, QString machineName, QString gcodeFilePath, QString objFilePath)
+    {
+        TCPConnection client;
+        client.setupNew(host, port);
+        QThread::sleep(1);
+
+        if(client.isReady()){
+            client.write("Machine Printer: " + machineName);
+            QThread::sleep(1);
+
+            client.write("GCode File Path: " + gcodeFilePath);
+            QThread::sleep(1);
+
+            client.write("Model File Path: " + objFilePath);
+            QThread::sleep(1);
+
+            client.close();
+        }
     }
 
     void GCodeLoader::run() {
@@ -295,7 +402,7 @@ namespace ORNL
             openingDelim % "Minimum Layer Time: " % MathUtils::formattedTimeSpan(min_time()) % closingDelim % "\n" %
             openingDelim % "Maximum Layer Time: " % MathUtils::formattedTimeSpan(max_time()) % closingDelim % "\n" %
             openingDelim % "XYZ Translation Data: " % QString::number(m_origin.x()) % ", " %
-                    QString::number(m_origin.y()) % ", " % QString::number(m_z_offset) % closingDelim % "\n";
+                    QString::number(m_origin.y()) % ", " % QString::number(m_z_offset) % closingDelim % "\n" % additionalExportComments();
 
             //if we are allowed to adjust file, add header block and write out file
             //also takes care of situation in which layer times were adjusted
@@ -316,6 +423,9 @@ namespace ORNL
 
                     ret = QFile::rename(tempFile.fileName(), m_filename);
                 }
+
+                if(PM->getKatanaSendOutput())
+                    savePartsModelObjFile();
             }
             }
             catch (ExceptionBase& exception)
@@ -489,11 +599,11 @@ namespace ORNL
         if(m_leadin.indexIn(comment) != -1)
             return PM->getVisualizationColor(VisualizationColors::kLeadIn);
         if(m_perimeter_embossing.indexIn(comment) != -1)
-            return Constants::Colors::kRed.lighter();
+            return PM->getVisualizationColor(VisualizationColors::kEmbossing);
         if(m_perimeter.indexIn(comment) != -1)
             return PM->getVisualizationColor(VisualizationColors::kPerimeter);
         if(m_inset_embossing.indexIn(comment) != -1)
-            return Constants::Colors::kRed.lighter();
+            return PM->getVisualizationColor(VisualizationColors::kEmbossing);
         if(m_inset.indexIn(comment) != -1)
             return PM->getVisualizationColor(VisualizationColors::kInset);
         if(m_infill.indexIn(comment) != -1)
@@ -521,7 +631,6 @@ namespace ORNL
 
         return PM->getVisualizationColor(VisualizationColors::kUnknown);
     }
-
 
     QVector<QSharedPointer<SegmentBase> > GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& color, int command_id,
                                             const QMap<char, double>& parameters, QVector<bool> extruders_on, QVector<Point> extruder_offsets,
@@ -703,6 +812,4 @@ namespace ORNL
 
         return generated_segments;
     }
-
-
 }  // namespace ORNL

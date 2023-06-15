@@ -1,3 +1,0 @@
-/*!
-\example Surface_sweep_2/plane_sweep.cpp
-*/

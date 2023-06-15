@@ -578,6 +578,7 @@ namespace ORNL
     const QString Constants::ProfileSettings::Inset::kSpeed = "inset_speed";
     const QString Constants::ProfileSettings::Inset::kExtruderSpeed = "inset_extruder_speed";
     const QString Constants::ProfileSettings::Inset::kMinPathLength = "inset_minimum_path_length";
+    const QString Constants::ProfileSettings::Inset::kOverlap = "inset_overlap_distance";
 
     //Skeleton
     const QString Constants::ProfileSettings::Skeleton::kEnable = "skeleton";
@@ -742,6 +743,7 @@ namespace ORNL
     // Printer Config
     const QString Constants::ExperimentalSettings::PrinterConfig::kSlicerType = "slicer_type";
     const QString Constants::ExperimentalSettings::PrinterConfig::kLayerOrdering = "layer_ordering";
+    const QString Constants::ExperimentalSettings::PrinterConfig::kLayerGroupingTolerance = "layer_grouping_tolerance";
 
     // Curve Fitting
     const QString Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting = "enable_arc_fitting";
@@ -841,7 +843,8 @@ namespace ORNL
     //File Output
     const QString Constants::ExperimentalSettings::FileOutput::kMeldCompanionOutput = "additional_meld_output";
     const QString Constants::ExperimentalSettings::FileOutput::kMeldDiscrete = "meld_discrete_feed_commands";
-    const QString Constants::ExperimentalSettings::FileOutput::kTormachPython = "tormach_python_output";
+    const QString Constants::ExperimentalSettings::FileOutput::kTormachOutput = "tormach_file_output";
+    const QString Constants::ExperimentalSettings::FileOutput::kTormachMode = "tormach_mode";
 
     //Rotation Origin
     const QString Constants::ExperimentalSettings::RotationOrigin::kXOffset = "rotation_origin_offset_x";

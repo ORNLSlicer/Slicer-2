@@ -706,27 +706,16 @@ namespace ORNL
 
     void PartView::handleWheelForward(QPointF mouse_ndc_pos, float delta)
     {
+        this->BaseView::handleWheelBackward(mouse_ndc_pos, delta);
         m_camera->zoom(delta);
         this->update();
     }
 
     void PartView::handleWheelBackward(QPointF mouse_ndc_pos, float delta)
     {
+        this->BaseView::handleWheelForward(mouse_ndc_pos, delta);
         m_camera->zoom(delta);
         this->update();
-    }
-
-    void PartView::translateCamera(QVector3D v, bool absolute)
-    {
-        if (absolute)
-        {
-            m_camera->panAbsolute(v);
-            m_focus->translateAbsolute(m_camera->getPan());
-        }else
-        {
-            m_camera->pan(v);
-            m_focus->translateAbsolute(m_camera->getPan());
-        }
     }
 
     void PartView::handleMidClick(QPointF mouse_ndc_pos)

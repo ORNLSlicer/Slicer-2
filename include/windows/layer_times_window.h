@@ -31,6 +31,8 @@ namespace ORNL
             //! \param minlayerTime user-specified minimum layer time for cooling purpose
             void updateTimeInformation(QList<QList<Time>> layer_times, Time min_layer_time, Time max_layer_time, bool adjusted_layer_time);
 
+            //! \brief Clear Layer times text
+            void clear();
         private:
 
             //! \brief Setup widget internal events

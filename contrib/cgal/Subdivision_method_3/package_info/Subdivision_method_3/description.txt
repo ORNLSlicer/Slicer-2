@@ -1,1 +1,0 @@
-Generic subdivision methods on Polygonal Meshes.

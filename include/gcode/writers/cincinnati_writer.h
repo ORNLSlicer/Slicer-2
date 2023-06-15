@@ -129,6 +129,10 @@ namespace ORNL
 
         //! \brief true if first travel, false for subsequent travels
         bool m_first_travel;
+        //! \brief true if the travel contains a Z coordinate
+        bool m_z_travel;
+        //! \brief true if the travel contains a W coordinate
+        bool m_w_travel;
         //! \brief true if first printing segment, false for subsquent paths - needed for Spiralize
         bool m_first_print;
         //! \brief true is first print motion of the layer

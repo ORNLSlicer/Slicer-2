@@ -8,6 +8,9 @@
 #include <QGridLayout>
 #include <QTabWidget>
 #include <QScrollArea>
+#include <QLineEdit>
+#include <QSpinBox>
+
 
 #include <QStandardPaths>
 
@@ -237,6 +240,62 @@ namespace ORNL
         for(const auto& color : PM->getVisualizationColors()){
             color_tab_layout->addWidget(new VisualizationColorPicker(QString::fromStdString(color.first), color.second), i++, 0, 1, 2, Qt::AlignTop);
         }
+
+        // ComWithApps tab
+        QGridLayout* com_with_apps_tab_layout = new QGridLayout();
+        QWidget* comWithAppsWidget = new QWidget(m_tab_widget);
+        m_tab_widget->addTab(comWithAppsWidget, "Com With Apps");
+        comWithAppsWidget->setLayout(com_with_apps_tab_layout);
+
+        com_with_apps_tab_layout->addWidget(new QLabel("Katana Server "), 0, 0, Qt::AlignTop);
+
+        com_with_apps_tab_layout->addWidget(new QLabel("Send Output:"), 1, 0, Qt::AlignTop);
+        auto katana_checkbox = new QCheckBox();
+        com_with_apps_tab_layout->addWidget(katana_checkbox, 1, 1, Qt::AlignTop);
+        katana_checkbox->setChecked(PM->getKatanaSendOutput());
+        connect(katana_checkbox, &QCheckBox::clicked, PM.get(), &PreferencesManager::setKatanaSendOutput);
+
+        com_with_apps_tab_layout->addWidget(new QLabel("TCP IP:"), 2, 0, Qt::AlignTop);
+        auto tcp_ip = new QLineEdit ();
+        com_with_apps_tab_layout->addWidget(tcp_ip, 2, 1, Qt::AlignTop);
+        tcp_ip->setText(PM->getKatanaTCPIp());
+        connect(tcp_ip, &QLineEdit ::textChanged, PM.get(), &PreferencesManager::setKatanaTCPIp);
+
+        com_with_apps_tab_layout->addWidget(new QLabel("TCP Port:"), 3, 0, Qt::AlignTop);
+        auto tcp_port_box = new QSpinBox();
+        com_with_apps_tab_layout->addWidget(tcp_port_box, 3, 1, Qt::AlignTop);
+        tcp_port_box->setMinimum(1);
+
+        // Lag tab
+        QWidget* lagWidget = new QWidget(m_tab_widget);
+        m_tab_widget->addTab(lagWidget, "Lag");
+
+        QGridLayout* lag_tab_layout = new QGridLayout();
+        lagWidget->setLayout(lag_tab_layout);
+        lag_tab_layout->addWidget(new QLabel("Lag between layers (ms):"), 0, 0, Qt::AlignTop);
+
+        QSpinBox *layer_lag_box = new QSpinBox();
+        lag_tab_layout->addWidget(layer_lag_box, 0, 1, Qt::AlignTop);
+        layer_lag_box->setMinimum(1);
+        layer_lag_box->setMaximum(5000);
+        layer_lag_box->setValue(PM->getLayerLag());
+        connect(layer_lag_box, QOverload<int>::of(&QSpinBox::valueChanged), PM.get(), &PreferencesManager::setLayerLag);
+
+        lag_tab_layout->addWidget(new QLabel("Lag between segments (ms):"), 0, 3, Qt::AlignTop);
+
+        QSpinBox *segment_lag_box = new QSpinBox();
+        lag_tab_layout->addWidget(segment_lag_box, 0, 4, Qt::AlignTop);
+        segment_lag_box->setMinimum(1);
+        segment_lag_box->setMaximum(5000);
+        segment_lag_box->setValue(PM->getSegmentLag());
+        connect(segment_lag_box, QOverload<int>::of(&QSpinBox::valueChanged), PM.get(), &PreferencesManager::setSegmentLag);
+
+        tcp_port_box->setMaximum(65535);
+        tcp_port_box->setValue(PM->getKatanaTCPPort());
+        connect(tcp_port_box, QOverload<int>::of(&QSpinBox::valueChanged), PM.get(), &PreferencesManager::setKatanaTCPPort);
+
+        com_with_apps_tab_layout->setRowStretch(5, 1);
+        // End ComWithApps tab
     }
 
     QGroupBox* PreferencesWindow::createContainer(PreferenceChoice choice, QList<QString> displayStrings,

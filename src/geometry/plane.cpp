@@ -124,15 +124,19 @@ Plane::Plane(const Point& point, const QVector3D& normal)
     }
     #endif
 
-    bool Plane::operator==(const Plane &rhs)
+    bool Plane::isEqual(const Plane& rhs, double epsilon)
     {
         Point diff = rhs.point() - m_point;
 
-        // has same normals and rhs point lies on lhs plane
         return  qFuzzyCompare(this->normal().x(), rhs.normal().x()) &&
                 qFuzzyCompare(this->normal().y(), rhs.normal().y()) &&
                 qFuzzyCompare(this->normal().z(), rhs.normal().z()) &&
-                qAbs(QVector3D::dotProduct(m_normal_vector, QVector3D(diff.x(), diff.y(), diff.z()))) < m_epsilon ? true : false;
+                qAbs(QVector3D::dotProduct(m_normal_vector, QVector3D(diff.x(), diff.y(), diff.z()))) <= epsilon;
+    }
+
+    bool Plane::operator==(const Plane& rhs)
+    {
+        return isEqual(rhs, 0.01);
     }
 
 }

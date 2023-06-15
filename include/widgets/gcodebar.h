@@ -11,6 +11,7 @@
 #include <QToolButton>
 #include <QCheckBox>
 #include <QGridLayout>
+#include <QTimer>
 
 // Local
 #include "widgets/gcodetextboxwidget.h"
@@ -27,6 +28,11 @@ namespace ORNL {
             //! \brief new_value: value to set lower/upper to
             void lowerLayerUpdated(int new_value);
             void upperLayerUpdated(int new_value);
+
+            //! \brief Signals to update segment range
+            //! \brief new_value: value to set lower/upper to
+            void lowerSegmentUpdated(int new_value);
+            void upperSegmentUpdated(int new_value);
 
             //! \brief Signal to notify GcodeView which segments to add/remove highlights to
             //! \param linesToAdd: segments to highlight
@@ -58,9 +64,16 @@ namespace ORNL {
             //! \param layerSkipLineNumbers: line numbers to skip highlighting if visualization reduction setting is enabled
             void updateGcodeText(QString text, QHash<QString, QTextCharFormat> fontColors, QList<int> layerFirstLineNumbers, QSet<int> layerSkipLineNumbers);
 
+            //! \brief Clear GcodeBar
+            void clear();
+
             //! \brief Sets layer maxes
             //! \brief new_value: value to set max to
             void setMaxLayer(int max_value);
+
+            //! \brief Sets segment maxes
+            //! \brief new_value: value to set max to
+            void setMaxSegment(int max_value);
 
             //! \brief Set which lines to add/remove highlights to
             //! \param linesToAdd: segments to highlight
@@ -87,6 +100,20 @@ namespace ORNL {
             //! \param change: boolean to indicate if the refresh button should be enabled or disabled
             void updateRefreshButton(bool change);
 
+            //! \brief enable or disable the play button
+            //! \param change: boolean to indicate if the play button should be enabled or disabled
+            void updatePlayButton();
+
+            //! \brief enable or disable the segment play button
+            //! \param change: boolean to indicate if the play button should be enabled or disabled
+            void updateSegmentPlayButton();
+
+            //! \brief display the next layer after each time window when the play button is pressed
+            void drawNextLayer();
+
+            //! \brief display the next segment after each time window when the play button is pressed
+            void drawNextSegment();
+
         private slots:
             //! \brief update slots to keep spinboxes and sliders in sync and respect lock
             //! \param new_value: new potential layer
@@ -94,6 +121,12 @@ namespace ORNL {
             void updateLowerSlider(int new_value);
             void updateUpperSpin(int new_value);
             void updateUpperSlider(int new_value);
+
+            //! \param new_value: new potential layer
+            void updateSegmentLowerSpin(int new_value);
+            void updateSegmentLowerSlider(int new_value);
+            void updateSegmentUpperSpin(int new_value);
+            void updateSegmentUpperSlider(int new_value);
 
         private:
             // Setup the static widgets and their layouts.
@@ -114,6 +147,11 @@ namespace ORNL {
             //! \brief new_value: value to set lower/upper spinbox/slider to
             void forwardLowerLayerUpdate(int new_value);
             void forwardUpperLayerUpdate(int new_value);
+
+            //! \brief Sets lower/upper segment values
+            //! \brief new_value: value to set lower/upper spinbox/slider to
+            void forwardLowerSegmentUpdate(int new_value);
+            void forwardUpperSegmentUpdate(int new_value);
 
             // Layout
             QGridLayout *m_layout;
@@ -137,9 +175,23 @@ namespace ORNL {
             QSlider *m_layer_upper_slider;
             QLabel *m_lower_label;
             QLabel *m_upper_label;
+            QToolButton *m_layer_play_btn;
+            QSpinBox *m_segment_lower;
+            QSpinBox *m_segment_upper;
+            QSlider *m_segment_lower_slider;
+            QSlider *m_segment_upper_slider;
+            QLabel *m_lower_segment_label;
+            QLabel *m_upper_segment_label;
+            QToolButton *m_segment_play_btn;
 
             //! \brief store "BEGINNING LAYER" line numbers for all layers
             QList<int> m_layer_first_line_numbers;
+
+            //! \brief timer for play button which is repeatedly reset for each layer
+            QTimer *m_layer_timer;
+
+            //! \brief timer for play button which is repeatedly reset for each segment
+            QTimer *m_segment_timer;
 
             //! \brief indicate format change induced by search, other than content edit
             bool m_search_only_change;

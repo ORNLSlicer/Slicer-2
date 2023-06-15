@@ -1,7 +1,7 @@
 import json
 import sys
 import os
-from pandas_ods_reader import read_ods
+import pandas
 
 """
     Summary: Script converts .ods file to json for the generation of master.conf
@@ -50,24 +50,19 @@ def main():
         raise(Exception("Unsupported file type. First argument must be '.ods' file."))
 
     # import the first sheet of the ods file specified by the first command line argument
-    data_table = read_ods(ods_file)
+    data_table = pandas.read_excel(ods_file, engine="odf")
 
     data_table.set_index('name', inplace=True)
     data_table.fillna('', inplace=True)  # fill in empty spaces with empty strings
 
-    # correct bool type columns first. Otherwise all non-empty column will be converted to True, even if value is "false"
-    for column, desired_type in types.items():
-        if desired_type == 'bool':
-            data_table[column] = data_table[column].map({'true': True, 'false': False})
-
     # correct all the other types from mis-tytping on import
-    data_table = data_table.astype(types)  
+    data_table = data_table.astype(types)
 
     # used to make sure the last setting doesn't get a trailing comma
     last_row_index = data_table.iloc[-1].name
 
     # open the text file
-    final_json_file = open(destination_file, "wt")
+    final_json_file = open(destination_file, "wt", newline="\n")
 
     # write the opening curly brace
     final_json_file.write("{\n")

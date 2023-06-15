@@ -24,7 +24,7 @@ namespace ORNL
         //First, get necessary parameters from settings to rotate all pathing
         QChar comma(','), newline('\n'), space(' '), x('X'), y('Y'), z('Z'), f('F'), s('S'), zero('0');
         QStringList lines = m_text.split(newline);
-        QString G0("G0"), G1("G1"), M24("M24"), M25("M25");
+        QString G0("G0"), G1("G1"), M3("M3"), M5("M5"), commaSpace(", ");
         QString xval, yval, zval, velocity, feedrate;
         QString maxVelocity = QString::number(GSM->getGlobal()->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kMaxXYSpeed).to(m_selected_meta.m_velocity_unit), 'f', 4);
         zval = QString::number(GSM->getGlobal()->setting<Distance>(Constants::PrinterSettings::Dimensions::kZMax).to(m_selected_meta.m_distance_unit), 'f', 4);
@@ -41,26 +41,75 @@ namespace ORNL
         }
 
         QFileInfo fi(m_filename);
-        QString filePath = fi.absolutePath() + "\\" + fi.baseName() + "_commands.csv";
+        QString filePath = fi.absolutePath() + "\\" + fi.baseName() + "_output.apt";
 
         QFile file(filePath);
         file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text);
         QTextStream out(&file);
-        out << x % comma % y % comma % z % comma % "TFR" % comma % "AFR" % newline;
+
+        out << "$$ ORNL SLICER 2" % newline;
+        out << "$$*" % newline;
+        out << "$$ -> MFGNO" % newline;
+        out << "PARTNO / CF HY-80 3 x 1 1 1 CF HY-80 3 x 1" % newline;
+        out << "MACHIN / MILL, 01" % newline;
+        out << "$$ -> CUTCOM_GEOMETRY_TYPE /" % newline;
+        out << "UNITS / MM" % newline;
+        out << "CALSUB/START_PROG" % newline;
+        out << "PARTNO/1 1 CF HY-80 3 x 1" % newline;
+        out << "PPRINT/ --- TOOLLIST BEGIN ---" % newline;
+        out << "PPRINT/ --- TOOLLIST END --- " % newline;
+        out << "$$-> CSYS / 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000" % newline;
+        out << "MULTAX/ ON" % newline;
+        out << "PPRINT/ --- files_x\toolChange_comment.txt --- " % newline;
+        out << "PPRINT/ - T1 R    2.25000 L   12.25000     0.00000 TORCH 1  *" % newline;
+        out << "PPRINT/ OPERATION 2 " % newline;
+        out << "PPRINT/" % newline;
+        out << "PPRINT/ CF HY-80 3 x 1" % newline;
+        out << "PPRINT/ T1 Additive Manufacturing" % newline;
+        out << "PPRINT/ --- " % newline;
+        out << "$$ ()" % newline;
+        out << "$$ ( -------------------- additive_toolchange.txt --- )" % newline;
+        out << "$$ LASER TOOL CHANGE" % newline;
+        out << "$$ ( -------------------- )" % newline;
+        out << "$$ ()" % newline;
+        out << "LOADTL/1" % newline;
+        out << "PPRINT/ --- files_x\\job_start.txt ---" % newline;
+        out << "PPRINT/ OPERATION 2" % newline;
+        out << "PPRINT/" % newline;
+        out << "PPRINT/ CF HY-80 3 x 1" % newline;
+        out << "PPRINT/ T1 Additive Manufacturing" % newline;
+        out << "CALSUB/START_JOB" % newline;
+        out << "SEQUENCE/ BEGIN,toolpath" % newline;
+        out << "PPRINT/ ---" % newline;
 
         for(QString line : lines)
         {
-            if(line.startsWith(G0) || line.startsWith(G1) || line.startsWith(M24) || line.startsWith(M25))
+            if(line.startsWith(G0))
             {
+                out << "RAPID" % newline;
                 QString temp = line.mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
                 QVector<QStringRef> params = temp.splitRef(space);
 
                 if(params[0] == G0)
                 {
-                    velocity = maxVelocity;
-                    feedrate = zero;
+                    for(int i = 1, end = params.size(); i < end; ++i)
+                    {
+                        if(params[i].startsWith(x))
+                            xval = params[i].mid(1).toString();
+                        else if(params[i].startsWith(y))
+                            yval = params[i].mid(1).toString();
+                        else if(params[i].startsWith(z))
+                            zval = params[i].mid(1).toString();
+                    }
                 }
-                if(params[0] == G0 || params[0] == G1)
+                out << "GOTO / " % xval % commaSpace % yval % commaSpace % zval % commaSpace % "0.0000, 0.0000, 1.0000" % newline;
+            }
+            else if(line.startsWith(G1))
+            {
+                QString temp = line.mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
+                QVector<QStringRef> params = temp.splitRef(space);
+
+                if(params[0] == G1)
                 {
                     for(int i = 1, end = params.size(); i < end; ++i)
                     {
@@ -74,22 +123,18 @@ namespace ORNL
                             velocity = params[i].mid(1).toString();
                     }
                 }
-                if(params[0] == M24)
-                {
-                    for(int i = 1, end = params.size(); i < end; ++i)
-                    {
-                        if(params[i].startsWith(s))
-                        {
-                            feedrate = params[i].mid(1).toString();
-                            break;
-                        }
-                    }
-                }
-                if(params[0] == M25)
-                {
-                    feedrate = QString::number(0);
-                }
-                out << xval % comma % yval % comma % zval % comma % velocity % comma % feedrate % newline;
+                out << "FEDRAT/ MMPM, " % velocity % newline;
+                out << "GOTO / " % xval % commaSpace % yval % commaSpace % zval % commaSpace % "0.0000, 0.0000, 1.0000" % newline;
+            }
+            else if(line.startsWith(M3))
+            {
+                out << "$$ ( -------------------- additiveDevice_on.txt --- )" % newline;
+                out << "CALSUB/START_DEPO" % newline;
+            }
+            else if(line.startsWith(M5))
+            {
+                out << "$$ ( -------------------- additiveDevice_off.txt --- )" % newline;
+                out << "CALSUB/STOP_DEPO" % newline;
             }
         }
         file.close();

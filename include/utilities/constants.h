@@ -647,6 +647,7 @@ namespace ORNL
                 static const QString kSpeed;
                 static const QString kExtruderSpeed;
                 static const QString kMinPathLength;
+                static const QString kOverlap;
             };
 
             class Skeleton
@@ -852,6 +853,7 @@ namespace ORNL
             public:
                 static const QString kSlicerType;
                 static const QString kLayerOrdering;
+                static const QString kLayerGroupingTolerance;
             };
 
             class CurveFitting
@@ -995,7 +997,8 @@ namespace ORNL
             public:
                 static const QString kMeldCompanionOutput;
                 static const QString kMeldDiscrete;
-                static const QString kTormachPython;
+                static const QString kTormachOutput;
+                static const QString kTormachMode;
             };
 
             class RotationOrigin

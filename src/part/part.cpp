@@ -49,9 +49,10 @@ namespace ORNL {
 
     }
 
-    Part::Part(QSharedPointer<MeshBase> root_mesh, QString file_name)
+    Part::Part(QSharedPointer<MeshBase> root_mesh, QString file_name, MeshType mt)
     {
         m_file_name = file_name;
+        m_mesh_type = mt;
         m_name = root_mesh->name();
         m_root_mesh = root_mesh;
         m_sync = QSharedPointer<SyncManager>::create();

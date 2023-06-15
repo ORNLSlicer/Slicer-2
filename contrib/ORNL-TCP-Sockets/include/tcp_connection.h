@@ -6,6 +6,7 @@
 #include <QTcpSocket>
 #include <QAbstractSocket>
 #include <QDataStream>
+#include <QUuid>
 
 namespace ORNL
 {
@@ -31,6 +32,9 @@ namespace ORNL
         //! \return the port as an int
         quint16 getPort();
 
+        void setId(QUuid id);
+        QUuid getId();
+
         //! \brief sets up a new connection to a host
         //! \param host the address to connect to
         //! \param port the port to connect to
@@ -50,6 +54,10 @@ namespace ORNL
         size_t getConnectionTimeout();
 
     public slots:
+        //! \brief check if connection is ready
+        //! \param msg the string data to send
+        bool isReady();
+
         //! \brief sends data over the connection
         //! \param msg the string data to send
         void write(const QString& msg);
@@ -111,6 +119,8 @@ namespace ORNL
 
         //! \brief default timeout is 15 seconds
         size_t m_connection_timeout = 15000;
+
+        QUuid m_id;
 
     private slots:
         //! \brief handles reading new messages when they arrive

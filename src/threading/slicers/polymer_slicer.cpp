@@ -47,8 +47,11 @@ namespace ORNL {
            m_saved_layer_settings.clear();
 
            // If rafts are being used, clear the part and start from scratch
-           if(part_sb->setting<bool>(Constants::MaterialSettings::PlatformAdhesion::kRaftEnable))
-                   part->clearSteps();
+           //if(part_sb->setting<bool>(Constants::MaterialSettings::PlatformAdhesion::kRaftEnable))
+           //        part->clearSteps();
+
+           // Caching does not work correctly - just always clear.
+           part->clearSteps();
 
            return false;
         });

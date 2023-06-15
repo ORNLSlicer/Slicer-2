@@ -1,2 +1,0 @@
-ls --format=single-column -S -r > dir.txt
-

@@ -61,6 +61,7 @@ namespace ORNL {
     }
 
     void PartMetaItem::setMeshType(MeshType mt) {
+        m_part->setMeshType(mt);
         m_type = mt;
 
         emit modified(PartMetaUpdateType::kVisualUpdate);
@@ -102,6 +103,9 @@ namespace ORNL {
     }
 
     void PartMetaItem::setRotation(QQuaternion r, bool current_rotation) {
+        if(m_rotation == r)
+            return;
+
         if (current_rotation) {
             m_rotation = r;
             m_transformation = MathUtils::composeTransformMatrix(m_translation, m_rotation, m_scale);

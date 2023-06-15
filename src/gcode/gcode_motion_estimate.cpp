@@ -53,11 +53,12 @@ namespace ORNL
         }
 
         //a Table move is always a standalone move
-        if(qAbs(dw) > m_min_threshold)
+        if(qAbs(dw) > m_min_threshold && qAbs(dx) < m_min_threshold && qAbs(dy) < m_min_threshold)
         {
             Time t = MotionEstimation::getTravelTime(dw, w_table_speed, m_v_acceleration);
             layer_time += t;
-            MotionEstimation::setVVector(0, 0, w_table_speed());
+            if(isFIncluded) G1F_time += t;
+            MotionEstimation::setVVector(0,0,w_table_speed());
             m_previous_w = m_current_w;
 
             MotionEstimation::addPreviousXYDecelerationTime(layer_time);
@@ -97,7 +98,7 @@ namespace ORNL
             {
                 if(m_previous_vertical)
                 {
-                   layer_time += MotionEstimation::firstXYMove(distance, dx, dy, dz, G1F_time);
+                   layer_time += MotionEstimation::firstXYMove(distance, dx, dy, dz, G1F_time, isFIncluded);
                 }
                 else
                 {
@@ -107,7 +108,9 @@ namespace ORNL
                     double theta = MotionEstimation::getTheta(distance, dx, dy, dz);
                     if(theta <= 0)
                     {
-                        layer_time += distance / m_current_speed;
+                        Time t = distance / m_current_speed;
+                        layer_time += t;
+                        if(isFIncluded) G1F_time += t;
                     }
                     else if(qAbs(theta - M_PI) < 0.1)
                     {
@@ -115,13 +118,13 @@ namespace ORNL
                         //treat it as 1st move, and calculate slowdown time from the previous move
                         //ToDo: 0.1 is an arbitrary value. Need to learn how the machine decides
                         //  on slowdown/parabolic blend
-                        layer_time += MotionEstimation::firstXYMove(distance, dx, dy, dz, G1F_time);
+                        layer_time += MotionEstimation::firstXYMove(distance, dx, dy, dz, G1F_time, isFIncluded);
                         MotionEstimation::addPreviousXYDecelerationTime(layer_time);
                     }
                     else
                     {
                         //relatively smoother turn: consider a parabolic blend
-                        layer_time += MotionEstimation::continuousXYMove(theta, distance, dx, dy, dz, G1F_time);
+                        layer_time += MotionEstimation::continuousXYMove(theta, distance, dx, dy, dz, G1F_time, isFIncluded);
                     }
                 }
             }
@@ -224,7 +227,7 @@ namespace ORNL
     }
 
     //consider only the acceleration from 0-speed
-    Time MotionEstimation::firstXYMove(Distance d, Distance dx, Distance dy, Distance dz, Time &G1F_time)
+    Time MotionEstimation::firstXYMove(Distance d, Distance dx, Distance dy, Distance dz, Time &G1F_time, bool isFIncluded)
     {
         Time time = 0;
         Time accelTime = m_current_speed / m_current_acceleration;
@@ -244,7 +247,7 @@ namespace ORNL
         m_previous_vv.setZ((m_incomingV * dz / d)());
 
         //max_xy_speed is used in G0 XY travel
-        if(m_current_speed != max_xy_speed)
+        if(isFIncluded && m_current_speed != max_xy_speed)
             G1F_time += d / m_current_speed;
 
         return time;
@@ -256,10 +259,10 @@ namespace ORNL
     // 3. time to accelerate for the current move
     //Incoming velocity: Velocity m_incomingV and Vector3D m_previous_v, not m_previous_speed which is reserved for the previous Fxx parameter
     //Current move: m_current_speed is still assumed as the speed
-    Time MotionEstimation::continuousXYMove(double theta, Distance d, Distance dx, Distance dy, Distance dz, Time &G1F_time)
+    Time MotionEstimation::continuousXYMove(double theta, Distance d, Distance dx, Distance dy, Distance dz, Time &G1F_time, bool isFIncluded)
     {
         Time time = d / m_current_speed;
-        G1F_time += time;
+        if(isFIncluded) G1F_time += time;
 
         Time addTime = 0;
         //Consider two minor changes

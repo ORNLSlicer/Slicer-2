@@ -43,6 +43,9 @@ namespace ORNL {
         m_low_layer  = 0;
         m_high_layer = gcode.size() - 1;
 
+        m_low_segment = 0;
+        m_high_segment = visibleSegmentCount();
+
         this->populateGL(view, vertices, normals, colors, GL_TRIANGLES);
     }
 
@@ -55,6 +58,34 @@ namespace ORNL {
                 else if (segment->hidden) segment->hidden = false;
             }
         }
+    }
+
+    void GCodeObject::showSegments(uint low_segment, uint high_segment){
+        uint max = visibleSegmentCount();
+        if(low_segment < 0 || high_segment > max) return;
+
+        m_high_segment = high_segment;
+        m_low_segment = low_segment;
+
+        uint count = 0;
+        for(int i = m_low_layer; i <= m_high_layer; i++){
+            for(int j = 0; j < m_segments[i].size(); j++){
+                if(count < low_segment || count > high_segment || static_cast<bool>(m_segments[i][j]->type & m_hidden_type)) {
+                    m_segments[i][j]->hidden = true;
+                } else {
+                    m_segments[i][j]->hidden = false;
+                }
+                ++count;
+            }
+        }
+    }
+
+    void GCodeObject::showLowSegment(uint low_segment){
+        this->showSegments(low_segment, m_high_segment);
+    }
+
+    void GCodeObject::showHighSegment(uint high_segment){
+        this->showSegments(m_low_segment, high_segment);
     }
 
     void GCodeObject::showLayers(uint low_layer, uint high_layer) {

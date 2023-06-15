@@ -1,1 +1,0 @@
-Geometric object generators: Random and synthetic point distributions, random convex sets, etc.

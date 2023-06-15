@@ -323,7 +323,13 @@ namespace ORNL
 
     void BaseView::translateCamera(QVector3D v, bool absolute)
     {
-        // Nothing by default.
+        if (absolute) {
+            m_camera->panAbsolute(v);
+            m_focus->translateAbsolute(m_camera->getPan());
+        } else {
+            m_camera->pan(v);
+            m_focus->translateAbsolute(m_camera->getPan());
+        }
     }
 
     void BaseView::initializeGL()

@@ -23,6 +23,8 @@ namespace ORNL
         for (int ext = 0, end = m_extruders_on.size(); ext < end; ++ext) //all extruders off initially
             m_extruders_on[ext] = false;
         m_first_travel = true;
+        m_z_travel = false;
+        m_w_travel = false;
         m_first_print = true;
         m_layer_start = true;
         m_wire_feed = false;
@@ -89,16 +91,6 @@ namespace ORNL
                 rv += "M0" % commentSpaceLine("WAIT FOR USER");
             }
         }
-
-        // Borish
-        // Laser Scanner
-        // IR camera
-        /* if (use scale)
-         * M233 (RAISE WEIGH STATION)
-         * writeDwell(3)
-         * G104 P1000 (SCALE CONNECT)
-         * G104 P5000 (SCALE TARE)
-         */
 
         if(m_sb->setting<bool>(Constants::ProfileSettings::LaserScanner::kLaserScanner))
         {
@@ -291,62 +283,110 @@ namespace ORNL
     {
         QString rv;
 
-         Point new_start_location;
-         RegionType rType = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
+        Point new_start_location;
+        RegionType rType = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
+        bool w_active_first_travel = false;
+        if(m_first_travel)
+             w_active_first_travel = true;
 
-         //Use updated start location if this is the first travel
-         if(m_first_travel)
-             new_start_location = m_start_point;
-         else
-             new_start_location = start_location;
+        //Use updated start location if this is the first travel
+        if(m_first_travel)
+            new_start_location = m_start_point;
+        else
+            new_start_location = start_location;
 
-         Distance liftDist;
-         if(rType == RegionType::kLaserScan)
+        Distance liftDist;
+        if(rType == RegionType::kLaserScan)
              liftDist =  m_sb->setting< Distance >(Constants::ProfileSettings::LaserScanner::kLaserScannerHeight) -
                      m_sb->setting<Distance>(Constants::ProfileSettings::LaserScanner::kLaserScannerHeightOffset);
-         else
+        else
              liftDist = m_sb->setting< Distance >(Constants::ProfileSettings::Travel::kLiftHeight);
 
-         bool travel_lift_required = liftDist > 0;// && !m_first_travel; //do not write a lift on first travel
+        bool travel_lift_required = liftDist > 0;// && !m_first_travel; //do not write a lift on first travel
 
-         //Don't lift for short travel moves
-         if(start_location.distance(target_location) < m_sb->setting< Distance >(Constants::ProfileSettings::Travel::kMinTravelForLift))
-         {
-             travel_lift_required = false;
-         }
+        //Don't lift for short travel moves
+        if(start_location.distance(target_location) < m_sb->setting< Distance >(Constants::ProfileSettings::Travel::kMinTravelForLift))
+        {
+            travel_lift_required = false;
+        }
 
-         //travel_lift vector in direction normal to the layer
-         //with length = lift height as defined in settings
-         QVector3D travel_lift = getTravelLift();
+        //travel_lift vector in direction normal to the layer
+        //with length = lift height as defined in settings
+        QVector3D travel_lift = getTravelLift();
 
-         //write the lift
-         if (travel_lift_required && !m_first_travel && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly))
-         {
-             Point lift_destination = new_start_location + travel_lift; //lift destination is above start location
+        //write the lift
+        if (travel_lift_required && !m_first_travel && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly))
+        {
+            Point lift_destination = new_start_location + travel_lift; //lift destination is above start location
+            rv += m_G0 % writeCoordinates(lift_destination);
+            if(m_w_travel)
+            {
+                rv += commentSpaceLine("TRAVEL LOWER W");
+                setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kWTableSpeed));
+            }
+            else
+            {
+               rv += commentSpaceLine("TRAVEL LIFT Z");
+               setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed));
+            }
+        }
+        /*else if(travel_lift_required && !m_first_travel && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly))
+        {
+            Point lift_destination = new_start_location + travel_lift; //lift destination is above start location
+            rv += m_G0 % writeCoordinates(lift_destination) % commentSpaceLine("TRAVEL LOWER W");
+            setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed));
+        }*/
 
-             rv += m_G0 % writeCoordinates(lift_destination) % commentSpaceLine("TRAVEL LIFT Z");
-             setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed));
-         }
+        //write the travel
+        Point travel_destination = target_location;
+        if(m_first_travel)
+            travel_destination.z(qAbs(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset)()));
+        else if (travel_lift_required)
+            travel_destination = travel_destination + travel_lift; //travel destination is above the target point
 
-         //write the travel
-         Point travel_destination = target_location;
-         if(m_first_travel)
-             travel_destination.z(qAbs(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset)()));
-         else if (travel_lift_required)
-             travel_destination = travel_destination + travel_lift; //travel destination is above the target point
+        rv += m_G0 % writeCoordinates(travel_destination) % commentSpaceLine("TRAVEL");
+        setFeedrate(m_sb->setting< Velocity >(Constants::ProfileSettings::Travel::kSpeed));
 
-         rv += m_G0 % writeCoordinates(travel_destination) % commentSpaceLine("TRAVEL");
-         setFeedrate(m_sb->setting< Velocity >(Constants::ProfileSettings::Travel::kSpeed));
+        if (m_first_travel) //if this is the first travel
+            m_first_travel = false; //update for next one
 
-         if (m_first_travel) //if this is the first travel
-             m_first_travel = false; //update for next one
+        //write the travel lower (undo the lift)
+        if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftLowerOnly))
+        {
+            rv += m_G0 % writeCoordinates(target_location);//
+            if(m_w_travel)
+            {
+                rv += commentSpaceLine("TRAVEL LIFT W");
+                setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kWTableSpeed));
+            }
+            else
+            {
+               rv += commentSpaceLine("TRAVEL LOWER Z");
+               setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed));
+            }
 
-         //write the travel lower (undo the lift)
-         if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftLowerOnly))
-         {
-             rv += m_G0 % writeCoordinates(target_location) % commentSpaceLine("TRAVEL LOWER Z");
-             setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed));
-         }
+
+        }
+        /*else if(travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftLowerOnly))
+        {
+            rv += m_G0 % writeCoordinates(target_location) % commentSpaceLine("TRAVEL LIFT W");
+            setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kWTableSpeed));
+        }*/
+
+        if(w_active_first_travel && m_sb->setting<int>(Constants::PrinterSettings::Dimensions::kLayerChangeAxis) == static_cast<int>(LayerChange::kW_only))
+        {
+            //If using W only, a first travel to position the Z is required
+            rv += m_G0 % m_z % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset).to(m_meta.m_distance_unit), 'f', 4)
+                % commentSpaceLine("TRAVEL SET PRINTING Z HEIGHT");
+            w_active_first_travel = false;
+        }
+        else if(w_active_first_travel && m_sb->setting<int>(Constants::PrinterSettings::Dimensions::kLayerChangeAxis) == static_cast<int>(LayerChange::kBoth_Z_and_W) && m_spiral_layer)
+        {
+            //If using ZW and Spiralize, a first travel to position the Z is required
+            rv += m_G0 % m_z % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset).to(m_meta.m_distance_unit), 'f', 4)
+                % commentSpaceLine("TRAVEL SET PRINTING Z HEIGHT");
+            w_active_first_travel = false;
+        }
 
         return rv;
     }
@@ -829,6 +869,8 @@ namespace ORNL
     QString CincinnatiWriter::writeCoordinates(Point destination)
     {
         QString rv;
+        m_z_travel = false;
+        m_w_travel = false;
 
         //always specify X and Y
         rv += m_x % QString::number(Distance(destination.x()).to(m_meta.m_distance_unit), 'f', 4) %
@@ -853,17 +895,19 @@ namespace ORNL
                 rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
                 m_current_z = target_z;
                 m_last_z = target_z;
+                m_z_travel = true;
             }
         }
         else if (m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kLayerChangeAxis) == static_cast<int>(LayerChange::kW_only))
         {
             //move in W only
             Distance target_w = destination.z() * -1.0;
-            if(qAbs(target_w - m_last_w) > 10)
+            if(qAbs(target_w - m_last_w) > 10 && !m_first_travel)
             {
                 rv += m_w % QString::number(Distance(target_w).to(m_meta.m_distance_unit), 'f', 4);
                 m_current_w = target_w;
                 m_last_w = target_w;
+                m_w_travel = true;
             }
         }
         else //Both Z and W
@@ -879,6 +923,7 @@ namespace ORNL
                         rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
                         m_current_z = target_z;
                         m_last_z = target_z;
+                        m_z_travel = true;
                     }
                 }
                 else
@@ -891,12 +936,14 @@ namespace ORNL
                         rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
                         m_current_z = target_z;
                         m_last_z = target_z;
+                        m_z_travel = true;
                     }
                     else
                     {
                         m_current_w = target_w;
                         m_last_w = target_w;
                         rv += m_w % QString::number(Distance(target_w).to(m_meta.m_distance_unit), 'f', 4);
+                        m_w_travel = true;
                     }
                 }
             }
@@ -913,6 +960,7 @@ namespace ORNL
                     rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
                     m_current_z = target_z;
                     m_last_z = target_z;
+                    m_z_travel = true;
                 }
             }
         }

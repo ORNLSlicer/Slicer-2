@@ -1,2 +1,0 @@
-the scripts used for release building, package handling
-and test handling.

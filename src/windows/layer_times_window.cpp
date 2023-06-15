@@ -122,4 +122,8 @@ namespace ORNL
       }
       m_layer_times_edit->setText(layerTimeString);
   }
+
+  void LayerTimesWindow::clear(){
+      m_layer_times_edit->setText("");
+  }
 }

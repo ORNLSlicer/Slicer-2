@@ -757,10 +757,15 @@ namespace ORNL {
         // Hook up updated layer min/max from gcode bar to gcodewidget
         connect(m_gcodebar, &GcodeBar::lowerLayerUpdated, m_gcode_widget->view(), &GCodeView::setLowLayer);
         connect(m_gcodebar, &GcodeBar::upperLayerUpdated, m_gcode_widget->view(), &GCodeView::setHighLayer);
+        connect(m_gcodebar, &GcodeBar::lowerSegmentUpdated, m_gcode_widget->view(), &GCodeView::setLowSegment);
+        connect(m_gcodebar, &GcodeBar::upperSegmentUpdated, m_gcode_widget->view(), &GCodeView::setHighSegment);
         connect(m_gcodebar, &GcodeBar::lineChanged, m_gcode_widget->view(), &GCodeView::updateSegments);
         connect(m_gcodebar, &GcodeBar::refreshGCode, this, &MainWindow::importGCodeHelper);
         connect(m_gcodebar, &GcodeBar::forwardVisibilityChange, m_gcode_widget->view(), &GCodeView::hideSegmentType);
         connect(m_gcodebar, &GcodeBar::forwardSegmentWidthChange, m_gcode_widget->view(), &GCodeView::updateSegmentWidths);
+
+        // Update segment slider when layer is changed
+        connect(m_gcode_widget->view(), &GCodeView::maxSegmentChanged, m_gcodebar, &GcodeBar::setMaxSegment);
 
         // Gcode widget to bar.
         connect(m_gcode_widget->view(), &GCodeView::updateSelectedSegments, this,
@@ -1069,6 +1074,11 @@ namespace ORNL {
         */
 
         m_gcode_widget->clear();
+        m_gcodebar->clear();
+        m_layertimebar->clear();
+
+        if(!CSM->isBuildMode())
+            return;
 
         m_slice_dialog.reset(new SliceDialog(this));
         connect(CSM.get(), &SessionManager::updateDialog, m_slice_dialog.get(), QOverload<StatusUpdateStepType, int>::of(&SliceDialog::updateStatus));
@@ -1208,6 +1218,7 @@ namespace ORNL {
         connect(loader, &GCodeLoader::gcodeLoadedVisualization, this,
                 [this](QVector<QVector<QSharedPointer<SegmentBase>>> segments) {
                     m_gcodebar->setMaxLayer(qMax(segments.size() - 1, 0));
+                    m_gcodebar->setMaxSegment(qMax(segments[0].size() + segments[1].size() - 1, 0));
                 }
         );
 

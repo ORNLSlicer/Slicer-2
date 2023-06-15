@@ -754,6 +754,7 @@ namespace ORNL
     {
         kBrim = 0,
         kCoasting,
+        kEmbossing,
         kInfill,
         kInitialStartup,
         kInset,
@@ -786,6 +787,7 @@ namespace ORNL
         switch (color){
             case VisualizationColors::kBrim: return "Brim";
             case VisualizationColors::kCoasting: return "Coasting";
+            case VisualizationColors::kEmbossing: return "Embossing";
             case VisualizationColors::kInfill: return "Infill";
             case VisualizationColors::kInitialStartup: return "InitialStartup";
             case VisualizationColors::kInset: return "Inset";
@@ -828,6 +830,7 @@ namespace ORNL
         switch (color){
         case VisualizationColors::kBrim: return QColor(200,113,55, 255);
             case VisualizationColors::kCoasting: return QColor(211,95,141, 255);
+            case VisualizationColors::kEmbossing: return QColor(255,0,0,255).lighter();
             case VisualizationColors::kInfill: return QColor(0,255,0, 255);
             case VisualizationColors::kInitialStartup: return QColor(135,222,205, 255);
             case VisualizationColors::kInset: return QColor(0,204,255, 255);
@@ -981,6 +984,15 @@ namespace ORNL
         kXLocation = 0,
         kYLocation = 1,
         kArea = 2
+    };
+
+    enum class TormachMode : uint8_t
+    {
+        kMode21 = 0,
+        kMode40 = 1,
+        kMode102 = 2,
+        kMode274 = 3,
+        kMode509 = 4
     };
 
     enum class Direction : uint8_t

@@ -1,3 +1,0 @@
-Property Map
-
-This package provides a framework for interfacing CGAL data structures with algorithms expecting Boost Property Maps.

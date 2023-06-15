@@ -1,4 +1,0 @@
-- The CGAL::Mesh_domain_with_polyline_features_3<MeshDomain_3>, there are
-  non-documented requirements on the geomtraits class typename
-  Mesh_domain_3::R.
-  -- Laurent Rineau, 2011/09/30

@@ -873,8 +873,6 @@ namespace ORNL
                        w_not_used = true, f_not_used = true, s_not_used = true,
                        e_not_used = true, is_motion_command = false;
 
-        m_with_F_value = false;
-
         for(QStringRef ref : params)
         {
             // Retriving the first character in the QString and making it a char
@@ -958,7 +956,6 @@ namespace ORNL
                         current_value *= m_velocity_unit();
                         setSpeed(current_value);
                         f_not_used = false;
-                        m_with_F_value = true;
                     }
                     else
                     {
@@ -1056,7 +1053,9 @@ namespace ORNL
             m_motion_commands[m_current_layer].push_back(m_current_gcode_command);
         }
 
+        m_with_F_value = m_current_spindle_speed != 0;
         MotionEstimation::m_total_distance += getCurrentGXDistance();
+        m_with_F_value = false;
         // Checks if the command did not use a movement command, but only a flow
         // command. Not needed. if( x_not_used && y_not_used && z_not_used &&
         // w_not_used )
@@ -1905,6 +1904,8 @@ namespace ORNL
 
                 if(!no_error)
                     m_current_extruders_speed = 0;
+
+                setSpindleSpeed(m_current_extruders_speed * m_angular_velocity_unit());
             }
         }
 
@@ -1917,6 +1918,7 @@ namespace ORNL
 
     void CommonParser::M5Handler(QVector<QStringRef> params)
     {
+        m_current_spindle_speed = m_current_extruders_speed = 0;
         for (int i = 0, end = m_extruders_on.size(); i < end; ++i)
         {
             if (m_extruders_active[i])

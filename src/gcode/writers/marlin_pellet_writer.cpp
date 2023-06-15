@@ -250,7 +250,7 @@ namespace ORNL
         {
             rv += writeExtruderOff();
         }
-        else if(m_current_bead_area != bead_area && m_sb->setting<bool>(Constants::ProfileSettings::SpecialModes::kEnableWidthHeight))
+        else if(m_current_bead_area != bead_area && m_sb->setting<bool>(Constants::ProfileSettings::SpecialModes::kEnableWidthHeight) && rpm > 0)
         {
             rv += m_M3 % m_s % QString::number((Distance(width).to(m_meta.m_distance_unit) - Distance(height).to(m_meta.m_distance_unit))
                                     * Distance(height).to(m_meta.m_distance_unit) + (pi()
@@ -572,6 +572,7 @@ namespace ORNL
         rv += m_M5 % commentSpaceLine("TURN EXTRUDER OFF");
 
         m_current_rpm = 0;
+        m_current_bead_area = 0;
 
         return rv;
     }

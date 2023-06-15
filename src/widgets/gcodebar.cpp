@@ -28,6 +28,22 @@ namespace ORNL {
         search();
     }
 
+    void GcodeBar::clear()
+    {
+        m_view->resetHighlight();
+        m_view->setPlainText("");
+        m_refresh_btn->setEnabled(false);
+
+        updateLowerSpin(0);
+        updateLowerSlider(0);
+        updateUpperSpin(0);
+        updateUpperSlider(0);
+
+        m_layer_upper->setMaximum(0);
+        m_layer_lower->setMaximum(0);
+    }
+
+
     void GcodeBar::updateLowerSpin(int new_value)
     {
         if(m_lock_layer->isChecked())
@@ -129,6 +145,58 @@ namespace ORNL {
         emit upperLayerUpdated(new_value);
     }
 
+    void GcodeBar::updateSegmentLowerSpin(int new_value)
+    {
+        m_segment_lower_slider->blockSignals(true);
+        m_segment_lower_slider->setValue(new_value);
+        m_segment_lower_slider->blockSignals(false);
+        forwardLowerSegmentUpdate(new_value);
+    }
+
+    void GcodeBar::updateSegmentLowerSlider(int new_value)
+    {
+        m_segment_lower->blockSignals(true);
+        m_segment_lower->setValue(new_value);
+        m_segment_lower->blockSignals(false);
+        forwardLowerSegmentUpdate(new_value);
+    }
+
+    void GcodeBar::forwardLowerSegmentUpdate(int new_value)
+    {
+        if(new_value > m_segment_upper->value())
+        {
+            //Note that this will cause the slot GcodeBar::forwardUpperLayerUpdate to be invoked
+            m_segment_upper->setValue(new_value);
+        }
+        emit lowerSegmentUpdated(new_value);
+    }
+
+    void GcodeBar::updateSegmentUpperSpin(int new_value)
+    {
+        m_segment_upper_slider->blockSignals(true);
+        m_segment_upper_slider->setValue(new_value);
+        m_segment_upper_slider->blockSignals(false);
+        forwardUpperSegmentUpdate(new_value);
+    }
+
+    void GcodeBar::updateSegmentUpperSlider(int new_value)
+    {
+        m_segment_upper->blockSignals(true);
+        m_segment_upper->setValue(new_value);
+        m_segment_upper->blockSignals(false);
+        forwardUpperSegmentUpdate(new_value);
+    }
+
+    void GcodeBar::forwardUpperSegmentUpdate(int new_value)
+    {
+        if(new_value < m_segment_lower->value())
+        {
+            //Note that this will cause the slot GcodeBar::forwardUpperLayerUpdate to be invoked
+            m_segment_lower->setValue(new_value);
+        }
+        emit upperSegmentUpdated(new_value);
+    }
+
     void GcodeBar::forwardLineChange(QList<int> linesToAdd, QList<int> linesToRemove)
     {
         this->setLineNumber(linesToAdd, linesToRemove, false);
@@ -169,6 +237,19 @@ namespace ORNL {
         m_layer_lower_slider->setMaximum(max_value);
         m_layer_upper->setMaximum(max_value);
         m_layer_upper_slider->setMaximum(max_value);
+    }
+
+    void GcodeBar::setMaxSegment(int max_value)
+    {
+        m_segment_lower->setMaximum(max_value);
+        m_segment_lower_slider->setMaximum(max_value);
+        m_segment_upper->setMaximum(max_value);
+        m_segment_upper_slider->setMaximum(max_value);
+
+        updateSegmentUpperSpin(max_value);
+        updateSegmentUpperSlider(max_value);
+        updateSegmentLowerSpin(0);
+        updateSegmentLowerSlider(0);
     }
 
     void GcodeBar::setLineNumber(QList<int> linesToAdd, QList<int> linesToRemove, bool shouldCenter)
@@ -249,6 +330,37 @@ namespace ORNL {
         // Layer Labels
         m_lower_label = new QLabel("Lower Layer:", this);
         m_upper_label = new QLabel("Upper Layer:", this);
+
+        // Layer Play button
+        m_layer_play_btn = new QToolButton(this);
+        m_layer_play_btn->setIcon(QIcon(":/icons/next.png"));
+        m_layer_play_btn->setToolTip("Play Layers");
+        m_layer_play_btn->setEnabled(true);
+
+        // Lower Segment Spinbox
+        m_segment_lower = new QSpinBox(this);
+        m_segment_lower->setMinimum(0);
+        m_segment_lower->setValue(0);
+
+        // Upper Segment Spinbox
+        m_segment_upper = new QSpinBox(this);
+        m_segment_upper->setMinimum(0);
+        m_segment_upper->setValue(1);
+
+        // Segment Sliders
+        m_segment_lower_slider = new QSlider(Qt::Horizontal, this);
+        m_segment_upper_slider = new QSlider(Qt::Horizontal, this);
+        m_segment_upper_slider->setValue(1);
+
+        // Segment Labels
+        m_lower_segment_label = new QLabel("First Segment:", this);
+        m_upper_segment_label = new QLabel("Last Segment:", this);
+
+        // Segment Play button
+        m_segment_play_btn = new QToolButton(this);
+        m_segment_play_btn->setIcon(QIcon(":/icons/next.png"));
+        m_segment_play_btn->setToolTip("Play Segments");
+        m_segment_play_btn->setEnabled(true);
     }
 
     void GcodeBar::setupLayouts() {
@@ -280,11 +392,23 @@ namespace ORNL {
         m_layout->addWidget(m_lower_label, 6, 0, 1, 1);
         m_layout->addWidget(m_layer_lower, 6, 1, 1, 1);
         m_layout->addWidget(m_layer_lower_slider, 6, 2, 1, 2);
-        m_layout->addWidget(m_lock_layer, 6, 4, 2, 1);
+        m_layout->addWidget(m_lock_layer, 5.5, 4, 2, 1);
 
         m_layout->addWidget(m_upper_label, 7, 0, 1, 1);
         m_layout->addWidget(m_layer_upper, 7, 1, 1, 1);
         m_layout->addWidget(m_layer_upper_slider, 7, 2, 1, 2);
+
+        m_layout->addWidget(m_layer_play_btn, 7, 4, 1, 1);
+
+        m_layout->addWidget(m_lower_segment_label, 8, 0, 1, 1);
+        m_layout->addWidget(m_segment_lower, 8, 1, 1, 1);
+        m_layout->addWidget(m_segment_lower_slider, 8, 2, 1, 2);
+
+        m_layout->addWidget(m_upper_segment_label, 9, 0, 1, 1);
+        m_layout->addWidget(m_segment_upper, 9, 1, 1, 1);
+        m_layout->addWidget(m_segment_upper_slider, 9, 2, 1, 2);
+
+        m_layout->addWidget(m_segment_play_btn, 9, 4, 1, 1);
     }
 
     void GcodeBar::setupEvents() {
@@ -293,9 +417,16 @@ namespace ORNL {
         connect(m_layer_upper, QOverload<int>::of(&QSpinBox::valueChanged), this, &GcodeBar::updateUpperSpin);
         connect(m_layer_upper_slider, &QSlider::valueChanged, this, &GcodeBar::updateUpperSlider);
 
+        connect(m_segment_lower, QOverload<int>::of(&QSpinBox::valueChanged), this, &GcodeBar::updateSegmentLowerSpin);
+        connect(m_segment_lower_slider, &QSlider::valueChanged, this, &GcodeBar::updateSegmentLowerSlider);
+        connect(m_segment_upper, QOverload<int>::of(&QSpinBox::valueChanged), this, &GcodeBar::updateSegmentUpperSpin);
+        connect(m_segment_upper_slider, &QSlider::valueChanged, this, &GcodeBar::updateSegmentUpperSlider);
+
         connect(this, &GcodeBar::lowerLayerUpdated, this, &GcodeBar::moveToLayer);
         connect(m_search_bar, &QLineEdit::returnPressed, this, &GcodeBar::search);
         connect(m_refresh_btn, &QPushButton::clicked, this, &GcodeBar::updateGCodeView);
+        connect(m_layer_play_btn, &QPushButton::clicked, this, &GcodeBar::updatePlayButton);
+        connect(m_segment_play_btn, &QPushButton::clicked, this, &GcodeBar::updateSegmentPlayButton);
         connect(m_view, &GcodeTextBoxWidget::lineChange, this, &GcodeBar::forwardLineChange);
         connect(m_view, &QPlainTextEdit::modificationChanged, this, &GcodeBar::updateRefreshButton);
 
@@ -313,6 +444,12 @@ namespace ORNL {
 
         connect(m_lock_layer, &QCheckBox::clicked,
                 [this] { if(m_lock_layer->isChecked()) m_lock_distance = m_layer_upper->value() - m_layer_lower->value(); });
+
+        //Timeout occurs when the timer is up, and the next layer or segment is drawn
+        m_layer_timer = new QTimer();
+        connect(m_layer_timer, &QTimer::timeout, this, &GcodeBar::drawNextLayer);
+        m_segment_timer = new QTimer();
+        connect(m_segment_timer, &QTimer::timeout, this, &GcodeBar::drawNextSegment);
     }
 
     void GcodeBar::updateGCodeView()
@@ -343,9 +480,87 @@ namespace ORNL {
 
     void GcodeBar::updateRefreshButton(bool change)
     {
+
         //Don't enable the refresh button if the change is for formatting resulted from a search
         //QPlainTextEdit::modificationChanged is for all types of modifications. No signal available for content change only
         if(!m_search_only_change)
             m_refresh_btn->setEnabled(change);
+    }
+
+    void GcodeBar::updatePlayButton()
+    {
+        if(m_layer_timer->isActive()){
+            //Pause drawing layers and reset image
+            m_layer_timer->stop();
+            m_layer_play_btn->setIcon(QIcon(":/icons/next.png"));
+            m_layer_play_btn->setToolTip("Start playing layers");
+        }
+        else{
+            //Delay between drawing layers in milliseconds
+            int draw_time = PM->getLayerLag();
+            m_layer_timer->start(draw_time);
+
+            m_layer_play_btn->setIcon(QIcon(":/icons/stop.png"));
+            m_layer_play_btn->setToolTip("Pause");
+
+            if (m_layer_upper_slider->value() >= m_layer_upper_slider->maximum()) {
+                updateUpperSlider(0);
+                updateUpperSpin(0);
+            }
+        }
+    }
+
+    void GcodeBar::updateSegmentPlayButton()
+    {
+        if(m_segment_timer->isActive()){
+            //Pause drawing layers and reset image
+            m_segment_timer->stop();
+            m_segment_play_btn->setIcon(QIcon(":/icons/next.png"));
+            m_segment_play_btn->setToolTip("Start playing segments");
+        }
+        else{
+            if (m_hide_travel->isChecked()) m_hide_travel->click();
+            if (m_hide_support->isChecked()) m_hide_support->click();
+
+            //Delay between drawing segments in milliseconds
+            int draw_time = PM->getSegmentLag();
+            m_segment_timer->start(draw_time);
+
+            m_segment_play_btn->setIcon(QIcon(":/icons/stop.png"));
+            m_segment_play_btn->setToolTip("Pause");
+
+            if(m_segment_upper_slider->value() >= m_segment_upper_slider->maximum()) {
+                updateSegmentUpperSlider(0);
+                updateSegmentUpperSpin(0);
+            }
+        }
+    }
+
+    void GcodeBar::drawNextLayer()
+    {
+        //Increase the layer slider until all layers are shown
+        if(m_layer_upper_slider->value() < m_layer_upper_slider->maximum()){
+            updateUpperSlider(m_layer_upper_slider->value() + 1);
+            updateUpperSpin(m_layer_upper_slider->value() + 1);
+        }
+        else{
+            m_layer_timer->stop();
+            m_layer_play_btn->setIcon(QIcon(":/icons/next.png"));
+            m_layer_play_btn->setToolTip("Start playing layers");
+        }
+    }
+
+    void GcodeBar::drawNextSegment()
+    {
+        //Increase the segment slider until all segments in window are shown
+        if(m_segment_upper_slider->value() < m_segment_upper_slider->maximum()){
+            updateSegmentUpperSlider(m_segment_upper_slider->value() + 1);
+            updateSegmentUpperSpin(m_segment_upper_slider->value() + 1);
+        }
+        else{
+            m_segment_timer->stop();
+            m_segment_play_btn->setIcon(QIcon(":/icons/next.png"));
+            m_segment_play_btn->setToolTip("Start playing segments");
+        }
     }
 }

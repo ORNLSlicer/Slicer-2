@@ -1,1 +1,0 @@
-Boolean operations on generalized polygons in the plane

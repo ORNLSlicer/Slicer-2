@@ -1,4 +1,0 @@
-/*!
-\example Circular_kernel_2/intersecting_arcs.cpp
-\example Circular_kernel_2/functor_has_on_2.cpp
-*/

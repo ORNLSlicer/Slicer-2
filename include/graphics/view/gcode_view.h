@@ -56,6 +56,11 @@ namespace ORNL {
             //! \brief Sets the highest layer to show.
             void setHighLayer(uint high_layer);
 
+            //! \brief Sets the lowest segment to show.
+            void setLowSegment(uint low_segment);
+            //! \brief Sets the highest layer to show.
+            void setHighSegment(uint high_segment);
+
             //! \brief Updates segments. Adjusts index as segments are 1-based
             //! while widget's block number is 0-based
             //! \param linesToAdd: lines to select
@@ -81,6 +86,10 @@ namespace ORNL {
             //! \param linesToAdd: lines to select
             //! \param lineToRemove: lines to deselect
             void updateSelectedSegments(QList<int> linesToAdd, QList<int> linesToRemove);
+
+            //! \brief Signal that the max segments has changed
+            //! \param max: new max segments
+            void maxSegmentChanged(uint max);
 
         protected:
             //! \brief Initalizes the view with the printer and the associated objects.

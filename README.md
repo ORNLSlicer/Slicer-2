@@ -11,7 +11,7 @@
 - [Contributors and Thanks](#contributors-and-thanks)
 - [Engagement](#Engagement)
 - [Contact](#contact)
-- [Share](#share)
+- [Share] (#share)
 
 ## Design goals
 

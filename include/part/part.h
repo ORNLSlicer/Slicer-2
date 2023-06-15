@@ -42,10 +42,17 @@ namespace ORNL {
         //! \brief Constructor
         //! \param a pointer to a mesh to set at the root
         //! \param source file path for this part.
-        Part(QSharedPointer<MeshBase> root_mesh, QString file_name = "");
+        //! \param Mesh type mode, defaults to build
+        Part(QSharedPointer<MeshBase> root_mesh, QString file_name = "", MeshType mt = MeshType::kBuild);
 
         //! \brief Source file for part
-        QString sourceFilePath() {return m_file_name;};
+        QString sourceFilePath() { return m_file_name; }
+
+        //! \brief Mesh type mode, defaults to build
+        MeshType getMeshType() { return m_mesh_type;}
+
+        //! \brief Set Mesh type mode
+        void setMeshType(MeshType mt) { m_mesh_type = mt;}
 
         //! \brief Get name of this part.
         inline QString name() { return m_name; }
@@ -333,6 +340,8 @@ namespace ORNL {
         //! \brief Source file path for the part.
         QString m_file_name;
 
+        //! \brief Mesh type mode, defaults to build
+        MeshType m_mesh_type = MeshType::kBuild;
     };
 }  // namespace ORNL
 

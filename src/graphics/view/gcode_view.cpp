@@ -334,8 +334,11 @@ namespace ORNL {
         // When there are more than 10000 segments being shown at once,
         // disable the mouse tracking (highlighting when mouse on top of
         // segment). This helps performance.
-        if (m_gcode_object->visibleSegmentCount() > 10000) this->setMouseTracking(false);
+        uint segment_count = m_gcode_object->visibleSegmentCount();
+        if (segment_count > 10000) this->setMouseTracking(false);
         else this->setMouseTracking(true);
+
+        emit maxSegmentChanged(segment_count-1);
 
         this->update();
     }
@@ -346,6 +349,33 @@ namespace ORNL {
 
         m_gcode_object->showHigh(high_layer);
         m_state.high_layer = high_layer;
+
+        uint segment_count = m_gcode_object->visibleSegmentCount();
+        if (segment_count > 10000) this->setMouseTracking(false);
+        else this->setMouseTracking(true);
+
+        emit maxSegmentChanged(segment_count-1);
+
+        this->update();
+    }
+
+    void GCodeView::setLowSegment(uint low_segment)
+    {
+        if (m_gcode_object.isNull()) return;
+
+        m_gcode_object->showLowSegment(low_segment);
+
+        if (m_gcode_object->visibleSegmentCount() > 10000) this->setMouseTracking(false);
+        else this->setMouseTracking(true);
+
+        this->update();
+    }
+
+    void GCodeView::setHighSegment(uint high_segment)
+    {
+        if (m_gcode_object.isNull()) return;
+
+        m_gcode_object->showHighSegment(high_segment);
 
         if (m_gcode_object->visibleSegmentCount() > 10000) this->setMouseTracking(false);
         else this->setMouseTracking(true);

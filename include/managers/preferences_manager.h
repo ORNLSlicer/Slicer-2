@@ -146,6 +146,14 @@ namespace ORNL
         //! \return if parts should always be dropped
         bool getAlwaysDropParts();
 
+        //! \brief Get the lag between layers
+        //! \return lag in milliseconds
+        int getLayerLag();
+
+        //! \brief Get the lag between segments
+        //! \return lag in milliseconds
+        int getSegmentLag();
+
         //! \brief Checks if any preferences have changed
         bool isDirty();
 
@@ -192,8 +200,12 @@ namespace ORNL
         bool isDefaultVisualizationColor(QString name);
 
         //! \brief Get visualization color map
-        //! \return visualization color map
-        std::unordered_map<std::string, QColor> getVisualizationColors();
+        //! \return visualization color map of name and color
+        std::map<std::string, QColor> getVisualizationColors();
+
+        //! \brief Get Visualization Colors as Hex strings
+        //! \return visualization color map of name and color as hex string
+        std::map<std::string, std::string> getVisualizationHexColors();
 
         //! \brief Get processing step connectivity
         //! \param type: processing step to get
@@ -207,6 +219,18 @@ namespace ORNL
         //! \brief Get TCP server autostart
         //! \return whether or not to autostart
         bool getTcpServerAutoStart();
+
+        //! \brief Get Send Output To Katana
+        //! \return whether or not to send gcode / model to Katana
+        bool getKatanaSendOutput();
+
+        //! \brief Get Katana TCP IP Address
+        //! \return Katana TCP IP Address as string
+        QString getKatanaTCPIp();
+
+        //! \brief Get Katana TCP Port
+        //! \return Katana TCP Port as integer
+        int getKatanaTCPPort();
 
     signals:
         //! \brief Signal emitted when the import unit is changed
@@ -359,6 +383,14 @@ namespace ORNL
         //! \param window_pos: position of window
         void setWindowPosPreference(QPoint window_pos);
 
+        //! \brief Sets the lag between layers when using the play button
+        //! \param lag: time to lag in milliseconds
+        void setLayerLag(int lag);
+
+        //! \brief Sets the lag between segments when using the play button
+        //! \param lag: time to lag in milliseconds
+        void setSegmentLag(int lag);
+
         //! \brief Sets processing stage connectivity (currently only gcode)
         //! \param type: processing stage to set
         //! \param toggle: whether or not to transmit over TCP
@@ -372,15 +404,24 @@ namespace ORNL
         //! \param start: whether or not to autostart
         void setTcpServerAutoStart(bool start);
 
+        //! \brief Sets whether Send Output To Katana or not
+        //! \param send: whether or not to send
+        void setKatanaSendOutput(bool send);
+
+        //! \brief Set Katana TCP IP Address
+        //! \param Katana TCP IP Address as string
+        void setKatanaTCPIp(QString ipAddress);
+
+        //! \brief Set Katana TCP Port
+        //! \param Katana TCP Port as integer
+        void setKatanaTCPPort(int port);
+
     private:
         //! \brief Constructor
         PreferencesManager();
 
-        //! \brief Get Visualization Colors as Hex strings
-        std::unordered_map<std::string, std::string> GetDefaultVisualizationColors();
-
         //! \brief Set Visualization Colors to Default
-        void SetDefaultVisualizationColors(std::unordered_map<std::string, std::string> visualizationColorsHex);
+        void setDefaultVisualizationColors(std::unordered_map<std::string, std::string> visualizationColorsHex);
 
         //! \brief Singleton pointer
         static QSharedPointer< PreferencesManager > m_singleton;
@@ -426,6 +467,10 @@ namespace ORNL
         bool m_use_implicit_transforms;
         bool m_always_drop_parts;
 
+        //! \brief Layer preferences
+        int m_layer_lag;
+        int m_segment_lag;
+
         //! \brief bool to determine if a save is necessary
         int m_dirty;
 
@@ -444,6 +489,15 @@ namespace ORNL
 
         //! \brief whether to automatically start tcp server on startup
         bool m_tcp_server_autostart;
+
+        //! \brief whether to Send Output To Katana
+        bool m_katana_send_output;
+
+        //! \brief Katana TCP IP Address
+        QString m_katana_tcp_ip;
+
+        //! \brief Katana TCP Port
+        int m_katana_tcp_port;
 
     };  // class PreferencesManager
 }  // namespace ORNL
