@@ -1,0 +1,68 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: ORNL Slicer 2
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Alex
+    family-names: Roschli
+    affiliation: Oak Ridge National Laboratory
+    email: roschliac@ornl.gov
+    orcid: 'https://orcid.org/0000-0002-1308-4632'
+  - given-names: Michael
+    family-names: Borish
+    email: borishmc@ornl.gov
+    affiliation: Oak Ridge National Laboratory
+    orcid: 'https://orcid.org/0000-0002-7282-4020'
+  - given-names: Abigail
+    family-names: Barnes
+    affiliation: Oak Ridge National Laboratory
+    email: barnesak@ornl.gov
+    orcid: 'https://orcid.org/0000-0002-2788-3603'
+  - given-names: Charles
+    family-names: Wade
+    affiliation: Matter Assembly Computation Lab
+    orcid: 'https://orcid.org/0000-0002-6056-7717'
+    email: charles.wade@colorado.edu
+  - given-names: Breanne
+    family-names: Crockett
+    affiliation: Collaborative AI and Robotics Lab
+    email: breanne.crockett@colorado.edu
+    orcid: 'https://orcid.org/0000-0003-4560-6658'
+  - given-names: Liam
+    family-names: White
+    email: whiteln@ornl.gov
+    affiliation: Oak Ridge National Laboratory
+    orcid: 'https://orcid.org/0000-0002-6981-506X'
+  - given-names: Cameron
+    family-names: Adkins
+    affiliation: Oak Ridge National Laboratory
+    orcid: 'https://orcid.org/0000-0001-6003-4593'
+    email: adkinscv@ornl.gov
+repository-code: 'https://github.com/ORNLSlicer/Slicer-2'
+url: 'https://www.osti.gov/doecode/biblio/97742'
+abstract: >-
+  ORNL Slicer 2 is a slicing program for additive
+  manufacturing. It takes a solid body mesh object,
+  typically as .STL file, and converts that into machine
+  readable instructions, called g-code, that a 3D printer
+  can use to build the object. The functionality includes
+  loading and positioning an object, slicing it into layers,
+  fitting toolpaths to the layers, and outputting g-code to
+  construct the object. All of this is contained within a
+  graphical user interface (GUI) that allows the user to
+  define all of the settings specific to their machine and
+  process, then preview the resultant g-code before starting
+  the printing process.
+keywords:
+  - Additive Manufacturing
+  - 3D Printing
+  - Slicer
+license: GPL-3.0
+commit: d480b5a
+version: 0.99.7
+date-released: '2023-06-15'
