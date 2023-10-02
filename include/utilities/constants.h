@@ -221,12 +221,16 @@ namespace ORNL
                 static const QString kXOffset;
                 static const QString kYOffset;
                 static const QString kZOffset;
+                static const QString kUseVariableForZ;
                 static const QString kEnableW;
                 static const QString kWMin;
                 static const QString kWMax;
                 static const QString kLayerChangeAxis;
                 static const QString kEnableDoffing;
                 static const QString kDoffingHeight;
+                static const QString kPurgeX;
+                static const QString kPurgeY;
+                static const QString kPurgeZ;
                 static const QString kEnableGridX;
                 static const QString kGridXDistance;
                 static const QString kEnableGridY;
@@ -315,12 +319,14 @@ namespace ORNL
                 static QString kMazak;
                 static QString kMeld;
                 static QString kMVP;
+                static QString kOkuma;
                 static QString kORNL;
                 static QString kRomiFanuc;
                 static QString kRPBF;
                 static QString kSiemens;
                 static QString kSkyBaam;
                 static QString kThermwood;
+                static QString kTormach;
                 static QString kWolf;
                 static QString kRepRap;
                 static QString kMach4;
@@ -432,35 +438,51 @@ namespace ORNL
                 static const QString kPerimeterEnable;
                 static const QString kPerimeterDistance;
                 static const QString kPerimeterSpeed;
+                static const QString kPerimeterExtruderSpeed;
                 static const QString kPerimeterDirection;
                 static const QString kPerimeterAngle;
+                static const QString kPerimeterCutoffDistance;
+                static const QString kPerimeterLiftHeight;
 
                 static const QString kInsetEnable;
                 static const QString kInsetDistance;
                 static const QString kInsetSpeed;
+                static const QString kInsetExtruderSpeed;
                 static const QString kInsetDirection;
                 static const QString kInsetAngle;
+                static const QString kInsetCutoffDistance;
+                static const QString kInsetLiftHeight;
 
                 static const QString kSkinEnable;
                 static const QString kSkinDistance;
                 static const QString kSkinSpeed;
+                static const QString kSkinExtruderSpeed;
                 static const QString kSkinDirection;
                 static const QString kSkinAngle;
+                static const QString kSkinCutoffDistance;
+                static const QString kSkinLiftHeight;
 
                 static const QString kInfillEnable;
                 static const QString kInfillDistance;
                 static const QString kInfillSpeed;
+                static const QString kInfillExtruderSpeed;
                 static const QString kInfillDirection;
                 static const QString kInfillAngle;
+                static const QString kInfillCutoffDistance;
+                static const QString kInfillLiftHeight;
 
                 static const QString kSkeletonEnable;
                 static const QString kSkeletonDistance;
                 static const QString kSkeletonSpeed;
+                static const QString kSkeletonExtruderSpeed;
                 static const QString kSkeletonDirection;
                 static const QString kSkeletonAngle;
+                static const QString kSkeletonCutoffDistance;
+                static const QString kSkeletonLiftHeight;
 
                 static const QString kLaserPowerMultiplier;
                 static const QString kWireFeedMultiplier;
+                static const QString kTipWipeVoltage;
             };
 
             class SpiralLift
@@ -483,6 +505,8 @@ namespace ORNL
                 static const QString kInitialDuration;
                 static const QString kInitialScrewRPM;
                 static const QString kInitialTipWipeDelay;
+                static const QString kPurgeLength;
+                static const QString kPurgeFeedrate;
             };
 
             class Extruder
@@ -503,10 +527,12 @@ namespace ORNL
             public:
                 static const QString kDiameter;
                 static const QString kRelative;
+                static const QString kDisableG92;
                 static const QString kPerimeterMultiplier;
                 static const QString kInsetMultiplier;
                 static const QString kSkinMultiplier;
                 static const QString kInfillMultiplier;
+                static const QString kFilamentBAxis;
             };
 
             class Retraction
@@ -635,6 +661,7 @@ namespace ORNL
                 static const QString kEnableLeadIn;
                 static const QString kEnableLeadInX;
                 static const QString kEnableLeadInY;
+                static const QString kEnableShiftedBeads;
             };
 
             class Inset
@@ -719,6 +746,7 @@ namespace ORNL
                 static const QString kPower;
                 static const QString kFocus;
                 static const QString kSpotSize;
+                static const QString kEnableAlternatingLines;
             };
 
             class Support
@@ -1292,6 +1320,7 @@ namespace ORNL
                 static const char* kLightingPositionName;
                 static const char* kCameraPositionName;
                 static const char* kAmbientStrengthName;
+                static const char* kUsingSolidWireframeModeName;
 
                 // Vertex Shader - Buffers
                 static const char* kPositionName;
@@ -1303,6 +1332,10 @@ namespace ORNL
                 static const char* kModelName;
                 static const char* kProjectionName;
                 static const char* kViewName;
+                static const char* kStackingAxisName;
+                static const char* kOverhangAngleName;
+                static const char* kOverhangModeName;
+                static const char* kRenderingPartObjectName;
             };
         };
 

@@ -14,10 +14,12 @@
 namespace ORNL
 {
     PathOrderOptimizer::PathOrderOptimizer(Point& start, uint layer_number, const QSharedPointer<SettingsBase>& sb)
-        : m_sb(sb)
-        , m_current_location(start)
+        : m_current_location(start)
+        , m_layer_number(layer_number)
+        , m_sb(sb)
         , m_override_used(false)
     {
+        m_layer_num = layer_number;
     }
 
     Point& PathOrderOptimizer::getCurrentLocation()
@@ -71,7 +73,6 @@ namespace ORNL
 
     Path PathOrderOptimizer::linkNextPath(QVector<Path> paths)
     {
-
         if(m_paths.size() > 0)
         {
             switch(m_current_region_type)
@@ -96,11 +97,17 @@ namespace ORNL
     {
         Point savedLocation = m_current_location;
 
+        bool infill_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
+        bool alternating_lines = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
+
         Path nextPath;
         switch (m_pattern)
         {
             case InfillPatterns::kLines:
-                nextPath = linkNextInfillLines(paths);
+                if((infill_enabled && alternating_lines))
+                    nextPath = linkNextInfillTravel(paths);
+                else
+                    nextPath = linkNextInfillLines(paths);
             break;
             case InfillPatterns::kGrid:
                 nextPath = linkNextInfillLines(paths);
@@ -144,18 +151,12 @@ namespace ORNL
         return nextPath;
     }
 
-    Path PathOrderOptimizer::linkNextInfillLines(QVector<Path>& paths)
+    Path PathOrderOptimizer::linkNextInfillTravel(QVector<Path>& paths)
     {
-        //! Gather settings for line segment links
-        Distance bead_width = m_paths.front().front()->getSb()->setting<Distance>(Constants::SegmentSettings::kWidth);
-        Distance layer_height = m_paths.front().front()->getSb()->setting<Distance>(Constants::SegmentSettings::kHeight);
-        Velocity speed = m_paths.front().front()->getSb()->setting<Velocity>(Constants::SegmentSettings::kSpeed);
-        Acceleration acceleration = m_paths.front().front()->getSb()->setting<Acceleration>(Constants::SegmentSettings::kAccel);
-        AngularVelocity extruder_speed = m_paths.front().front()->getSb()->setting<AngularVelocity>(Constants::SegmentSettings::kExtruderSpeed);
-
         Path new_path;
         QPair<int, bool> indexAndStart = closestOpenPath(m_paths);
         int index = indexAndStart.first;
+
         //if false, indicates index is closest if you start at the end point, so reverse
         if(indexAndStart.second == false)
             m_paths[index].reverseSegments();
@@ -173,6 +174,87 @@ namespace ORNL
 
         QVector<Path> empty_paths;
         PolygonList empty_polygon_list;
+
+        for(int i = 0, end = m_paths.size(); i < end; ++i)
+        {
+            if(m_paths.size() > 0)
+            {
+                indexAndStart = closestOpenPath(m_paths);
+                index = indexAndStart.first;
+                //if false, indicates index is closest if you start at the end point, so reverse
+                if(indexAndStart.second == false)
+                    m_paths[index].reverseSegments();
+
+                Point link_start = m_current_location;
+                Point link_end = m_paths[index].front()->start();
+
+                // Create a travel
+                QSharedPointer<TravelSegment> travel = QSharedPointer<TravelSegment>::create(link_start, link_end);
+                Velocity velocity = m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed);
+                travel->getSb()->setSetting(Constants::SegmentSettings::kSpeed, velocity);
+
+                if (!(linkIntersects(link_start, link_end, empty_paths, m_border_geometry) || linkIntersects(link_start, link_end, m_paths, empty_polygon_list) ||
+                      linkIntersects(link_start, link_end, paths, empty_polygon_list) || linkIntersects(link_start, link_end, QVector<Path> { new_path }, empty_polygon_list))
+                        && link_start.distance(link_end) < m_sb->setting< int >(Constants::ProfileSettings::Travel::kMinLength))
+                {
+                    travel->setLiftType(TravelLiftType::kNoLift);
+                }
+
+                new_path.append(travel);
+
+                for (QSharedPointer<SegmentBase> seg : m_paths[index])
+                    new_path.append(seg);
+
+                m_current_location = new_path.back()->end();
+                m_paths.remove(index);
+
+                i = 0;
+            }
+        }
+
+        return new_path;
+    }
+
+    Path PathOrderOptimizer::linkNextInfillLines(QVector<Path>& paths)
+    {
+        //! Gather settings for line segment links
+        Distance bead_width = m_paths.front().front()->getSb()->setting<Distance>(Constants::SegmentSettings::kWidth);
+        Distance layer_height = m_paths.front().front()->getSb()->setting<Distance>(Constants::SegmentSettings::kHeight);
+        Velocity speed = m_paths.front().front()->getSb()->setting<Velocity>(Constants::SegmentSettings::kSpeed);
+        Acceleration acceleration = m_paths.front().front()->getSb()->setting<Acceleration>(Constants::SegmentSettings::kAccel);
+        AngularVelocity extruder_speed = m_paths.front().front()->getSb()->setting<AngularVelocity>(Constants::SegmentSettings::kExtruderSpeed);
+
+        Path new_path;
+        QPair<int, bool> indexAndStart = closestOpenPath(m_paths);
+        int index = indexAndStart.first;
+
+        //if false, indicates index is closest if you start at the end point, so reverse
+        if(indexAndStart.second == false)
+            m_paths[index].reverseSegments();
+
+        QVector<Path> empty_paths;
+        PolygonList empty_polygon_list;
+
+        QSharedPointer<TravelSegment> travel_segment = QSharedPointer<TravelSegment>::create(m_current_location, m_paths[index].front()->start());
+
+        if(m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines) && m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable))
+        {
+            if (!(linkIntersects(m_current_location, m_paths[index].front()->start(), empty_paths, m_border_geometry) || linkIntersects(m_current_location, m_paths[index].front()->start(), m_paths, empty_polygon_list) ||
+                  linkIntersects(m_current_location, m_paths[index].front()->start(), paths, empty_polygon_list) || linkIntersects(m_current_location, m_paths[index].front()->start(), QVector<Path> { new_path }, empty_polygon_list)))
+            {
+                travel_segment->setLiftType(TravelLiftType::kNoLift);
+            }
+        }
+
+        Velocity velocity = m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed);
+        travel_segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed, velocity);
+        new_path.append(travel_segment);
+
+        for (QSharedPointer<SegmentBase> seg : m_paths[index])
+            new_path.append(seg);
+
+        m_current_location = new_path.back()->end();
+        m_paths.remove(index);
 
         for(int i = 0, end = m_paths.size(); i < end; ++i)
         {
@@ -420,14 +502,29 @@ namespace ORNL
             {
                 QSharedPointer<SegmentBase> seg = m_paths[i][j];
                 Distance closestSegment = MathUtils::distanceFromLineSegSqrd(queryPoint, seg->start(), seg->end());
-                if (closestSegment < closest)
+                if(shortest)
                 {
-                    closest = closestSegment;
-                    pathIndex = i;
-                    if(seg->start().distance(queryPoint) < seg->end().distance(queryPoint))
-                        startIndex = j;
-                    else
-                        startIndex = (j + 1) % end2;
+                    if (closestSegment < closest)
+                    {
+                        closest = closestSegment;
+                        pathIndex = i;
+                        if(seg->start().distance(queryPoint) < seg->end().distance(queryPoint))
+                            startIndex = j;
+                        else
+                            startIndex = (j + 1) % end2;
+                    }
+                }
+                else
+                {
+                    if (closestSegment > closest)
+                    {
+                        closest = closestSegment;
+                        pathIndex = i;
+                        if(seg->start().distance(queryPoint) > seg->end().distance(queryPoint))
+                            startIndex = j;
+                        else
+                            startIndex = (j + 1) % end2;
+                    }
                 }
             }
         }
@@ -475,7 +572,6 @@ namespace ORNL
             //looped through whole path
             if(startIndex == previousIndex)
             {
-                startIndex = previousIndex;
                 break;
             }
 

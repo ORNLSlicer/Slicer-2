@@ -225,6 +225,7 @@ namespace ORNL
         m_translation_controls->setUnitText(PM->getDistanceUnitText());
         m_translation_controls->setIncrement(1 / (PM->getDistanceUnit()() / cm()));
         m_translation_controls->setModel(m_model, ToolbarInput::ModelTrackingType::kTranslation);
+        m_translation_controls->setPrecision(4);
         connect(m_translation_btn, &QToolButton::pressed, m_translation_controls, &ToolbarInput::toggleInput);
     }
 
@@ -253,6 +254,7 @@ namespace ORNL
         m_rotation_controls->setMinimumZValue(min_roll.to(default_unit));
         m_rotation_controls->setMaximumZValue(max_roll.to(default_unit));
         m_rotation_controls->setModel(m_model, ToolbarInput::ModelTrackingType::kRotation);
+        m_rotation_controls->setPrecision(4);
         connect(m_rotation_btn, &QToolButton::pressed, m_rotation_controls, &ToolbarInput::toggleInput);;
     }
 
@@ -261,9 +263,9 @@ namespace ORNL
         m_scale_btn = buildIconButton(":/icons/scale_black.png", "Scaling Controls", false);
         this->addWidget(m_scale_btn);
         m_scale_controls->setMaximumValue(Constants::Limits::Maximums::kMaxFloat);
-        m_scale_controls->setMinimumValue(0.01f); //Shouldn't be able to scale a dimension to 0! Unphysical
+        m_scale_controls->setMinimumValue(0.0001f); //Shouldn't be able to scale a dimension to 0! Unphysical
         m_scale_controls->setIncrement(0.1);
-        m_scale_controls->setPrecision(2);
+        m_scale_controls->setPrecision(4);
         m_scale_controls->setValue(Axis::kX, 1.0);
         m_scale_controls->setValue(Axis::kY, 1.0);
         m_scale_controls->setValue(Axis::kZ, 1.0);

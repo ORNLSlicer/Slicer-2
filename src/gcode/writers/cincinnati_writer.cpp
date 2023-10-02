@@ -92,7 +92,7 @@ namespace ORNL
             }
         }
 
-        if(m_sb->setting<bool>(Constants::ProfileSettings::LaserScanner::kLaserScanner))
+        if(m_sb->setting<bool>(Constants::ProfileSettings::LaserScanner::kLaserScanner) && !m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kUseVariableForZ))
         {
             Distance scannerZOffset = m_sb->setting<Distance>(Constants::ProfileSettings::LaserScanner::kLaserScannerHeight)
                     - m_sb->setting<Distance>(Constants::ProfileSettings::LaserScanner::kLaserScannerHeightOffset);
@@ -231,6 +231,7 @@ namespace ORNL
 
     QString CincinnatiWriter::writeBeforePath(RegionType type)
     {
+        m_region_type = type;
         QString rv;
         if(!m_spiral_layer || m_first_print)
         {
@@ -285,7 +286,9 @@ namespace ORNL
 
         Point new_start_location;
         RegionType rType = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
+        bool infill_alternating_lines = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
         bool w_active_first_travel = false;
+
         if(m_first_travel)
              w_active_first_travel = true;
 
@@ -304,6 +307,12 @@ namespace ORNL
 
         bool travel_lift_required = liftDist > 0;// && !m_first_travel; //do not write a lift on first travel
 
+        // Need to check if a lift is needed if infill alternating lines is enabled
+        if(infill_alternating_lines && m_region_type == RegionType::kInfill && !m_first_travel && lType == TravelLiftType::kNoLift)
+        {
+            travel_lift_required = false;
+        }
+
         //Don't lift for short travel moves
         if(start_location.distance(target_location) < m_sb->setting< Distance >(Constants::ProfileSettings::Travel::kMinTravelForLift))
         {
@@ -321,6 +330,7 @@ namespace ORNL
             rv += m_G0 % writeCoordinates(lift_destination);
             if(m_w_travel)
             {
+
                 rv += commentSpaceLine("TRAVEL LOWER W");
                 setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kWTableSpeed));
             }
@@ -376,15 +386,29 @@ namespace ORNL
         if(w_active_first_travel && m_sb->setting<int>(Constants::PrinterSettings::Dimensions::kLayerChangeAxis) == static_cast<int>(LayerChange::kW_only))
         {
             //If using W only, a first travel to position the Z is required
-            rv += m_G0 % m_z % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset).to(m_meta.m_distance_unit), 'f', 4)
-                % commentSpaceLine("TRAVEL SET PRINTING Z HEIGHT");
+            if (m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kUseVariableForZ))
+            {
+               rv += m_G0 % m_z % "[#200]" % commentSpaceLine("TRAVEL SET PRINTING Z HEIGHT");
+            }
+            else
+            {
+               rv += m_G0 % m_z % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset).to(m_meta.m_distance_unit), 'f', 4)
+                     % commentSpaceLine("TRAVEL SET PRINTING Z HEIGHT");
+            }
             w_active_first_travel = false;
         }
         else if(w_active_first_travel && m_sb->setting<int>(Constants::PrinterSettings::Dimensions::kLayerChangeAxis) == static_cast<int>(LayerChange::kBoth_Z_and_W) && m_spiral_layer)
         {
             //If using ZW and Spiralize, a first travel to position the Z is required
-            rv += m_G0 % m_z % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset).to(m_meta.m_distance_unit), 'f', 4)
-                % commentSpaceLine("TRAVEL SET PRINTING Z HEIGHT");
+            if (m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kUseVariableForZ))
+            {
+               rv += m_G0 % m_z % "[#200]" % commentSpaceLine("TRAVEL SET PRINTING Z HEIGHT");
+            }
+            else
+            {
+               rv += m_G0 % m_z % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset).to(m_meta.m_distance_unit), 'f', 4)
+                     % commentSpaceLine("TRAVEL SET PRINTING Z HEIGHT");
+            }
             w_active_first_travel = false;
         }
 
@@ -885,6 +909,8 @@ namespace ORNL
         QString rv;
         //write vertical coordinate along the correct axis (Z or W) according to printer settings
         //only output Z/W coordinate if there was a change in Z/W
+        Distance temp_dest_z = destination.z();
+        Distance temp_last_z = m_last_z;
         Distance z_offset = m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset);
         if(m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kLayerChangeAxis) == static_cast<int>(LayerChange::kZ_only))
         {
@@ -892,7 +918,14 @@ namespace ORNL
             Distance target_z = destination.z() + z_offset;
             if(qAbs(target_z - m_last_z) > 10)
             {
-                rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+                if (m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kUseVariableForZ))
+                {
+                    rv += m_z % "[#200 + " % QString::number(Distance(destination.z()).to(m_meta.m_distance_unit), 'f', 4) % "]";
+                }
+                else
+                {
+                    rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+                }
                 m_current_z = target_z;
                 m_last_z = target_z;
                 m_z_travel = true;
@@ -920,7 +953,14 @@ namespace ORNL
                     Distance target_z = destination.z() + z_offset + m_current_w;
                     if(qAbs(target_z - m_last_z) > 10)
                     {
-                        rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+                        if (m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kUseVariableForZ))
+                        {
+                            rv += m_z % "[#200 + " % QString::number(Distance(destination.z() + m_current_w).to(m_meta.m_distance_unit), 'f', 4) % "]";
+                        }
+                        else
+                        {
+                            rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+                        }
                         m_current_z = target_z;
                         m_last_z = target_z;
                         m_z_travel = true;
@@ -933,7 +973,14 @@ namespace ORNL
                     if(target_w < m_sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kWMin))
                     {
                         Distance target_z = destination.z() + z_offset + m_current_w;
-                        rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+                        if (m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kUseVariableForZ))
+                        {
+                            rv += m_z % "[#200 + " % QString::number(Distance(destination.z() + m_current_w).to(m_meta.m_distance_unit), 'f', 4) % "]";
+                        }
+                        else
+                        {
+                            rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+                        }
                         m_current_z = target_z;
                         m_last_z = target_z;
                         m_z_travel = true;
@@ -949,6 +996,8 @@ namespace ORNL
             }
             else if(m_first_travel)
             {
+                // For BAAM, this typically returns Z0. This isn't configured for variable Z because it could cause
+                // an error if the original Z offset is more negative than the new Z offset, because the resultant location would be > 0
                 rv += m_z % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZMax).to(m_meta.m_distance_unit), 'f', 4);
             }
             else
@@ -957,7 +1006,14 @@ namespace ORNL
                 Distance target_z = destination.z() + z_offset + m_current_w;
                 if(qAbs(target_z - m_last_z) > 10)
                 {
-                    rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+                    if (m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kUseVariableForZ))
+                    {
+                        rv += m_z % "[#200 + " % QString::number(Distance(destination.z() + m_current_w).to(m_meta.m_distance_unit), 'f', 4) % "]";
+                    }
+                    else
+                    {
+                        rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+                    }
                     m_current_z = target_z;
                     m_last_z = target_z;
                     m_z_travel = true;

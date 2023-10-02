@@ -166,7 +166,7 @@ namespace ORNL
 
         //! \brief preallocated common prefixes that all writers use
         QChar m_space;
-        QString m_x, m_y, m_z, m_w, m_f, m_s, m_p, m_i, m_j, m_k, m_r, m_l, m_e, m_q, m_a, m_G0, m_G1, m_G2, m_G3, m_G4, m_G5, m_M3, m_M5;
+        QString m_x, m_y, m_z, m_w, m_f, m_s, m_p, m_i, m_j, m_k, m_r, m_l, m_e, m_q, m_a, m_b, m_G0, m_G1, m_G2, m_G3, m_G4, m_G5, m_M3, m_M5;
 
         //! \brief whether or not layer should be spiralized
         bool m_spiral_layer;

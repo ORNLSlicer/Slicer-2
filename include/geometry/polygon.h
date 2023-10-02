@@ -30,6 +30,9 @@ namespace ORNL
     class Polygon : public QVector< Point >
     {
     public:
+        // QVector constructors
+        using QVector<Point>::QVector;
+
         //! \brief Constructor
         Polygon() = default;
 

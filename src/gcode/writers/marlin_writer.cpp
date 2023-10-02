@@ -30,13 +30,82 @@ namespace ORNL
                         % commentSpaceLine("SET BED TEMPERATURE AND WAIT");
             }
 
-            rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0).to(degC))
-                    % " T0" % commentSpaceLine("SET EXTRUDER 0 TEMPERATURE");
-            if (m_sb->setting< int >(Constants::MaterialSettings::Temperatures::kBed) > 0)
+            if(m_sb->setting< bool >(Constants::MaterialSettings::Temperatures::kTwoZones))
             {
-                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0).to(degC))
-                        % " T0" % commentSpaceLine("SET EXTRUDER 0 TEMPERATURE AND WAIT");
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone1).to(degC))
+                        % " T0" % commentSpaceLine("SET EXTRUDER 0 ZONE 1 TEMPERATURE");
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone2).to(degC))
+                        % " T1" % commentSpaceLine("SET EXTRUDER 0 ZONE 2 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone1).to(degC))
+                        % " T0" % commentSpaceLine("SET EXTRUDER 1 ZONE 1 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone2).to(degC))
+                        % " T1" % commentSpaceLine("SET EXTRUDER 1 ZONE 2 TEMPERATURE");
             }
+            else if(m_sb->setting< bool >(Constants::MaterialSettings::Temperatures::kThreeZones))
+            {
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone1).to(degC))
+                        % " T0" % commentSpaceLine("SET EXTRUDER 0 ZONE 1 TEMPERATURE");
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone2).to(degC))
+                        % " T1" % commentSpaceLine("SET EXTRUDER 0 ZONE 2 TEMPERATURE");
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone3).to(degC))
+                        % " T2" % commentSpaceLine("SET EXTRUDER 0 ZONE 3 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone1).to(degC))
+                        % " T0" % commentSpaceLine("SET EXTRUDER 1 ZONE 1 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone2).to(degC))
+                        % " T1" % commentSpaceLine("SET EXTRUDER 1 ZONE 2 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone3).to(degC))
+                        % " T2" % commentSpaceLine("SET EXTRUDER 1 ZONE 3 TEMPERATURE");
+            }
+            else if(m_sb->setting< bool >(Constants::MaterialSettings::Temperatures::kFourZones))
+            {
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone1).to(degC))
+                        % " T0" % commentSpaceLine("SET EXTRUDER 0 ZONE 1 TEMPERATURE");
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone2).to(degC))
+                        % " T1" % commentSpaceLine("SET EXTRUDER 0 ZONE 2 TEMPERATURE");
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone3).to(degC))
+                        % " T2" % commentSpaceLine("SET EXTRUDER 0 ZONE 3 TEMPERATURE");
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone4).to(degC))
+                        % " T3" % commentSpaceLine("SET EXTRUDER 0 ZONE 4 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone1).to(degC))
+                        % " T0" % commentSpaceLine("SET EXTRUDER 1 ZONE 1 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone2).to(degC))
+                        % " T1" % commentSpaceLine("SET EXTRUDER 1 ZONE 2 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone3).to(degC))
+                        % " T2" % commentSpaceLine("SET EXTRUDER 1 ZONE 3 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone4).to(degC))
+                        % " T3" % commentSpaceLine("SET EXTRUDER 1 ZONE 4 TEMPERATURE");
+            }
+            else if(m_sb->setting< bool >(Constants::MaterialSettings::Temperatures::kFiveZones))
+            {
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone1).to(degC))
+                        % " T0" % commentSpaceLine("SET EXTRUDER 0 ZONE 1 TEMPERATURE");
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone2).to(degC))
+                        % " T1" % commentSpaceLine("SET EXTRUDER 0 ZONE 2 TEMPERATURE");
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone3).to(degC))
+                        % " T2" % commentSpaceLine("SET EXTRUDER 0 ZONE 3 TEMPERATURE");
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone4).to(degC))
+                        % " T3" % commentSpaceLine("SET EXTRUDER 0 ZONE 4 TEMPERATURE");
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0Zone5).to(degC))
+                        % " T4" % commentSpaceLine("SET EXTRUDER 0 ZONE 5 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone1).to(degC))
+                        % " T0" % commentSpaceLine("SET EXTRUDER 1 ZONE 1 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone2).to(degC))
+                        % " T1" % commentSpaceLine("SET EXTRUDER 1 ZONE 2 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone3).to(degC))
+                        % " T2" % commentSpaceLine("SET EXTRUDER 1 ZONE 3 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone4).to(degC))
+                        % " T3" % commentSpaceLine("SET EXTRUDER 1 ZONE 4 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1Zone5).to(degC))
+                        % " T4" % commentSpaceLine("SET EXTRUDER 1 ZONE 5 TEMPERATURE");
+            }
+            else
+            {
+                rv += "M104 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder0).to(degC))
+                        % " T0" % commentSpaceLine("SET EXTRUDER 0 TEMPERATURE");
+                rv += "M109 S" % QString::number(m_sb->setting< Temperature >(Constants::MaterialSettings::Temperatures::kExtruder1).to(degC))
+                        % " T0" % commentSpaceLine("SET EXTRUDER 1 TEMPERATURE");
+            }
+
 
             rv += "G28" % commentSpaceLine("TRAVEL HOME ALL AXES");
 
@@ -47,9 +116,7 @@ namespace ORNL
             else
             {
                 rv += "M82" % commentSpaceLine("USE ABSOLUTE EXTRUSION DISTANCES");
-            }
-
-            rv += "G92 E0" % commentSpaceLine("RESET FILAMENT AXIS TO 0");
+            }            
 
             // Cooling fan
             if(m_sb->setting< bool >(Constants::MaterialSettings::Cooling::kEnable))
@@ -59,6 +126,12 @@ namespace ORNL
                 rv += "M107" % commentSpaceLine("DISABLE COOLING FAN");
 
             rv += m_newline;
+        }
+
+        if(!m_sb->setting< bool >(Constants::MaterialSettings::Filament::kDisableG92))
+        {
+            rv += "G92 E0" % commentSpaceLine("RESET FILAMENT AXIS TO 0");
+
         }
 
         if(m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableBoundingBox))
@@ -150,7 +223,7 @@ namespace ORNL
                     rv += m_sb->setting< QString >(Constants::ProfileSettings::GCode::kSupportStart) % m_newline;
             }
         }
-        if (m_filament_location > 0)
+        if (m_filament_location > 0 && !m_sb->setting< bool >(Constants::MaterialSettings::Filament::kDisableG92))
         {
             rv += "G92 E0" % commentSpaceLine("RESET FILAMENT TO 0");
             m_filament_location = 0.0;
@@ -204,7 +277,7 @@ namespace ORNL
         QVector3D travel_lift = getTravelLift();
 
         //write the lift
-        if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly))
+        if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly) && !m_first_travel)
         {
             Point lift_destination = new_start_location + travel_lift; //lift destination is above start location
             rv += m_G1 % m_f % QString::number(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed).to(m_meta.m_velocity_unit))
@@ -339,13 +412,27 @@ namespace ORNL
             if (m_sb->setting< bool >(Constants::MaterialSettings::Filament::kRelative))
             {
                 m_filament_location = segment_filament_length;
-                rv += m_e % QString::number(Distance(segment_filament_length).to(m_meta.m_distance_unit), 'f', 4);
+                if(m_sb->setting< bool >(Constants::MaterialSettings::Filament::kFilamentBAxis))
+                {
+                    rv += m_b % QString::number(Distance(segment_filament_length).to(m_meta.m_distance_unit), 'f', 4);
+                }
+                else
+                {
+                    rv += m_e % QString::number(Distance(segment_filament_length).to(m_meta.m_distance_unit), 'f', 4);
+                }
             }
             //if using absolute E, update total length and write value
             else
             {
                 m_filament_location += segment_filament_length;
-                rv += m_e % QString::number(Distance(m_filament_location).to(m_meta.m_distance_unit), 'f', 4);
+                if(m_sb->setting< bool >(Constants::MaterialSettings::Filament::kFilamentBAxis))
+                {
+                    rv += m_b % QString::number(Distance(m_filament_location).to(m_meta.m_distance_unit), 'f', 4);
+                }
+                else
+                {
+                    rv += m_e % QString::number(Distance(m_filament_location).to(m_meta.m_distance_unit), 'f', 4);
+                }
             }
 
         }
@@ -488,13 +575,27 @@ namespace ORNL
             if (m_sb->setting< bool >(Constants::MaterialSettings::Filament::kRelative))
             {
                 m_filament_location = segment_filament_length;
-                rv += m_e % QString::number(segment_filament_length.to(m_meta.m_distance_unit));
+                if(m_sb->setting< bool >(Constants::MaterialSettings::Filament::kFilamentBAxis))
+                {
+                    rv += m_b % QString::number(segment_filament_length.to(m_meta.m_distance_unit));
+                }
+                else
+                {
+                    rv += m_e % QString::number(segment_filament_length.to(m_meta.m_distance_unit));
+                }
             }
             //if using absolute E, update total length and write value
             else
             {
                 m_filament_location += segment_filament_length;
-                rv += m_e % QString::number(m_filament_location.to(m_meta.m_distance_unit));
+                if(m_sb->setting< bool >(Constants::MaterialSettings::Filament::kFilamentBAxis))
+                {
+                    rv += m_b % QString::number(m_filament_location.to(m_meta.m_distance_unit));
+                }
+                else
+                {
+                    rv += m_e % QString::number(m_filament_location.to(m_meta.m_distance_unit));
+                }
             }
 
         }
@@ -586,7 +687,16 @@ namespace ORNL
 
     QString MarlinWriter::writePurge(int RPM, int duration, int delay)
     {
-        return {};
+        QString rv;
+        m_filament_location += m_sb->setting< Distance >(Constants::MaterialSettings::Purge::kPurgeLength).to(m_meta.m_distance_unit);
+        rv += m_G1 % m_x % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeX).to(m_meta.m_distance_unit))
+            % m_y % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeY).to(m_meta.m_distance_unit))
+            % m_z % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeZ).to(m_meta.m_distance_unit))
+              % commentSpaceLine("MOVE TO PURGE LOCATION");
+        rv += m_G1 % m_f % QString::number(m_sb->setting< Velocity >(Constants::MaterialSettings::Purge::kPurgeFeedrate).to(m_meta.m_velocity_unit))
+            % m_b % QString::number(Distance(m_filament_location).to(m_meta.m_distance_unit))
+              % commentSpaceLine("PURGE");
+        return rv;
     }
 
     QString MarlinWriter::writeDwell(Time time)
@@ -624,14 +734,27 @@ namespace ORNL
 
         if(m_filament_location >= 0 && m_sb->setting< bool >(Constants::MaterialSettings::Retraction::kEnable))
         {
-            if(m_filament_location != 0)
+            if(m_filament_location != 0 && !m_sb->setting< bool >(Constants::MaterialSettings::Filament::kDisableG92))
+            {
                 rv += "G92 E0" % commentSpaceLine("RESET FILAMENT TO 0");
-            m_filament_location = 0.0;
+                m_filament_location = 0.0;
+            }
 
-            rv += m_G1 % m_f %
-                    QString::number(m_sb->setting< Velocity >(Constants::MaterialSettings::Retraction::kSpeed).to(m_meta.m_velocity_unit)) %
-                    m_e % QString::number(m_sb->setting< Distance >(Constants::MaterialSettings::Retraction::kLength).to(m_meta.m_distance_unit) * -1) %
-                    commentSpaceLine("RETRACT FILAMENT");
+            if(m_sb->setting< bool >(Constants::MaterialSettings::Filament::kFilamentBAxis))
+            {
+                rv += m_G1 % m_f %
+                      QString::number(m_sb->setting< Velocity >(Constants::MaterialSettings::Retraction::kSpeed).to(m_meta.m_velocity_unit)) %
+                      m_b % QString::number(m_sb->setting< Distance >(Constants::MaterialSettings::Retraction::kLength).to(m_meta.m_distance_unit) * -1) %
+                      commentSpaceLine("RETRACT FILAMENT");
+            }
+            else
+            {
+                rv += m_G1 % m_f %
+                      QString::number(m_sb->setting< Velocity >(Constants::MaterialSettings::Retraction::kSpeed).to(m_meta.m_velocity_unit)) %
+                      m_e % QString::number(m_sb->setting< Distance >(Constants::MaterialSettings::Retraction::kLength).to(m_meta.m_distance_unit) * -1) %
+                      commentSpaceLine("RETRACT FILAMENT");
+            }
+
 
             if(m_sb->setting< bool >(Constants::MaterialSettings::Filament::kRelative))
                 m_filament_location = -1 * m_sb->setting< Distance >(Constants::MaterialSettings::Retraction::kLength);
@@ -650,19 +773,41 @@ namespace ORNL
         {
             m_filament_location = m_sb->setting< Distance >(Constants::MaterialSettings::Retraction::kLength) +
                     m_sb->setting< Distance >(Constants::MaterialSettings::Retraction::kPrimeAdditionalLength);
-            rv += m_G1 % m_f %
-                    QString::number(m_sb->setting< Velocity >(Constants::MaterialSettings::Retraction::kPrimeSpeed).to(m_meta.m_velocity_unit)) %
-                    m_e % QString::number(m_filament_location.to(m_meta.m_distance_unit)) %
-                    commentSpaceLine("PRIME FILAMENT");
+            if(m_sb->setting< bool >(Constants::MaterialSettings::Filament::kFilamentBAxis))
+            {
+                rv += m_G1 % m_f %
+                      QString::number(m_sb->setting< Velocity >(Constants::MaterialSettings::Retraction::kPrimeSpeed).to(m_meta.m_velocity_unit)) %
+                      m_b % QString::number(m_filament_location.to(m_meta.m_distance_unit)) %
+                      commentSpaceLine("PRIME FILAMENT");
+            }
+            else
+            {
+                rv += m_G1 % m_f %
+                      QString::number(m_sb->setting< Velocity >(Constants::MaterialSettings::Retraction::kPrimeSpeed).to(m_meta.m_velocity_unit)) %
+                      m_e % QString::number(m_filament_location.to(m_meta.m_distance_unit)) %
+                      commentSpaceLine("PRIME FILAMENT");
+            }
+
         }
         else
         {
             m_filament_location += (m_sb->setting< Distance >(Constants::MaterialSettings::Retraction::kLength) +
                     m_sb->setting< Distance >(Constants::MaterialSettings::Retraction::kPrimeAdditionalLength));
-            rv += m_G1 % m_f %
-                    QString::number(m_sb->setting< Velocity >(Constants::MaterialSettings::Retraction::kPrimeSpeed).to(m_meta.m_velocity_unit)) %
-                    m_e % QString::number(m_filament_location.to(m_meta.m_distance_unit)) %
-                    commentSpaceLine("PRIME FILAMENT");
+            if(m_sb->setting< bool >(Constants::MaterialSettings::Filament::kFilamentBAxis))
+            {
+                rv += m_G1 % m_f %
+                      QString::number(m_sb->setting< Velocity >(Constants::MaterialSettings::Retraction::kPrimeSpeed).to(m_meta.m_velocity_unit)) %
+                      m_b % QString::number(m_filament_location.to(m_meta.m_distance_unit)) %
+                      commentSpaceLine("PRIME FILAMENT");
+            }
+            else
+            {
+                rv += m_G1 % m_f %
+                      QString::number(m_sb->setting< Velocity >(Constants::MaterialSettings::Retraction::kPrimeSpeed).to(m_meta.m_velocity_unit)) %
+                      m_e % QString::number(m_filament_location.to(m_meta.m_distance_unit)) %
+                      commentSpaceLine("PRIME FILAMENT");
+            }
+
         }
         return rv;
     }

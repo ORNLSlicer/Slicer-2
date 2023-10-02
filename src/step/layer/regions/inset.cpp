@@ -155,6 +155,10 @@ namespace ORNL {
 
                         // Find if/ where this line intersects with a settings polygon
                         QVector<Point> poly_intersect = settings_poly.clipLine(start, end);
+                        for (Point& point : poly_intersect) {
+                            point.setSettings(updatedBase);
+                        }
+
                         intersections.append(poly_intersect);
                     }
 
@@ -248,17 +252,26 @@ namespace ORNL {
                     static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kInsetDirection)) == TipWipeDirection::kOptimal)
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInsetDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kInsetSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInsetAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInsetAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kInsetExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInsetLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInsetCutoffDistance));
             else if(static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kInsetDirection)) == TipWipeDirection::kAngled)
             {
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kAngledTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInsetDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kInsetSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInsetAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInsetAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kInsetExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInsetLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInsetCutoffDistance));
             }
             else
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kReverseTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInsetDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kInsetSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInsetAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInsetAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kInsetExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInsetLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInsetCutoffDistance));
             current_location = path.back()->end();
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::SpiralLift::kInsetEnable))

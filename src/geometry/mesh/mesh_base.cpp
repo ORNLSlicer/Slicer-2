@@ -61,12 +61,6 @@ namespace ORNL
 
     void MeshBase::setTransformation(const QMatrix4x4 &matrix)
     {
-        QQuaternion rotation;
-        if(isRotationalTransform(matrix, rotation)){
-            m_all_transformations.append(m_transformation);
-            m_all_transformations.append(matrix);
-        }
-
         m_transformation = matrix;
 
         m_vertices = m_vertices_aligned;
@@ -87,70 +81,9 @@ namespace ORNL
         updateDims();
     }
 
-    bool MeshBase::isRotationalTransform(const QMatrix4x4 &matrix, QQuaternion &rotation)
-    {
-        QVector3D translation, scale;
-        std::tie(translation, rotation, scale) = MathUtils::decomposeTransformMatrix(matrix);
-        return (rotation.x() != 0 || rotation.y() != 0 || rotation.z() != 0);
-    }
-
-    void MeshBase::setTransformations(const QVector<QMatrix4x4> matrixes){
-        m_all_transformations.clear();
-
-        for(QMatrix4x4 matrix : matrixes) {
-            QQuaternion rotation;
-            if(isRotationalTransform(matrix, rotation)) {
-                QVector3D translationL, scaleL;
-                QQuaternion rotationL;
-                std::tie(translationL, rotationL, scaleL) = MathUtils::decomposeTransformMatrix(m_transformation);
-
-                this->setTransformation(MathUtils::composeTransformMatrix(QVector3D(0,0,0), rotationL, scaleL));
-                this->setTransformation(MathUtils::composeTransformMatrix(QVector3D(0,0,0), rotation, scaleL));
-                this->alignAxis(MathUtils::composeTransformMatrix(translationL, QQuaternion(1,0,0,0), QVector3D(1,1,1)));
-            }
-            else {
-                this->setTransformation(matrix);
-            }
-
-            m_all_transformations.append(matrix);
-        }
-    }
-
-    void MeshBase::alignAxis(const QMatrix4x4 &matrix)
-    {
-        m_transformation = matrix;
-        m_vertices_aligned = m_vertices;
-        m_faces_aligned = m_faces;
-
-        convert();
-        updateDims();
-        m_original_dimensions = m_dimensions;
-    }
-
-    void MeshBase::resetAlignedAxis(const QMatrix4x4 &matrix)
-    {
-        m_all_transformations.clear();
-
-        m_transformation = matrix;
-        m_vertices_aligned = m_vertices = m_vertices_original;
-        m_faces_aligned = m_faces = m_faces_original;
-
-        center();
-        convert();
-        updateDims();
-        m_original_dimensions = m_dimensions;
-    }
-
     const QMatrix4x4 &MeshBase::transformation() const
     {
         return m_transformation;
-    }
-
-    QVector<QMatrix4x4> MeshBase::transformations() {
-        if(m_all_transformations.isEmpty() || m_all_transformations.last() != m_transformation)
-            m_all_transformations.append(m_transformation);
-
-        return m_all_transformations;
     }
 
     void MeshBase::scale(Distance3D bounds)

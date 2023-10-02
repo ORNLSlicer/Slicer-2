@@ -31,6 +31,8 @@
 #include <gcode/writers/sheet_lamination_writer.h>
 #include <gcode/writers/meld_writer.h>
 #include <gcode/writers/ornl_writer.h>
+#include <gcode/writers/okuma_writer.h>
+#include <gcode/writers/tormach_writer.h>
 
 #include <gcode/gcode_meta.h>
 
@@ -108,6 +110,9 @@ namespace ORNL {
         case GcodeSyntax::kMVP:
             m_base = QSharedPointer<MVPWriter>(new MVPWriter(GcodeMetaList::MVPMeta, GSM->getGlobal()));
             break;
+        case GcodeSyntax::kOkuma:
+            m_base = QSharedPointer<OkumaWriter>(new OkumaWriter(GcodeMetaList::HaasMetricMeta, GSM->getGlobal()));
+            break;
         case GcodeSyntax::kORNL:
             m_base = QSharedPointer<ORNLWriter>(new ORNLWriter(GcodeMetaList::ORNLMeta, GSM->getGlobal()));
             break;
@@ -125,6 +130,9 @@ namespace ORNL {
             break;
         case GcodeSyntax::kThermwood:
             m_base = QSharedPointer<ThermwoodWriter>(new ThermwoodWriter(GcodeMetaList::CincinnatiMeta, GSM->getGlobal()));
+            break;
+        case GcodeSyntax::kTormach:
+            m_base = QSharedPointer<TormachWriter>(new TormachWriter(GcodeMetaList::TormachMeta, GSM->getGlobal()));
             break;
         case GcodeSyntax::kRepRap:
             m_base = QSharedPointer<RepRapWriter>(new RepRapWriter(GcodeMetaList::RepRapMeta, GSM->getGlobal()));

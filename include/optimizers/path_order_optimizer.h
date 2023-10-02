@@ -101,6 +101,10 @@ namespace ORNL {
             //! \return Next path linked via travel
             Path linkNextInfillLines(QVector<Path>& paths);
 
+            //! \brief Links a travel in line infill
+            //! \return Next path linked via travel
+            Path linkNextInfillTravel(QVector<Path>& paths);
+
             //! \brief Links single path in concentric infill
             //! \return Next path linked via travel
             Path linkNextInfillConcentric();
@@ -172,6 +176,9 @@ namespace ORNL {
 
             //! \brief CW or CCW status for next path to determine which direction to rotate
             bool m_should_next_path_be_ccw;
+
+            //! \brief The layer number we are currently on
+            int m_layer_num;
     };
 }
 

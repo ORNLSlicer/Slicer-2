@@ -25,11 +25,11 @@ namespace ORNL {
             static void GenerateTrajectorySlowdown(Path& path, QSharedPointer<SettingsBase> sb);
 
             //tip wipe for perimeter/inset forward, backward, and angled
-            static void GenerateTipWipe(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed, Angle wipeAngle);
+            static void GenerateTipWipe(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed, Angle wipeAngle, AngularVelocity extruderSpeed, Distance tipWipeLiftDistance, Distance tipWipeCutoffDistance);
             //tip wipe for skin/infill open patterns that connect to inset
-            static void GenerateTipWipe(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed, QVector<Path>& outerPath, Angle wipeAngle);
+            static void GenerateTipWipe(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed, QVector<Path>& outerPath, Angle wipeAngle, AngularVelocity extruderSpeed, Distance tipWipeLiftDistance, Distance tipWipeCutoffDistance);
             //forward tip wipe for open loop paths (infill and skeletons)
-            static void GenerateForwardTipWipeOpenLoop(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed);
+            static void GenerateForwardTipWipeOpenLoop(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed, AngularVelocity extruderSpeed, Distance tipWipeLiftDistance, Distance tipWipeCutoffDistance);
 
             static void GenerateSpiralLift(Path& path, Distance spiralWidth, Distance spiralHeight, int spiralPoints, Velocity spiralLiftVelocity, bool supportsG3);
 

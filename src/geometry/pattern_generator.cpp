@@ -51,6 +51,62 @@ namespace ORNL {
         return cutlines;
     }
 
+    QVector<Polyline> PatternGenerator::GenerateAlternatingLines(PolygonList geometry, Distance lineSpacing, Angle rotation, bool globalBounds, Point min, Point max, uint layerNum)
+    {
+        geometry = geometry.rotate(rotation);
+
+        if(!globalBounds)
+        {
+            min = geometry.min();
+            max = geometry.max();
+        }
+        else
+        {
+            min = min.rotate(rotation);
+            max = max.rotate(rotation);
+        }
+
+        //! The result we get after intersecting the polygons with the grid lines
+        QVector<Polyline> cutlines;
+
+        //! The space left over after all the max number of cutlines are generated
+        Distance freeSpace = (max.toDistance3D().x - min.toDistance3D().x) % lineSpacing;
+
+        int i = 0;
+        //! start at the bounding box's minimum x value and go all the way to the bounding box's maximum x value.
+        //! As we go along, every "line_spacing" distance we intersect the polygons with the grid lines
+        for (Distance x = min.toDistance3D().x + (freeSpace / 2);
+             x < max.toDistance3D().x;
+             x += lineSpacing)
+        {
+            //! Only need every other cutline (alternating between subsequent layers)
+            if(layerNum % 2 != i % 2)
+            {
+                //! Create the grid lines
+                Polyline cutline;
+                cutline << Point(x(), min.y());
+                cutline << Point(x(), max.y());
+
+                //! Intersect the polygons and the gridlines and store them
+                //! \note This calls ClipperLib
+
+                cutlines += geometry & cutline;
+            }
+            i++;
+        }
+
+        //! Unrotate polygons
+        for(int i = 0; i < cutlines.size(); i++)
+        {
+            cutlines[i] = cutlines[i].rotate(-rotation);
+            if(i % 2 == 0)
+                cutlines[i] = cutlines[i].reverse();
+        }
+
+        return cutlines;
+    }
+
+
     QVector<Polyline> PatternGenerator::GenerateGrid(PolygonList geometry, Distance lineSpacing, Angle rotation, bool globalBounds, Point min, Point max)
     {
         QVector<Polyline> result;

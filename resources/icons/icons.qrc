@@ -461,5 +461,6 @@
         <file>vector_triangle_white.png</file>
         <file>palette_black.png</file>
         <file>palette_white.png</file>
+        <file>vector_triangle_black_solid.png</file>
     </qresource>
 </RCC>

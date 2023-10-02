@@ -57,36 +57,36 @@ int main(int argc, char* argv[])
     // Register the message handler so all output is printed in the main window as well.
     //qInstallMessageHandler(ORNL::msgHandler);
 
-    QCommandLineParser parser;
+//    QCommandLineParser parser;
 
-    if(argc > 1)
-    {
-        QCoreApplication ca(argc, argv);
+//    if(argc > 1)
+//    {
+//        QCoreApplication ca(argc, argv);
 
-        QSharedPointer<ORNL::SettingsBase> options = QSharedPointer<ORNL::SettingsBase>::create();
-        ORNL::CommandLineConverter clc;
-        clc.setupCommandLineParser(parser);
+//        QSharedPointer<ORNL::SettingsBase> options = QSharedPointer<ORNL::SettingsBase>::create();
+//        ORNL::CommandLineConverter clc;
+//        clc.setupCommandLineParser(parser);
 
-        parser.process(ca);
+//        parser.process(ca);
 
-        bool setupResult = clc.convertOptions(parser, options);
+//        bool setupResult = clc.convertOptions(parser, options);
 
-        if(setupResult)
-        {
-            ORNL::MainControl* control = new ORNL::MainControl(options);
-            QObject::connect(control, &ORNL::MainControl::finished, &ca, &QCoreApplication::quit,
-                             Qt::QueuedConnection);
+//        if(setupResult)
+//        {
+//            ORNL::MainControl* control = new ORNL::MainControl(options);
+//            QObject::connect(control, &ORNL::MainControl::finished, &ca, &QCoreApplication::quit,
+//                             Qt::QueuedConnection);
 
-            control->run();
-            int ret = ca.exec();
+//            control->run();
+//            int ret = ca.exec();
 
-            delete control;
-            return ret;
-        }
-        return 1;
-    }
-    else
-    {
+//            delete control;
+//            return ret;
+//        }
+//        return 1;
+//    }
+//    else
+//    {
         QApplication a(argc, argv);
 #ifdef WIN32
         HWND consoleWnd = GetConsoleWindow();
@@ -109,5 +109,5 @@ int main(int argc, char* argv[])
         delete w;
 
         return ret;
-    }
+//    }
 }

@@ -123,6 +123,25 @@ namespace ORNL {
         this->setTransformation(MathUtils::composeTransformMatrix(trans, rot, scale), true);
     }
 
+    void PartObject::draw() {
+        m_view->makeCurrent();
+        if (getWireFrameMode())
+        {
+            m_view->glDisable(GL_CULL_FACE);
+            m_view->glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            m_view->glDrawArrays(GL_TRIANGLES, 0, m_vertices.size() / 3);
+            m_view->glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            m_view->glEnable(GL_CULL_FACE);
+        }
+        else
+        {
+            m_view->glDrawArrays(renderMode(), 0, m_vertices.size() / 3);
+        }
+    }
+    void PartObject::configureUniforms() {
+        view()->shaderProgram()->setUniformValue(m_shader_locs.renderingPartObject, true);
+    }
+
     QSet<QSharedPointer<PartObject>> PartObject::select()
     {
         QSet<QSharedPointer<PartObject>> ret;
@@ -192,20 +211,6 @@ namespace ORNL {
         this->paint(m_color);
     }
 
-    void PartObject::setTransparency(uint trans) {
-        m_transparency = trans;
-        m_base_color.setAlpha(trans);
-        m_selected_color.setAlpha(trans);
-
-        m_color = (m_selected) ? m_selected_color : m_base_color;
-
-        this->paint(m_color);
-    }
-
-    uint PartObject::transparency() {
-        return m_transparency;
-    }
-
     void PartObject::setMeshTypeColor(MeshType type) {
         switch(type)
         {
@@ -234,7 +239,13 @@ namespace ORNL {
     void PartObject::setRenderMode(ushort mode)
     {
         renderMode() = mode;
+        this->setWireFrameMode(mode == GL_LINES);
         render();
+    }
+
+    void PartObject::setSolidWireFrameMode(bool state)
+    {
+        solidWireFrameMode() = state;
     }
 
     QSharedPointer<ArrowObject> PartObject::arrow() {
@@ -284,7 +295,7 @@ namespace ORNL {
         const std::vector<float>& normals = this->normals();
         const std::vector<float>& colors = this->colors();
 
-        std::vector<float> new_colors;
+        std::vector<float> new_colors = colors;
         new_colors.resize(colors.size());
 
         QColor color_to_set;
@@ -299,57 +310,14 @@ namespace ORNL {
         QVector3D stacking_axis(0, 0, 1);
         QQuaternion quaternion = MathUtils::CreateQuaternion(stacking_pitch, stacking_yaw, stacking_roll);
         stacking_axis = quaternion.rotatedVector(stacking_axis).normalized();
-
-        //! \todo Move this to GLSL shader to avoid the copies between CPU and graphics.
-        for (int i = 0; i < vertices.size(); i += 9) {
-            QVector3D p1 = objectTransform * QVector3D(vertices[i + 0], vertices[i + 1], vertices[i + 2]);
-            QVector3D p2 = objectTransform * QVector3D(vertices[i + 3], vertices[i + 4], vertices[i + 5]);
-            QVector3D p3 = objectTransform * QVector3D(vertices[i + 6], vertices[i + 7], vertices[i + 8]);
-
-            QVector3D normal = rot * QVector3D(normals[i], normals[i + 1], normals[i + 2]);
-
-            color_to_set = m_color;
-
-            auto upward = QVector3D::dotProduct(stacking_axis, normal);
-
-            //Z pointing down
-            if (upward <= 0.0)
-            {
-                float faceAngle;
-                auto val = QVector3D::dotProduct(stacking_axis, normal) / (normal.length() * stacking_axis.length());
-
-                if (val <= -1.0)
-                    faceAngle = M_PI;
-                else if (val >= 1.0)
-                    faceAngle = 0;
-                else
-                    faceAngle = qAcos(val);
-
-                faceAngle = faceAngle - (M_PI / 2.0);
-
-                if (faceAngle > m_overhang_angle)
-                    color_to_set = Constants::Colors::kRed;
-            }
-
-            new_colors[j + 0]  = color_to_set.redF();
-            new_colors[j + 1]  = color_to_set.greenF();
-            new_colors[j + 2]  = color_to_set.blueF();
-            new_colors[j + 3]  = color_to_set.alphaF();
-
-            new_colors[j + 4]  = color_to_set.redF();
-            new_colors[j + 5]  = color_to_set.greenF();
-            new_colors[j + 6]  = color_to_set.blueF();
-            new_colors[j + 7]  = color_to_set.alphaF();
-
-            new_colors[j + 8]  = color_to_set.redF();
-            new_colors[j + 9]  = color_to_set.greenF();
-            new_colors[j + 10] = color_to_set.blueF();
-            new_colors[j + 11] = color_to_set.alphaF();
-
-            j += 12;
-        }
-
-        this->updateColors(new_colors);
+        this->view()->shaderProgram()->bind();
+        float overhang_angle = m_overhang_angle();
+        //Pass the information angle and stacking axis to the shader so that it can determine what faces
+        //need to be colored with the overhang color.
+        this->view()->shaderProgram()->setUniformValue(m_shader_locs.overhangAngle, overhang_angle);
+        this->view()->shaderProgram()->setUniformValue(m_shader_locs.stackingAxis, QVector3D(0,0,1));
+        this->view()->shaderProgram()->setUniformValue(m_shader_locs.overhangMode, true);
+        this->view()->shaderProgram()->release();
     }
 
     void PartObject::transformationCallback() {
@@ -400,6 +368,10 @@ namespace ORNL {
     }
 
     void PartObject::paint(QColor color) {
+        //Disable the overhang setting on the shader
+        this->view()->shaderProgram()->bind();
+        this->view()->shaderProgram()->setUniformValue(m_shader_locs.overhangMode, false);
+        this->view()->shaderProgram()->release();
         color.setAlpha(m_transparency);
 
         this->GraphicsObject::paint(color);

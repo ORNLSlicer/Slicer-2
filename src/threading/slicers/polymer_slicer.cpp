@@ -16,10 +16,12 @@
 #include "step/layer/island/wire_feed_island.h"
 #include "step/layer/regions/ironing.h"
 #include "step/layer/regions/skin.h"
+#include "step/layer/regions/perimeter.h"
 #include "utilities/mathutils.h"
 #include "optimizers/multi_nozzle_optimizer.h"
 #include "slicing/layer_additions.h"
 #include "optimizers/layer_order_optimizer.h"
+#include "step/layer/regions/infill.h"
 
 namespace ORNL {
 
@@ -50,6 +52,9 @@ namespace ORNL {
            //if(part_sb->setting<bool>(Constants::MaterialSettings::PlatformAdhesion::kRaftEnable))
            //        part->clearSteps();
 
+           if(m_half_layer_height != 0)
+               m_half_layer_height = 0;
+
            // Caching does not work correctly - just always clear.
            part->clearSteps();
 
@@ -65,20 +70,23 @@ namespace ORNL {
         });
 
         pp.addStepBuilder([this](QSharedPointer<BufferedSlicer::SliceMeta> next_layer_meta, Preprocessor::ActivePartMeta& meta){
-            // Save settings
-            m_saved_layer_settings.push_back(next_layer_meta->settings);
 
-            // must add new
-            if(next_layer_meta->number >= meta.steps_processed)
-            {
-                QSharedPointer<Layer> layer = QSharedPointer<Layer>::create(next_layer_meta->number + 1, next_layer_meta->settings);
-                layer->setSettingsPolygons(next_layer_meta->settings_polygons);
+            auto addNewLayer = [this](QSharedPointer<BufferedSlicer::SliceMeta> next_layer_meta, Preprocessor::ActivePartMeta& meta, QSharedPointer<Layer>& new_layer, int layerNum){
+                // Save settings
+                m_saved_layer_settings.push_back(next_layer_meta->settings);
+
+                new_layer = QSharedPointer<Layer>::create(next_layer_meta->number, next_layer_meta->settings);
+
+                new_layer->setSettingsPolygons(next_layer_meta->settings_polygons);
 
                 // add data from cross-sectioning to a layer
-                layer->setGeometry(next_layer_meta->geometry, next_layer_meta->average_normal);
+                new_layer->setGeometry(next_layer_meta->geometry, next_layer_meta->average_normal);
 
-                layer->setOrientation(next_layer_meta->plane, next_layer_meta->shift_amount + next_layer_meta->additional_shift);
-                meta.part->appendStep(layer);
+                if(layerNum == 2){
+                    next_layer_meta->shift_amount.z(next_layer_meta->shift_amount.z() + m_half_layer_height);
+                }
+                new_layer->setOrientation(next_layer_meta->plane, next_layer_meta->shift_amount + next_layer_meta->additional_shift);
+                meta.part->appendStep(new_layer);
 
                 // Create the islands from the geometry.
                 QVector<PolygonList> split_geometry = next_layer_meta->geometry.splitIntoParts();
@@ -93,12 +101,12 @@ namespace ORNL {
                 //If wire feeding is turned on, have to create special island combinations
                 if(next_layer_meta->settings->setting<bool>(Constants::ExperimentalSettings::WireFeed::kWireFeedEnable))
                 {
-              //    LayerAdditions::createWireFeedIslands(layer, next_layer_meta, true);
+                //    LayerAdditions::createWireFeedIslands(layer, next_layer_meta, true);
                     for (const PolygonList& island_geometry : split_geometry) {
                         // Polymer builds use polymer islands.
                         QSharedPointer<WireFeedIsland> poly_isl = QSharedPointer<WireFeedIsland>::create(island_geometry, next_layer_meta->settings,
-                                                                                                       next_layer_meta->settings_polygons, next_layer_meta->single_grid);
-                        layer->addIsland(IslandType::kWireFeed, poly_isl);
+                                                                                                         next_layer_meta->settings_polygons, next_layer_meta->single_grid);
+                        new_layer->addIsland(IslandType::kWireFeed, poly_isl);
                     }
                 }
                 //Else, normal polymer islands
@@ -108,12 +116,61 @@ namespace ORNL {
                         // Polymer builds use polymer islands.
                         QSharedPointer<PolymerIsland> poly_isl = QSharedPointer<PolymerIsland>::create(island_geometry, next_layer_meta->settings,
                                                                                                        next_layer_meta->settings_polygons, next_layer_meta->single_grid);
-                        layer->addIsland(IslandType::kPolymer, poly_isl);
+                        new_layer->addIsland(IslandType::kPolymer, poly_isl);
                     }
+                }
+            };
+
+            // must add new
+            if(next_layer_meta->number >= meta.steps_processed)
+            {
+                QSharedPointer<Layer> layer;
+                QSharedPointer<Layer> layerWithSameZ;
+                QSharedPointer<Layer> layer2;
+
+                bool perimeter_enabled = next_layer_meta->settings->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable);
+                bool shifted_beads_enabled = next_layer_meta->settings->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableShiftedBeads);
+                bool infill_enabled = next_layer_meta->settings->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
+                bool alternating_lines_enabled = next_layer_meta->settings->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
+
+                if((perimeter_enabled && shifted_beads_enabled) || (infill_enabled && alternating_lines_enabled))
+                {
+                    // get height of the half sized layer on first layer creation
+                    if(m_half_layer_height == 0)
+                    {
+                        next_layer_meta->number = (next_layer_meta->number * 2 + 1);
+                        m_half_layer_height = next_layer_meta->shift_amount.z();
+                    }
+                    // if not creating the first layer
+                    else{                     
+                        next_layer_meta->number = (next_layer_meta->number * 2 + 2);
+                    }
+                }
+                else
+                {
+                    next_layer_meta->number++;
+                }
+
+                addNewLayer(next_layer_meta, meta, layer, 1);
+
+                if((perimeter_enabled && shifted_beads_enabled) || (infill_enabled && alternating_lines_enabled))
+                {
+                    // creation of layer on the same z as the layer number 1
+                    if(next_layer_meta->number == 1){
+                        next_layer_meta->number = next_layer_meta->number + 1;
+                        addNewLayer(next_layer_meta, meta, layerWithSameZ, 3);
+                    }
+
+                    // creation of the next half layer
+                    next_layer_meta->number = next_layer_meta->number + 1;
+                    addNewLayer(next_layer_meta, meta, layer2, 2);
                 }
             }
             else
             {
+                // Save settings
+                m_saved_layer_settings.push_back(next_layer_meta->settings);
+
                 QSharedPointer<Layer> layer = meta.part->step(next_layer_meta->number + meta.part_start, StepType::kLayer).dynamicCast<Layer>();
                 layer->flagIfDirtySettings(next_layer_meta->settings);
                 layer->flagIfDirtySettingsPolygons(next_layer_meta->settings_polygons);
@@ -149,7 +206,7 @@ namespace ORNL {
                         for (const PolygonList& island_geometry : split_geometry) {
                             // Polymer builds use polymer islands.
                             QSharedPointer<WireFeedIsland> poly_isl = QSharedPointer<WireFeedIsland>::create(island_geometry, next_layer_meta->settings,
-                                                                                                           next_layer_meta->settings_polygons, next_layer_meta->single_grid);
+                                                                                                             next_layer_meta->settings_polygons, next_layer_meta->single_grid);
                             newIslands.append(poly_isl);
                         }
                         newLayer->updateIslands(IslandType::kWireFeed, newIslands);
@@ -168,12 +225,21 @@ namespace ORNL {
                 }
             }
 
+
             return false; // No error, so continune slicing
         });
 
         pp.addCrossSectionProcessing([this](Preprocessor::ActivePartMeta& meta){
             // If fewer layers than last slice, remove all steps from that layer onwards
             meta.part->clearStepsFromIndex(meta.last_step_count + meta.part_start);
+
+            //! If perimeters are enabled, give each perimeter the total number of layers
+            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable))
+                processPerimeter(meta.part, meta.part_start, meta.last_step_count);
+
+            //! If infill alternating lines are enabled, give the infill the total number of layers
+            if(meta.part_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines))
+                processInfill(meta.part, meta.part_start, meta.last_step_count);
 
             //! If skins are enabled, give each skin its upper and lower geometry
             if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Skin::kEnable))
@@ -242,6 +308,28 @@ namespace ORNL {
         }
     }
 
+    void PolymerSlicer::processPerimeter(QSharedPointer<Part> part, int part_start, int last_layer_count)
+    {
+        m_layer_num = last_layer_count;
+        for (int layer_nbr = part_start; layer_nbr < last_layer_count; ++layer_nbr)
+        {
+            if (layer_nbr < part->countStepPairs())
+            {
+                QSharedPointer<Layer> layer = part->step(layer_nbr, StepType::kLayer).dynamicCast<Layer>();
+
+                if (layer->isDirty())
+                {
+                    for (QSharedPointer<IslandBase> isl : layer->getIslands())
+                    {
+                        QSharedPointer<Perimeter> perimeter = isl->getRegion(RegionType::kPerimeter).dynamicCast<Perimeter>();
+                        perimeter->setLayerCount(last_layer_count);
+
+                    }
+                }
+            }
+        }
+    }
+
     void PolymerSlicer::processSkin(QSharedPointer<Part> part, int part_start, int last_layer_count)
     {
         for (int layer_nr = part_start; layer_nr < last_layer_count; layer_nr++)
@@ -287,6 +375,27 @@ namespace ORNL {
                         //! Lower geometry
                         for (int i = lower_bound; i < layer_nr; ++i)
                             skin->addLowerGeometry(part->step(i, StepType::kLayer).dynamicCast<Layer>()->getGeometry());
+                    }
+                }
+            }
+        }
+    }
+
+    void PolymerSlicer::processInfill(QSharedPointer<Part> part, int part_start, int last_layer_count)
+    {
+        m_layer_num = last_layer_count;
+        for (int layer_nbr = part_start; layer_nbr < last_layer_count; ++layer_nbr)
+        {
+            if (layer_nbr < part->countStepPairs())
+            {
+                QSharedPointer<Layer> layer = part->step(layer_nbr, StepType::kLayer).dynamicCast<Layer>();
+
+                if (layer->isDirty())
+                {
+                    for (QSharedPointer<IslandBase> isl : layer->getIslands())
+                    {
+                        QSharedPointer<Infill> infill = isl->getRegion(RegionType::kInfill).dynamicCast<Infill>();
+                        infill->setLayerCount(last_layer_count);
                     }
                 }
             }

@@ -907,19 +907,19 @@ namespace ORNL {
     void Skeleton::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
     {
         //! Uncomment if erroneous skeletons are being generated outside geometry
-        //if (!outerMostClosedContour.isEmpty())
-        //{
-        //    PolygonList _outerMostClosedContour;
-        //    for (const Path &path : outerMostClosedContour)
-        //        _outerMostClosedContour += Polygon(path);
+        if (!outerMostClosedContour.isEmpty())
+        {
+            PolygonList _outerMostClosedContour;
+            for (const Path &path : outerMostClosedContour)
+                _outerMostClosedContour += Polygon(path);
 
-        //    //! Removes skeletons generated outside outerMostClosedContour
-        //    QVector<Path> containedPaths;
-        //    for (Path path : m_paths)
-        //        if (std::all_of(path.begin(), path.end(), [_outerMostClosedContour] (const QSharedPointer<SegmentBase> &segment) mutable {return _outerMostClosedContour.inside(segment->start());}))
-        //            containedPaths += path;
-        //    m_paths = containedPaths;
-        //}
+            //! Removes skeletons generated outside outerMostClosedContour
+            QVector<Path> containedPaths;
+            for (Path path : m_paths)
+                if (std::all_of(path.begin(), path.end(), [_outerMostClosedContour] (const QSharedPointer<SegmentBase> &segment) mutable {return _outerMostClosedContour.inside(segment->start());}))
+                    containedPaths += path;
+            m_paths = containedPaths;
+        }
 
         poo->setPathsToEvaluate(m_paths);
         QVector<Path> new_paths;
@@ -957,17 +957,26 @@ namespace ORNL {
             if(static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkeletonDirection)) == TipWipeDirection::kForward ||
                     static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkeletonDirection)) == TipWipeDirection::kOptimal)
                 PathModifierGenerator::GenerateForwardTipWipeOpenLoop(path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonDistance),
-                                                                      m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkeletonSpeed));
+                                                                      m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkeletonSpeed),
+                                                                      m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkeletonExtruderSpeed),
+                                                                      m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonLiftHeight),
+                                                                      m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonCutoffDistance));
             else if(static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkeletonDirection)) == TipWipeDirection::kAngled)
             {
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kAngledTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkeletonSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkeletonAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkeletonAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkeletonExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonCutoffDistance));
             }
             else
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kReverseTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkeletonSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkeletonAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkeletonAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkeletonExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonCutoffDistance));
              current_location = path.back()->end();
         }
 

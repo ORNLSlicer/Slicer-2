@@ -23,6 +23,7 @@ namespace ORNL
     {
         //First, get necessary parameters from settings to rotate all pathing
         QChar comma(','), newline('\n'), space(' '), x('X'), y('Y'), z('Z'), f('F'), s('S'), zero('0');
+        qint16 layerNum = 0;
         QStringList lines = m_text.split(newline);
         QString G0("G0"), G1("G1"), M3("M3"), M5("M5"), commaSpace(", ");
         QString xval, yval, zval, velocity, feedrate;
@@ -73,6 +74,36 @@ namespace ORNL
         out << "$$ ( -------------------- )" % newline;
         out << "$$ ()" % newline;
         out << "LOADTL/1" % newline;
+
+        if(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::FileOutput::kTormachMode) == static_cast<int>(TormachMode::kMode21))
+        {
+            out << "wirefeed speed" % newline;
+            out << "voltage" % newline;
+        }
+        else if(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::FileOutput::kTormachMode) == static_cast<int>(TormachMode::kMode40))
+        {
+            out << "wirefeed speed" % newline;
+            out << "power" % newline;
+        }
+        else if(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::FileOutput::kTormachMode) == static_cast<int>(TormachMode::kMode102))
+        {
+            out << "wirefeed speed" % newline;
+            out << "trim" % newline;
+            out << "frequency" % newline;
+        }
+        else if(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::FileOutput::kTormachMode) == static_cast<int>(TormachMode::kMode274))
+        {
+            out << "wirefeed speed" % newline;
+            out << "trim" % newline;
+            out << "ultimarc" % newline;
+        }
+        else if(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::FileOutput::kTormachMode) == static_cast<int>(TormachMode::kMode509))
+        {
+            out << "wirefeed speed" % newline;
+            out << "trim" % newline;
+            out << "ultimarc" % newline;
+        }
+
         out << "PPRINT/ --- files_x\\job_start.txt ---" % newline;
         out << "PPRINT/ OPERATION 2" % newline;
         out << "PPRINT/" % newline;
@@ -102,7 +133,7 @@ namespace ORNL
                             zval = params[i].mid(1).toString();
                     }
                 }
-                out << "GOTO / " % xval % commaSpace % yval % commaSpace % zval % commaSpace % "0.0000, 0.0000, 1.0000" % newline;
+                out << "GOTO / " % xval % commaSpace % yval % commaSpace % zval % commaSpace % "0.0000, 0.0000, 0.0000" % newline;
             }
             else if(line.startsWith(G1))
             {
@@ -124,7 +155,7 @@ namespace ORNL
                     }
                 }
                 out << "FEDRAT/ MMPM, " % velocity % newline;
-                out << "GOTO / " % xval % commaSpace % yval % commaSpace % zval % commaSpace % "0.0000, 0.0000, 1.0000" % newline;
+                out << "GOTO / " % xval % commaSpace % yval % commaSpace % zval % commaSpace % "0.0000, 0.0000, 0.0000" % newline;
             }
             else if(line.startsWith(M3))
             {
@@ -135,6 +166,15 @@ namespace ORNL
             {
                 out << "$$ ( -------------------- additiveDevice_off.txt --- )" % newline;
                 out << "CALSUB/STOP_DEPO" % newline;
+            }
+            else if(line.startsWith("(BEGINNING LAYER:"))
+            {
+                layerNum ++;
+                out << "$$ Layer: " << layerNum << "\n";
+            }
+            else if(line.startsWith("(UPDATE VOLTAGE FOR TIP WIPE)"))
+            {
+                out << "$$ Set New Welder Voltage\n";
             }
         }
         file.close();

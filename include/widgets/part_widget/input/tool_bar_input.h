@@ -259,6 +259,8 @@ namespace ORNL
             //! \param val the new value
             void lockScaleUpdate(double val);
 
+            void reset(double value = 0, bool notify = true);
+
             //! \brief updates based on model selection
             //! \param item the item in question
             void modelSelectionUpdate(QSharedPointer<PartMetaItem> item);

@@ -343,6 +343,10 @@ namespace ORNL
             //extract components of command
             //handlers will also update appropriate state
             //if the line is not just an empty line or whitespace
+            if(m_upper_lines[m_current_line].contains("[#"))
+            {
+                continue;
+            }
             if(!m_upper_lines[m_current_line].midRef(0).trimmed().isEmpty())
             {
                 if(skip)
@@ -1001,6 +1005,8 @@ namespace ORNL
 
                 case ('A'):
                 case ('a'):
+                case ('B'):
+                case ('b'):
                 case ('E'):
                 case ('e'):
                     if(e_not_used)
@@ -1929,23 +1935,74 @@ namespace ORNL
     void CommonParser::AddDwell(double dwellTime)
     {
         int insertIndex = m_current_line - 1 + m_insertions;
-
         QSharedPointer<SettingsBase> sb = GSM->getGlobal();
-        QString custom_code = sb->setting< QString >(Constants::MaterialSettings::Cooling::kPostPauseCode);
-        if(!(custom_code.isNull() || custom_code.isEmpty())) {
-            m_lines.insert(insertIndex, custom_code);
-            m_insertions += custom_code.count('\n') + 1;
+
+        if(sb->setting< int >(Constants::PrinterSettings::MachineSetup::kSyntax) == 11)
+        {
+            QString custom_code = sb->setting< QString >(Constants::MaterialSettings::Cooling::kPostPauseCode);
+            if(!(custom_code.isNull() || custom_code.isEmpty())) {
+                m_lines.insert(insertIndex, custom_code);
+                m_insertions += custom_code.count('\n') + 1;
+            }
+
+            QString rv;
+
+            // Move to Purge Position
+            rv = "G1 X" % QString::number(sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeX).to(m_distance_unit))
+                  % " Y" % QString::number(sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeY).to(m_distance_unit))
+                  % " Z " % QString::number(sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeZ).to(m_distance_unit))
+                  % m_space % getCommentStartDelimiter() % "MOVE TO PURGE LOCATION" % getCommentEndDelimiter();
+            m_lines.insert(insertIndex, rv);
+            insertIndex++;
+            ++m_insertions;
+
+            // Dwell for the amount of dwell time minus the purge time
+            double new_dwellTime;
+            double purgeLength = sb->setting< double >(Constants::MaterialSettings::Purge::kPurgeLength);
+            double purgeRate = sb->setting< double >(Constants::MaterialSettings::Purge::kPurgeFeedrate);
+            new_dwellTime = dwellTime - purgeLength / purgeRate;
+            if (new_dwellTime > 0)
+            {
+                rv = m_g4_prefix % QString::number(new_dwellTime, 'f', 1) % m_space % getCommentStartDelimiter()
+                     % m_g4_comment % getCommentEndDelimiter();
+                m_lines.insert(insertIndex, rv);
+                ++m_insertions;
+                insertIndex++;
+            }
+
+            // Purge
+            MotionEstimation::m_previous_e += sb->setting< Distance >(Constants::MaterialSettings::Purge::kPurgeLength);
+            rv = "G1 F" % QString::number(sb->setting< Velocity >(Constants::MaterialSettings::Purge::kPurgeFeedrate).to(m_velocity_unit))
+                  % " B" % QString::number(Distance(MotionEstimation::m_previous_e).to(m_distance_unit))
+                  % m_space % getCommentStartDelimiter() % "PURGE" % getCommentEndDelimiter();
+            m_lines.insert(insertIndex, rv);
+            ++m_insertions;
+
+            custom_code = sb->setting< QString >(Constants::MaterialSettings::Cooling::kPrePauseCode);
+            if(!(custom_code.isNull() || custom_code.isEmpty())) {
+                m_lines.insert(insertIndex, custom_code);
+                m_insertions += custom_code.count('\n') + 1;
+            }
         }
+        else
+        {
 
-        QString dwell = m_g4_prefix % QString::number(dwellTime, 'f', 1) % m_space % getCommentStartDelimiter()
-                % m_g4_comment % getCommentEndDelimiter();
-        m_lines.insert(insertIndex, dwell);
-        ++m_insertions;
+            QString custom_code = sb->setting< QString >(Constants::MaterialSettings::Cooling::kPostPauseCode);
+            if(!(custom_code.isNull() || custom_code.isEmpty())) {
+                m_lines.insert(insertIndex, custom_code);
+                m_insertions += custom_code.count('\n') + 1;
+            }
 
-        custom_code = sb->setting< QString >(Constants::MaterialSettings::Cooling::kPrePauseCode);
-        if(!(custom_code.isNull() || custom_code.isEmpty())) {
-           m_lines.insert(insertIndex, custom_code);
-           m_insertions += custom_code.count('\n') + 1;
+            QString dwell = m_g4_prefix % QString::number(dwellTime, 'f', 1) % m_space % getCommentStartDelimiter()
+                            % m_g4_comment % getCommentEndDelimiter();
+            m_lines.insert(insertIndex, dwell);
+            ++m_insertions;
+
+            custom_code = sb->setting< QString >(Constants::MaterialSettings::Cooling::kPrePauseCode);
+            if(!(custom_code.isNull() || custom_code.isEmpty())) {
+                m_lines.insert(insertIndex, custom_code);
+                m_insertions += custom_code.count('\n') + 1;
+            }
         }
     }
 

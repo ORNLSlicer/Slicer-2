@@ -188,7 +188,9 @@ namespace ORNL
         kAeroBasic,
         kSheetLamination,
         kMeld,
-        kORNL
+        kORNL,
+        kOkuma,
+        kTormach
     };
 
     inline QString toString(GcodeSyntax syntax) {
@@ -223,6 +225,8 @@ namespace ORNL
             return Constants::PrinterSettings::SyntaxString::kMeld;
         case GcodeSyntax::kMVP:
             return Constants::PrinterSettings::SyntaxString::kMVP;
+        case GcodeSyntax::kOkuma:
+            return Constants::PrinterSettings::SyntaxString::kOkuma;
         case GcodeSyntax::kORNL:
             return Constants::PrinterSettings::SyntaxString::kORNL;
         case GcodeSyntax::kRomiFanuc:
@@ -235,6 +239,8 @@ namespace ORNL
             return Constants::PrinterSettings::SyntaxString::kSkyBaam;
         case GcodeSyntax::kThermwood:
             return Constants::PrinterSettings::SyntaxString::kThermwood;
+        case GcodeSyntax::kTormach:
+            return Constants::PrinterSettings::SyntaxString::kTormach;
         case GcodeSyntax::kWolf:
             return Constants::PrinterSettings::SyntaxString::kWolf;
         case GcodeSyntax::kRepRap:

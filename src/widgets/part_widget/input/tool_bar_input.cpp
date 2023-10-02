@@ -5,6 +5,7 @@
 #include <QGraphicsDropShadowEffect>
 
 // Local
+#include "utilities/mathutils.h"
 #include "widgets/part_widget/model/part_meta_model.h"
 #include "managers/preferences_manager.h"
 
@@ -177,7 +178,10 @@ namespace ORNL
                 double conv_d = conv.to(pm_ang);
 
                 QObject::disconnect(m_model.get(), &PartMetaModel::transformUpdate, this, &ToolbarInput::modelRotationUpdate);
-                m_selected_item->setRotation(QQuaternion::fromEulerAngles(new_val / conv_d));
+                // Note: this transform is relative to the current rotation.
+                m_selected_item->rotate(QQuaternion::fromEulerAngles(new_val / conv_d));
+                this->reset(0, false);
+
                 QObject::connect(m_model.get(), &PartMetaModel::transformUpdate, this, &ToolbarInput::modelRotationUpdate);
                 break;
             }
@@ -268,6 +272,20 @@ namespace ORNL
         this->readValue(val);
     }
 
+    void ToolbarInput::reset(double value, bool notify) {
+        m_input_x->blockSignals(!notify);
+        m_input_y->blockSignals(!notify);
+        m_input_z->blockSignals(!notify);
+
+        m_input_x->setValue(value);
+        m_input_y->setValue(value);
+        m_input_z->setValue(value);
+
+        m_input_x->blockSignals(false);
+        m_input_y->blockSignals(false);
+        m_input_z->blockSignals(false);
+    }
+
     void ToolbarInput::modelSelectionUpdate(QSharedPointer<PartMetaItem> item) {
         QList<QSharedPointer<PartMetaItem>> selected_items = m_model->selectedItems();
         QSharedPointer<PartMetaItem> manip_item;
@@ -298,6 +316,27 @@ namespace ORNL
 
     void ToolbarInput::modelTranslationUpdate(QSharedPointer<PartMetaItem> item) {
         if (m_selected_item != item) return;
+
+        if (PM->getUseImplicitTransforms()) {
+            // Let it be 0,0,0 if transform is implicit and not moved yet.
+            QMatrix4x4 gl_transform = m_selected_item->transformation();
+            QVector3D gl_trans;
+            std::tie(gl_trans, std::ignore, std::ignore) = MathUtils::decomposeTransformMatrix(gl_transform);
+            gl_trans *= Constants::OpenGL::kViewToObject;
+
+            QVector3D trans;
+            std::tie(trans, std::ignore, std::ignore) = MathUtils::decomposeTransformMatrix(item->part()->rootMesh()->transformation());
+
+            // Basically glEquals with high epsilon.
+            if (
+                std::abs(trans.x() - gl_trans.x()) < 1 &&
+                std::abs(trans.y() - gl_trans.y()) < 1 &&
+                std::abs(trans.z() - gl_trans.z()) < 1
+            ) {
+                this->reset(0, false);
+                return;
+            }
+        }
 
         Distance conv;
         Distance pm_dist = PM->getDistanceUnit();
@@ -375,7 +414,7 @@ namespace ORNL
         m_combo->blockSignals(false);
 
 
-        QVector3D s = item->scale() / (m_conversion() / mm());
+        QVector3D s = item->scaling() / (m_conversion() / mm());
 
         m_input_x->blockSignals(true);
         m_input_y->blockSignals(true);

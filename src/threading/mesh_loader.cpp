@@ -133,6 +133,7 @@ namespace ORNL
                     new_mesh->setType(mt);
 
                     // Center the mesh about itself
+                    auto center = new_mesh->originalCentroid();
                     new_mesh->center();
 
                     if(transform.isIdentity()) // If the transform was not provided
@@ -143,10 +144,8 @@ namespace ORNL
                         transform.scale(QVector3D(conv(), conv(), conv()));
                         new_mesh->setUnit(unit);
 
-                        if(PM->getUseImplicitTransforms()){
-                            auto center = new_mesh->originalCentroid();
+                        if(PM->getUseImplicitTransforms())
                             transform.translate(center.toQVector3D());
-                        }
                     }
 
                     // Apply transform

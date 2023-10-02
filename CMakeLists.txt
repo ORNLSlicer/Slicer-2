@@ -98,9 +98,9 @@ else()
     include_directories(${libs_include})
 
     # Set some Win32 Specific Settings.  For now, set GUI type to suppress console.
-    #IF(WIN32)
-    #    SET(GUI_TYPE WIN32)
-    #ENDIF(WIN32)
+    IF(WIN32)
+        SET(GUI_TYPE WIN32)
+    ENDIF(WIN32)
 
     option(ENABLE_OPENMP "Enable OpenMP Support" ON)
     if(ENABLE_OPENMP)

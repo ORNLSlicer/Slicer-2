@@ -4,6 +4,7 @@
 
 //Local
 #include "graphics/base_view.h"
+
 #include "managers/settings/settings_manager.h"
 #include "graphics/support/shape_factory.h"
 #include "utilities/enums.h"
@@ -27,7 +28,6 @@ namespace ORNL
 
         m_camera = QSharedPointer<CameraManager>::create(); //Manager for camera/view matrix
         m_shader_program.reset(new QOpenGLShaderProgram());
-
         this->setMouseTracking(true);
     }
 
@@ -236,7 +236,10 @@ namespace ORNL
     }
 
     QSharedPointer<QOpenGLShaderProgram> BaseView::shaderProgram() {
+
         return m_shader_program;
+
+
     }
 
     void BaseView::handleMidClick(QPointF mouse_ndc_pos)
@@ -345,10 +348,11 @@ namespace ORNL
         this->glEnable(GL_BLEND);
         this->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        //Compile shaders
+        //Compile shaders for the first shader program that is used for objects not in wireframe mode
         m_shader_program->addShaderFromSourceFile(QOpenGLShader::Vertex, Constants::OpenGL::Shader::kVertShaderFile);
         m_shader_program->addShaderFromSourceFile(QOpenGLShader::Fragment, Constants::OpenGL::Shader::kFragShaderFile);
 
+        m_shader_program->link();
         m_shader_program->bind();
 
         m_shader_locs.projection        = m_shader_program->uniformLocation(Constants::OpenGL::Shader::kProjectionName);
@@ -357,8 +361,14 @@ namespace ORNL
         m_shader_locs.lighting_pos      = m_shader_program->uniformLocation(Constants::OpenGL::Shader::kLightingPositionName);
         m_shader_locs.camera_pos        = m_shader_program->uniformLocation(Constants::OpenGL::Shader::kCameraPositionName);
         m_shader_locs.ambient_strength  = m_shader_program->uniformLocation(Constants::OpenGL::Shader::kAmbientStrengthName);
-
+        m_shader_locs.using_solid_wireframe_mode  = m_shader_program->uniformLocation(Constants::OpenGL::Shader::kUsingSolidWireframeModeName);
+        m_shader_locs.stack_axis  = m_shader_program->uniformLocation(Constants::OpenGL::Shader::kStackingAxisName);
+        m_shader_locs.overhang_angle  = m_shader_program->uniformLocation(Constants::OpenGL::Shader::kOverhangAngleName);
+        m_shader_locs.using_overhang_mode  = m_shader_program->uniformLocation(Constants::OpenGL::Shader::kOverhangModeName);
+        m_shader_locs.rendering_part_object  = m_shader_program->uniformLocation(Constants::OpenGL::Shader::kRenderingPartObjectName);
         m_shader_program->release();
+
+
 
         m_focus = QSharedPointer<AxesObject>::create(this, 5);
         m_focus->hide();
@@ -401,18 +411,25 @@ namespace ORNL
 
         m_shader_program->setUniformValue(m_shader_locs.camera_pos, m_camera->cameraTranslation());
         m_shader_program->setUniformValue(m_shader_locs.ambient_strength, 0.4f);
-
         // We draw most objects in this depth range, leaving the front and the back for objects that need
         // to be drawn there.
-        this->glDepthRangef(0.01, 0.99);
+        this->glDepthRange(0.01, 0.99);
 
-        // Render all objects.
+        QQueue<QSharedPointer<GraphicsObject>> goQueue;
+        // Add objects to the render queue first
         for (auto& go : m_render_objects) {
-            go->render();
+            go->addToRenderQueue(goQueue);
         }
 
+        //Then render objects in queue
+        while (!goQueue.isEmpty()) {
+            QSharedPointer<GraphicsObject> go = goQueue.dequeue();
+            go->render();
+        }
         //Since we bound shader program, we must release
         m_shader_program->release();
+
+
     }
 
     void BaseView::setupStyle()

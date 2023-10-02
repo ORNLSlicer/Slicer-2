@@ -546,11 +546,13 @@ namespace ORNL {
     }
 
     //to generate tip wipe
-    void PathModifierGenerator::GenerateTipWipe(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed, Angle wipeAngle)
+    void PathModifierGenerator::GenerateTipWipe(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed, Angle wipeAngle, AngularVelocity extruderSpeed, Distance tipWipeLiftDistance, Distance tipWipeCutoffDistance)
     {
         if(static_cast<int>(modifiers & PathModifiers::kForwardTipWipe) != 0)
         {
             int currentIndex = 0;
+            Distance cumulativeDistance=0;
+            Distance wipeLength = wipeDistance;
             for (QSharedPointer<SegmentBase> segment : path.getSegments())
             {
                 if (TravelSegment* ts = dynamic_cast<TravelSegment*>(segment.data()))
@@ -570,24 +572,27 @@ namespace ORNL {
                     break;
 
                 wipeDistance -= nextSegmentDist;
+                cumulativeDistance += nextSegmentDist;
+                Distance tempZ;
 
                 Point end;
                 if(wipeDistance >= 0)
                 {
-                    end = path[currentIndex]->end();
+                    end = Point(path[currentIndex]->end().x(), path[currentIndex]->end().y(), path[currentIndex]->end().z() + (tipWipeLiftDistance * cumulativeDistance/wipeLength));
                 }
                 else
                 {
                     float percentage = 1 - (-wipeDistance() / nextSegmentDist());
                     end = Point((1.0 - percentage) * path[currentIndex]->start().x() + percentage * path[currentIndex]->end().x(),
-                                (1.0 - percentage) * path[currentIndex]->start().y() + percentage * path[currentIndex]->end().y());
+                                (1.0 - percentage) * path[currentIndex]->start().y() + percentage * path[currentIndex]->end().y(),
+                                path[currentIndex]->end().z() + tipWipeLiftDistance);
                 }
                 writeSegment(path, path[currentIndex]->start(), end,
                              path[currentIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kWidth),
                              path[currentIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kHeight),
                              wipeSpeed,
                              path[currentIndex]->getSb()->setting< Acceleration >(Constants::SegmentSettings::kAccel),
-                             .0f,
+                             extruderSpeed,
                              path[currentIndex]->getSb()->setting< RegionType >(Constants::SegmentSettings::kRegionType),
                              PathModifiers::kForwardTipWipe,
                              path[currentIndex]->getSb()->setting< int >(Constants::SegmentSettings::kMaterialNumber),
@@ -609,14 +614,14 @@ namespace ORNL {
             //Find the new X and Y location to wipe to
             Distance new_x = wipeDistance * cos(new_angle) + path[currentIndex]->end().x();
             Distance new_y = wipeDistance * sin(new_angle) + path[currentIndex]->end().y();
-            Point end = Point(new_x, new_y);
+            Point end = Point(new_x, new_y, path[currentIndex]->end().z() + tipWipeLiftDistance);
 
             writeSegment(path, path[currentIndex]->end(), end,
                          path[currentIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kWidth),
                          path[currentIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kHeight),
                          wipeSpeed,
                          path[currentIndex]->getSb()->setting< Acceleration >(Constants::SegmentSettings::kAccel),
-                         .0f,
+                         extruderSpeed,
                          path[currentIndex]->getSb()->setting< RegionType >(Constants::SegmentSettings::kRegionType),
                          PathModifiers::kAngledTipWipe,
                          path[currentIndex]->getSb()->setting< int >(Constants::SegmentSettings::kMaterialNumber),
@@ -625,6 +630,8 @@ namespace ORNL {
         else
         {
             int currentIndex = path.size() - 1;
+            Distance cumulativeDistance = 0;
+            Distance wipeLength = wipeDistance;
             bool isClosed = false;
             if(path[currentIndex]->end() == path[0]->start())
                 isClosed = true;
@@ -633,17 +640,19 @@ namespace ORNL {
             {
                 Distance nextSegmentDist = path[currentIndex]->end().distance(path[currentIndex]->start());
                 wipeDistance -= nextSegmentDist;
+                cumulativeDistance += nextSegmentDist;
 
                 Point end;
                 if(wipeDistance >= 0)
                 {
-                    end = path[currentIndex]->start();
+                    end = Point(path[currentIndex]->start().x(), path[currentIndex]->start().y(), path[currentIndex]->start().z() + (tipWipeLiftDistance * cumulativeDistance/wipeLength));
                 }
                 else
                 {
                     float percentage = 1 - (-wipeDistance() / nextSegmentDist());
                     end = Point((1.0 - percentage) * path[currentIndex]->end().x() + percentage * path[currentIndex]->start().x(),
-                                (1.0 - percentage) * path[currentIndex]->end().y() + percentage * path[currentIndex]->start().y());
+                                (1.0 - percentage) * path[currentIndex]->end().y() + percentage * path[currentIndex]->start().y(),
+                                path[currentIndex]->start().z() + tipWipeLiftDistance);
                 }
 
                 writeSegment(path, path[currentIndex]->end(), end,
@@ -651,7 +660,7 @@ namespace ORNL {
                              path[currentIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kHeight),
                              wipeSpeed,
                              path[currentIndex]->getSb()->setting< Acceleration >(Constants::SegmentSettings::kAccel),
-                             .0f,
+                             extruderSpeed,
                              path[currentIndex]->getSb()->setting< RegionType >(Constants::SegmentSettings::kRegionType),
                              PathModifiers::kReverseTipWipe,
                              path[currentIndex]->getSb()->setting< int >(Constants::SegmentSettings::kMaterialNumber),
@@ -664,7 +673,7 @@ namespace ORNL {
         }
     }
 
-    void PathModifierGenerator::GenerateTipWipe(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed, QVector<Path>& outerPath, Angle wipeAngle)
+    void PathModifierGenerator::GenerateTipWipe(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed, QVector<Path>& outerPath, Angle wipeAngle, AngularVelocity extruderSpeed, Distance tipWipeLiftDistance, Distance tipWipeCutoffDistance)
     {
         //can only go forward, connect to inset
         Point closest;
@@ -693,17 +702,21 @@ namespace ORNL {
         {
             if (dist > path[finalIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kWidth))
             {
-                GenerateForwardTipWipeOpenLoop(path, modifiers, wipeDistance, wipeSpeed);
+                GenerateForwardTipWipeOpenLoop(path, modifiers, wipeDistance, wipeSpeed, extruderSpeed, tipWipeLiftDistance, tipWipeCutoffDistance);
             }
             else
             {
                 //move to segment
-                writeSegment(path, finalPoint, closest,
+                Distance new_Z = closest.z() + (tipWipeLiftDistance * finalPoint.distance(closest)/wipeDistance);
+                Point new_end = Point(closest.x(), closest.y(), new_Z);
+                Distance cumulative_distance = 0;
+                Distance wipeLength = wipeDistance;
+                writeSegment(path, finalPoint, new_end,
                              path[finalIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kWidth),
                              path[finalIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kHeight),
                              wipeSpeed,
                              path[finalIndex]->getSb()->setting< Acceleration >(Constants::SegmentSettings::kAccel),
-                             .0f,
+                             extruderSpeed,
                              path[finalIndex]->getSb()->setting< RegionType >(Constants::SegmentSettings::kRegionType),
                              PathModifiers::kForwardTipWipe,
                              path[finalIndex]->getSb()->setting< int >(Constants::SegmentSettings::kMaterialNumber),
@@ -713,6 +726,7 @@ namespace ORNL {
                 Distance nextSegmentDistStart = outerPath[pathIndex][segmentIndex]->start().distance(closest);
 
                 wipeDistance -= finalPoint.distance(closest);
+                cumulative_distance += finalPoint.distance(closest);
 
                 if(nextSegmentDistStart > nextSegmentDistEnd)
                 {
@@ -721,17 +735,19 @@ namespace ORNL {
                     {
                         Distance nextSegmentDist = closest.distance(outerPath[pathIndex][segmentIndex]->end());
                         wipeDistance -= nextSegmentDist;
+                        cumulative_distance += nextSegmentDist;
 
                         Point end;
                         if(wipeDistance >= 0)
                         {
-                            end = outerPath[pathIndex][segmentIndex]->end();
+                            end = Point(outerPath[pathIndex][segmentIndex]->end().x(), outerPath[pathIndex][segmentIndex]->end().y(), outerPath[pathIndex][segmentIndex]->end().z() + (tipWipeLiftDistance * cumulative_distance/wipeLength));
                         }
                         else
                         {
                             float percentage = 1 - (-wipeDistance() / nextSegmentDist());
                             end = Point((1.0 - percentage) * closest.x() + percentage * outerPath[pathIndex][segmentIndex]->end().x(),
-                                        (1.0 - percentage) * closest.y() + percentage * outerPath[pathIndex][segmentIndex]->end().y());
+                                        (1.0 - percentage) * closest.y() + percentage * outerPath[pathIndex][segmentIndex]->end().y(),
+                                        outerPath[pathIndex][segmentIndex]->end().z() + tipWipeLiftDistance);
                         }
 
                         writeSegment(path, closest, end,
@@ -739,7 +755,7 @@ namespace ORNL {
                                      path[finalIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kHeight),
                                      wipeSpeed,
                                      path[finalIndex]->getSb()->setting< Acceleration >(Constants::SegmentSettings::kAccel),
-                                     .0f,
+                                     extruderSpeed,
                                      path[finalIndex]->getSb()->setting< RegionType >(Constants::SegmentSettings::kRegionType),
                                      PathModifiers::kForwardTipWipe,
                                      path[finalIndex]->getSb()->setting<int>(Constants::SegmentSettings::kMaterialNumber),
@@ -754,11 +770,12 @@ namespace ORNL {
                     {
                         Distance nextSegmentDist = closest.distance(outerPath[pathIndex][segmentIndex]->start());
                         wipeDistance -= nextSegmentDist;
+                        cumulative_distance += nextSegmentDist;
 
                         Point end;
                         if(wipeDistance >= 0)
                         {
-                            end = outerPath[pathIndex][segmentIndex]->start();
+                            end = Point(outerPath[pathIndex][segmentIndex]->end().x(), outerPath[pathIndex][segmentIndex]->end().y(), outerPath[pathIndex][segmentIndex]->end().z() + (tipWipeLiftDistance * cumulative_distance/wipeLength));
                         }
                         else
                         {
@@ -772,7 +789,7 @@ namespace ORNL {
                                      path[finalIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kHeight),
                                      wipeSpeed,
                                      path[finalIndex]->getSb()->setting< Acceleration >(Constants::SegmentSettings::kAccel),
-                                     .0f,
+                                     extruderSpeed,
                                      path[finalIndex]->getSb()->setting< RegionType >(Constants::SegmentSettings::kRegionType),
                                      PathModifiers::kForwardTipWipe,
                                      path[finalIndex]->getSb()->setting<int>(Constants::SegmentSettings::kMaterialNumber),
@@ -789,24 +806,25 @@ namespace ORNL {
         }
         else
         {
-            GenerateTipWipe(path, modifiers, wipeDistance, wipeSpeed, wipeAngle);
+            GenerateTipWipe(path, modifiers, wipeDistance, wipeSpeed, wipeAngle, extruderSpeed, tipWipeLiftDistance, tipWipeCutoffDistance);
         }
     }
 
-    void PathModifierGenerator::GenerateForwardTipWipeOpenLoop(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed)
+    void PathModifierGenerator::GenerateForwardTipWipeOpenLoop(Path &path, PathModifiers modifiers, Distance wipeDistance, Velocity wipeSpeed, AngularVelocity extruderSpeed, Distance tipWipeLiftDistance, Distance tipWipeCutoffDistance)
     {
         int currentIndex = path.size() - 1;
         Distance length = path[currentIndex]->end().distance(path[currentIndex]->start());
-        double X = path[currentIndex]->end().x() + (path[currentIndex]->end().x() - path[currentIndex]->start().x()) / length() * wipeDistance();
-        double Y = path[currentIndex]->end().y() + (path[currentIndex]->end().y() - path[currentIndex]->start().y()) / length() * wipeDistance();
-        Point end(X, Y);
+        Distance X = path[currentIndex]->end().x() + (path[currentIndex]->end().x() - path[currentIndex]->start().x()) / length() * wipeDistance();
+        Distance Y = path[currentIndex]->end().y() + (path[currentIndex]->end().y() - path[currentIndex]->start().y()) / length() * wipeDistance();
+        Distance Z = path[currentIndex]->end().z() + tipWipeLiftDistance;
+        Point end(X, Y, Z);
 
         writeSegment(path, path[currentIndex]->end(), end,
              path[currentIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kWidth),
              path[currentIndex]->getSb()->setting< Distance >(Constants::SegmentSettings::kHeight),
              wipeSpeed,
              path[currentIndex]->getSb()->setting< Acceleration >(Constants::SegmentSettings::kAccel),
-             .0f,
+             extruderSpeed,
              path[currentIndex]->getSb()->setting< RegionType >(Constants::SegmentSettings::kRegionType),
              PathModifiers::kForwardTipWipe,
              path[currentIndex]->getSb()->setting< int >(Constants::SegmentSettings::kMaterialNumber),

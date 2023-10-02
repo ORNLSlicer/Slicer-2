@@ -524,6 +524,10 @@ namespace ORNL
                     m_parser.reset(new MVPParser(GcodeMetaList::MVPMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::MVPMeta;
                 }
+                else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kOkuma).toUpper())) {
+                    m_parser.reset(new CommonParser(GcodeMetaList::HaasMetricMeta, m_adjust_file, originalLines, lines));
+                    m_selected_meta = GcodeMetaList::ORNLMeta;
+                }
                 else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kORNL).toUpper())) {
                     m_parser.reset(new CommonParser(GcodeMetaList::ORNLMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::ORNLMeta;
@@ -547,6 +551,10 @@ namespace ORNL
                 else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kThermwood).toUpper())) {
                     m_parser.reset(new CincinnatiParser(GcodeMetaList::CincinnatiMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::CincinnatiMeta;
+                }
+                else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kTormach).toUpper())) {
+                    m_parser.reset(new CincinnatiParser(GcodeMetaList::TormachMeta, m_adjust_file, originalLines, lines));
+                    m_selected_meta = GcodeMetaList::TormachMeta;
                 }
                 else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kAeroBasic).toUpper())) {
                     m_parser.reset(new AeroBasicParser(GcodeMetaList::AeroBasicMeta, m_adjust_file, originalLines, lines));

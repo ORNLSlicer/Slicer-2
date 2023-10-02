@@ -204,12 +204,14 @@ namespace ORNL
     QString Constants::PrinterSettings::SyntaxString::kMazak = "Mazak";
     QString Constants::PrinterSettings::SyntaxString::kMeld = "Meld";
     QString Constants::PrinterSettings::SyntaxString::kMVP = "MVP";
+    QString Constants::PrinterSettings::SyntaxString::kOkuma = "Okuma";
     QString Constants::PrinterSettings::SyntaxString::kORNL = "ORNL";
     QString Constants::PrinterSettings::SyntaxString::kRomiFanuc = "ROMI Fanuc";
     QString Constants::PrinterSettings::SyntaxString::kRPBF = "RPBF";
     QString Constants::PrinterSettings::SyntaxString::kSiemens = "Siemens";
     QString Constants::PrinterSettings::SyntaxString::kSkyBaam = "SkyBAAM";
     QString Constants::PrinterSettings::SyntaxString::kThermwood = "Thermwood";
+    QString Constants::PrinterSettings::SyntaxString::kTormach = "Tormach";
     QString Constants::PrinterSettings::SyntaxString::kWolf = "Wolf";
     QString Constants::PrinterSettings::SyntaxString::kRepRap = "RepRap";
     QString Constants::PrinterSettings::SyntaxString::kMach4 = "Mach4";
@@ -281,6 +283,7 @@ namespace ORNL
     const QString Constants::PrinterSettings::Dimensions::kYMax = "maximum_y";
     const QString Constants::PrinterSettings::Dimensions::kZMin = "minimum_z";
     const QString Constants::PrinterSettings::Dimensions::kZMax = "maximum_z";
+    const QString Constants::PrinterSettings::Dimensions::kUseVariableForZ = "variable_for_z";
     const QString Constants::PrinterSettings::Dimensions::kInnerRadius = "inner_radius";
     const QString Constants::PrinterSettings::Dimensions::kOuterRadius = "outer_radius";
     const QString Constants::PrinterSettings::Dimensions::kXOffset = "x_offset";
@@ -292,6 +295,9 @@ namespace ORNL
     const QString Constants::PrinterSettings::Dimensions::kLayerChangeAxis = "layer_change";
     const QString Constants::PrinterSettings::Dimensions::kEnableDoffing = "doffing";
     const QString Constants::PrinterSettings::Dimensions::kDoffingHeight = "doffing_location";
+    const QString Constants::PrinterSettings::Dimensions::kPurgeX = "purge_x";
+    const QString Constants::PrinterSettings::Dimensions::kPurgeY = "purge_y";
+    const QString Constants::PrinterSettings::Dimensions::kPurgeZ = "purge_z";
     const QString Constants::PrinterSettings::Dimensions::kEnableGridX = "enable_grid_x";
     const QString Constants::PrinterSettings::Dimensions::kGridXDistance = "grid_x_distance";
     const QString Constants::PrinterSettings::Dimensions::kEnableGridY = "enable_grid_y";
@@ -416,30 +422,46 @@ namespace ORNL
     const QString Constants::MaterialSettings::TipWipe::kPerimeterEnable = "perimeter_wipe";
     const QString Constants::MaterialSettings::TipWipe::kPerimeterDistance = "perimeter_wipe_distance";
     const QString Constants::MaterialSettings::TipWipe::kPerimeterSpeed = "perimeter_wipe_speed";
+    const QString Constants::MaterialSettings::TipWipe::kPerimeterExtruderSpeed = "perimeter_wipe_extruder_speed";
     const QString Constants::MaterialSettings::TipWipe::kPerimeterDirection = "perimeter_wipe_direction";
     const QString Constants::MaterialSettings::TipWipe::kPerimeterAngle = "perimeter_wipe_angle";
+    const QString Constants::MaterialSettings::TipWipe::kPerimeterCutoffDistance = "perimeter_wipe_cutoff_distance";
+    const QString Constants::MaterialSettings::TipWipe::kPerimeterLiftHeight = "perimeter_wipe_lift_height";
     const QString Constants::MaterialSettings::TipWipe::kInsetEnable = "inset_wipe";
     const QString Constants::MaterialSettings::TipWipe::kInsetDistance = "inset_wipe_distance";
     const QString Constants::MaterialSettings::TipWipe::kInsetSpeed = "inset_wipe_speed";
+    const QString Constants::MaterialSettings::TipWipe::kInsetExtruderSpeed = "inset_wipe_extruder_speed";
     const QString Constants::MaterialSettings::TipWipe::kInsetDirection = "inset_wipe_direction";
     const QString Constants::MaterialSettings::TipWipe::kInsetAngle = "inset_wipe_angle";
+    const QString Constants::MaterialSettings::TipWipe::kInsetCutoffDistance = "inset_wipe_cutoff_distance";
+    const QString Constants::MaterialSettings::TipWipe::kInsetLiftHeight = "inset_wipe_lift_height";
     const QString Constants::MaterialSettings::TipWipe::kSkinEnable = "skin_wipe";
     const QString Constants::MaterialSettings::TipWipe::kSkinDistance = "skin_wipe_distance";
     const QString Constants::MaterialSettings::TipWipe::kSkinSpeed = "skin_wipe_speed";
+    const QString Constants::MaterialSettings::TipWipe::kSkinExtruderSpeed = "skin_wipe_extruder_speed";
     const QString Constants::MaterialSettings::TipWipe::kSkinDirection = "skin_wipe_direction";
     const QString Constants::MaterialSettings::TipWipe::kSkinAngle = "skin_wipe_angle";
+    const QString Constants::MaterialSettings::TipWipe::kSkinCutoffDistance = "skin_wipe_cutoff_distance";
+    const QString Constants::MaterialSettings::TipWipe::kSkinLiftHeight = "skin_wipe_lift_height";
     const QString Constants::MaterialSettings::TipWipe::kInfillEnable = "infill_wipe";
     const QString Constants::MaterialSettings::TipWipe::kInfillDistance = "infill_wipe_distance";
     const QString Constants::MaterialSettings::TipWipe::kInfillSpeed = "infill_wipe_speed";
+    const QString Constants::MaterialSettings::TipWipe::kInfillExtruderSpeed = "infill_wipe_extruder_speed";
     const QString Constants::MaterialSettings::TipWipe::kInfillDirection = "infill_wipe_direction";
     const QString Constants::MaterialSettings::TipWipe::kInfillAngle = "infill_wipe_angle";
+    const QString Constants::MaterialSettings::TipWipe::kInfillCutoffDistance = "infill_wipe_cutoff_distance";
+    const QString Constants::MaterialSettings::TipWipe::kInfillLiftHeight = "infill_wipe_lift_height";
     const QString Constants::MaterialSettings::TipWipe::kSkeletonEnable = "skeleton_wipe";
     const QString Constants::MaterialSettings::TipWipe::kSkeletonDistance = "skeleton_wipe_distance";
     const QString Constants::MaterialSettings::TipWipe::kSkeletonSpeed = "skeleton_wipe_speed";
+    const QString Constants::MaterialSettings::TipWipe::kSkeletonExtruderSpeed = "skeleton_wipe_extruder_speed";
     const QString Constants::MaterialSettings::TipWipe::kSkeletonDirection = "skeleton_wipe_direction";
     const QString Constants::MaterialSettings::TipWipe::kSkeletonAngle = "skeleton_wipe_angle";
+    const QString Constants::MaterialSettings::TipWipe::kSkeletonCutoffDistance = "skeleton_wipe_cutoff_distance";
+    const QString Constants::MaterialSettings::TipWipe::kSkeletonLiftHeight = "skeleton_wipe_lift_height";
     const QString Constants::MaterialSettings::TipWipe::kLaserPowerMultiplier = "laser_power_multiplier";
     const QString Constants::MaterialSettings::TipWipe::kWireFeedMultiplier = "wire_feed_multiplier";
+    const QString Constants::MaterialSettings::TipWipe::kTipWipeVoltage = "tip_wipe_voltage";
 
     //Spiral Lift
     const QString Constants::MaterialSettings::SpiralLift::kPerimeterEnable = "enable_spiral_perimeter";
@@ -456,6 +478,8 @@ namespace ORNL
     const QString Constants::MaterialSettings::Purge::kInitialDuration = "initial_purge_duration";
     const QString Constants::MaterialSettings::Purge::kInitialScrewRPM = "initial_purge_dwell_screw_rpm";
     const QString Constants::MaterialSettings::Purge::kInitialTipWipeDelay = "initial_purge_tip_wipe_delay";
+    const QString Constants::MaterialSettings::Purge::kPurgeLength = "purge_length";
+    const QString Constants::MaterialSettings::Purge::kPurgeFeedrate = "purge_feedrate";
 
     //Extruder
     const QString Constants::MaterialSettings::Extruder::kInitialSpeed = "initial_extruder_speed";
@@ -470,10 +494,12 @@ namespace ORNL
     //Filament
     const QString Constants::MaterialSettings::Filament::kDiameter = "filament_diameter";
     const QString Constants::MaterialSettings::Filament::kRelative = "filament_relative_distance";
+    const QString Constants::MaterialSettings::Filament::kDisableG92 = "disable_g92";
     const QString Constants::MaterialSettings::Filament::kPerimeterMultiplier = "perimeter_filament_extrusion_multiplier";
     const QString Constants::MaterialSettings::Filament::kInsetMultiplier = "inset_filament_extrusion_multiplier";
     const QString Constants::MaterialSettings::Filament::kSkinMultiplier = "skin_filament_extrusion_multiplier";
     const QString Constants::MaterialSettings::Filament::kInfillMultiplier = "infill_filament_extrusion_multiplier";
+    const QString Constants::MaterialSettings::Filament::kFilamentBAxis = "filament_b_axis";
 
     //Retraction
     const QString Constants::MaterialSettings::Retraction::kEnable = "retraction";
@@ -500,11 +526,11 @@ namespace ORNL
     const QString Constants::MaterialSettings::Temperatures::kExtruder0Zone3 = "extruder0_zone3";
     const QString Constants::MaterialSettings::Temperatures::kExtruder0Zone4 = "extruder0_zone4";
     const QString Constants::MaterialSettings::Temperatures::kExtruder0Zone5 = "extruder0_zone5";
-    const QString Constants::MaterialSettings::Temperatures::kExtruder1Zone1 = "extruder0_zone1";
-    const QString Constants::MaterialSettings::Temperatures::kExtruder1Zone2 = "extruder0_zone2";
-    const QString Constants::MaterialSettings::Temperatures::kExtruder1Zone3 = "extruder0_zone3";
-    const QString Constants::MaterialSettings::Temperatures::kExtruder1Zone4 = "extruder0_zone4";
-    const QString Constants::MaterialSettings::Temperatures::kExtruder1Zone5 = "extruder0_zone5";
+    const QString Constants::MaterialSettings::Temperatures::kExtruder1Zone1 = "extruder1_zone1";
+    const QString Constants::MaterialSettings::Temperatures::kExtruder1Zone2 = "extruder1_zone2";
+    const QString Constants::MaterialSettings::Temperatures::kExtruder1Zone3 = "extruder1_zone3";
+    const QString Constants::MaterialSettings::Temperatures::kExtruder1Zone4 = "extruder1_zone4";
+    const QString Constants::MaterialSettings::Temperatures::kExtruder1Zone5 = "extruder1_zone5";
 
     //Cooling
     const QString Constants::MaterialSettings::Cooling::kEnable = "fan";
@@ -570,6 +596,7 @@ namespace ORNL
     const QString Constants::ProfileSettings::Perimeter::kEnableLeadIn = "perimeter_lead_in";
     const QString Constants::ProfileSettings::Perimeter::kEnableLeadInX = "perimeter_lead_in_x";
     const QString Constants::ProfileSettings::Perimeter::kEnableLeadInY = "perimeter_lead_in_y";
+    const QString Constants::ProfileSettings::Perimeter::kEnableShiftedBeads = "perimeter_shifted_beads";
 
     //Inset
     const QString Constants::ProfileSettings::Inset::kEnable = "inset";
@@ -640,6 +667,7 @@ namespace ORNL
     const QString Constants::ProfileSettings::Infill::kPower = "infill_power";
     const QString Constants::ProfileSettings::Infill::kFocus = "infill_focus";
     const QString Constants::ProfileSettings::Infill::kSpotSize = "infill_spot_size";
+    const QString Constants::ProfileSettings::Infill::kEnableAlternatingLines = "infill_alternating_lines";
 
     //Support
     const QString Constants::ProfileSettings::Support::kEnable = "support";
@@ -1047,6 +1075,7 @@ namespace ORNL
     const float Constants::OpenGL::kObjectToView = 0.00001f;
     const float Constants::OpenGL::kViewToObject = 100000.0f;
 
+    //ShaderProgram 1 files
     const char* Constants::OpenGL::Shader::kVertShaderFile          = ":/shaders/vert";
     const char* Constants::OpenGL::Shader::kFragShaderFile          = ":/shaders/frag";
 
@@ -1054,6 +1083,7 @@ namespace ORNL
     const char* Constants::OpenGL::Shader::kLightingPositionName    = "lightPos";
     const char* Constants::OpenGL::Shader::kCameraPositionName      = "viewPos";
     const char* Constants::OpenGL::Shader::kAmbientStrengthName     = "ambientStrength";
+    const char* Constants::OpenGL::Shader::kUsingSolidWireframeModeName = "usingSolidWireframeMode";
 
     const char* Constants::OpenGL::Shader::kPositionName            = "position";
     const char* Constants::OpenGL::Shader::kColorName               = "color";
@@ -1063,6 +1093,10 @@ namespace ORNL
     const char* Constants::OpenGL::Shader::kProjectionName          = "projection";
     const char* Constants::OpenGL::Shader::kViewName                = "view";
     const char* Constants::OpenGL::Shader::kModelName               = "model";
+    const char* Constants::OpenGL::Shader::kStackingAxisName        = "stackingAxis";
+    const char* Constants::OpenGL::Shader::kOverhangAngleName       = "overhangAngle";
+    const char* Constants::OpenGL::Shader::kOverhangModeName        = "usingOverhangMode";
+    const char* Constants::OpenGL::Shader::kRenderingPartObjectName = "renderingPartObject";
     //================================================================================
     // Slicer 1 Keys - used for gcode processing (all caps)
     //================================================================================

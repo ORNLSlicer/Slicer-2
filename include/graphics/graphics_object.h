@@ -6,6 +6,7 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLTexture>
+#include <QQueue>
 
 // Forward
 class QOpenGLShaderProgram;
@@ -72,6 +73,10 @@ namespace ORNL {
 
             //! \brief Perform render. Renders to view passed to constructor.
             void render();
+
+            //! \brief Allows GraphicsObject and objects that inherit from GraphicsObject to modify
+            //! uniforms in their own way
+            virtual void configureUniforms();
 
             //! \brief Get the view this object renders to.
             BaseView* view();
@@ -167,6 +172,25 @@ namespace ORNL {
             void setOnTop(bool state);
             //! \brief Set if this object should be rendered undeneath of the rest of the geometry.
             void setUnderneath(bool state);
+            //! \brief Adds this graphic object to the render queue. Must be done here
+            //! since graphics objects are accessed recursively.
+            void addToRenderQueue(QQueue<QSharedPointer<GraphicsObject>>& goQueue);
+
+            //! \brief Get the solid wireframe mode
+            bool getSolidWireFrameMode();
+            //! \brief Set the solid wireframe mode
+            void setSolidWireFrameMode(bool state);
+
+            //! \brief Get the wireframe mode
+            bool getWireFrameMode();
+            //! \brief Set the wireframe mode
+            void setWireFrameMode(bool state);
+
+            //! \brief Sets object transparency.
+            //! \param trans: Value 0 - 255
+            void setTransparency(uint trans);
+            //! \brief Gets object transparency.
+            uint transparency();
 
         protected:
             //! \brief Empty constructor. Only for derived classes.
@@ -219,37 +243,26 @@ namespace ORNL {
             QSharedPointer<QOpenGLVertexArrayObject>& vao();
             //! \brief Get the render mode.
             ushort& renderMode();
+            //! \brief Get the solid wireframe mode
+            bool& solidWireFrameMode();
 
-        private:
-            //! \brief Set the global transformation. This is an internal function to enforce updating of
-            //!        transform components.
-            void setTransformationInternal(QMatrix4x4 mtrx, bool propagate = true);
+            //! \brief Get the wireframe mode
+            bool& wireFrameMode();
 
-            //! \brief OpenGL buffers.
-            QSharedPointer<QOpenGLVertexArrayObject> m_vao;
-            QOpenGLBuffer m_vbo;
-            QOpenGLBuffer m_cbo;
-            QOpenGLBuffer m_nbo;
-            QOpenGLBuffer m_tbo;
-
-            //! \brief Texture object.
-            QSharedPointer<QOpenGLTexture> m_texture;
-
-            //! \brief View that we draw to. Raw pointer to prevent double free.
-            BaseView* m_view;
-            //! \brief Mode of render. Use values like GL_TRIANGLES, GL_LINES, etc.
-            ushort m_render_mode;
-
-            //! \brief GL mesh information.
-            std::vector<float> m_vertices;
-            std::vector<float> m_normals;
-            std::vector<float> m_colors;
-            std::vector<float> m_uv;
-
-            //! \brief Parent of this object.
-            QSharedPointer<GraphicsObject> m_parent = nullptr;
-            //! \brief List of children for this object.
-            QSet<QSharedPointer<GraphicsObject>> m_children;
+            //! \brief Locations in shader code.
+            struct {
+                int model;
+                int ambient;
+                int vertice;
+                int normal;
+                int color;
+                int uv;
+                int usingSolidWireframeMode;
+                int overhangAngle;
+                int overhangMode;
+                int stackingAxis;
+                int renderingPartObject;
+            } m_shader_locs;
 
             //! \brief Current state for the object.
             struct {
@@ -266,7 +279,59 @@ namespace ORNL {
 
                 //! \brief If the object is currently in a translation callback. Prevents endless recursion.
                 bool in_callback = false;
+
+                //If the object is currently rendering in wireFrame mode
+                bool is_wireframe = false;
+
+                //If the object is currently rendering in wireFrame mode
+                bool is_solid_wireframe = false;
+
+
             } m_state;
+
+            //! \brief View that we draw to. Raw pointer to prevent double free.
+            BaseView* m_view;
+
+            //! \brief GL mesh information.
+            std::vector<float> m_vertices;
+            std::vector<float> m_normals;
+            std::vector<float> m_colors;
+            std::vector<float> m_uv;
+
+            //! \brief Colors.
+            QColor m_selected_color;
+            QColor m_base_color;
+            QColor m_color;
+
+            //! \brief Transparency.
+            uint m_transparency = 255;
+
+            //! \brief If this object is selected or not.
+            bool m_selected = false;
+        private:
+            //! \brief Set the global transformation. This is an internal function to enforce updating of
+            //!        transform components.
+            void setTransformationInternal(QMatrix4x4 mtrx, bool propagate = true);
+
+            //! \brief OpenGL buffers.
+            QSharedPointer<QOpenGLVertexArrayObject> m_vao;
+            QOpenGLBuffer m_vbo;
+            QOpenGLBuffer m_cbo;
+            QOpenGLBuffer m_nbo;
+            QOpenGLBuffer m_tbo;
+
+            //! \brief Texture object.
+            QSharedPointer<QOpenGLTexture> m_texture;
+
+            //! \brief Mode of render. Use values like GL_TRIANGLES, GL_LINES, etc.
+            ushort m_render_mode;
+
+            //! \brief Parent of this object.
+            QSharedPointer<GraphicsObject> m_parent = nullptr;
+            //! \brief List of children for this object.
+            QSet<QSharedPointer<GraphicsObject>> m_children;
+
+
 
             //! \brief Components of transform. This is done to allow faster
             //! and easier matrix construction.
@@ -282,15 +347,7 @@ namespace ORNL {
             //! \brief Bounding cube after transformation.
             QVector<QVector3D> m_transformed_mbb;
 
-            //! \brief Locations in shader code.
-            struct {
-                int model;
-                int ambient;
-                int vertice;
-                int normal;
-                int color;
-                int uv;
-            } m_shader_locs;
+
     };
 
 } // Namespace ORNL

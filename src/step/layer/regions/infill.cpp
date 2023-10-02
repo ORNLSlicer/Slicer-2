@@ -30,6 +30,7 @@ namespace ORNL {
     }
 
     void Infill::compute(uint layer_num, QSharedPointer<SyncManager>& sync) {
+        m_layer_num = layer_num;
         m_paths.clear();
         m_region_paths.clear();
 
@@ -69,7 +70,14 @@ namespace ORNL {
             }
         }
 
-        this->createPaths();
+        bool perimeter_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable);
+        bool shifted_perimeters = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableShiftedBeads);
+        bool infill_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
+        bool alternating_lines = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
+
+        // If perimeters are shifted and infill is not, infill is not needed on the second layer
+        if((infill_enabled && alternating_lines) || !(perimeter_enabled && shifted_perimeters) || m_layer_num != 2)
+            this->createPaths();
 
         // Only fit arcs if the infill was concentric
         if(static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)) == InfillPatterns::kConcentric)
@@ -101,7 +109,17 @@ namespace ORNL {
             max = Point(sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kXMax), sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kYMax));
         }
 
-        if(!sb->setting<bool>(Constants::ProfileSettings::Infill::kManualLineSpacing))
+        bool perimeter_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable);
+        bool shifted_perimeters = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableShiftedBeads);
+        bool infill_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
+        bool alternating_lines = sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
+
+        if((infill_enabled && alternating_lines))
+        {
+            default_line_spacing = default_bead_width;
+            default_angle = 0;
+        }
+        else if(!sb->setting<bool>(Constants::ProfileSettings::Infill::kManualLineSpacing))
         {
             double density = sb->setting<double>(Constants::ProfileSettings::Infill::kDensity) / 100.0;
             default_line_spacing = default_bead_width / density;
@@ -110,7 +128,13 @@ namespace ORNL {
         switch(default_infill_pattern)
         {
             case InfillPatterns::kLines:
-                m_computed_geometry.append(PatternGenerator::GenerateLines(adjustedGeometry, default_line_spacing, default_angle, default_global_printer_area, min, max));
+                if((infill_enabled && alternating_lines) || !(perimeter_enabled && shifted_perimeters) || m_layer_num != 2)
+                {
+                    if(infill_enabled && alternating_lines)
+                        m_computed_geometry.append(PatternGenerator::GenerateAlternatingLines(adjustedGeometry, default_line_spacing, default_angle, default_global_printer_area, min, max, m_layer_num));
+                    else
+                        m_computed_geometry.append(PatternGenerator::GenerateLines(adjustedGeometry, default_line_spacing, default_angle, default_global_printer_area, min, max));
+                }
                 break;
             case InfillPatterns::kGrid:
                 m_computed_geometry.append(PatternGenerator::GenerateGrid(adjustedGeometry, default_line_spacing, default_angle, default_global_printer_area, min, max));
@@ -163,6 +187,7 @@ namespace ORNL {
         while(poo->getCurrentPathCount() > 0)
         {
             Path new_path = poo->linkNextPath(new_paths);
+
             if(new_path.size() > 0)
             {
                 QVector<QSharedPointer<SegmentBase>> newSegments;
@@ -227,9 +252,16 @@ namespace ORNL {
 
     void Infill::createPaths() {
 
+        bool infill_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
+        bool lines_alternating = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
+        bool perimeter_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable);
+        bool shifted_perimeter = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableShiftedBeads);
+
         Distance width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Infill::kBeadWidth);
         Distance height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
+        Distance half_height            = height / 2;
         Velocity speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Infill::kSpeed);
+        Velocity double_speed           = speed * 2;
         Acceleration acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kInfill);
         AngularVelocity extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Infill::kExtruderSpeed);
         int material_number             = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kInfillNum);
@@ -240,6 +272,7 @@ namespace ORNL {
         {
             QVector<Polyline> polylineList = m_computed_geometry[i];
 
+            int polylineNum = 0;
             for(Polyline polyline : polylineList)
             {
                 Path newPath;
@@ -248,8 +281,15 @@ namespace ORNL {
                     QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(polyline[j], polyline[j + 1]);
 
                     segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
+                    if(((infill_enabled && lines_alternating) && (m_layer_num == 1 || m_layer_num == m_layer_count)) || (!(infill_enabled && lines_alternating) && (perimeter_enabled && shifted_perimeter))){
+                        segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           half_height);
+                        segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            double_speed);
+                    }
+                    else{
+                        segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
+                        segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
+                    }
+
                     segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
@@ -274,10 +314,14 @@ namespace ORNL {
 
                     newPath.append(segment);
                 }
-                if(i == 0)
+
+                if(i == 0){
                     m_paths.append(newPath);
+                }
                 else
                     m_region_paths[i - 1].append(newPath);
+
+                polylineNum++;
             }
         }
     }
@@ -313,25 +357,40 @@ namespace ORNL {
                         static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)) == InfillPatterns::kInsideOutConcentric)
                     PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillDistance),
                                                            m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kInfillSpeed),
-                                                           m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInfillAngle));
+                                                           m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInfillAngle),
+                                                           m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kInfillExtruderSpeed),
+                                                           m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillLiftHeight),
+                                                           m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillCutoffDistance));
                 else if(m_sb->setting<int>(Constants::ProfileSettings::Perimeter::kEnable) || m_sb->setting<int>(Constants::ProfileSettings::Inset::kEnable))
                     PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillDistance),
                                                            m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kInfillSpeed), innerMostClosedContour,
-                                                           m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInfillAngle));
+                                                           m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInfillAngle),
+                                                           m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kInfillExtruderSpeed),
+                                                           m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillLiftHeight),
+                                                           m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillCutoffDistance));
                 else
                     PathModifierGenerator::GenerateForwardTipWipeOpenLoop(path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillDistance),
-                                                                          m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kInfillSpeed));
+                                                                          m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kInfillSpeed),
+                                                                          m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kInfillExtruderSpeed),
+                                                                          m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillLiftHeight),
+                                                                          m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillCutoffDistance));
             }
             else if(static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kInfillDirection)) == TipWipeDirection::kAngled)
             {
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kAngledTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kInfillSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInfillAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInfillAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kInfillExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillCutoffDistance));
             }
             else
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kReverseTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kInfillSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInfillAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInfillAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kInfillExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillCutoffDistance));
             current_location = path.back()->end();
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::SpiralLift::kInfillEnable))
@@ -598,4 +657,10 @@ namespace ORNL {
 
         return recipe;
     }
+
+    void Infill::setLayerCount(uint layer_count)
+    {
+        m_layer_count = layer_count - 1;
+    }
 }
+

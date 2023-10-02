@@ -394,12 +394,6 @@ namespace ORNL
             // If not see if we hit a selected object.
             else if (m_selected_objects.contains(picked_part)) {
                  m_state.translating = true;
-
-                if (m_state.overhangs_shown) {
-                    for (auto& gop : m_part_objects) {
-                        gop->showOverhang(false);
-                    }
-                }
             }
 
             return;
@@ -449,12 +443,6 @@ namespace ORNL
                 this->setCursor(QCursor(Qt::OpenHandCursor));
                 m_selected_objects.subtract(picked_part->select());
                 m_state.translating = true;
-
-                if (m_state.overhangs_shown) {
-                    for (auto& gop : m_part_objects) {
-                        gop->showOverhang(false);
-                    }
-                }
             }
 
             this->blockModel();
@@ -483,12 +471,6 @@ namespace ORNL
         this->permitModel();
         m_state.blocking = false;
         m_state.translating = false;
-
-        if (m_state.overhangs_shown) {
-            for (auto& gop : m_part_objects) {
-                gop->showOverhang(true);
-            }
-        }
 
         this->blockModel();
         for (auto& gop : m_part_objects) {
@@ -605,10 +587,9 @@ namespace ORNL
 
         for (auto& gop : m_selected_objects) {
             gop->rotateAbsolute(qr * m_state.part_rot_start[gop]);
-            m_model->lookupByGraphic(gop)->setRotation(gop->rotation(), true);
+            m_model->lookupByGraphic(gop)->setRotation(gop->rotation());
 
             //qDebug() << gop->name() << "rotates to" << gop->rotation().toEulerAngles() << gop->rotation();
-            if (m_state.overhangs_shown) gop->showOverhang(false);
         }
 
         this->update();
@@ -646,8 +627,6 @@ namespace ORNL
                 gop->rotateAbsolute(QQuaternion::fromEulerAngles(er));
 
                 gop->axes()->hide();
-
-                if (m_state.overhangs_shown) gop->showOverhang(true);
             }
 
             auto tmp_selected = m_selected_objects;
@@ -721,23 +700,11 @@ namespace ORNL
     void PartView::handleMidClick(QPointF mouse_ndc_pos)
     {
         this->BaseView::handleMidClick(mouse_ndc_pos);
-
-        if (m_state.overhangs_shown) {
-            for (auto& gop : m_part_objects) {
-                gop->showOverhang(false);
-            }
-        }
     }
 
     void PartView::handleMidRelease(QPointF mouse_ndc_pos)
     {
         this->BaseView::handleMidRelease(mouse_ndc_pos);
-
-        if (m_state.overhangs_shown) {
-            for (auto& gop : m_part_objects) {
-                gop->showOverhang(true);
-            }
-        }
     }
 
     void PartView::resetCamera()
@@ -811,8 +778,6 @@ namespace ORNL
         this->permitModel();
 
         this->postTransformCheck();
-
-        pm->setOriginalTransformation(gop->transformation());
 
         this->update();
     }
@@ -926,7 +891,7 @@ namespace ORNL
         gop->setTransparency(pm->transparency());
         gop->setMeshTypeColor(pm->meshType());
         gop->setRenderMode(pm->renderMode());
-
+        gop->setSolidWireFrameMode(pm->solidWireframeMode());
         this->update();
     }
 

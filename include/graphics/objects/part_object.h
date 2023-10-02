@@ -32,6 +32,8 @@ namespace ORNL {
             //! \param render_mode: OpenGL render mode. Use GL_TRIANGLES, GL_LINES, etc.
             PartObject(BaseView* view, QSharedPointer<Part> p, ushort render_mode = GL_TRIANGLES);
 
+            //! \brief Modfies uniforms to specific values for PartObjects
+            void configureUniforms() override;
             //! \brief Selects this object and unselects any parents or children.
             //! \return The parts that have been unselected.
             QSet<QSharedPointer<PartObject>> select();
@@ -42,12 +44,6 @@ namespace ORNL {
             //! \brief Restores normal color after highlighting.
             void unhighlight();
 
-            //! \brief Sets object transparency.
-            //! \param trans: Value 0 - 255
-            void setTransparency(uint trans);
-            //! \brief Gets object transparency.
-            uint transparency();
-
             //! \brief Sets mesh color based on type.
             //! \param type: Mesh type.
             void setMeshTypeColor(MeshType type);
@@ -55,6 +51,9 @@ namespace ORNL {
             //! \brief sets the render mode to use
             //! \param mode the mode
             void setRenderMode(ushort mode);
+
+            //! \brief sets the shader to use (m_shader_program vs m_shader_program2)
+            void setSolidWireFrameMode(bool state);
 
             //! \brief Gets the arrow object.
             QSharedPointer<ArrowObject> arrow();
@@ -76,6 +75,7 @@ namespace ORNL {
             QSharedPointer<Part> part();
 
         protected:
+            void draw() override;
             //! \brief Updates the overhang coloring. Called after rotations/translations.
             void overhangUpdate();
 
@@ -103,21 +103,10 @@ namespace ORNL {
             QSharedPointer<AxesObject> m_axes_object;
             QSharedPointer<PlaneObject> m_plane_object;
 
-            //! \brief If this object is selected or not.
-            bool m_selected = false;
-
             //! \brief Overhang angle to use for calculations.
             Angle m_overhang_angle;
             //! \brief If overhang angles are shown or not.
             bool m_overhang_shown = false;
-
-            //! \brief Colors.
-            QColor m_selected_color;
-            QColor m_base_color;
-            QColor m_color;
-
-            //! \brief Transparency.
-            uint m_transparency = 255;
     };
 } // Namespace ORNL
 

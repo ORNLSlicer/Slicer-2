@@ -1,6 +1,7 @@
 // Local
 #include "step/layer/regions/perimeter.h"
 #include "geometry/segments/line.h"
+#include "managers/preferences_manager.h"
 #include "optimizers/path_order_optimizer.h"
 #include "geometry/path_modifier.h"
 #include "utilities/mathutils.h"
@@ -20,7 +21,6 @@ namespace ORNL {
     Perimeter::Perimeter(const QSharedPointer<SettingsBase>& sb, const int index, const QVector<SettingsPolygon>& settings_polygons, const SingleExternalGridInfo& gridInfo,
                          PolygonList uncut_geometry)
         : RegionBase(sb, index, settings_polygons, gridInfo, uncut_geometry) {
-        // NOP
     }
 
     QString Perimeter::writeGCode(QSharedPointer<WriterBase> writer) {
@@ -34,7 +34,6 @@ namespace ORNL {
             gcode += writer->writeAfterPath(RegionType::kPerimeter);
         }
         gcode += writer->writeAfterRegion(RegionType::kPerimeter);
-
         return gcode;
     }
 
@@ -44,10 +43,20 @@ namespace ORNL {
         m_outer_most_path_set.clear();
         m_inner_most_path_set.clear();
 
+        bool perimeter_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable);
+        bool shifted_beads_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableShiftedBeads);
+        bool infill_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
+        bool shifted_infill_lines = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
+
         setMaterialNumber(m_sb->setting<int>(Constants::MaterialSettings::MultiMaterial::kPerimterNum));
         Distance beadWidth = m_sb->setting<Distance>(Constants::ProfileSettings::Perimeter::kBeadWidth);
-        int rings = m_sb->setting<int>(Constants::ProfileSettings::Perimeter::kCount);
-
+        PolygonList lastPerimeter;
+        // Must have at least 2 perimeters for shifted beads to work properly
+        int rings;
+        if(perimeter_enabled && shifted_beads_enabled && m_sb->setting<int>(Constants::ProfileSettings::Perimeter::kCount) == 1)
+            rings = 2;
+        else
+            rings = m_sb->setting<int>(Constants::ProfileSettings::Perimeter::kCount);
 
         if (m_sb->setting<bool>(Constants::ExperimentalSettings::DirectedPerimeter::kEnableDirectedPerimeter))
         {
@@ -79,6 +88,7 @@ namespace ORNL {
                 }
 
                 int ring_nr = 0;
+                int path_line_num = 0;
                 while (!path_line.isEmpty() && ring_nr < rings)
                 {
                     for(Polygon& poly : path_line)
@@ -96,21 +106,35 @@ namespace ORNL {
                     previousPoints = currentPoints;
                     currentPoints.clear();
 
-                    m_computed_geometry.append(path_line);
+                    if((path_line_num + 1) == rings)
+                        lastPerimeter = path_line;
+
+                    if(!(perimeter_enabled && shifted_beads_enabled) || (!(perimeter_enabled && shifted_beads_enabled) && (infill_enabled && shifted_infill_lines) && layer_num != 2) || (layer_num % 2 != path_line_num % 2))
+                        m_computed_geometry.append(path_line);
+
                     path_line = path_line.offset(-beadWidth, -beadWidth / 2);
                     ring_nr++;
+
+                    path_line_num++;
                 }
             }
-
-            if (!m_computed_geometry.isEmpty())
-                m_geometry = m_computed_geometry.last().offset(-beadWidth / 2, -beadWidth / 2);
         }
 
         #ifdef HAVE_SINGLE_PATH
             if(!m_sb->setting<bool>(Constants::ExperimentalSettings::SinglePath::kEnableSinglePath))
                 this->createPaths();
         #else
-            this->createPaths();
+            m_layer_num = layer_num;
+
+            if(!(infill_enabled && shifted_infill_lines) || (perimeter_enabled && shifted_beads_enabled) || m_layer_num != 2)
+                this->createPaths();
+
+            // Append the innermost perimeter to allow for correct computation in the infill region when shifted beads is enabled
+            if (!m_computed_geometry.isEmpty()){
+                m_computed_geometry.append(lastPerimeter);
+                m_geometry = m_computed_geometry.last().offset(-beadWidth / 2, -beadWidth / 2);
+            }
+
         #endif
 
         if(m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting) ||
@@ -249,19 +273,28 @@ namespace ORNL {
         {
             if(static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kPerimeterDirection)) == TipWipeDirection::kForward ||
                     static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kPerimeterDirection)) == TipWipeDirection::kOptimal)
-                PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kPerimeterDistance),
+                    PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kPerimeterDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kPerimeterSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kPerimeterAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kPerimeterAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kPerimeterExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kPerimeterLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kPerimeterCutoffDistance));
             else if(static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kPerimeterDirection)) == TipWipeDirection::kAngled)
             {
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kAngledTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kPerimeterDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kPerimeterSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kPerimeterAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kPerimeterAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kPerimeterExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kPerimeterLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kPerimeterCutoffDistance));
             }
             else
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kReverseTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kPerimeterDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kPerimeterSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kPerimeterAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kPerimeterAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kPerimeterExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kPerimeterLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kPerimeterCutoffDistance));
 
             current_location = path.back()->end();
         }
@@ -300,12 +333,19 @@ namespace ORNL {
 
     void Perimeter::createPaths()
     {
+        bool perimeter_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable);
+        bool shifted_beads_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableShiftedBeads);
+        bool infill_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
+        bool shifted_infill_lines = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
+
         const Point origin(m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kXOffset), m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kYOffset));
         for(int i = 0, end = m_computed_geometry.size(); i < end; ++i)
         {
             PolygonList& polygon_list = m_computed_geometry[i];
             for (Polygon polygon: polygon_list)
             {
+                int rep = 0;
+
                 Path new_path;
 
                 new_path.setCCW(polygon.orientation());
@@ -313,7 +353,9 @@ namespace ORNL {
 
                 Distance default_width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Perimeter::kBeadWidth);
                 Distance default_height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
+                Distance default_half_height            = default_height / 2;
                 Velocity default_speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed);
+                Velocity default_double_speed           = default_speed * 2;
                 Acceleration default_acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kPerimeter);
                 AngularVelocity default_extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Perimeter::kExtruderSpeed);
                 float default_esp_value                 = m_sb->setting< float >(Constants::PrinterSettings::Embossing::kESPNominalValue);
@@ -347,6 +389,11 @@ namespace ORNL {
 
                         // Find if/ where this line intersects with a settings polygon
                         QVector<Point> poly_intersect = settings_poly.clipLine(start, end);
+
+                        for (Point& point : poly_intersect) {
+                            point.setSettings(updatedBase);
+                        }
+
                         //qDebug() << poly_intersect;
                         intersections.append(poly_intersect);
                     }
@@ -365,13 +412,19 @@ namespace ORNL {
                             if(point.getSettings()->json() == m_sb->json())
                                 continue;
 
-                            //qDebug() << "Creating segment from" << start.toQVector3D() << "to" << point.toQVector3D() << "Distance:" << start.distance(point)();
+                            //qDebug() << "\t\tCreating segment from" << start.toQVector3D() << "to" << point.toQVector3D() << "Distance:" << start.distance(point)();
 
                             QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(start, point);
 
                             segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Perimeter::kBeadWidth) : default_width);
-                            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
-                            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_speed);
+                            if(((perimeter_enabled && shifted_beads_enabled) && (m_layer_num == 1 || m_layer_num == m_layer_count)) || ((infill_enabled && shifted_infill_lines) && !(perimeter_enabled && shifted_beads_enabled))){
+                                segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_half_height);
+                                segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_double_speed);
+                            }
+                            else{
+                                segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
+                                segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_speed);
+                            }
                             segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            is_settings_region ? start.getSettings()->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kPerimeter) : default_acceleration);
                             segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    is_settings_region ? start.getSettings()->setting< AngularVelocity >(Constants::ProfileSettings::Perimeter::kExtruderSpeed) : default_extruder_speed);
                             segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
@@ -391,8 +444,16 @@ namespace ORNL {
                     // Add final segment
                     QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(start, end);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Perimeter::kBeadWidth) : default_width);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_speed);
+
+                    if(((perimeter_enabled && shifted_beads_enabled) && (m_layer_num == 1 || m_layer_num == m_layer_count)) || ((infill_enabled && shifted_infill_lines) && !(perimeter_enabled && shifted_beads_enabled))){
+                        segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_half_height);
+                        segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_double_speed);
+                    }
+                    else{
+                        segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
+                        segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_speed);
+                    }
+
                     segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            is_settings_region ? start.getSettings()->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kPerimeter) : default_acceleration);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    is_settings_region ? start.getSettings()->setting< AngularVelocity >(Constants::ProfileSettings::Perimeter::kExtruderSpeed) : default_extruder_speed);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
@@ -492,6 +553,12 @@ namespace ORNL {
         }
     }
     #endif
+
+    void Perimeter::setLayerCount(uint layer_count)
+    {
+        m_layer_count = layer_count;
+        m_layer_count--;
+    }
 
     QVector<Path>& Perimeter::getOuterMostPathSet()
     {

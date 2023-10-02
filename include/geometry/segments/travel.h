@@ -19,6 +19,9 @@ namespace ORNL {
             //! Default lift type is both
             TravelSegment(Point start, Point end, TravelLiftType liftType = TravelLiftType::kBoth);
 
+            //! \brief Set the travel lift type
+            void setLiftType(TravelLiftType newLiftType);
+
             //! \brief Clone
             QSharedPointer<SegmentBase> clone() const;
 

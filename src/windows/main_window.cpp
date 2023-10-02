@@ -10,6 +10,7 @@
 
 // Local
 #include "configs/range.h"
+#include "step/layer/regions/perimeter.h"
 #include "windows/dialogs/template_save.h"
 #include "windows/dialogs/template_layer_save.h"
 #include "windows/dialogs/cs_dbg.h"
@@ -31,6 +32,8 @@
 
 #include "geometry/mesh/advanced/auto_orientation.h"
 #include "threading/mesh_loader.h"
+
+#include "windows/dialogs/geometry_view_dialog.h"
 
 namespace ORNL {
     MainWindow* MainWindow::m_singleton = nullptr;
@@ -126,7 +129,6 @@ namespace ORNL {
 
     void MainWindow::debug()
     {
-
     }
 
     bool MainWindow::setStyleFromFile() {
@@ -815,9 +817,6 @@ namespace ORNL {
                 }
             }
         );
-        connect(m_part_widget, &PartWidget::displayRotationInfoMsg, this, [this] () {
-                m_cmdbar->append("\r\nScaling applied permenantly to current transformation\r\n"
-                                 "Scaling factors are reset to 100%\r\n");});
 
         // Connect to timer.
         connect(m_timer, &QTimer::timeout, this, &MainWindow::autoSave);
@@ -1217,6 +1216,10 @@ namespace ORNL {
 
         connect(loader, &GCodeLoader::gcodeLoadedVisualization, this,
                 [this](QVector<QVector<QSharedPointer<SegmentBase>>> segments) {
+                    if (segments.empty()) {
+                        return;
+                    }
+
                     m_gcodebar->setMaxLayer(qMax(segments.size() - 1, 0));
                     m_gcodebar->setMaxSegment(qMax(segments[0].size() + segments[1].size() - 1, 0));
                 }

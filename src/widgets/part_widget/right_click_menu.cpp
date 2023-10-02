@@ -57,6 +57,14 @@ namespace ORNL
         m_wireframe_action->setCheckable(true);
         m_wireframe_action->setChecked(false);
         this->addAction(m_wireframe_action);
+
+        m_solidwireframe_action = new QAction("Show solid wireframe", this);
+        m_solidwireframe_action->setIcon(QIcon(":/icons/vector_triangle_black_solid.png"));
+        m_solidwireframe_action->setCheckable(true);
+        m_solidwireframe_action->setChecked(false);
+        this->addAction(m_solidwireframe_action);
+
+
     }
 
     void RightClickMenu::setupEvents()
@@ -133,7 +141,20 @@ namespace ORNL
         connect(m_wireframe_action,  &QAction::triggered, this,
                 [this]() {
                     for (auto item : m_selected_items) {
+                        //Solid wireframe and wireframe cannot both be active, uncheck the other
+                        item->setSolidWireframe(false);
+                        m_solidwireframe_action->setChecked(false);
                         item->setWireframe(m_wireframe_action->isChecked());
+                    }
+                }
+        );
+        connect(m_solidwireframe_action,  &QAction::triggered, this,
+                [this]() {
+                    for (auto item : m_selected_items) {
+                        //Solid wireframe and wireframe cannot both be active, uncheck the other
+                        item->setWireframe(false);
+                        m_wireframe_action->setChecked(false);
+                        item->setSolidWireframe(m_solidwireframe_action->isChecked());
                     }
                 }
         );
@@ -198,6 +219,7 @@ namespace ORNL
             m_delete_part_action->setDisabled(false);
             m_transparency_menu->setDisabled(false);
             m_wireframe_action->setDisabled(false);
+            m_solidwireframe_action->setDisabled(false);
         }
         else
         {
@@ -210,6 +232,7 @@ namespace ORNL
             m_delete_part_action->setDisabled(true);
             m_transparency_menu->setDisabled(true);
             m_wireframe_action->setDisabled(true);
+            m_solidwireframe_action->setDisabled(true);
         }
     }
 }

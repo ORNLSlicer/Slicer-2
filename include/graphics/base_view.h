@@ -5,7 +5,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
-
+#include <QOpenGLFunctions_3_3_Core>
 // Local
 #include "graphics/support/camera_manager.h"
 #include "graphics/graphics_object.h"
@@ -24,7 +24,7 @@ namespace ORNL
      *  Must inherit from both QOpenGLWidget and QOpenGLFunctions to have widget functionality and use the
      *  Qt OpenGL API.
      */
-    class BaseView : public QOpenGLWidget, protected QOpenGLFunctions
+    class BaseView : public QOpenGLWidget, public QOpenGLFunctions_3_3_Core
     {
     Q_OBJECT
     public:
@@ -33,6 +33,8 @@ namespace ORNL
         //! \param parent QWidget that has to be passed to superclass constructor
         BaseView(QWidget* parent = nullptr);
 
+        //! \return The view's shader program
+        QSharedPointer<QOpenGLShaderProgram> shaderProgram();
         //! \brief Makes this the current OpenGL context and deletes members as required.
         ~BaseView() override;
 
@@ -119,9 +121,6 @@ namespace ORNL
 
         //! \return The view's view matrix.
         QMatrix4x4 viewMatrix();
-
-        //! \return The view's shader program
-        QSharedPointer<QOpenGLShaderProgram> shaderProgram();
 
         /*!
          * \title Virtual Methods - Render
@@ -210,7 +209,7 @@ namespace ORNL
         friend class GraphicsObject;
         friend class GCodeObject;
 
-        //! \brief Shader file locations.
+        //! \brief Shader file location for the first shader program.
         struct {
            int view;
            int camera_pos;
@@ -218,14 +217,19 @@ namespace ORNL
            int ambient_strength;
            int lighting_color;
            int lighting_pos;
+           int using_solid_wireframe_mode;
+           int overhang_angle;
+           int using_overhang_mode;
+           int rendering_part_object;
+           int stack_axis;
         } m_shader_locs;
+
 
         //! \brief Projection matrix (world to clip coordinates/NDC coordinates)
         QMatrix4x4 m_projection;
 
-        //! \brief OpenGL shader program to hold shader files and set up VAO
+        //! \brief OpenGL shader program to hold shader files and set up VAO.
         QSharedPointer<QOpenGLShaderProgram> m_shader_program;
-
 
         //! \brief Set of objects to render.
         QList<QSharedPointer<GraphicsObject>> m_render_objects;

@@ -48,6 +48,7 @@ namespace ORNL
         QAction* m_reload_part_action;
         QAction* m_delete_part_action;
         QAction* m_wireframe_action;
+        QAction* m_solidwireframe_action;
 
         //! \brief Menu to hold transparency
         QMenu* m_transparency_menu;

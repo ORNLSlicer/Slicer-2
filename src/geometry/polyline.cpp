@@ -315,6 +315,56 @@ namespace ORNL
         return rv;
     }
 
+    Point Polyline::min() const
+    {
+        Point rv(std::numeric_limits< float >::max(),
+                 std::numeric_limits< float >::max(),
+                 std::numeric_limits< float >::max());
+        for (const Point& point : *this)
+        {
+            if (point.x() < rv.x())
+            {
+                rv.x(point.x());
+            }
+
+            if (point.y() < rv.y())
+            {
+                rv.y(point.y());
+            }
+
+            if (point.z() < rv.z())
+            {
+                rv.z(point.z());
+            }
+        }
+        return rv;
+    }
+
+    Point Polyline::max() const
+    {
+        Point rv(std::numeric_limits< float >::lowest(),
+                 std::numeric_limits< float >::lowest(),
+                 std::numeric_limits< float >::lowest());
+        for (const Point& point : *this)
+        {
+            if (point.x() > rv.x())
+            {
+                rv.x(point.x());
+            }
+
+            if (point.y() > rv.y())
+            {
+                rv.y(point.y());
+            }
+
+            if (point.z() > rv.z())
+            {
+                rv.z(point.z());
+            }
+        }
+        return rv;
+    }
+
     QVector< Point > Polyline::operator&(const Polyline& rhs)
     {
         // TODO

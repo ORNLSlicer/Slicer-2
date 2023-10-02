@@ -5,6 +5,9 @@
 #include "threading/traditional_ast.h"
 #include "step/global_layer.h"
 
+//#include "slicing/preprocessor.h"
+//#include "slicing/buffered_slicer.h"
+
 namespace ORNL {
     /*!
      * \class PolymerSlicer
@@ -44,6 +47,18 @@ namespace ORNL {
             //! \param part_start the layer number to start on
             //! \param last_layer_count the last layer number
             void processGeometryAboveIroning(QSharedPointer<Part> part, int part_start, int last_layer_count);
+
+            //! \brief Processes perimeters on a part. Gives each perimeter the total layer count.
+            //! \param part: The part whose perimeters need processing
+            //! \param part_start: The first layer number of the part
+            //! \param last_layer_count: The total layer count of the part
+            void processPerimeter(QSharedPointer<Part> part, int part_start, int last_layer_count);
+
+            //! \brief Gives the infill the total layer count.
+            //! \param part: The part whose perimeters need processing
+            //! \param part_start: The first layer number of the part
+            //! \param last_layer_count: The total layer count of the part
+            void processInfill(QSharedPointer<Part> part, int part_start, int last_layer_count);
 
             //! \brief Creates layer steps for support structure
             //! \param part: Part to create supports for
@@ -111,6 +126,13 @@ namespace ORNL {
 
             //! \brief spiral paths
             QVector<Path> m_spiral_paths;
+
+            //! \brief height of the half-height bead in the first layer
+            int m_half_layer_height = 0;
+
+            //! \brief layer that we are currently on
+            uint m_layer_num;
+
     };
 }
 

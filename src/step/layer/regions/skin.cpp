@@ -348,25 +348,40 @@ namespace ORNL {
                         static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Skin::kPattern)) == InfillPatterns::kInsideOutConcentric)
                     PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinDistance),
                                                            m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkinSpeed),
-                                                           m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkinAngle));
+                                                           m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkinAngle),
+                                                           m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkinExtruderSpeed),
+                                                           m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinLiftHeight),
+                                                           m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinCutoffDistance));
                 else if(m_sb->setting<int>(Constants::ProfileSettings::Perimeter::kEnable) || m_sb->setting<int>(Constants::ProfileSettings::Inset::kEnable))
                     PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinDistance),
                                                            m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkinSpeed), innerMostClosedContour,
-                                                           m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkinAngle));
+                                                           m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkinAngle),
+                                                           m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkinExtruderSpeed),
+                                                           m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinLiftHeight),
+                                                           m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinCutoffDistance));
                 else
                     PathModifierGenerator::GenerateForwardTipWipeOpenLoop(path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinDistance),
-                                                                          m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkinSpeed));
+                                                                          m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkinSpeed),
+                                                                          m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkinExtruderSpeed),
+                                                                          m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinLiftHeight),
+                                                                          m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinCutoffDistance));
             }
             else if(static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkinDirection)) == TipWipeDirection::kAngled)
             {
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kAngledTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkinSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkinAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkinAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkinExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinCutoffDistance));
             }
             else
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kReverseTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkinSpeed),
-                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkinAngle));
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkinAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkinExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinCutoffDistance));
             current_location = path.back()->end();
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::SpiralLift::kSkinEnable))

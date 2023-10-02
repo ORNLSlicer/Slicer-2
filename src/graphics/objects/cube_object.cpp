@@ -102,6 +102,8 @@ namespace ORNL {
         };
 
 
+
+
         ShapeFactory::createRectangle(m_length, m_width, m_height, QMatrix4x4(), color, vertices, colors, normals);
 
         this->populateGL(view, vertices, normals, colors, render_mode, uv, result);

@@ -28,6 +28,7 @@ namespace ORNL
        m_l = " L";
        m_q = " Q";
        m_a = " A";
+       m_b = " B";
        m_G0 = "G0";
        m_G1 = "G1";
        m_G2 = "G2";

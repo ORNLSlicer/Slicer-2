@@ -40,6 +40,9 @@ namespace ORNL
     class PolygonList : public QVector< Polygon >
     {
     public:
+        // QVector constructors.
+        using QVector<Polygon>::QVector;
+
         PolygonList();
 
         PolygonList(QVector<QVector<QPair<double, double>>> raw_poly_list);

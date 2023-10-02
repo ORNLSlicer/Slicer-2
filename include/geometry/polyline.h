@@ -29,6 +29,9 @@ namespace ORNL
     class Polyline : public QVector< Point >
     {
     public:
+        // QVector constructors.
+        using QVector<Point>::QVector;
+
         /*!
          * \brief Constructor
          */
@@ -194,6 +197,14 @@ namespace ORNL
          * determined...
          */
         QVector< Point > operator&(const Polyline& rhs);
+
+        //! \brief Smallest x, y, and z coordinates (may not be from the same
+        //! point)
+        Point min() const;
+
+        //! \brief Largest x, y, and z coordinates (may not be from the same
+        //! point)
+        Point max() const;
 
         friend class Polygon;
         friend class PolygonList;

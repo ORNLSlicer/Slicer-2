@@ -5,8 +5,11 @@
 #include <QStack>
 
 // Local
+#include "graphics/objects/part_object.h"
 #include "utilities/mathutils.h"
 #include "graphics/base_view.h"
+
+#include <graphics/objects/part_object.h>
 
 namespace ORNL {
     GraphicsObject::GraphicsObject(BaseView* view, const std::vector<float>& vertices, const std::vector<float>& normals, const std::vector<float>& colors,
@@ -26,16 +29,14 @@ namespace ORNL {
     }
 
     void GraphicsObject::render() {
-        if (m_state.hidden) return;
 
-        // Render children.
-        for (auto& c : m_children) {
-            c->render();
-        }
+        if (m_state.hidden) return;
+        m_view->shaderProgram()->setUniformValue(m_shader_locs.usingSolidWireframeMode, this->getSolidWireFrameMode());
+
 
         // Draw to front of screen if on top or underneath.
-        if (m_state.ontop) m_view->glDepthRangef(0.00, 0.01);
-        else if (m_state.underneath) m_view->glDepthRangef(0.99, 1.00);
+        if (m_state.ontop) m_view->glDepthRange(0.00, 0.01);
+        else if (m_state.underneath) m_view->glDepthRange(0.99, 1.00);
 
         // Adjust rotation / scale if billboarding.
         if (m_state.billboard) {
@@ -54,10 +55,14 @@ namespace ORNL {
         }
 
         // Note: if rendered outside of BaseView::paintGL(), the view must be made current.
-        // m_view->makeCurrent();
+        m_view->makeCurrent();
 
         // Actual render.
         m_view->shaderProgram()->setUniformValue(m_shader_locs.model, m_transform);
+        this->configureUniforms();
+
+
+
 
         m_texture->bind();
         m_vao->bind();
@@ -67,8 +72,12 @@ namespace ORNL {
         //qDebug() << m_view->glGetError();
 
         // Restore global rendering values.
-        if (m_state.ontop || m_state.underneath) m_view->glDepthRangef(0.01, 0.99);
+        if (m_state.ontop || m_state.underneath) m_view->glDepthRange(0.01, 0.99);
         if (m_state.billboard) m_view->shaderProgram()->setUniformValue(m_shader_locs.ambient, 0.4f);
+    }
+
+    void GraphicsObject::configureUniforms() {
+        m_view->shaderProgram()->setUniformValue(m_shader_locs.renderingPartObject, false);
     }
 
     BaseView* GraphicsObject::view() {
@@ -149,6 +158,7 @@ namespace ORNL {
         }
 
         m_transform = mtrx;
+
 
         // Update bounding cube.
         for (int i = 0; i < m_mbb.size(); i++) {
@@ -359,24 +369,35 @@ namespace ORNL {
         m_state.underneath = state;
     }
 
+
+
     GraphicsObject::GraphicsObject() {
         // NOP
     }
+
+
 
     void GraphicsObject::populateGL(BaseView* view, const std::vector<float>& vertices, const std::vector<float>& normals, const std::vector<float>& colors,
                                     const ushort render_mode, const std::vector<float>& uv, const QImage texture) {
         m_view = view;
         m_render_mode = render_mode;
 
+        QSharedPointer<QOpenGLShaderProgram> program = m_view->shaderProgram();
         // Get shader locations.
         m_shader_locs.model     = m_view->shaderProgram()->uniformLocation(Constants::OpenGL::Shader::kModelName);
         m_shader_locs.ambient   = m_view->shaderProgram()->uniformLocation(Constants::OpenGL::Shader::kAmbientStrengthName);
+        m_shader_locs.overhangAngle  = m_view->shaderProgram()->uniformLocation(Constants::OpenGL::Shader::kOverhangAngleName);
+        m_shader_locs.overhangMode = m_view->shaderProgram()->uniformLocation(Constants::OpenGL::Shader::kOverhangModeName);
+        m_shader_locs.stackingAxis  = m_view->shaderProgram()->uniformLocation(Constants::OpenGL::Shader::kStackingAxisName);
+        m_shader_locs.renderingPartObject  = m_view->shaderProgram()->uniformLocation(Constants::OpenGL::Shader::kRenderingPartObjectName);
         m_shader_locs.vertice   = m_view->shaderProgram()->attributeLocation(Constants::OpenGL::Shader::kPositionName);
         m_shader_locs.normal    = m_view->shaderProgram()->attributeLocation(Constants::OpenGL::Shader::kNormalName);
         m_shader_locs.color     = m_view->shaderProgram()->attributeLocation(Constants::OpenGL::Shader::kColorName);
         m_shader_locs.uv        = m_view->shaderProgram()->attributeLocation(Constants::OpenGL::Shader::kUVName);
+        m_shader_locs.usingSolidWireframeMode = m_view->shaderProgram()->uniformLocation(Constants::OpenGL::Shader::kUsingSolidWireframeModeName);
 
         m_view->makeCurrent();
+
         m_view->shaderProgram()->bind();
 
         m_vertices = vertices;
@@ -410,7 +431,6 @@ namespace ORNL {
         m_nbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
         m_nbo.bind();
         m_nbo.allocate(m_normals.data(), m_normals.size() * sizeof(float));
-
         m_view->shaderProgram()->enableAttributeArray(m_shader_locs.normal);
         m_view->shaderProgram()->setAttributeBuffer(m_shader_locs.normal, GL_FLOAT, 0, 3);
 
@@ -452,7 +472,7 @@ namespace ORNL {
         m_cbo.release();
         m_tbo.release();
 
-//        m_view->shaderProgram()->release();
+        m_view->shaderProgram()->release();
 
         // Create bounding box.
         QVector3D min, max;
@@ -489,7 +509,38 @@ namespace ORNL {
     }
 
     void GraphicsObject::draw() {
-        m_view->glDrawArrays(m_render_mode, 0, m_vertices.size() / 3);
+        m_view->glDrawArrays(renderMode(), 0, m_vertices.size() / 3);
+
+    }
+
+    bool GraphicsObject::getSolidWireFrameMode() {
+        return m_state.is_solid_wireframe;
+    }
+
+    void GraphicsObject::setSolidWireFrameMode(bool state) {
+        m_state.is_solid_wireframe = state;
+    }
+
+    bool GraphicsObject::getWireFrameMode() {
+        return m_state.is_wireframe;
+    }
+
+    void GraphicsObject::setWireFrameMode(bool state) {
+        m_state.is_wireframe = state;
+    }
+
+    void GraphicsObject::setTransparency(uint trans) {
+        m_transparency = trans;
+        m_base_color.setAlpha(trans);
+        m_selected_color.setAlpha(trans);
+
+        m_color = (m_selected) ? m_selected_color : m_base_color;
+
+        this->paint(m_color);
+    }
+
+    uint GraphicsObject::transparency() {
+        return m_transparency;
     }
 
     void GraphicsObject::replaceVertices(std::vector<float>& vertices) {
@@ -651,6 +702,37 @@ namespace ORNL {
 
     ushort& GraphicsObject::renderMode() {
         return m_render_mode;
+    }
+
+    bool& GraphicsObject::solidWireFrameMode() {
+
+        return m_state.is_solid_wireframe;
+    }
+
+
+    bool& GraphicsObject::wireFrameMode() {
+        return m_state.is_wireframe;
+    }
+
+    void GraphicsObject::addToRenderQueue(QQueue<QSharedPointer<GraphicsObject>>& renderQueue)
+    {
+
+        //First add each of this objects children to the render queue
+        for (auto& c : m_children) {
+            c->addToRenderQueue(renderQueue);
+        }
+
+        QSharedPointer<PartObject> p = this->sharedFromThis().dynamicCast<PartObject>();
+        //If this graphics object is a part and its transparent, put it to the back of the render queue,
+        //otherwise, put it to the front.
+        if (p && p->transparency() < 255)
+        {
+            renderQueue.append(this->sharedFromThis());
+        }
+        else
+        {
+            renderQueue.prepend(this->sharedFromThis());
+        }
     }
 
     void GraphicsObject::paint(QColor color) {

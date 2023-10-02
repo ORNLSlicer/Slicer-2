@@ -18,6 +18,11 @@ namespace ORNL {
         return writer->writeTravel(m_start, m_end, m_lift_type, this->getSb());
     }
 
+    void TravelSegment::setLiftType(TravelLiftType newLiftType)
+    {
+        m_lift_type = newLiftType;
+    }
+
     float TravelSegment::getMinZ()
     {
         if (m_start.z() < m_end.z())
