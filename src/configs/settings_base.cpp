@@ -116,15 +116,15 @@ namespace ORNL
         }
 
         //alternating seam adjustment
-        PathOrderOptimization pathOrder = static_cast<PathOrderOptimization>(setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder));
-        if(pathOrder == PathOrderOptimization::kCustomPoint && setting<bool>(Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation))
+        PointOrderOptimization pointOrder = static_cast<PointOrderOptimization>(setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
+        if(pointOrder == PointOrderOptimization::kCustomPoint && setting<bool>(Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation))
         {
             if(layer_number % 2 == 0)
             {
-                setSetting(Constants::ProfileSettings::Optimizations::kCustomXLocation,
-                               (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomSecondXLocation));
-                setSetting(Constants::ProfileSettings::Optimizations::kCustomYLocation,
-                               (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomSecondYLocation));
+                setSetting(Constants::ProfileSettings::Optimizations::kCustomPointXLocation,
+                               (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondXLocation));
+                setSetting(Constants::ProfileSettings::Optimizations::kCustomPointYLocation,
+                               (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondYLocation));
             }
         }
 

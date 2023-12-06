@@ -200,8 +200,8 @@ namespace ORNL {
             // Do seam adjustment if necessary
             if(islandOrderMethod == IslandOrderOptimization::kCustomPoint)
             {
-                Point start_override(global_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomXLocation),
-                                     global_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomYLocation));
+                Point start_override(global_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomIslandXLocation),
+                                     global_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomIslandYLocation));
 
                 //start[tool] = start_override;
                 island_optimizer.setStartPoint(start_override);

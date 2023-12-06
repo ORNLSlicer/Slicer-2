@@ -586,8 +586,7 @@ namespace ORNL
         //qDebug() << "Applied rotation" << qr.toEulerAngles();
 
         for (auto& gop : m_selected_objects) {
-            gop->rotateAbsolute(qr * m_state.part_rot_start[gop]);
-            m_model->lookupByGraphic(gop)->setRotation(gop->rotation());
+            m_model->lookupByGraphic(gop)->setRotation(gop->rotation(), true);
 
             //qDebug() << gop->name() << "rotates to" << gop->rotation().toEulerAngles() << gop->rotation();
         }
@@ -778,6 +777,8 @@ namespace ORNL
         this->permitModel();
 
         this->postTransformCheck();
+
+        pm->setOriginalTransformation(gop->transformation());
 
         this->update();
     }

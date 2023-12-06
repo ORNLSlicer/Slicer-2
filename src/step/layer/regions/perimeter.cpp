@@ -43,21 +43,11 @@ namespace ORNL {
         m_outer_most_path_set.clear();
         m_inner_most_path_set.clear();
 
-        bool perimeter_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable);
-        bool shifted_beads_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableShiftedBeads);
-        bool infill_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
-        bool shifted_infill_lines = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
-
         setMaterialNumber(m_sb->setting<int>(Constants::MaterialSettings::MultiMaterial::kPerimterNum));
         Distance beadWidth = m_sb->setting<Distance>(Constants::ProfileSettings::Perimeter::kBeadWidth);
         PolygonList lastPerimeter;
-        // Must have at least 2 perimeters for shifted beads to work properly
-        int rings;
-        if(perimeter_enabled && shifted_beads_enabled && m_sb->setting<int>(Constants::ProfileSettings::Perimeter::kCount) == 1)
-            rings = 2;
-        else
-            rings = m_sb->setting<int>(Constants::ProfileSettings::Perimeter::kCount);
 
+        int rings = m_sb->setting<int>(Constants::ProfileSettings::Perimeter::kCount);
         if (m_sb->setting<bool>(Constants::ExperimentalSettings::DirectedPerimeter::kEnableDirectedPerimeter))
         {
             computeDirected(beadWidth, rings);
@@ -109,8 +99,7 @@ namespace ORNL {
                     if((path_line_num + 1) == rings)
                         lastPerimeter = path_line;
 
-                    if(!(perimeter_enabled && shifted_beads_enabled) || (!(perimeter_enabled && shifted_beads_enabled) && (infill_enabled && shifted_infill_lines) && layer_num != 2) || (layer_num % 2 != path_line_num % 2))
-                        m_computed_geometry.append(path_line);
+                    m_computed_geometry.append(path_line);
 
                     path_line = path_line.offset(-beadWidth, -beadWidth / 2);
                     ring_nr++;
@@ -126,8 +115,7 @@ namespace ORNL {
         #else
             m_layer_num = layer_num;
 
-            if(!(infill_enabled && shifted_infill_lines) || (perimeter_enabled && shifted_beads_enabled) || m_layer_num != 2)
-                this->createPaths();
+            this->createPaths();
 
             // Append the innermost perimeter to allow for correct computation in the infill region when shifted beads is enabled
             if (!m_computed_geometry.isEmpty()){
@@ -145,9 +133,6 @@ namespace ORNL {
         if(static_cast<PrintDirection>(m_sb->setting<int>(Constants::ProfileSettings::Ordering::kPerimeterReverseDirection)) != PrintDirection::kReverse_off)
             for(Path& path : m_paths)
                 path.reverseSegments();
-
-        if(m_sb->setting<int>(Constants::ProfileSettings::Ordering::kPerimeterReverseOrder))
-            std::reverse(m_paths.begin(), m_paths.end());
     }
 
     void Perimeter::computeDirected(Distance bead_width, int rings)
@@ -333,11 +318,6 @@ namespace ORNL {
 
     void Perimeter::createPaths()
     {
-        bool perimeter_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable);
-        bool shifted_beads_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableShiftedBeads);
-        bool infill_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
-        bool shifted_infill_lines = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
-
         const Point origin(m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kXOffset), m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kYOffset));
         for(int i = 0, end = m_computed_geometry.size(); i < end; ++i)
         {
@@ -353,9 +333,7 @@ namespace ORNL {
 
                 Distance default_width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Perimeter::kBeadWidth);
                 Distance default_height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
-                Distance default_half_height            = default_height / 2;
                 Velocity default_speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed);
-                Velocity default_double_speed           = default_speed * 2;
                 Acceleration default_acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kPerimeter);
                 AngularVelocity default_extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Perimeter::kExtruderSpeed);
                 float default_esp_value                 = m_sb->setting< float >(Constants::PrinterSettings::Embossing::kESPNominalValue);
@@ -417,14 +395,8 @@ namespace ORNL {
                             QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(start, point);
 
                             segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Perimeter::kBeadWidth) : default_width);
-                            if(((perimeter_enabled && shifted_beads_enabled) && (m_layer_num == 1 || m_layer_num == m_layer_count)) || ((infill_enabled && shifted_infill_lines) && !(perimeter_enabled && shifted_beads_enabled))){
-                                segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_half_height);
-                                segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_double_speed);
-                            }
-                            else{
-                                segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
-                                segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_speed);
-                            }
+                            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
+                            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_speed);
                             segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            is_settings_region ? start.getSettings()->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kPerimeter) : default_acceleration);
                             segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    is_settings_region ? start.getSettings()->setting< AngularVelocity >(Constants::ProfileSettings::Perimeter::kExtruderSpeed) : default_extruder_speed);
                             segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
@@ -444,16 +416,8 @@ namespace ORNL {
                     // Add final segment
                     QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(start, end);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Perimeter::kBeadWidth) : default_width);
-
-                    if(((perimeter_enabled && shifted_beads_enabled) && (m_layer_num == 1 || m_layer_num == m_layer_count)) || ((infill_enabled && shifted_infill_lines) && !(perimeter_enabled && shifted_beads_enabled))){
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_half_height);
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_double_speed);
-                    }
-                    else{
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_speed);
-                    }
-
+                    segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
+                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed) : default_speed);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            is_settings_region ? start.getSettings()->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kPerimeter) : default_acceleration);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    is_settings_region ? start.getSettings()->setting< AngularVelocity >(Constants::ProfileSettings::Perimeter::kExtruderSpeed) : default_extruder_speed);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);

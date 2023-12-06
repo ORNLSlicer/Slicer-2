@@ -43,12 +43,14 @@ namespace ORNL {
         {
             m_seams.custom_island_opt->hide();
             m_seams.custom_path_opt->hide();
-            m_seams.custom_path_second_opt->hide();
+            m_seams.custom_point_opt->hide();
+            m_seams.custom_point_second_opt->hide();
             return;
         }
 
         IslandOrderOptimization islandOrder = static_cast<IslandOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kIslandOrder));
         PathOrderOptimization pathOrder = static_cast<PathOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder));
+        PointOrderOptimization pointOrder = static_cast<PointOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
         bool secondPointEnabled = m_sb->setting<bool>(Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation);
 
         if (islandOrder == IslandOrderOptimization::kCustomPoint)
@@ -73,10 +75,10 @@ namespace ORNL {
 
         if (pathOrder == PathOrderOptimization::kCustomPoint)
         {
-            QVector3D translation(  m_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomXLocation)
+            QVector3D translation(  m_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathXLocation)
                                   + m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kXOffset),
 
-                                    m_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomYLocation)
+                                    m_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathYLocation)
                                   + m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kYOffset),
 
                                    .0f);
@@ -85,30 +87,50 @@ namespace ORNL {
 
             m_seams.custom_path_opt->translateAbsolute(translation);
             m_seams.custom_path_opt->show();
+        }
+        else
+        {
+            m_seams.custom_path_opt->hide();
+        }
+
+        if(pointOrder == PointOrderOptimization::kCustomPoint)
+        {
+            QVector3D translation(  m_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointXLocation)
+                                  + m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kXOffset),
+
+                                    m_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointYLocation)
+                                  + m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kYOffset),
+
+                                   .0f);
+
+            translation *= Constants::OpenGL::kObjectToView;
+
+            m_seams.custom_point_opt->translateAbsolute(translation);
+            m_seams.custom_point_opt->show();
 
             if (secondPointEnabled)
             {
-                QVector3D secondTranslation(  m_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomSecondXLocation)
+                QVector3D secondTranslation(  m_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondXLocation)
                                             - m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kXOffset),
 
-                                              m_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomSecondYLocation)
+                                              m_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondYLocation)
                                             - m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kYOffset),
 
                                               .0f);
 
                 secondTranslation *= Constants::OpenGL::kObjectToView;
 
-                m_seams.custom_path_second_opt->translateAbsolute(secondTranslation);
-                m_seams.custom_path_second_opt->show();
+                m_seams.custom_point_second_opt->translateAbsolute(secondTranslation);
+                m_seams.custom_point_second_opt->show();
             }
             else
             {
-                m_seams.custom_path_second_opt->hide();
+                m_seams.custom_point_second_opt->hide();
             }
         }
         else
         {
-            m_seams.custom_path_opt->hide();
+            m_seams.custom_point_opt->hide();
         }
     }
 
@@ -126,15 +148,18 @@ namespace ORNL {
     {
         m_seams.custom_island_opt       = QSharedPointer<SeamObject>::create(this->view(), PM->getVisualizationColor(VisualizationColors::kPerimeter));
         m_seams.custom_path_opt         = QSharedPointer<SeamObject>::create(this->view(), PM->getVisualizationColor(VisualizationColors::kSkin));
-        m_seams.custom_path_second_opt  = QSharedPointer<SeamObject>::create(this->view(), PM->getVisualizationColor(VisualizationColors::kInfill));
+        m_seams.custom_point_opt         = QSharedPointer<SeamObject>::create(this->view(), PM->getVisualizationColor(VisualizationColors::kInset));
+        m_seams.custom_point_second_opt  = QSharedPointer<SeamObject>::create(this->view(), PM->getVisualizationColor(VisualizationColors::kInfill));
 
         this->adoptChild(m_seams.custom_island_opt);
         this->adoptChild(m_seams.custom_path_opt);
-        this->adoptChild(m_seams.custom_path_second_opt);
+        this->adoptChild(m_seams.custom_point_opt);
+        this->adoptChild(m_seams.custom_point_second_opt);
 
         m_seams.custom_island_opt->hide();
         m_seams.custom_path_opt->hide();
-        m_seams.custom_path_second_opt->hide();
+        m_seams.custom_point_opt->hide();
+        m_seams.custom_point_second_opt->hide();
     }
 
     bool PrinterObject::isTrueVolume()

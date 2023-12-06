@@ -15,6 +15,7 @@ namespace ORNL
         m_previous_y = 0;
         m_previous_z = 0;
         m_previous_w = 0;
+        m_previous_e = 0;
         m_previous_vertical = true; //initialize for the very first move
 
         m_incomingV = max_xy_speed;
@@ -161,6 +162,7 @@ namespace ORNL
             m_previous_y = m_current_y;
             m_previous_z = m_current_z;
             m_previous_w = m_current_w;
+            m_previous_e = m_current_e;
             m_previous_vertical = false;
 
             return distance;

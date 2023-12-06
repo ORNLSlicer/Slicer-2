@@ -83,7 +83,7 @@ namespace ORNL
                     last_step_count = next_layer_meta->number;
                 }while(next_layer_meta != nullptr);
 
-                part_meta.last_step_count = last_step_count + 1;
+                part_meta.last_step_count = last_step_count;
 
 
                 if(m_cross_section_processing != nullptr)

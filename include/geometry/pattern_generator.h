@@ -31,20 +31,6 @@ namespace ORNL {
              * \param max: Max value of global space to generate pattern from.  Used in conjuction with globalBounds.
              */
             static QVector<Polyline> GenerateLines(PolygonList geometry, Distance lineSpacing, Angle rotation, bool globalBounds = false, Point min = Point(), Point max = Point());
-
-            /*!
-             * \brief Creates parallel lines as paths.
-             * \param geometry: The bounds of the geometry under consideration
-             * \param lineSpacing: is the distance between lines
-             * \param rotation: Rotation of the pattern
-             * \param globalBounds: bool to indicate whether to override min/max with supplied values.
-             * Used to provide patterns depenedent on build volume instead of object.
-             * \param min: Min value of global space to generate pattern from.  Used in conjuction with globalBounds.
-             * \param max: Max value of global space to generate pattern from.  Used in conjuction with globalBounds.
-             * \param layerNum: the layer we are currently on.
-             */
-            static QVector<Polyline> GenerateAlternatingLines(PolygonList geometry, Distance lineSpacing, Angle rotation, bool globalBounds = false, Point min = Point(), Point max = Point(), uint layerNum = 0);
-
             /*!
              * \brief Creates grid lines as paths.
              * \param geometry: The bounds of the geometry under consideration

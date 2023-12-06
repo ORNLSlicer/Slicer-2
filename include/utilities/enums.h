@@ -597,11 +597,21 @@ namespace ORNL
     {
         kNextClosest = 0,
         kNextFarthest = 1,
-        kLeastRecentlyVisited = 2,
-        kRandom = 3,
-        kConsecutive = 4,
+        kRandom = 2,
+        kOutsideIn = 3,
+        kInsideOut = 4,
         kCustomPoint = 5
     };
+
+    enum class PointOrderOptimization : uint8_t
+    {
+        kNextClosest = 0,
+        kNextFarthest = 1,
+        kRandom = 2,
+        kConsecutive = 3,
+        kCustomPoint = 4
+    };
+
     //! \brief Function for going from json to OrderOptimization
     void to_json(json& j, const IslandOrderOptimization& i);
 

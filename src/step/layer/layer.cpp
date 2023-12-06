@@ -75,8 +75,8 @@ namespace ORNL {
         //seam adjustment
         if(islandOrderOptimization == IslandOrderOptimization::kCustomPoint)
         {
-            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomXLocation),
-                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomYLocation));
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomIslandXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomIslandYLocation));
 
             ioo.setStartPoint(startOverride);
         }

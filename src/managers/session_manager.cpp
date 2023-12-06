@@ -345,7 +345,7 @@ namespace ORNL
             part_json[Constants::Settings::Session::kOrgDims]["x"] = curr_part->rootMesh()->originalDimensions().x;
             part_json[Constants::Settings::Session::kOrgDims]["y"] = curr_part->rootMesh()->originalDimensions().y;
             part_json[Constants::Settings::Session::kOrgDims]["z"] = curr_part->rootMesh()->originalDimensions().z;
-            part_json[Constants::Settings::Session::kTransform] = curr_part->rootMesh()->transformation();
+            part_json[Constants::Settings::Session::kTransforms] = curr_part->rootMesh()->transformations();
 
             session_json[Constants::Settings::Session::kParts][curr_part->name().toStdString()] = part_json;
         }
@@ -372,15 +372,19 @@ namespace ORNL
             Distance3D org_dims(it.value()[Constants::Settings::Session::kOrgDims]["x"],
                                 it.value()[Constants::Settings::Session::kOrgDims]["y"],
                                 it.value()[Constants::Settings::Session::kOrgDims]["z"]);
+            auto mtrxesArray = it.value()[Constants::Settings::Session::kTransforms];
 
-            // Backwards compatibility for when multiple tranforms were stored
-            QMatrix4x4 mtrx;
-            if (it.value().contains(Constants::Settings::Session::kTransform)) {
-               mtrx = it.value()[Constants::Settings::Session::kTransform];
-            } else {
-                auto matrix_array = it.value()[Constants::Settings::Session::kTransforms];
-                if (!matrix_array.empty()) {
-                    mtrx = matrix_array.back();
+            int transformCount = 1;
+            QVector<QMatrix4x4> mtrxes;
+            if(mtrxesArray.size() == 0){
+                QMatrix4x4 mtrx = it.value()[Constants::Settings::Session::kTransform];
+                mtrxes.append(mtrx);
+            }
+            else{
+                transformCount = (int)mtrxesArray.size();
+                for(auto i = 0; i < transformCount; i++){
+                    QMatrix4x4 mx = mtrxesArray[i];
+                    mtrxes.append(mx);
                 }
             }
 
@@ -393,10 +397,10 @@ namespace ORNL
                     if(m_models.contains(filename)) // Allready have this model data
                     {
                         auto data = m_models.value(filename);
-                        auto meshes = MeshLoader::LoadMeshes(filename, mesh_type, QMatrix4x4(), Distance(mm), data.model, data.size);
+                        auto meshes = MeshLoader::LoadMeshes(filename, mesh_type, mtrxes[0], Distance(mm), data.model, data.size);
                         for(auto mesh_data : meshes)
                         {
-                            mesh_data.mesh->setTransformation(mtrx);
+                            mesh_data.mesh->setTransformations(mtrxes);
 
                             mesh_data.mesh->setName(name);
                             addPart(mesh_data.mesh);
@@ -407,7 +411,7 @@ namespace ORNL
                 case kRectangularBox:
                 {
                     auto mesh = QSharedPointer<ClosedMesh>::create(MeshFactory::CreateBoxMesh(org_dims.x, org_dims.y, org_dims.z));
-                    mesh->setTransformation(mtrx);
+                    mesh->setTransformations(mtrxes);
                     mesh->setType(mesh_type);
                     mesh->setName(name);
                     CSM->addPart(mesh);
@@ -416,7 +420,7 @@ namespace ORNL
                 case kTriangularPyramid:
                 {
                     auto mesh = QSharedPointer<ClosedMesh>::create(MeshFactory::CreateTriaglePyramidMesh(org_dims.y));
-                    mesh->setTransformation(mtrx);
+                    mesh->setTransformations(mtrxes);
                     mesh->setType(mesh_type);
                     mesh->setName(name);
                     CSM->addPart(mesh);
@@ -425,7 +429,7 @@ namespace ORNL
                 case kCylinder:
                 {
                     auto mesh = QSharedPointer<ClosedMesh>::create(MeshFactory::CreateCylinderMesh(org_dims.y, org_dims.z));
-                    mesh->setTransformation(mtrx);
+                    mesh->setTransformations(mtrxes);
                     mesh->setType(mesh_type);
                     mesh->setName(name);
                     CSM->addPart(mesh);
@@ -434,7 +438,7 @@ namespace ORNL
                 case kCone:
                 {
                     auto mesh = QSharedPointer<ClosedMesh>::create(MeshFactory::CreateConeMesh(org_dims.y, org_dims.z));
-                    mesh->setTransformation(mtrx);
+                    mesh->setTransformations(mtrxes);
                     mesh->setType(mesh_type);
                     mesh->setName(name);
                     CSM->addPart(mesh);
@@ -444,7 +448,7 @@ namespace ORNL
                 case kDefaultSettingRegion:
                 {
                     auto mesh = QSharedPointer<OpenMesh>::create(MeshFactory::CreateOpenTopBoxMesh(org_dims.x, org_dims.y, org_dims.z));
-                    mesh->setTransformation(mtrx);
+                    mesh->setTransformations(mtrxes);
                     mesh->setType(mesh_type);
                     mesh->setName(name);
                     CSM->addPart(mesh);

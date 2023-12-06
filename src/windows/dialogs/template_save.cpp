@@ -169,6 +169,8 @@ namespace ORNL {
             }
         }
 
+        QMessageBox::information(this, "Save Template", "Template been succesfully exported.");
+
         this->QDialog::accept();
     }
 

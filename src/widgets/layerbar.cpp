@@ -775,7 +775,7 @@ namespace ORNL
 
         QVector3D    gop_translation = item->translation();
         QQuaternion  gop_rotation    = item->rotation();
-        QVector3D    gop_scale       = item->scaling();
+        QVector3D    gop_scale       = item->scale();
         gop_translation *= Constants::OpenGL::kViewToObject;
 
 

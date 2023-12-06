@@ -77,7 +77,8 @@ namespace ORNL {
             struct {
                 QSharedPointer<SeamObject> custom_island_opt;
                 QSharedPointer<SeamObject> custom_path_opt;
-                QSharedPointer<SeamObject> custom_path_second_opt;
+                QSharedPointer<SeamObject> custom_point_opt;
+                QSharedPointer<SeamObject> custom_point_second_opt;
             } m_seams;
 
     };

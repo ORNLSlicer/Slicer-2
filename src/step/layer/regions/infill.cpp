@@ -70,14 +70,7 @@ namespace ORNL {
             }
         }
 
-        bool perimeter_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable);
-        bool shifted_perimeters = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableShiftedBeads);
-        bool infill_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
-        bool alternating_lines = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
-
-        // If perimeters are shifted and infill is not, infill is not needed on the second layer
-        if((infill_enabled && alternating_lines) || !(perimeter_enabled && shifted_perimeters) || m_layer_num != 2)
-            this->createPaths();
+        this->createPaths();
 
         // Only fit arcs if the infill was concentric
         if(static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)) == InfillPatterns::kConcentric)
@@ -109,17 +102,7 @@ namespace ORNL {
             max = Point(sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kXMax), sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kYMax));
         }
 
-        bool perimeter_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable);
-        bool shifted_perimeters = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableShiftedBeads);
-        bool infill_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
-        bool alternating_lines = sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
-
-        if((infill_enabled && alternating_lines))
-        {
-            default_line_spacing = default_bead_width;
-            default_angle = 0;
-        }
-        else if(!sb->setting<bool>(Constants::ProfileSettings::Infill::kManualLineSpacing))
+        if(!sb->setting<bool>(Constants::ProfileSettings::Infill::kManualLineSpacing))
         {
             double density = sb->setting<double>(Constants::ProfileSettings::Infill::kDensity) / 100.0;
             default_line_spacing = default_bead_width / density;
@@ -128,13 +111,7 @@ namespace ORNL {
         switch(default_infill_pattern)
         {
             case InfillPatterns::kLines:
-                if((infill_enabled && alternating_lines) || !(perimeter_enabled && shifted_perimeters) || m_layer_num != 2)
-                {
-                    if(infill_enabled && alternating_lines)
-                        m_computed_geometry.append(PatternGenerator::GenerateAlternatingLines(adjustedGeometry, default_line_spacing, default_angle, default_global_printer_area, min, max, m_layer_num));
-                    else
-                        m_computed_geometry.append(PatternGenerator::GenerateLines(adjustedGeometry, default_line_spacing, default_angle, default_global_printer_area, min, max));
-                }
+                m_computed_geometry.append(PatternGenerator::GenerateLines(adjustedGeometry, default_line_spacing, default_angle, default_global_printer_area, min, max));
                 break;
             case InfillPatterns::kGrid:
                 m_computed_geometry.append(PatternGenerator::GenerateGrid(adjustedGeometry, default_line_spacing, default_angle, default_global_printer_area, min, max));
@@ -252,11 +229,6 @@ namespace ORNL {
 
     void Infill::createPaths() {
 
-        bool infill_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
-        bool lines_alternating = m_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
-        bool perimeter_enabled = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable);
-        bool shifted_perimeter = m_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableShiftedBeads);
-
         Distance width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Infill::kBeadWidth);
         Distance height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
         Distance half_height            = height / 2;
@@ -281,15 +253,8 @@ namespace ORNL {
                     QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(polyline[j], polyline[j + 1]);
 
                     segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                    if(((infill_enabled && lines_alternating) && (m_layer_num == 1 || m_layer_num == m_layer_count)) || (!(infill_enabled && lines_alternating) && (perimeter_enabled && shifted_perimeter))){
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           half_height);
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            double_speed);
-                    }
-                    else{
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
-                    }
-
+                    segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
+                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);

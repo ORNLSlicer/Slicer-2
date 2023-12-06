@@ -82,19 +82,16 @@ namespace ORNL {
 
             //! \brief Sets the translation.
             void setTranslation(QVector3D t);
-            void translate(QVector3D delta_t);
             //! \brief Gets the translation.
             QVector3D translation();
             //! \brief Sets the rotation.
-            void setRotation(QQuaternion r);
-            void rotate(QQuaternion delta_r);
+            void setRotation(QQuaternion r, bool current_rotation = false);
             //! \brief Gets the rotation.
             QQuaternion rotation();
             //! \brief Sets the scale.
             void setScale(QVector3D s);
-            void scale(QVector3D delta_s);
             //! \brief Gets the scale.
-            QVector3D scaling();
+            QVector3D scale();
             //! \brief Sets the transform.
             void setTransformation(QMatrix4x4 m);
             //! \brief Gets the transform.
@@ -102,6 +99,10 @@ namespace ORNL {
 
             //! \brief resets to the original transform of this object
             void resetTransformation();
+
+            //! \brief overrides the orginal transform with a new one
+            //! \param m the transform to apply
+            void setOriginalTransformation(QMatrix4x4 m);
 
             //! \brief Adopts a child item.
             void adoptChild(QSharedPointer<PartMetaItem> c);
@@ -155,6 +156,8 @@ namespace ORNL {
             QQuaternion m_rotation;
             QVector3D m_scale;
             QMatrix4x4 m_transformation;
+            QMatrix4x4 m_original_transformation;
+            QMatrix4x4 m_aligned_transformation;
 
             //! \brief Parenting
             QSharedPointer<PartMetaItem> m_parent = nullptr;

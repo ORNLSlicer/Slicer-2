@@ -85,6 +85,8 @@ namespace ORNL
 
         //! \brief true if first printing segment, false for subsquent paths - needed for Spiralize
         bool m_first_print;
+        //! \brief true if first travel segment, false for subsquent travels - needed for adjusting the start point in header
+        bool m_first_travel;
         //! \brief true is first print motion of the layer
         bool m_layer_start;
 

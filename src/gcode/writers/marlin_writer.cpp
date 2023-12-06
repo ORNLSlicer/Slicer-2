@@ -130,8 +130,14 @@ namespace ORNL
 
         if(!m_sb->setting< bool >(Constants::MaterialSettings::Filament::kDisableG92))
         {
-            rv += "G92 E0" % commentSpaceLine("RESET FILAMENT AXIS TO 0");
-
+            if(m_sb->setting< bool >(Constants::MaterialSettings::Filament::kFilamentBAxis))
+            {
+                rv += "G92 B0" % commentSpaceLine("RESET FILAMENT TO 0");
+            }
+            else
+            {
+                rv += "G92 E0" % commentSpaceLine("RESET FILAMENT TO 0");
+            }
         }
 
         if(m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableBoundingBox))
@@ -225,7 +231,14 @@ namespace ORNL
         }
         if (m_filament_location > 0 && !m_sb->setting< bool >(Constants::MaterialSettings::Filament::kDisableG92))
         {
-            rv += "G92 E0" % commentSpaceLine("RESET FILAMENT TO 0");
+            if(m_sb->setting< bool >(Constants::MaterialSettings::Filament::kFilamentBAxis))
+            {
+                rv += "G92 B0" % commentSpaceLine("RESET FILAMENT TO 0");
+            }
+            else
+            {
+                rv += "G92 E0" % commentSpaceLine("RESET FILAMENT TO 0");
+            }
             m_filament_location = 0.0;
         }
 
@@ -669,6 +682,12 @@ namespace ORNL
     QString MarlinWriter::writeAfterLayer()
     {
         QString rv;
+
+        // 11/8/23 - Marlin purge based on force minimum layer time has been added to common parser
+        /*if(m_sb->setting< bool >(Constants::MaterialSettings::Cooling::kForceMinLayerTime) &&
+            ForceMinimumLayerTime::kUse_Purge_Dwells == m_sb->setting< ForceMinimumLayerTime >(Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod))
+            rv = writePurge(0,0,0);*/
+
         rv += m_sb->setting< QString >(Constants::PrinterSettings::GCode::kLayerCodeChange) % m_newline;
         return rv;
     }
@@ -688,14 +707,35 @@ namespace ORNL
     QString MarlinWriter::writePurge(int RPM, int duration, int delay)
     {
         QString rv;
-        m_filament_location += m_sb->setting< Distance >(Constants::MaterialSettings::Purge::kPurgeLength).to(m_meta.m_distance_unit);
+
+        QVector3D travel_lift = getTravelLift();
+        auto liftZ = Distance(travel_lift.z()).to(m_meta.m_distance_unit) + m_current_z.to(m_meta.m_distance_unit);
+        auto purgeZ = m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeZ).to(m_meta.m_distance_unit);
+
+        rv += m_G1 % m_f % QString::number(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed).to(m_meta.m_velocity_unit))
+              % m_z % QString::number(liftZ > purgeZ ? liftZ : purgeZ) % commentSpaceLine("TRAVEL LIFT Z");
+
         rv += m_G1 % m_x % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeX).to(m_meta.m_distance_unit))
-            % m_y % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeY).to(m_meta.m_distance_unit))
-            % m_z % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeZ).to(m_meta.m_distance_unit))
-              % commentSpaceLine("MOVE TO PURGE LOCATION");
+              % m_y % QString::number(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeY).to(m_meta.m_distance_unit))
+              % commentSpaceLine("TRAVEL");
+
+        if(liftZ > purgeZ)
+        rv += m_G1 % m_z % QString::number(purgeZ)
+              % commentSpaceLine("TRAVEL LOWER Z");
+
+        auto length = m_sb->setting< Distance >(Constants::MaterialSettings::Purge::kPurgeLength).to(m_meta.m_distance_unit);
+        if (m_sb->setting< bool >(Constants::MaterialSettings::Filament::kRelative))
+            m_filament_location = length;
+        else
+            m_filament_location += length;
         rv += m_G1 % m_f % QString::number(m_sb->setting< Velocity >(Constants::MaterialSettings::Purge::kPurgeFeedrate).to(m_meta.m_velocity_unit))
-            % m_b % QString::number(Distance(m_filament_location).to(m_meta.m_distance_unit))
+              % m_b % QString::number(Distance(m_filament_location).to(m_meta.m_distance_unit), 'f', 4)
               % commentSpaceLine("PURGE");
+
+        if(liftZ > purgeZ)
+        rv += m_G1 % m_z % QString::number(liftZ)
+              % commentSpaceLine("TRAVEL LIFT Z");
+
         return rv;
     }
 
@@ -736,7 +776,14 @@ namespace ORNL
         {
             if(m_filament_location != 0 && !m_sb->setting< bool >(Constants::MaterialSettings::Filament::kDisableG92))
             {
-                rv += "G92 E0" % commentSpaceLine("RESET FILAMENT TO 0");
+                if(m_sb->setting< bool >(Constants::MaterialSettings::Filament::kFilamentBAxis))
+                {
+                    rv += "G92 B0" % commentSpaceLine("RESET FILAMENT TO 0");
+                }
+                else
+                {
+                    rv += "G92 E0" % commentSpaceLine("RESET FILAMENT TO 0");
+                }
                 m_filament_location = 0.0;
             }
 

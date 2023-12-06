@@ -59,13 +59,20 @@ namespace ORNL
                 rv += "G0 Z0 " % commentLine("LIFT Z FOR SAFETY");
                 m_current_z = 0;
             }
-            if (m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kLayerChangeAxis) != static_cast<int>(LayerChange::kZ_only))
+            /*if (m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kLayerChangeAxis) != static_cast<int>(LayerChange::kZ_only))
             {
                 //can't output in W if there is no W-axis
                 m_current_w = m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kWMax);
                 rv += m_G0 % m_w % QString::number(m_current_w.to(m_meta.m_distance_unit), 'f', 4)
                     % commentSpaceLine("SET INITIAL W HEIGHT");
-            }
+            }*/
+        }
+
+        if(m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kLayerChangeAxis) == static_cast<int>(LayerChange::kZ_only))
+        {
+            m_current_w = m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kInitialW);
+            rv += m_G0 % m_w % QString::number(m_current_w.to(m_meta.m_distance_unit), 'f', 4)
+                  % commentSpaceLine("SET INITIAL W HEIGHT");
         }
 
         if(m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableBoundingBox))
@@ -885,9 +892,11 @@ namespace ORNL
     QString CincinnatiWriter::writeAcceleration(Acceleration acc)
     {
         float ci_acc = acc.to(m_meta.m_acceleration_unit) / 386.08858; // Convert to units of G
+
+        if(ci_acc == 0) return "";
+
         ci_acc = (1 / ci_acc * 1000000 * 25.4 / 162560) / (1000 * 9.81);
         return "M66 L" % QString::number(ci_acc, 'g', 4) % commentSpaceLine("SET ACCELERATION");
-        return "";
     }
 
     QString CincinnatiWriter::writeCoordinates(Point destination)

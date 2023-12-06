@@ -4,6 +4,7 @@
 // Local
 #include "step/layer/regions/skeleton.h"
 #include "managers/settings/settings_manager.h"
+#include "geometry/path_modifier.h"
 
 namespace ORNL {
     WireFeedIsland::WireFeedIsland(const PolygonList& geometry, const QSharedPointer<SettingsBase>& sb, const QVector<SettingsPolygon>& settings_polygons,
@@ -17,6 +18,57 @@ namespace ORNL {
     void WireFeedIsland::optimize(QSharedPointer<PathOrderOptimizer> poo, Point &currentLocation,
                                   QVector<QSharedPointer<RegionBase>>& previousRegions)
     {
+        previousRegions.push_back(getRegion(RegionType::kSkeleton));
+        QSharedPointer<Skeleton> wire_feed_region = getRegion(RegionType::kSkeleton).dynamicCast<Skeleton>();
+        bool empty;
+        QVector<Path> empty_path;
+        wire_feed_region->optimize(poo, currentLocation, empty_path, empty_path, empty);
+        QVector<Path>& paths = wire_feed_region->getPaths();
+
+        for(Path& path : paths)
+        {
+            PathModifierGenerator::GenerateInitialStartup(path, m_sb->setting<Distance>(Constants::ExperimentalSettings::WireFeed::kWirePrestartDistance),
+                                                          m_sb->setting< Velocity >(Constants::ProfileSettings::Skeleton::kSpeed),
+                                                          AngularVelocity(), false, 0.0);
+
+            PathModifierGenerator::GenerateSlowdown(path, Distance(), Distance(),
+                                                    m_sb->setting<Distance>(Constants::ExperimentalSettings::WireFeed::kWireCutoffDistance),
+                                                    m_sb->setting< Velocity >(Constants::ProfileSettings::Skeleton::kSpeed),
+                                                    m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Skeleton::kExtruderSpeed),
+                                                    false, 0.0);
+
+            for(int i = 0, end = path.getSegments().size(); i < end; ++i)
+            {
+                QSharedPointer<SegmentBase> seg = path.getSegments()[i];
+                if (dynamic_cast<TravelSegment*>(seg.data()))
+                {
+                    seg->getSb()->setSetting(Constants::SegmentSettings::kWireFeed,
+                                                 m_sb->setting<Distance>(Constants::ExperimentalSettings::WireFeed::kWireStickoutDistance));
+                }
+
+                if(seg->getSb()->contains(Constants::SegmentSettings::kPathModifiers))
+                {
+                    if(seg->getSb()->setting<PathModifiers>(Constants::SegmentSettings::kPathModifiers) == PathModifiers::kPrestart)
+                    {
+                        seg->getSb()->remove(Constants::SegmentSettings::kPathModifiers);
+                        seg->getSb()->setSetting(Constants::SegmentSettings::kWireFeed, seg->start().distance(seg->end()));
+
+                    }
+
+                    if(seg->getSb()->setting<PathModifiers>(Constants::SegmentSettings::kPathModifiers) == PathModifiers::kSlowDown)
+                    {
+                        seg->getSb()->remove(Constants::SegmentSettings::kPathModifiers);
+                        seg->getSb()->setSetting(Constants::SegmentSettings::kWireFeed, seg->start().distance(seg->end()));
+
+                        //seg->getSb()->setSetting(Constants::SegmentSettings::kFinalWireFeed, true);
+                        path.getSegments()[i-1]->getSb()->setSetting(Constants::SegmentSettings::kFinalWireFeed, true);
+                    }
+                }
+            }
+        }
+
+//        travel_segment->getSb()->setSetting(Constants::SegmentSettings::kWireFeed, true);
+  //      paths.last().back()->getSb()->setSetting(Constants::SegmentSettings::kFinalWireFeed, true);
 
     }
 

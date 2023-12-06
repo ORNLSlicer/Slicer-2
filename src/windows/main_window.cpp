@@ -817,6 +817,9 @@ namespace ORNL {
                 }
             }
         );
+        connect(m_part_widget, &PartWidget::displayRotationInfoMsg, this, [this] () {
+                m_cmdbar->append("\r\nScaling applied permenantly to current transformation\r\n"
+                                 "Scaling factors are reset to 100%\r\n");});
 
         // Connect to timer.
         connect(m_timer, &QTimer::timeout, this, &MainWindow::autoSave);
@@ -1221,7 +1224,10 @@ namespace ORNL {
                     }
 
                     m_gcodebar->setMaxLayer(qMax(segments.size() - 1, 0));
-                    m_gcodebar->setMaxSegment(qMax(segments[0].size() + segments[1].size() - 1, 0));
+                    if(segments.size() > 1)
+                        m_gcodebar->setMaxSegment(qMax(segments[0].size() + segments[1].size() - 1, 0));
+                    else
+                        m_gcodebar->setMaxSegment(qMax(segments[0].size() - 1, 0));
                 }
         );
 

@@ -257,10 +257,8 @@ namespace ORNL
                                                                 m_slicing_plane, tmp_point, tmp_vec,
                                                                 settings_part->getSb());
 
-            for (Polygon poly : geometry) {
-                auto settings = settings_part->getSb();
-                settings_polygons.push_back(SettingsPolygon(poly, settings));
-            }
+            auto settings = settings_part->getSb();
+            settings_polygons.push_back(SettingsPolygon(geometry, settings));
         }
     }
 
@@ -293,10 +291,7 @@ namespace ORNL
                                                                 m_slicing_plane, tmp_point, tmp_vec,
                                                                 m_settings);
 
-            for (Polygon poly : geometry)
-            {
-                emboss_polygons.push_back(SettingsPolygon(poly, region_settings));
-            }
+            emboss_polygons.push_back(SettingsPolygon(geometry, region_settings));
         }
     }
 }

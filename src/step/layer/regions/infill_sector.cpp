@@ -97,17 +97,17 @@ namespace ORNL {
             circularOrder.push_back(pair);
         }
 
-        bool shouldReverse = static_cast<PrintDirection>(m_sb->setting<int>(Constants::ProfileSettings::Ordering::kPerimeterReverseOrder))
-                == PrintDirection::kReverse_All_Layers;
+//        bool shouldReverse = static_cast<PrintDirection>(m_sb->setting<int>(Constants::ProfileSettings::Ordering::kPerimeterReverseOrder))
+//                == PrintDirection::kReverse_All_Layers;
 
-        std::sort(std::begin(circularOrder), std::end(circularOrder),
-                  [&](const auto& a, const auto& b)
-        {
-            if(shouldReverse)
-                return a.first < b.first;
-            else
-                return a.first > b.first;
-        });
+//        std::sort(std::begin(circularOrder), std::end(circularOrder),
+//                  [&](const auto& a, const auto& b)
+//        {
+//            if(shouldReverse)
+//                return a.first < b.first;
+//            else
+//                return a.first > b.first;
+//        });
 
         std::reverse(m_computed_geometry.begin(), m_computed_geometry.end());
 

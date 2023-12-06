@@ -130,6 +130,11 @@ namespace ORNL
         //! \brief preallocated prefixs commonly used in this syntax
         int m_material_number;
 
+        //! \brief state for wire feed. Whether or not pathing is in the middle of feed or not
+        //! and whether or not the current segment is the final one before cutoff.
+        bool m_wire_feed;
+        bool m_final_wire_feed;
+
     };  // class IngersollWriter
 }  // namespace ORNL
 #endif // INGERSOLL_WRITER_H

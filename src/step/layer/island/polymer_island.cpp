@@ -76,10 +76,21 @@ namespace ORNL {
 
         if(pathOrderOptimization == PathOrderOptimization::kCustomPoint)
         {
-            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomXLocation),
-                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomYLocation));
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathYLocation));
 
             poo->setStartOverride(startOverride);
+        }
+
+        PointOrderOptimization pointOrderOptimization = static_cast<PointOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
+
+        if(pointOrderOptimization == PointOrderOptimization::kCustomPoint)
+        {
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointYLocation));
+
+            poo->setStartPointOverride(startOverride);
         }
 
         bool shouldNextPathBeCCW = true;

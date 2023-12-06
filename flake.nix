@@ -34,7 +34,7 @@
             # Main Slicer 2 derivation.
             ornl-slicer2 = pkgs.stdenv.mkDerivation rec {
                 pname = "ornl-slicer2";
-                version = "0.99.6-" + (builtins.substring 0 8 (if (self ? rev) then self.rev else "dirty"));
+                version = "0.99.8-" + (builtins.substring 0 8 (if (self ? rev) then self.rev else "dirty"));
 
                 src = self;
 

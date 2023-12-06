@@ -334,6 +334,10 @@ namespace ORNL
 
         QVector<SearchCell> getVisualCells();
 
+    protected:
+        //! \brief Private operator for use with internal clipper functions
+        ClipperLib2::Paths operator()() const;
+
     private:
         //! \brief Private constructor for use with internal clipper functions
         PolygonList(const ClipperLib2::Paths& paths);
@@ -341,9 +345,6 @@ namespace ORNL
         // Replaces the current polygons with whatever is in paths. Used with
         // internal clipper functions
         void clipperLoad(const ClipperLib2::Paths& paths);
-
-        //! \brief Private operator for use with internal clipper functions
-        ClipperLib2::Paths operator()() const;
 
         /*!
          * \brief Add an instance of Polygon with this this one.

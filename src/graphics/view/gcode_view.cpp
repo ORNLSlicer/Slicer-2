@@ -56,6 +56,9 @@ namespace ORNL {
         }
         else
         {
+            if(m_state.high_layer >= gcode.size())
+                m_state.high_layer = gcode.size() - 1;
+
             m_gcode_object = QSharedPointer<GCodeObject>::create(this, gcode, m_segment_info_control);
             m_gcode_object->showLayers(m_state.low_layer, m_state.high_layer);
             m_gcode_object->hideSegmentType(m_state.hidden_type, true);

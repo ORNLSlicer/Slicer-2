@@ -80,11 +80,6 @@ namespace ORNL {
                 path.reverseSegments();
             }
         }
-
-        if(m_sb->setting<int>(Constants::ProfileSettings::Ordering::kInsetReverseOrder))
-        {
-            std::reverse(m_paths.begin(), m_paths.end());
-        }
     }
 
     void Inset::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)

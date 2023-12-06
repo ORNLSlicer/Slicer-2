@@ -24,7 +24,7 @@ namespace ORNL {
 
             QVector3D    gop_translation = item->translation();
             QQuaternion  gop_rotation    = item->rotation();
-            QVector3D    gop_scale       = item->scaling();
+            QVector3D    gop_scale       = item->scale();
 
             gop_translation *= Constants::OpenGL::kViewToObject;
 
@@ -166,11 +166,13 @@ namespace ORNL {
             Constants::ProfileSettings::Optimizations::kCustomIslandXLocation,
             Constants::ProfileSettings::Optimizations::kCustomIslandYLocation,
             Constants::ProfileSettings::Optimizations::kPathOrder,
-            Constants::ProfileSettings::Optimizations::kCustomXLocation,
-            Constants::ProfileSettings::Optimizations::kCustomYLocation,
+            Constants::ProfileSettings::Optimizations::kCustomPathXLocation,
+            Constants::ProfileSettings::Optimizations::kCustomPathYLocation,
+            Constants::ProfileSettings::Optimizations::kCustomPointXLocation,
+            Constants::ProfileSettings::Optimizations::kCustomPointYLocation,
             Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation,
-            Constants::ProfileSettings::Optimizations::kCustomSecondXLocation,
-            Constants::ProfileSettings::Optimizations::kCustomSecondYLocation,
+            Constants::ProfileSettings::Optimizations::kCustomPointSecondXLocation,
+            Constants::ProfileSettings::Optimizations::kCustomPointSecondYLocation,
             Constants::PrinterSettings::Dimensions::kXOffset,
             Constants::PrinterSettings::Dimensions::kYOffset
         };
@@ -237,7 +239,7 @@ namespace ORNL {
 
             QVector3D    gop_translation = item->translation();
             QQuaternion  gop_rotation    = item->rotation();
-            QVector3D    gop_scale       = item->scaling();
+            QVector3D    gop_scale       = item->scale();
 
             gop_translation *= Constants::OpenGL::kViewToObject;
 
@@ -276,6 +278,9 @@ namespace ORNL {
     }
 
     void PartWidget::modelTransformationUpdate(QSharedPointer<PartMetaItem> item) {
+        if(item->rotation() != QQuaternion(1,0,0,0) && item->scale() != QVector3D(1,1,1))
+            emit displayRotationInfoMsg();
+
         // IMPORTANT NOTE: there is no intention of keeping this as is. The layer bar should
         // work off of the PartMetaItem, not the part itself. The this currently exists just to
         // keep the bar in working order and should be replaced as soon as the layerbar is either

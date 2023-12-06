@@ -2,7 +2,7 @@
 #define SETTINGS_POLYGON_H
 
 // Locals
-#include "geometry/polygon.h"
+#include "geometry/polygon_list.h"
 #include "geometry/plane.h"
 #include "configs/settings_base.h"
 
@@ -12,16 +12,16 @@ namespace ORNL
      * \class SettingsPolygon
      * \brief is a polygon that contains a settings. It is a cross-section of a settings mesh with part range info
      */
-    class SettingsPolygon : public Polygon
+    class SettingsPolygon : public PolygonList
     {
         public:
             //! \brief Constructor
             SettingsPolygon() = default;
 
             //! \brief Constructor to cross section a setting's part with a given plane and save it's SettingsBase
-            //! \param slicing_plane: the plane to slice with
+            //! \param geometery: cross-section of the settings mesh
             //! \param sb: the settings
-            SettingsPolygon(Polygon geometry, QSharedPointer<SettingsBase>& sb);
+            SettingsPolygon(QVector<Polygon> geometry, QSharedPointer<SettingsBase>& sb);
 
             //! \brief clips a line with this polygon
             //! \param start: the start of the line

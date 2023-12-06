@@ -60,9 +60,25 @@ namespace ORNL
         //! \param matrix: a translation matrix
         void setTransformation(const QMatrix4x4& matrix);
 
+        //! \brief Change the mesh's transformations matrixes
+        //! \param matrixes: a list of tramsformation matrix
+        void setTransformations(const QVector<QMatrix4x4> matrixes);
+
+        //! \brief align axis
+        //! \param matrix: a translation matrix
+        void alignAxis(const QMatrix4x4 &matrix);
+
+        //! \brief align axis
+        //! \param matrix: a translation matrix
+        void resetAlignedAxis(const QMatrix4x4 &matrix);
+
         //! \brief Get the transformation matrix.
         //! \return the transformation of this mesh
         const QMatrix4x4& transformation() const;
+
+        //! \brief Get the transformations matrixes.
+        //! \return the transformations of this mesh
+        QVector<QMatrix4x4> transformations();
 
         //! \brief Scale mesh to fit within a given volume.
         //! \param bounds: the dimensions to scale to
@@ -245,6 +261,9 @@ namespace ORNL
 
         //! \brief Transformation matrix which defines Translation, Rotation, and Scale.
         QMatrix4x4 m_transformation;
+
+        //! \brief List of Transformation matrix which defines Translation, Rotation, and Scale.
+        QVector<QMatrix4x4> m_all_transformations;
 
         //! \brief Dimensions: the size of the mesh
         Distance3D m_dimensions;

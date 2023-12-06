@@ -225,6 +225,7 @@ namespace ORNL
                 static const QString kEnableW;
                 static const QString kWMin;
                 static const QString kWMax;
+                static const QString kInitialW;
                 static const QString kLayerChangeAxis;
                 static const QString kEnableDoffing;
                 static const QString kDoffingHeight;
@@ -505,6 +506,10 @@ namespace ORNL
                 static const QString kInitialDuration;
                 static const QString kInitialScrewRPM;
                 static const QString kInitialTipWipeDelay;
+                static const QString kEnablePurgeDwell;
+                static const QString kPurgeDwellDuration;
+                static const QString kPurgeDwellRPM;
+                static const QString kPurgeDwellTipWipeDelay;
                 static const QString kPurgeLength;
                 static const QString kPurgeFeedrate;
             };
@@ -811,14 +816,20 @@ namespace ORNL
                 static const QString kPathOrder;
                 static const QString kCustomIslandXLocation;
                 static const QString kCustomIslandYLocation;
-                static const QString kCustomXLocation;
-                static const QString kCustomYLocation;
-                static const QString kEnableSecondCustomLocation;
-                static const QString kCustomSecondXLocation;
-                static const QString kCustomSecondYLocation;
+                static const QString kCustomPathXLocation;
+                static const QString kCustomPathYLocation;
+                static const QString kPointOrder;
+                static const QString kLocalRandomnessEnable;
+                static const QString kLocalRandomnessRadius;
+                static const QString kMinDistanceEnabled;
+                static const QString kMinDistanceThreshold;
                 static const QString kConsecutiveDistanceThreshold;
-                static const QString kCustomLocationRandomnessEnable;
-                static const QString kCustomLocationLocalRandomnessRadius;
+                static const QString kCustomPointXLocation;
+                static const QString kCustomPointYLocation;
+                static const QString kEnableSecondCustomLocation;
+                static const QString kCustomPointSecondXLocation;
+                static const QString kCustomPointSecondYLocation;
+
             };
 
             class Ordering
@@ -826,9 +837,7 @@ namespace ORNL
                 public:
                     static const QString kRegionOrder;
                     static const QString kPerimeterReverseDirection;
-                    static const QString kPerimeterReverseOrder;
                     static const QString kInsetReverseDirection;
-                    static const QString kInsetReverseOrder;
             };
 
             class LaserScanner
@@ -1009,6 +1018,9 @@ namespace ORNL
                 static const QString kAnchorHeight;
                 static const QString kAnchorObjectDistanceLeft;
                 static const QString kAnchorObjectDistanceRight;
+                static const QString kWireCutoffDistance;
+                static const QString kWireStickoutDistance;
+                static const QString kWirePrestartDistance;
             };
 
   			class DirectedPerimeter

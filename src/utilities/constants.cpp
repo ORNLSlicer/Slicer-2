@@ -292,6 +292,7 @@ namespace ORNL
     const QString Constants::PrinterSettings::Dimensions::kEnableW = "enable_w_axis";
     const QString Constants::PrinterSettings::Dimensions::kWMin = "minimum_w";
     const QString Constants::PrinterSettings::Dimensions::kWMax = "maximum_w";
+    const QString Constants::PrinterSettings::Dimensions::kInitialW = "initial_w";
     const QString Constants::PrinterSettings::Dimensions::kLayerChangeAxis = "layer_change";
     const QString Constants::PrinterSettings::Dimensions::kEnableDoffing = "doffing";
     const QString Constants::PrinterSettings::Dimensions::kDoffingHeight = "doffing_location";
@@ -478,6 +479,10 @@ namespace ORNL
     const QString Constants::MaterialSettings::Purge::kInitialDuration = "initial_purge_duration";
     const QString Constants::MaterialSettings::Purge::kInitialScrewRPM = "initial_purge_dwell_screw_rpm";
     const QString Constants::MaterialSettings::Purge::kInitialTipWipeDelay = "initial_purge_tip_wipe_delay";
+    const QString Constants::MaterialSettings::Purge::kEnablePurgeDwell = "purge_during_dwell";
+    const QString Constants::MaterialSettings::Purge::kPurgeDwellDuration = "purge_dwell_duration";
+    const QString Constants::MaterialSettings::Purge::kPurgeDwellRPM = "purge_dwell_screw_rpm";
+    const QString Constants::MaterialSettings::Purge::kPurgeDwellTipWipeDelay = "purge_tip_wipe_delay";
     const QString Constants::MaterialSettings::Purge::kPurgeLength = "purge_length";
     const QString Constants::MaterialSettings::Purge::kPurgeFeedrate = "purge_feedrate";
 
@@ -716,21 +721,24 @@ namespace ORNL
     const QString Constants::ProfileSettings::Optimizations::kPathOrder = "path_order_optimization";
     const QString Constants::ProfileSettings::Optimizations::kCustomIslandXLocation = "custom_island_order_x_location";
     const QString Constants::ProfileSettings::Optimizations::kCustomIslandYLocation = "custom_island_order_y_location";
-    const QString Constants::ProfileSettings::Optimizations::kCustomXLocation = "custom_path_order_x_location";
-    const QString Constants::ProfileSettings::Optimizations::kCustomYLocation = "custom_path_order_y_location";
-    const QString Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation = "enable_second_custom_path_location";
-    const QString Constants::ProfileSettings::Optimizations::kCustomSecondXLocation = "custom_second_path_order_x_location";
-    const QString Constants::ProfileSettings::Optimizations::kCustomSecondYLocation = "custom_second_path_order_y_location";
+    const QString Constants::ProfileSettings::Optimizations::kCustomPathXLocation = "custom_path_order_x_location";
+    const QString Constants::ProfileSettings::Optimizations::kCustomPathYLocation = "custom_path_order_y_location";
+    const QString Constants::ProfileSettings::Optimizations::kPointOrder = "point_order_optimization";
+    const QString Constants::ProfileSettings::Optimizations::kLocalRandomnessEnable = "local_randomness_enable";
+    const QString Constants::ProfileSettings::Optimizations::kLocalRandomnessRadius = "local_randomness_radius";
+    const QString Constants::ProfileSettings::Optimizations::kMinDistanceEnabled = "min_distance_enabled";
+    const QString Constants::ProfileSettings::Optimizations::kMinDistanceThreshold = "min_distance_threshold";
     const QString Constants::ProfileSettings::Optimizations::kConsecutiveDistanceThreshold = "consecutive_path_distance_threshold";
-    const QString Constants::ProfileSettings::Optimizations::kCustomLocationRandomnessEnable = "custom_path_randomness_enable";
-    const QString Constants::ProfileSettings::Optimizations::kCustomLocationLocalRandomnessRadius = "custom_path_localized_randomness_radius";
+    const QString Constants::ProfileSettings::Optimizations::kCustomPointXLocation = "custom_point_order_x_location";
+    const QString Constants::ProfileSettings::Optimizations::kCustomPointYLocation = "custom_point_order_y_location";
+    const QString Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation = "enable_second_custom_point_location";
+    const QString Constants::ProfileSettings::Optimizations::kCustomPointSecondXLocation = "custom_second_point_order_x_location";
+    const QString Constants::ProfileSettings::Optimizations::kCustomPointSecondYLocation = "custom_second_point_order_y_location";
 
     //Ordering
     const QString Constants::ProfileSettings::Ordering::kRegionOrder = "region_order";
     const QString Constants::ProfileSettings::Ordering::kPerimeterReverseDirection = "perimeter_reverse_direction";
-    const QString Constants::ProfileSettings::Ordering::kPerimeterReverseOrder = "perimeter_reverse_order";
     const QString Constants::ProfileSettings::Ordering::kInsetReverseDirection = "inset_reverse_direction";
-    const QString Constants::ProfileSettings::Ordering::kInsetReverseOrder = "inset_reverse_order";
 
     //Laser Scanner
     const QString Constants::ProfileSettings::LaserScanner::kLaserScanner = "laser_scanner";
@@ -867,6 +875,9 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::WireFeed::kAnchorHeight = "anchor_height";
     const QString Constants::ExperimentalSettings::WireFeed::kAnchorObjectDistanceLeft = "anchor_object_distance_left";
     const QString Constants::ExperimentalSettings::WireFeed::kAnchorObjectDistanceRight = "anchor_object_distance_right";
+    const QString Constants::ExperimentalSettings::WireFeed::kWireCutoffDistance = "wire_feed_cutoff_distance";
+    const QString Constants::ExperimentalSettings::WireFeed::kWireStickoutDistance = "wire_feed_stickout_distance";
+    const QString Constants::ExperimentalSettings::WireFeed::kWirePrestartDistance = "wire_feed_prestart_distance";
 
     //File Output
     const QString Constants::ExperimentalSettings::FileOutput::kMeldCompanionOutput = "additional_meld_output";
