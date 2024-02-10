@@ -12,13 +12,13 @@ namespace ORNL {
         m_island_type = IslandType::kSupport;
     }
 
-    void SupportIsland::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& currentLocation, QVector<QSharedPointer<RegionBase>>& previousRegions)
+    void SupportIsland::optimize(int layerNumber, Point& currentLocation, QVector<QSharedPointer<RegionBase>>& previousRegions)
     {
         bool unused = true;
         for (QSharedPointer<RegionBase> r : m_regions)
         {
             QVector<Path> tmp_path;
-            r->optimize(poo, currentLocation, tmp_path, tmp_path, unused);
+            r->optimize(layerNumber, currentLocation, tmp_path, tmp_path, unused);
 
             if(r->getPaths().size() > 0)
                 previousRegions.push_back(r);

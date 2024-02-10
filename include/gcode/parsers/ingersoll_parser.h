@@ -43,7 +43,24 @@ namespace ORNL
 
     protected:
 
+        //! \brief Handler for 'G0' command for motion
+        //! G0 must be overridden due to wire feed, formatting is adjusted and then
+        //! referred to base G0 handler
+        //! \param params Parameters of current interest include: X, Y, Z, speed
+        void G0Handler(QVector<QStringRef> params) override;
+
+        //! \brief Handler for 'G1' command for motion
+        //! G1 must be overridden due to wire feed, formatting is adjusted and then
+        //! referred to base G1 handler
+        //! \param params Parameters of current interest include: X, Y, Z, speed
+        void G1Handler(QVector<QStringRef> params) override;
+
     private:
+
+        //! \brief UA and H parameters to ignore in G1's
+        QString m_ua_parameter;
+        QChar m_h_parameter;
+
         //! \brief Copy of G-Code meta from Common Parser
         GcodeMeta m_meta_copy;
 

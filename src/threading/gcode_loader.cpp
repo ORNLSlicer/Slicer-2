@@ -460,7 +460,15 @@ namespace ORNL
         {
             if(syntaxIdentifier1.indexIn(m_lines[m_current_line]) != -1 || syntaxIdentifier2.indexIn(m_lines[m_current_line]) != -1)
             {
-                if(m_lines[m_current_line].contains(toString(GcodeSyntax::kBeam).toUpper())) {
+                if(m_lines[m_current_line].contains(toString(GcodeSyntax::k5AxisMarlin).toUpper())) {
+                    m_parser.reset(new MarlinParser(GcodeMetaList::MarlinMeta, m_adjust_file, originalLines, lines));
+                    m_selected_meta = GcodeMetaList::MarlinMeta;
+                }
+                else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kAML3D).toUpper())) {
+                    m_parser.reset(new CincinnatiParser(GcodeMetaList::AML3DMeta, m_adjust_file, originalLines, lines));
+                    m_selected_meta = GcodeMetaList::AML3DMeta;
+                }
+                else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kBeam).toUpper())) {
                     m_parser.reset(new BeamParser(GcodeMetaList::BeamMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::BeamMeta;
                 }
@@ -495,6 +503,10 @@ namespace ORNL
                 else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kIngersoll).toUpper())) {
                      m_parser.reset(new IngersollParser(GcodeMetaList::IngersollMeta, m_adjust_file, originalLines, lines));
                      m_selected_meta = GcodeMetaList::IngersollMeta;
+                 }
+                else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kKraussMaffei).toUpper())) {
+                     m_parser.reset(new MarlinParser(GcodeMetaList::KraussMaffeiMeta, m_adjust_file, originalLines, lines));
+                     m_selected_meta = GcodeMetaList::KraussMaffeiMeta;
                  }
                 else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kMarlinPellet).toUpper())) {
                     m_parser.reset(new MarlinParser(GcodeMetaList::MarlinMeta, m_adjust_file, originalLines, lines));
@@ -540,6 +552,10 @@ namespace ORNL
                     m_parser.reset(new RPBFParser(GcodeMetaList::RPBFMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::RPBFMeta;
                 }
+                 else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kSandia).toUpper())) {
+                    m_parser.reset(new CommonParser(GcodeMetaList::SandiaMeta, m_adjust_file, originalLines, lines));
+                    m_selected_meta = GcodeMetaList::SandiaMeta;
+                 }
                 else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kSiemens).toUpper())) {
                     m_parser.reset(new SiemensParser(GcodeMetaList::SiemensMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::SiemensMeta;

@@ -2,7 +2,6 @@
 #include "step/layer/layer.h"
 #include "step/layer/scan_layer.h"
 #include <optimizers/island_order_optimizer.h>
-#include <optimizers/path_order_optimizer.h>
 #include "geometry/path_modifier.h"
 #include "step/layer/regions/skirt.h"
 #include "utilities/mathutils.h"
@@ -203,11 +202,8 @@ namespace ORNL {
                 Point start_override(global_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomIslandXLocation),
                                      global_sb->setting<double>(Constants::ProfileSettings::Optimizations::kCustomIslandYLocation));
 
-                //start[tool] = start_override;
                 island_optimizer.setStartPoint(start_override);
             }
-
-            QSharedPointer<PathOrderOptimizer> path_optimizer = QSharedPointer<PathOrderOptimizer>(new PathOrderOptimizer(start[tool], m_layer_number, global_sb));
 
             QList<QSharedPointer<IslandBase>> wire_feed_islands = islands_for_current_tool.values(static_cast<int>(IslandType::kWireFeed));
 
@@ -219,7 +215,7 @@ namespace ORNL {
                     int index = island_optimizer.computeNextIndex();
                     QSharedPointer<IslandBase> isl = wire_feed_islands[index];
                     wire_feed_islands.removeAt(index);
-                    isl->optimize(path_optimizer, start[tool], previous_regions[tool]);
+                    isl->optimize(m_layer_number, start[tool], previous_regions[tool]);
                     m_island_order[tool].push_back(isl);
                     island_optimizer.setStartPoint(start[tool]);
                 }
@@ -232,7 +228,7 @@ namespace ORNL {
             if(skirt_islands.size() > 0)
             {
                 m_island_order[tool].push_back(skirt_islands[0]);
-                m_island_order[tool].last()->optimize(path_optimizer, start[tool], previous_regions[tool]);
+                m_island_order[tool].last()->optimize(m_layer_number, start[tool], previous_regions[tool]);
             }
 
             QList<QList<QSharedPointer<IslandBase>>> ordered_islands_to_process;
@@ -284,7 +280,7 @@ namespace ORNL {
                     QSharedPointer<IslandBase> currentIsland = islandSet[index];
                     if(!visited_islands.contains(currentIsland))
                     {
-                        currentIsland->optimize(path_optimizer, start[tool], previous_regions[tool]);
+                        currentIsland->optimize(m_layer_number, start[tool], previous_regions[tool]);
                         m_island_order[tool].push_back(currentIsland);
                         visited_islands.push_back(currentIsland);
                     }
@@ -296,7 +292,7 @@ namespace ORNL {
                         {
                             int index = island_optimizer.computeNextIndex();
                             QSharedPointer<IslandBase> currentIsland = childrenSet[index];
-                            currentIsland->optimize(path_optimizer, start[tool], previous_regions[tool]);
+                            currentIsland->optimize(m_layer_number, start[tool], previous_regions[tool]);
                             m_island_order[tool].push_back(currentIsland);
                             childrenSet.removeAt(index);
                         }
@@ -317,7 +313,7 @@ namespace ORNL {
                     int index = island_optimizer.computeNextIndex();
                     QSharedPointer<IslandBase> isl = thermal_scan_islands[index];
                     thermal_scan_islands.removeAt(index);
-                    isl->optimize(path_optimizer, start[tool], previous_regions[tool]);
+                    isl->optimize(m_layer_number, start[tool], previous_regions[tool]);
                     m_island_order[tool].push_back(isl);
                 }
             }

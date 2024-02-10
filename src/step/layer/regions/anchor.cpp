@@ -1,6 +1,7 @@
 #include "step/layer/regions/anchor.h"
 #include "geometry/segments/line.h"
-#include "optimizers/path_order_optimizer.h"
+#include "optimizers/polyline_order_optimizer.h"
+#include "geometry/path_modifier.h"
 
 namespace ORNL {
     Anchor::Anchor(const QSharedPointer<SettingsBase>& sb, const QVector<SettingsPolygon>& settings_polygons) : RegionBase(sb, settings_polygons) {
@@ -32,64 +33,101 @@ namespace ORNL {
         int ring_nr = 0;
         while (!path_line.isEmpty() && ring_nr < rings)
         {
-            m_computed_geometry.append(path_line);
+            for(Polygon poly : path_line)
+            {
+                Polyline line = poly.toPolyline();
+                line.pop_back();
+                m_computed_geometry.push_back(line);
+            }
+
             path_line = path_line.offset(-beadWidth, -beadWidth / 2);
             ring_nr++;
         }
-
-        this->createPaths();
     }
 
-    void Anchor::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    void Anchor::optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
     {
-        poo->setPathsToEvaluate(m_paths);
+        PolylineOrderOptimizer poo(current_location, layerNumber);
+
+        PathOrderOptimization pathOrderOptimization = static_cast<PathOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder));
+        if(pathOrderOptimization == PathOrderOptimization::kCustomPoint)
+        {
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathYLocation));
+
+            poo.setStartOverride(startOverride);
+        }
+
+        PointOrderOptimization pointOrderOptimization = static_cast<PointOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
+
+        if(pointOrderOptimization == PointOrderOptimization::kCustomPoint)
+        {
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointYLocation));
+
+            poo.setStartPointOverride(startOverride);
+        }
+
+        poo.setPointParameters(pointOrderOptimization, getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kMinDistanceEnabled),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kMinDistanceThreshold),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kConsecutiveDistanceThreshold),
+                               getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kLocalRandomnessEnable),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kLocalRandomnessRadius));
+
         m_paths.clear();
-        while(poo->getCurrentPathCount() > 0)
-            m_paths.push_back(poo->linkNextPath());
+
+        poo.setGeometryToEvaluate(m_computed_geometry, RegionType::kAnchor, static_cast<PathOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder)));
+
+        while(poo.getCurrentPolylineCount() > 0)
+        {
+            Polyline result = poo.linkNextPolyline();
+            Path newPath = createPath(result);
+
+            if(newPath.size() > 0)
+            {
+                calculateModifiers(newPath, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), QVector<Path>());
+                PathModifierGenerator::GenerateTravel(newPath, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
+                current_location = newPath.back()->end();
+                m_paths.push_back(newPath);
+            }
+        }
     }
 
-    void Anchor::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location)
+    void Anchor::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour)
     {
         //NOP
     }
 
-    void Anchor::createPaths()
+    Path Anchor::createPath(Polyline line)
     {
-        for(int i = 0, end = m_computed_geometry.size(); i < end; ++i)
+        for(int i = 0, end = line.size(); i < end; ++i)
         {
-            PolygonList& polygon_list = m_computed_geometry[i];
-            for (Polygon polygon : polygon_list)
-            {
-                Path new_path;
+            Path new_path;
 
-                Distance default_width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Perimeter::kBeadWidth);
-                Distance default_height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
-                Velocity default_speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed);
-                Acceleration default_acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kPerimeter);
-                AngularVelocity default_extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Perimeter::kExtruderSpeed);
-                int material_number                     = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kPerimterNum);
+            Distance default_width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Perimeter::kBeadWidth);
+            Distance default_height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
+            Velocity default_speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed);
+            Acceleration default_acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kPerimeter);
+            AngularVelocity default_extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Perimeter::kExtruderSpeed);
+            int material_number                     = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kPerimterNum);
 
-                for (int j = 0, end_cond = polygon.size(); j <  end_cond; ++j)
-                {
-                    Point start = polygon[j];
-                    Point end = polygon[(j + 1) % end_cond];
-                    QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(start, end);
+            QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line[i], line[(i + 1) % end]);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            default_width);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           default_height);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            default_speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            default_acceleration);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    default_extruder_speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kPerimeter);
 
-                    // Add final segment
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            default_width);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           default_height);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            default_speed);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            default_acceleration);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    default_extruder_speed);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kPerimeter);
+            new_path.append(segment);
 
-                    new_path.append(segment);
-                }
-
-                if (new_path.calculateLength() > m_sb->setting< Distance >(Constants::ProfileSettings::Perimeter::kMinPathLength))
-                    m_paths.append(new_path);
-            }
+            if (new_path.calculateLength() > m_sb->setting< Distance >(Constants::ProfileSettings::Perimeter::kMinPathLength))
+               return new_path;
+            else
+                return Path();
         }
     }
 }

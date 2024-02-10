@@ -113,7 +113,8 @@ namespace ORNL {
 
         uniform(m_computed_geometry);
 
-        this->createPaths();
+        for(Polyline line : m_computed_geometry)
+            m_paths.push_back(createPath(line));
     }
 
     void InfillSector::uniform(QVector<Polyline>& sector)
@@ -211,7 +212,7 @@ namespace ORNL {
 //        }
 //    }
 
-    void InfillSector::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    void InfillSector::optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
     {
 //        Point center;
 //        int i = 0;
@@ -226,36 +227,33 @@ namespace ORNL {
 //        }
     }
 
-    void InfillSector::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location)
+    void InfillSector::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour)
     {
        //NOP
     }
 
-    void InfillSector::createPaths() {
+    Path InfillSector::createPath(Polyline line) {
         Distance width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Infill::kBeadWidth);
         Distance height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
         Velocity speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Infill::kSpeed);
         Acceleration acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kInfill);
         AngularVelocity extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Infill::kExtruderSpeed);
 
-        for(Polyline line : m_computed_geometry)
-        {
-            Path newPath;
-            for (int i = 0, end = line.size() - 1; i < end; ++i) {
+        Path newPath;
+        for (int i = 0, end = line.size() - 1; i < end; ++i) {
 
-                QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line[i], line[i + 1]);
+            QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line[i], line[i + 1]);
 
-                segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kInfill);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kInfill);
 
-                newPath.append(segment);
-            }
-            m_paths.push_back(newPath);
+            newPath.append(segment);
         }
+        return newPath;
     }
 
     void InfillSector::setSectorAngle(Angle angle)

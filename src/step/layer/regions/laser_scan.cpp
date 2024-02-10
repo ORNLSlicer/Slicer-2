@@ -100,44 +100,43 @@ namespace ORNL {
 
         m_computed_geometry = scan_lines;
 
-        this->createPaths();
+        Path finalPath;
+        for(Polyline line : m_computed_geometry)
+            finalPath.append(createPath(line));
+
+        m_paths.append(finalPath);
     }
 
-    void LaserScan::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    void LaserScan::optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
     {
         //NOP - handled by ScanLayer
     }
 
-    void LaserScan::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location)
+    void LaserScan::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour)
     {
         //NOP
     }
 
-    void LaserScan::createPaths()
+    Path LaserScan::createPath(Polyline line)
     {
         Path newPath;
 
-        for(int i = 0; i < m_computed_geometry.size(); ++i)
+        QSharedPointer<ScanSegment> segment = QSharedPointer<ScanSegment>::create(line.first(), line.last());
+        segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType, RegionType::kLaserScan);
+
+        if(m_paths.size() % 2 == 0)
         {
-            QSharedPointer<ScanSegment> segment = QSharedPointer<ScanSegment>::create(m_computed_geometry[i].first(), m_computed_geometry[i].last());
-            segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kLaserScan);
-
-            if(i % 2 == 0)
-            {
-                segment->setDataCollection(true);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,
-                                             this->getSb()->setting<Velocity>(Constants::ProfileSettings::LaserScanner::kSpeed));
-            }
-            else
-            {
-                segment->setDataCollection(false);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,
-                                             this->getSb()->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
-            }
-
-            newPath.append(segment);
+            segment->setDataCollection(true);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,
+                                         this->getSb()->setting<Velocity>(Constants::ProfileSettings::LaserScanner::kSpeed));
+        }
+        else
+        {
+            segment->setDataCollection(false);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,
+                                         this->getSb()->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
         }
 
-        m_paths.append(newPath);
+        return newPath;
     }
 }

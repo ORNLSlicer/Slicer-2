@@ -28,6 +28,10 @@ namespace ORNL
             //! \param ps: Segment to append
             void append(const QSharedPointer<SegmentBase>& ps);
 
+            //! \brief Add a segment to the end of the path.
+            //! \param path: Path to append
+            void append(Path path);
+
             //! \brief Add a segment to the start of the path.
             //! \param ps: Segment to prepend
             void prepend(const QSharedPointer<SegmentBase>& ps);

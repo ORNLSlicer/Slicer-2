@@ -95,10 +95,10 @@ namespace ORNL {
 
             //! \brief Function called by parent step.  Filters down to individual regions to add
             //! travels and apply path modifiers
-            //! \param poo: Path Optimizer that controls travel addition
+            //! \param layerNumber: current layer number
             //! \param current_location: Current point in space
             //! \param previousRegions: sequence of previously visited regions
-            virtual void optimize(QSharedPointer<PathOrderOptimizer> poo, Point& currentLocation,
+            virtual void optimize(int layerNumber, Point& currentLocation,
                                   QVector<QSharedPointer<RegionBase>>& previousRegions) = 0;
 
             //! \brief gets the list of settings polygons

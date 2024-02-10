@@ -78,7 +78,7 @@ namespace ORNL
         connect(bugReport, &QLabel::linkActivated, [](const QString &link) { QDesktopServices::openUrl(QUrl(link));});
         layout->addWidget(bugReport, 6, 0, 1, 2, Qt::AlignCenter);
 
-        layout->addWidget(new QLabel("Copyright © 2023"), 7, 0, 1, 2, Qt::AlignCenter);
+        layout->addWidget(new QLabel("Copyright © 2024"), 7, 0, 1, 2, Qt::AlignCenter);
 
         this->setLayout(layout);
     }

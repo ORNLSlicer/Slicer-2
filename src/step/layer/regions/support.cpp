@@ -1,9 +1,8 @@
 #include "step/layer/regions/support.h"
 #include "utilities/enums.h"
-
-#include <geometry/segments/line.h>
-
-#include <optimizers/path_order_optimizer.h>
+#include "geometry/segments/line.h"
+#include "optimizers/polyline_order_optimizer.h"
+#include "geometry/path_modifier.h"
 
 namespace ORNL {
     Support::Support(const QSharedPointer<SettingsBase>& sb, const QVector<SettingsPolygon>& settings_polygons) : RegionBase(sb, settings_polygons) {
@@ -41,10 +40,9 @@ namespace ORNL {
 
         for (Polygon poly : perimeter_geometry)
         {
-            for (int i = 0; i < poly.size() - 1; i++)
-                m_computed_perimeter_geometry += Polyline({poly[i], poly[i + 1]});
-
-            m_computed_perimeter_geometry += Polyline({poly.last(), poly.first()});
+            Polyline line = poly.toPolyline();
+            line.pop_back();
+            m_computed_perimeter_geometry.push_back(line);
         }
 
         // Determine whether or not to generate support infill
@@ -60,8 +58,6 @@ namespace ORNL {
                 break;
             }
         }
-
-        this->createPaths();
     }
 
     void Support::computeLine(Distance line_spacing, Angle rotation)
@@ -117,46 +113,83 @@ namespace ORNL {
         computeLine(line_spacing, rotation + 90 * deg);
     }
 
-    void Support::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    void Support::optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
     {
-        if (!m_paths.isEmpty())
+        PolylineOrderOptimizer poo(current_location, layerNumber);
+
+        PathOrderOptimization pathOrderOptimization = static_cast<PathOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder));
+        if(pathOrderOptimization == PathOrderOptimization::kCustomPoint)
         {
-            InfillPatterns infill_pattern = static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Support::kPattern));
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathYLocation));
 
-            Path perimeter = m_paths.first();
-            QVector<Path> infill = m_paths.mid(1);
+            poo.setStartOverride(startOverride);
+        }
 
-            m_paths.clear();
-            poo->setPathsToEvaluate(QVector<Path> { perimeter });
-            perimeter = poo->linkNextPath();
+        PointOrderOptimization pointOrderOptimization = static_cast<PointOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
 
-            if (perimeter.calculateLengthNoTravel() > m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kMinExtrudeLength))
-                m_paths.append(perimeter);
-            poo->setPathsToEvaluate(infill);
-            poo->setParameters(infill_pattern, m_geometry);
-            QVector<Path> new_paths;
-            while(poo->getCurrentPathCount() > 0)
+        if(pointOrderOptimization == PointOrderOptimization::kCustomPoint)
+        {
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointYLocation));
+
+            poo.setStartPointOverride(startOverride);
+        }
+
+        poo.setPointParameters(pointOrderOptimization, getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kMinDistanceEnabled),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kMinDistanceThreshold),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kConsecutiveDistanceThreshold),
+                               getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kLocalRandomnessEnable),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kLocalRandomnessRadius));
+
+        m_paths.clear();
+
+        poo.setGeometryToEvaluate(m_computed_perimeter_geometry, RegionType::kSupport, static_cast<PathOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder)));
+
+        while(poo.getCurrentPolylineCount() > 0)
+        {
+            Polyline result = poo.linkNextPolyline();
+            Path newPath = createPath(result);
+
+            if(newPath.size() > 0)
             {
-                Path new_path = poo->linkNextPath(new_paths);
-                QVector<Path> tmp_path;
-                calculateModifiers(new_path, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), tmp_path, poo->getCurrentLocation());
-
-                if (new_path.calculateLengthNoTravel() > m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kMinExtrudeLength))
-                    new_paths.append(new_path);
-
+                PathModifierGenerator::GenerateTravel(newPath, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
+                current_location = newPath.back()->end();
+                m_paths.push_back(newPath);
             }
+        }
 
-            for(Path& p : new_paths)
-                m_paths.append(p);
+        poo.setInfillParameters(static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Support::kPattern)), m_geometry, getSb()->setting<Distance>(Constants::ProfileSettings::Infill::kMinPathLength),
+                          getSb()->setting<Distance>(Constants::ProfileSettings::Travel::kMinLength));
+
+        poo.setGeometryToEvaluate(m_computed_infill_geometry, RegionType::kInfill, static_cast<PathOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder)));
+
+        QVector<Polyline> previouslyLinkedLines;
+        while(poo.getCurrentPolylineCount() > 0)
+        {
+            Polyline result = poo.linkNextPolyline(previouslyLinkedLines);
+            if(result.size() > 0)
+            {
+                Path newPath = createPath(result);
+                if(newPath.size() > 0)
+                {
+                    PathModifierGenerator::GenerateTravel(newPath, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
+                    current_location = newPath.back()->end();
+                    previouslyLinkedLines.push_back(result);
+                    m_paths.push_back(newPath);
+                }
+            }
         }
     }
 
-    void Support::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location)
+    void Support::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour)
     {
        //NOP
     }
 
-    void Support::createPaths()
+    Path Support::createPath(Polyline line)
     {
         Distance bead_width = m_sb->setting<Distance>(Constants::ProfileSettings::Layer::kBeadWidth);
         Distance layer_height = m_sb->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
@@ -165,43 +198,23 @@ namespace ORNL {
         AngularVelocity extruder_speed = m_sb->setting<AngularVelocity>(Constants::ProfileSettings::Layer::kExtruderSpeed);
         int material_number             = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kPerimterNum);
 
-        Path perimeter;
+        Path newPath;
 
-        for (Polyline support_line : m_computed_perimeter_geometry)
-        {
-            QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(support_line.first(), support_line.last());
+        QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line.first(), line.last());
 
-            segment->getSb()->setSetting(Constants::SegmentSettings::kWidth, bead_width);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight, layer_height);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed, speed);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kAccel, acceleration);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed, extruder_speed);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kSupport);
+        segment->getSb()->setSetting(Constants::SegmentSettings::kWidth, bead_width);
+        segment->getSb()->setSetting(Constants::SegmentSettings::kHeight, layer_height);
+        segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed, speed);
+        segment->getSb()->setSetting(Constants::SegmentSettings::kAccel, acceleration);
+        segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed, extruder_speed);
+        segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
+        segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kSupport);
 
-            perimeter.append(segment);
-        }
+        newPath.append(segment);
 
-        if(perimeter.size() > 0)
-            m_paths.append(perimeter);
-
-        for (Polyline support_line : m_computed_infill_geometry)
-        {
-            Path infill;
-
-            QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(support_line.first(), support_line.last());
-
-            segment->getSb()->setSetting(Constants::SegmentSettings::kWidth, bead_width);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight, layer_height);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed, speed);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kAccel, acceleration);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed, extruder_speed);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
-            segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kSupport);
-
-            infill.append(segment);
-            m_paths.append(infill);
-        }
-
+        if(newPath.calculateLength() > m_sb->setting<Distance>(Constants::ProfileSettings::Layer::kMinExtrudeLength))
+            return newPath;
+        else
+            return Path();
     }
 }

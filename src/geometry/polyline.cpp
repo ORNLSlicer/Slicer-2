@@ -233,6 +233,25 @@ namespace ORNL
         return polyline;
     }
 
+    bool Polyline::inside(const Point& point, bool border_result) const
+    {
+        if(this->first() == this->last())
+        {
+            int res = ClipperLib2::PointInPolygon(point.toIntPoint(), (*this)());
+            if (res == -1)
+            {
+                return border_result;
+            }
+            return res == 1;
+        }
+        return false;
+    }
+
+    bool Polyline::orientation() const
+    {
+        return ClipperLib2::Orientation((*this)());
+    }
+
     Polyline Polyline::operator+(Polyline rhs)
     {
         if (last() == rhs.first())
@@ -256,7 +275,7 @@ namespace ORNL
 
     Polyline& Polyline::operator+=(Polyline rhs)
     {
-        if (last() == rhs.first())
+        if (this->size() > 0 && last() == rhs.first())
         {
             rhs.removeFirst();
         }

@@ -179,6 +179,7 @@ namespace ORNL
             static const QString kRampingUp;
             static const QString kRampingDown;
             static const QString kLeadIn;
+            static const QString kFlyingStart;
         };
 
 
@@ -303,6 +304,8 @@ namespace ORNL
             class SyntaxString
             {
             public:
+                static QString kAML3D;
+                static QString k5AxisMarlin;
                 static QString kBeam;
                 static QString kCincinnati;
                 static QString kCincinnatiLegacy;
@@ -315,6 +318,7 @@ namespace ORNL
                 static QString kHaasMetricNoComments;
                 static QString kHurco;
                 static QString kIngersoll;
+                static QString kKraussMaffei;
                 static QString kMarlin;
                 static QString kMarlinPellet;
                 static QString kMazak;
@@ -324,6 +328,7 @@ namespace ORNL
                 static QString kORNL;
                 static QString kRomiFanuc;
                 static QString kRPBF;
+                static QString kSandia;
                 static QString kSiemens;
                 static QString kSkyBaam;
                 static QString kThermwood;
@@ -518,6 +523,8 @@ namespace ORNL
             {
             public:
                 static const QString kInitialSpeed;
+                static const QString kExtruderPrimeVolume;
+                static const QString kExtruderPrimeSpeed;
                 static const QString kOnDelayPerimeter;
                 static const QString kOnDelayInset;
                 static const QString kOnDelaySkin;
@@ -533,10 +540,6 @@ namespace ORNL
                 static const QString kDiameter;
                 static const QString kRelative;
                 static const QString kDisableG92;
-                static const QString kPerimeterMultiplier;
-                static const QString kInsetMultiplier;
-                static const QString kSkinMultiplier;
-                static const QString kInfillMultiplier;
                 static const QString kFilamentBAxis;
             };
 
@@ -659,6 +662,7 @@ namespace ORNL
                 static const QString kFirstLayerBeadWidth;
                 static const QString kSpeed;
                 static const QString kExtruderSpeed;
+                static const QString kExtrusionMultiplier;
                 static const QString kMinPathLength;
                 static const QString kPower;
                 static const QString kFocus;
@@ -666,6 +670,9 @@ namespace ORNL
                 static const QString kEnableLeadIn;
                 static const QString kEnableLeadInX;
                 static const QString kEnableLeadInY;
+                static const QString kEnableFlyingStart;
+                static const QString kFlyingStartDistance;
+                static const QString kFlyingStartSpeed;
                 static const QString kEnableShiftedBeads;
             };
 
@@ -678,6 +685,7 @@ namespace ORNL
                 static const QString kFirstLayerBeadWidth;
                 static const QString kSpeed;
                 static const QString kExtruderSpeed;
+                static const QString kExtrusionMultiplier;
                 static const QString kMinPathLength;
                 static const QString kOverlap;
             };
@@ -696,8 +704,10 @@ namespace ORNL
                     static const QString kSkeletonAdaptDiscretizationDistance;
                     static const QString kSkeletonMinWidth;
                     static const QString kSkeletonMaxWidth;
-                    static const QString kMinPathLength;
                     static const QString kExtruderSpeed;
+                    static const QString kExtrusionMultiplier;
+                    static const QString kMinPathLength;
+                    static const QString kUseSkinMcode;
             };
 
             class Skin
@@ -712,6 +722,7 @@ namespace ORNL
                 static const QString kBeadWidth;
                 static const QString kSpeed;
                 static const QString kExtruderSpeed;
+                static const QString kExtrusionMultiplier;
                 static const QString kOverlap;
                 static const QString kMinPathLength;
                 static const QString kPrestart;
@@ -741,6 +752,7 @@ namespace ORNL
                 static const QString kBeadWidth;
                 static const QString kSpeed;
                 static const QString kExtruderSpeed;
+                static const QString kExtrusionMultiplier;
                 static const QString kCombineXLayers;
                 static const QString kMinPathLength;
                 static const QString kPrestart;
@@ -1039,6 +1051,10 @@ namespace ORNL
                 static const QString kMeldDiscrete;
                 static const QString kTormachOutput;
                 static const QString kTormachMode;
+                static const QString kAML3DOutput;
+                static const QString kAML3DWeaveLength;
+                static const QString kAML3DWeaveWidth;
+                static const QString kSandiaOutput;
             };
 
             class RotationOrigin
@@ -1137,6 +1153,7 @@ namespace ORNL
             static const QString kExtruders;
             static const QString kIsRegionStartSegment;
             static const QString kWireFeed;
+            static const QString kFinalWireCoast;
             static const QString kFinalWireFeed;
         };
 

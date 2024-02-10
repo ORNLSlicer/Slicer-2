@@ -329,18 +329,24 @@ namespace ORNL
         int index = 0;
         bool start;
 
+        Point queryPoint;
+        if(m_override_used)
+            queryPoint = m_override_location;
+        else
+            queryPoint = m_current_location;
+
         for (int i = 0, end = paths.size(); i < end; ++i)
         {
-            if (m_current_location.distance(paths[i].front()->start()) < shortest)
+            if (queryPoint.distance(paths[i].front()->start()) < shortest)
             {
-                shortest = m_current_location.distance(paths[i].front()->start());
+                shortest = queryPoint.distance(paths[i].front()->start());
                 index = i;
                 start = true;
             }
 
-            if (m_current_location.distance(paths[i].back()->end()) < shortest)
+            if (queryPoint.distance(paths[i].back()->end()) < shortest)
             {
-                shortest = m_current_location.distance(paths[i].back()->end());
+                shortest = queryPoint.distance(paths[i].back()->end());
                 index = i;
                 start = false;
             }
@@ -408,7 +414,17 @@ namespace ORNL
         else
             queryPoint = m_current_location;
 
-        int pointIndex = PointOrderOptimizer::linkToPoint(queryPoint, nextPath, m_layer_num, m_sb);
+        Polyline line;
+        for(QSharedPointer<SegmentBase> seg : nextPath)
+            line.append(seg->start());
+
+        int pointIndex = PointOrderOptimizer::linkToPoint(queryPoint, line, m_layer_num, pointOrderOptimization,
+                                                          m_sb->setting<bool>(Constants::ProfileSettings::Optimizations::kMinDistanceEnabled),
+                                                          m_sb->setting<Distance>(Constants::ProfileSettings::Optimizations::kMinDistanceThreshold),
+                                                          m_sb->setting<Distance>(Constants::ProfileSettings::Optimizations::kConsecutiveDistanceThreshold),
+                                                          m_sb->setting<bool>(Constants::ProfileSettings::Optimizations::kLocalRandomnessEnable),
+                                                          m_sb->setting<Distance>(Constants::ProfileSettings::Optimizations::kLocalRandomnessRadius));
+
         addTravel(pointIndex, nextPath);
 
         m_current_location = nextPath.back()->end();
@@ -571,7 +587,13 @@ namespace ORNL
         temp_sb->setSetting(Constants::ProfileSettings::Optimizations::kMinDistanceEnabled, false);
         temp_sb->setSetting<Distance>(Constants::ProfileSettings::Optimizations::kMinDistanceThreshold, Distance());
 
-        int pointIndex = PointOrderOptimizer::linkToPoint(m_current_location, newPath, 0, temp_sb);
+        Polyline line;
+        for(QSharedPointer<SegmentBase> seg : newPath)
+            line.append(seg->start());
+
+        int pointIndex = PointOrderOptimizer::linkToPoint(m_current_location, line, m_layer_num,
+                                                          PointOrderOptimization::kNextClosest,
+                                                          false, 0, 0, false, 0);
 
         for(int i = 0; i < pointIndex; ++i)
             newPath.move(0, newPath.size() - 1);

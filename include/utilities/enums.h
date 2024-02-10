@@ -190,13 +190,21 @@ namespace ORNL
         kMeld,
         kORNL,
         kOkuma,
-        kTormach
+        kTormach,
+        kAML3D,
+        kKraussMaffei,
+        kSandia,
+        k5AxisMarlin
     };
 
     inline QString toString(GcodeSyntax syntax) {
         switch (syntax) {
+        case GcodeSyntax::k5AxisMarlin:
+            return Constants::PrinterSettings::SyntaxString::k5AxisMarlin;
+        case GcodeSyntax::kAML3D:
+            return Constants::PrinterSettings::SyntaxString::kAML3D;
         case GcodeSyntax::kBeam:
-                return Constants::PrinterSettings::SyntaxString::kBeam;
+            return Constants::PrinterSettings::SyntaxString::kBeam;
         case GcodeSyntax::kCincinnati:
             return Constants::PrinterSettings::SyntaxString::kCincinnati;
         case GcodeSyntax::kDmgDmu:
@@ -215,6 +223,8 @@ namespace ORNL
             return Constants::PrinterSettings::SyntaxString::kHurco;
         case GcodeSyntax::kIngersoll:
             return Constants::PrinterSettings::SyntaxString::kIngersoll;
+        case GcodeSyntax::kKraussMaffei:
+            return Constants::PrinterSettings::SyntaxString::kKraussMaffei;
         case GcodeSyntax::kMarlin:
             return Constants::PrinterSettings::SyntaxString::kMarlin;
         case GcodeSyntax::kMarlinPellet:
@@ -233,6 +243,8 @@ namespace ORNL
             return Constants::PrinterSettings::SyntaxString::kRomiFanuc;
         case GcodeSyntax::kRPBF:
             return Constants::PrinterSettings::SyntaxString::kRPBF;
+        case GcodeSyntax::kSandia:
+            return Constants::PrinterSettings::SyntaxString::kSandia;
         case GcodeSyntax::kSiemens:
             return Constants::PrinterSettings::SyntaxString::kSiemens;
         case GcodeSyntax::kSkyBaam:
@@ -506,7 +518,7 @@ namespace ORNL
         kRampingUp        = 1 << 10,
         kRampingDown      = 1 << 11,
         kLeadIn           = 1 << 12,
-       // kOnWait           = 1 << 9
+        kFlyingStart      = 1 << 13
     };
 
 
@@ -574,6 +586,8 @@ namespace ORNL
             return Constants::PathModifierStrings::kRampingDown;
         case PathModifiers::kLeadIn:
             return Constants::PathModifierStrings::kLeadIn;
+        case PathModifiers::kFlyingStart:
+            return Constants::PathModifierStrings::kFlyingStart;
         }
         return QString();
     }
@@ -777,6 +791,7 @@ namespace ORNL
         kIroning,
         kLaserScan,
         kLeadIn,
+        kFlyingStart,
         kPerimeter,
         kPrestart,
         kRaft,
@@ -810,6 +825,7 @@ namespace ORNL
             case VisualizationColors::kIroning: return "Ironing";
             case VisualizationColors::kLaserScan: return "LaserScan";
             case VisualizationColors::kLeadIn: return "LeadIn";
+            case VisualizationColors::kFlyingStart: return "FlyingStart";
             case VisualizationColors::kPerimeter: return "Perimeter";
             case VisualizationColors::kPrestart: return "Prestart";
             case VisualizationColors::kRaft: return "Raft";
@@ -853,6 +869,7 @@ namespace ORNL
             case VisualizationColors::kIroning: return QColor(255,0,100, 255);
             case VisualizationColors::kLaserScan: return QColor(90,255,90, 255);
             case VisualizationColors::kLeadIn: return QColor(255,153,51, 255);
+            case VisualizationColors::kFlyingStart: return QColor(120, 150, 250);
             case VisualizationColors::kPerimeter: return QColor(0,0,255, 255);
             case VisualizationColors::kPrestart: return QColor(204,0,255, 255);
             case VisualizationColors::kRaft: return QColor(102,102,102, 255);

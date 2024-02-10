@@ -339,15 +339,42 @@ namespace ORNL
         int actualLayer = 0;
         QStringMatcher layerDelimiter(m_layer_delimiter);
 
+        QString newCurrentLine,zOffsetString;
+        double currentZOffset = sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset).to(m_distance_unit);
+        bool no_error;
+
         //parse each line
         for(m_current_line; m_current_line <= m_current_end_line; ++m_current_line)
         {
             //extract components of command
             //handlers will also update appropriate state
             //if the line is not just an empty line or whitespace
-            if(m_upper_lines[m_current_line].contains("[#"))
+
+            if(m_upper_lines[m_current_line].contains("[#") && sb->setting<int>(Constants::PrinterSettings::Dimensions::kUseVariableForZ))
             {
+                // If using a variable Z, find the value added to the variable, calculate the total value of Z by replacing the variable with the value from the printer settings
+                // then create a new line of g-code to be sent to the parser that is formatted the way a line is normally formatted (without the variable)
+                int first = m_upper_lines[m_current_line].indexOf("+")+2;
+                int second = m_upper_lines[m_current_line].indexOf("]");
+                int zLoc = m_upper_lines[m_current_line].indexOf("Z");
+                QString zAdditionString = m_upper_lines[m_current_line].mid(first, second-first);
+                double zVal = zAdditionString.toDouble(&no_error);
+                if (!no_error)
+                {
+                    throwFloatConversionErrorException();
+                }
+                zVal += currentZOffset;
+                newCurrentLine = m_upper_lines[m_current_line].mid(0, zLoc+1) % QString::number(zVal, 'f', 4) % m_upper_lines[m_current_line].mid(second+1);
+            }            
+            else if(m_upper_lines[m_current_line].contains("[#"))
+            {
+                // Ignore lines with variable definition if variable Z is not enabled
                 continue;
+            }
+            else
+            {
+                // Save the current line to be sent for the parseCommand function
+                newCurrentLine = m_upper_lines[m_current_line];
             }
             if(!m_upper_lines[m_current_line].midRef(0).trimmed().isEmpty())
             {
@@ -367,12 +394,12 @@ namespace ORNL
                         m_layer_G1F_times.push_back(Time());
                         m_layer_volumes.push_back(Volume());
 
-                         m_layer_start_lines.push_back(m_current_line + 1);
+                        m_layer_start_lines.push_back(m_current_line + 1);
                     }
                 }
                 else
                 {
-                    parseCommand(m_upper_lines[m_current_line], m_current_line + m_insertions);
+                    parseCommand(newCurrentLine, m_current_line + m_insertions);
 
                     // If a new layer has just started, check if previous layer needs to be adjusted
                     // to meet the minimum layer time
@@ -2009,13 +2036,23 @@ namespace ORNL
             }
 
             // Move to purge location
-            rv = "G1 F" % QString::number(sb->setting< Velocity >(Constants::ProfileSettings::Travel::kSpeed).to(m_velocity_unit))
-                 % " X" % QString::number(sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeX).to(m_distance_unit))
-                 % " Y" % QString::number(sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeY).to(m_distance_unit))
-                 % " Z" % QString::number(sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeZ).to(m_distance_unit))
-                 % m_space % getCommentStartDelimiter() % "MOVE TO PURGE LOCATION" % getCommentEndDelimiter();
-            m_lines.insert(insertIndex, rv);
-            ++m_insertions;
+            if(sb->setting< int >(Constants::PrinterSettings::MachineSetup::kSyntax) == 1)
+            {
+                rv = "M68" % m_space % getCommentStartDelimiter() % "PARK" % getCommentEndDelimiter();
+                m_lines.insert(insertIndex, rv);
+                ++m_insertions;
+            }
+            else
+            {
+                rv = "G1 F" % QString::number(sb->setting< Velocity >(Constants::ProfileSettings::Travel::kSpeed).to(m_velocity_unit))
+                     % " X" % QString::number(sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeX).to(m_distance_unit))
+                     % " Y" % QString::number(sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeY).to(m_distance_unit))
+                     % " Z" % QString::number(sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kPurgeZ).to(m_distance_unit))
+                     % m_space % getCommentStartDelimiter() % "MOVE TO PURGE LOCATION" % getCommentEndDelimiter();
+                m_lines.insert(insertIndex, rv);
+                ++m_insertions;
+            }
+
 
             custom_code = sb->setting< QString >(Constants::MaterialSettings::Cooling::kPrePauseCode);
             if(!(custom_code.isNull() || custom_code.isEmpty())) {

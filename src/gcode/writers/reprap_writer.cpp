@@ -311,7 +311,7 @@ namespace ORNL
         }
 
         rv += m_G1;
-        //update feedrate and speed if needed
+        //update feedrate if needed
         if (getFeedrate() != speed || m_layer_start)
         {
             setFeedrate(speed);
@@ -331,15 +331,17 @@ namespace ORNL
             //Set extrusion multiplier, or use default value of 1.0
             double current_multiplier;
             if(region_type == RegionType::kPerimeter)
-                current_multiplier = m_sb->setting<double>(Constants::MaterialSettings::Filament::kPerimeterMultiplier);
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Perimeter::kExtrusionMultiplier);
             else if(region_type == RegionType::kInset)
-                current_multiplier = m_sb->setting<double>(Constants::MaterialSettings::Filament::kInsetMultiplier);
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Inset::kExtrusionMultiplier);
+            else if(region_type == RegionType::kSkeleton)
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Skeleton::kExtrusionMultiplier);
             else if(region_type == RegionType::kSkin)
-                current_multiplier = m_sb->setting<double>(Constants::MaterialSettings::Filament::kSkinMultiplier);
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Skin::kExtrusionMultiplier);
             else if(region_type == RegionType::kInfill)
-                current_multiplier = m_sb->setting<double>(Constants::MaterialSettings::Filament::kInfillMultiplier);
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Infill::kExtrusionMultiplier);
             else
-                current_multiplier = 1.0;
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Perimeter::kExtrusionMultiplier);
 
             Distance segment_length = start_point.distance(target_point);
             Distance width = params->setting<Distance>(Constants::SegmentSettings::kWidth);
@@ -417,15 +419,17 @@ namespace ORNL
             //Set extrusion multiplier, or use default value of 1.0
             double current_multiplier;
             if(region_type == RegionType::kPerimeter)
-                current_multiplier = m_sb->setting<double>(Constants::MaterialSettings::Filament::kPerimeterMultiplier);
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Perimeter::kExtrusionMultiplier);
             else if(region_type == RegionType::kInset)
-                current_multiplier = m_sb->setting<double>(Constants::MaterialSettings::Filament::kInsetMultiplier);
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Inset::kExtrusionMultiplier);
+            else if(region_type == RegionType::kSkeleton)
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Skeleton::kExtrusionMultiplier);
             else if(region_type == RegionType::kSkin)
-                current_multiplier = m_sb->setting<double>(Constants::MaterialSettings::Filament::kSkinMultiplier);
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Skin::kExtrusionMultiplier);
             else if(region_type == RegionType::kInfill)
-                current_multiplier = m_sb->setting<double>(Constants::MaterialSettings::Filament::kInfillMultiplier);
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Infill::kExtrusionMultiplier);
             else
-                current_multiplier = 1.0;
+                current_multiplier = m_sb->setting<double>(Constants::ProfileSettings::Perimeter::kExtrusionMultiplier);
 
             Distance segment_length = ArcSegment(start_point, end_point, center_point, ccw).length();
             Distance width = params->setting<Distance>(Constants::SegmentSettings::kWidth);

@@ -8,13 +8,13 @@ namespace ORNL {
         m_island_type = IslandType::kSkirt;
     }
 
-    void SkirtIsland::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& currentLocation, QVector<QSharedPointer<RegionBase>>& previousRegions)
+    void SkirtIsland::optimize(int layerNumber, Point& currentLocation, QVector<QSharedPointer<RegionBase>>& previousRegions)
     {
         bool unused = true;
         for (QSharedPointer<RegionBase> r : m_regions)
         {
             QVector<Path> tmp_path;
-            r->optimize(poo, currentLocation, tmp_path, tmp_path, unused);
+            r->optimize(layerNumber, currentLocation, tmp_path, tmp_path, unused);
         }
     }
 }  // namespace ORNL

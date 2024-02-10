@@ -351,10 +351,51 @@ static GcodeMeta TormachMeta = {
     rev / minute,
     ".gcode"
 };
+static GcodeMeta AML3DMeta = {
+    GcodeSyntax::kAML3D,
+    QString("("), //starting_delim
+    QString(")"), //ending_delim
+    mm,
+    s,
+    degree,
+    g,
+    mm / s,
+    mm / s / s,
+    rev / minute,
+    ".gcode"
+};
+static GcodeMeta KraussMaffeiMeta = {
+    GcodeSyntax::kKraussMaffei,
+    QString(";"), //starting_delim
+    QString(), //ending_delim
+    mm, //distance
+    ms, //time
+    degree, //angle
+    g, //mass
+    mm / minute, //velocity
+    mm / s / s, //acceleration
+    rev / minute,  //angular velocity
+    ".gcode"
+};
+static GcodeMeta SandiaMeta = {
+    GcodeSyntax::kSandia,
+    QString(";"), //starting_delim
+    QString(), //ending_delim
+    mm, //distance
+    ms, //time
+    degree, //angle
+    g, //mass
+    m / s, //velocity
+    mm / s / s, //acceleration
+    rev / minute,  //angular velocity
+    ".gcode"
+};
 
 static QHash<int, GcodeMeta> createMapping()
 {
     QHash<int, GcodeMeta> result;
+    result.insert((int)GcodeSyntax::k5AxisMarlin, MarlinMeta);
+    result.insert((int)GcodeSyntax::kAML3D, AML3DMeta);
     result.insert((int)GcodeSyntax::kBeam, DmgDmuAndBeamMeta);
     result.insert((int)GcodeSyntax::kCincinnati, CincinnatiMeta);
     result.insert((int)GcodeSyntax::kCommon, MarlinMeta);
@@ -366,12 +407,14 @@ static QHash<int, GcodeMeta> createMapping()
     result.insert((int)GcodeSyntax::kHaasMetricNoComments, HaasInchMeta);
     result.insert((int)GcodeSyntax::kHurco, HurcoMeta);
     result.insert((int)GcodeSyntax::kIngersoll, IngersollMeta);
+    result.insert((int)GcodeSyntax::kKraussMaffei, KraussMaffeiMeta);
     result.insert((int)GcodeSyntax::kMarlin, MarlinMeta);
     result.insert((int)GcodeSyntax::kMarlinPellet, MarlinMeta);
     result.insert((int)GcodeSyntax::kMazak, MazakMeta);
     result.insert((int)GcodeSyntax::kMVP, MVPMeta);
     result.insert((int)GcodeSyntax::kRomiFanuc, RomiFanucMeta);
     result.insert((int)GcodeSyntax::kRPBF, RPBFMeta);
+    result.insert((int)GcodeSyntax::kSandia, SandiaMeta);
     result.insert((int)GcodeSyntax::kSiemens, SiemensMeta);
     result.insert((int)GcodeSyntax::kSkyBaam, SkyBaamMeta);
     result.insert((int)GcodeSyntax::kThermwood, CincinnatiMeta);
@@ -380,6 +423,7 @@ static QHash<int, GcodeMeta> createMapping()
     result.insert((int)GcodeSyntax::kAeroBasic, AeroBasicMeta);
     result.insert((int)GcodeSyntax::kSheetLamination, SheetLaminationMeta);
     result.insert((int)GcodeSyntax::kORNL, ORNLMeta);
+    result.insert((int)GcodeSyntax::kTormach, TormachMeta);
     return result;
 }
 

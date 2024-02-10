@@ -187,6 +187,8 @@ namespace ORNL
     //================================================================================
     // Machine Syntax Strings
     //================================================================================
+    QString Constants::PrinterSettings::SyntaxString::kAML3D = "AML3D";
+    QString Constants::PrinterSettings::SyntaxString::k5AxisMarlin = "5AxisMarlin";
     QString Constants::PrinterSettings::SyntaxString::kBeam = "Beam";
     QString Constants::PrinterSettings::SyntaxString::kCincinnati = "Cincinnati";
     QString Constants::PrinterSettings::SyntaxString::kCincinnatiLegacy = "Cincinnati-BERTHA";
@@ -199,6 +201,7 @@ namespace ORNL
     QString Constants::PrinterSettings::SyntaxString::kHaasMetricNoComments = "Haas-Metric-No-Comments";
     QString Constants::PrinterSettings::SyntaxString::kHurco = "Hurco";
     QString Constants::PrinterSettings::SyntaxString::kIngersoll = "Ingersoll";
+    QString Constants::PrinterSettings::SyntaxString::kKraussMaffei = "KraussMaffei";
     QString Constants::PrinterSettings::SyntaxString::kMarlin = "Marlin";
     QString Constants::PrinterSettings::SyntaxString::kMarlinPellet = "Marlin-Pellet";
     QString Constants::PrinterSettings::SyntaxString::kMazak = "Mazak";
@@ -208,6 +211,7 @@ namespace ORNL
     QString Constants::PrinterSettings::SyntaxString::kORNL = "ORNL";
     QString Constants::PrinterSettings::SyntaxString::kRomiFanuc = "ROMI Fanuc";
     QString Constants::PrinterSettings::SyntaxString::kRPBF = "RPBF";
+    QString Constants::PrinterSettings::SyntaxString::kSandia ="Sandia";
     QString Constants::PrinterSettings::SyntaxString::kSiemens = "Siemens";
     QString Constants::PrinterSettings::SyntaxString::kSkyBaam = "SkyBAAM";
     QString Constants::PrinterSettings::SyntaxString::kThermwood = "Thermwood";
@@ -258,6 +262,7 @@ namespace ORNL
     const QString Constants::PathModifierStrings::kRampingUp = "RAMPING UP";
     const QString Constants::PathModifierStrings::kRampingDown = "RAMPING DOWN";
     const QString Constants::PathModifierStrings::kLeadIn = "LEAD IN";
+    const QString Constants::PathModifierStrings::kFlyingStart = "FLYING START";
 
     //================================================================================
     // Printer Settings
@@ -488,6 +493,8 @@ namespace ORNL
 
     //Extruder
     const QString Constants::MaterialSettings::Extruder::kInitialSpeed = "initial_extruder_speed";
+    const QString Constants::MaterialSettings::Extruder::kExtruderPrimeVolume = "extruder_prime_volume";
+    const QString Constants::MaterialSettings::Extruder::kExtruderPrimeSpeed = "extruder_prime_speed";
     const QString Constants::MaterialSettings::Extruder::kOnDelayPerimeter = "extruder_on_delay_perimeter";
     const QString Constants::MaterialSettings::Extruder::kOnDelayInset = "extruder_on_delay_inset";
     const QString Constants::MaterialSettings::Extruder::kOnDelaySkin = "extruder_on_delay_skin";
@@ -500,10 +507,6 @@ namespace ORNL
     const QString Constants::MaterialSettings::Filament::kDiameter = "filament_diameter";
     const QString Constants::MaterialSettings::Filament::kRelative = "filament_relative_distance";
     const QString Constants::MaterialSettings::Filament::kDisableG92 = "disable_g92";
-    const QString Constants::MaterialSettings::Filament::kPerimeterMultiplier = "perimeter_filament_extrusion_multiplier";
-    const QString Constants::MaterialSettings::Filament::kInsetMultiplier = "inset_filament_extrusion_multiplier";
-    const QString Constants::MaterialSettings::Filament::kSkinMultiplier = "skin_filament_extrusion_multiplier";
-    const QString Constants::MaterialSettings::Filament::kInfillMultiplier = "infill_filament_extrusion_multiplier";
     const QString Constants::MaterialSettings::Filament::kFilamentBAxis = "filament_b_axis";
 
     //Retraction
@@ -594,6 +597,7 @@ namespace ORNL
     const QString Constants::ProfileSettings::Perimeter::kBeadWidth = "perimeter_width";
     const QString Constants::ProfileSettings::Perimeter::kSpeed = "perimeter_speed";
     const QString Constants::ProfileSettings::Perimeter::kExtruderSpeed = "perimeter_extruder_speed";
+    const QString Constants::ProfileSettings::Perimeter::kExtrusionMultiplier = "perimeter_extrusion_multiplier";
     const QString Constants::ProfileSettings::Perimeter::kMinPathLength = "perimeter_minimum_path_length";
     const QString Constants::ProfileSettings::Perimeter::kPower = "perimeter_power";
     const QString Constants::ProfileSettings::Perimeter::kFocus = "perimeter_focus";
@@ -601,6 +605,9 @@ namespace ORNL
     const QString Constants::ProfileSettings::Perimeter::kEnableLeadIn = "perimeter_lead_in";
     const QString Constants::ProfileSettings::Perimeter::kEnableLeadInX = "perimeter_lead_in_x";
     const QString Constants::ProfileSettings::Perimeter::kEnableLeadInY = "perimeter_lead_in_y";
+    const QString Constants::ProfileSettings::Perimeter::kEnableFlyingStart = "perimeter_flying_start";
+    const QString Constants::ProfileSettings::Perimeter::kFlyingStartDistance = "perimeter_flying_start_distance";
+    const QString Constants::ProfileSettings::Perimeter::kFlyingStartSpeed = "perimeter_flying_start_speed";
     const QString Constants::ProfileSettings::Perimeter::kEnableShiftedBeads = "perimeter_shifted_beads";
 
     //Inset
@@ -609,6 +616,7 @@ namespace ORNL
     const QString Constants::ProfileSettings::Inset::kBeadWidth = "inset_width";
     const QString Constants::ProfileSettings::Inset::kSpeed = "inset_speed";
     const QString Constants::ProfileSettings::Inset::kExtruderSpeed = "inset_extruder_speed";
+    const QString Constants::ProfileSettings::Inset::kExtrusionMultiplier = "inset_extrusion_multiplier";
     const QString Constants::ProfileSettings::Inset::kMinPathLength = "inset_minimum_path_length";
     const QString Constants::ProfileSettings::Inset::kOverlap = "inset_overlap_distance";
 
@@ -624,8 +632,10 @@ namespace ORNL
     const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptDiscretizationDistance = "skeleton_adapt_discretization_distance";
     const QString Constants::ProfileSettings::Skeleton::kSkeletonMinWidth = "skeleton_minimum_width";
     const QString Constants::ProfileSettings::Skeleton::kSkeletonMaxWidth = "skeleton_maximum_width";
-    const QString Constants::ProfileSettings::Skeleton::kMinPathLength = "skeleton_minimum_path_length";
     const QString Constants::ProfileSettings::Skeleton::kExtruderSpeed = "skeleton_extruder_speed";
+    const QString Constants::ProfileSettings::Skeleton::kExtrusionMultiplier = "skeleton_extrusion_multiplier";
+    const QString Constants::ProfileSettings::Skeleton::kMinPathLength = "skeleton_minimum_path_length";
+    const QString Constants::ProfileSettings::Skeleton::kUseSkinMcode = "skeleton_skin_mcode";
 
     //Skin
     const QString Constants::ProfileSettings::Skin::kEnable = "skin";
@@ -637,6 +647,7 @@ namespace ORNL
     const QString Constants::ProfileSettings::Skin::kBeadWidth = "skin_width";
     const QString Constants::ProfileSettings::Skin::kSpeed = "skin_speed";
     const QString Constants::ProfileSettings::Skin::kExtruderSpeed = "skin_extruder_speed";
+    const QString Constants::ProfileSettings::Skin::kExtrusionMultiplier = "skin_extrusion_multiplier";
     const QString Constants::ProfileSettings::Skin::kOverlap = "skin_exterior_overlap";
     const QString Constants::ProfileSettings::Skin::kMinPathLength = "skin_minimum_path_length";
     const QString Constants::ProfileSettings::Skin::kPrestart = "skin_prestart";
@@ -662,6 +673,7 @@ namespace ORNL
     const QString Constants::ProfileSettings::Infill::kBeadWidth = "infill_width";
     const QString Constants::ProfileSettings::Infill::kSpeed = "infill_speed";
     const QString Constants::ProfileSettings::Infill::kExtruderSpeed = "infill_extruder_speed";
+    const QString Constants::ProfileSettings::Infill::kExtrusionMultiplier = "infill_extrusion_multiplier";
     const QString Constants::ProfileSettings::Infill::kCombineXLayers = "infill_combine_every_x_layers";
     const QString Constants::ProfileSettings::Infill::kMinPathLength = "infill_minimum_path_length";
     const QString Constants::ProfileSettings::Infill::kPrestart = "infill_prestart";
@@ -884,6 +896,10 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::FileOutput::kMeldDiscrete = "meld_discrete_feed_commands";
     const QString Constants::ExperimentalSettings::FileOutput::kTormachOutput = "tormach_file_output";
     const QString Constants::ExperimentalSettings::FileOutput::kTormachMode = "tormach_mode";
+    const QString Constants::ExperimentalSettings::FileOutput::kAML3DOutput = "aml3d_file_output";
+    const QString Constants::ExperimentalSettings::FileOutput::kAML3DWeaveLength = "aml3d_weave_length";
+    const QString Constants::ExperimentalSettings::FileOutput::kAML3DWeaveWidth = "aml3d_weave_width";
+    const QString Constants::ExperimentalSettings::FileOutput::kSandiaOutput = "sandia_file_output";
 
     //Rotation Origin
     const QString Constants::ExperimentalSettings::RotationOrigin::kXOffset = "rotation_origin_offset_x";
@@ -959,6 +975,7 @@ namespace ORNL
     const QString Constants::SegmentSettings::kExtruders = "extruders";
     const QString Constants::SegmentSettings::kIsRegionStartSegment = "is_region_start_segment";
     const QString Constants::SegmentSettings::kWireFeed = "wire_feed";
+    const QString Constants::SegmentSettings::kFinalWireCoast = "final_wire_coast";
     const QString Constants::SegmentSettings::kFinalWireFeed = "final_wire_feed";
 
     //================================================================================

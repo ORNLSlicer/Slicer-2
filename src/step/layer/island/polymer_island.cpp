@@ -52,7 +52,7 @@ namespace ORNL {
         m_island_type = IslandType::kPolymer;
     }
 
-    void PolymerIsland::optimize(QSharedPointer<PathOrderOptimizer> poo, Point &currentLocation,
+    void PolymerIsland::optimize(int layerNumber, Point &currentLocation,
                                  QVector<QSharedPointer<RegionBase>>& previousRegions)
     {
         QSharedPointer<Inset> insets = getRegion(RegionType::kInset).dynamicCast<Inset>();
@@ -70,29 +70,6 @@ namespace ORNL {
         else if(insets != nullptr)
             outerMostClosedContour = insets->getOuterMostPathSet();
 
-
-        PathOrderOptimization pathOrderOptimization = static_cast<PathOrderOptimization>(
-                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder));
-
-        if(pathOrderOptimization == PathOrderOptimization::kCustomPoint)
-        {
-            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathXLocation),
-                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathYLocation));
-
-            poo->setStartOverride(startOverride);
-        }
-
-        PointOrderOptimization pointOrderOptimization = static_cast<PointOrderOptimization>(
-                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
-
-        if(pointOrderOptimization == PointOrderOptimization::kCustomPoint)
-        {
-            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointXLocation),
-                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointYLocation));
-
-            poo->setStartPointOverride(startOverride);
-        }
-
         bool shouldNextPathBeCCW = true;
         if(previousRegions.size() != 0 && previousRegions.last()->getPaths().size() != 0)
             shouldNextPathBeCCW = !previousRegions.last()->getPaths().last().getCCW();
@@ -106,7 +83,7 @@ namespace ORNL {
 
             r->setLastSpiral(wasLastSpiral);
 
-            r->optimize(poo, currentLocation, innerMostClosedContour, outerMostClosedContour, shouldNextPathBeCCW);
+            r->optimize(layerNumber, currentLocation, innerMostClosedContour, outerMostClosedContour, shouldNextPathBeCCW);
 
             if(r->getPaths().size() > 0)
                 previousRegions.push_back(r);
