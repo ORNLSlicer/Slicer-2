@@ -195,7 +195,7 @@ namespace ORNL {
 
     QPair<bool, unsigned long> Parameterization::findFace(MeshTypes::SimpleCartesian::Point_2 point)
     {
-        auto face = std::find_if(CGAL::faces(m_sm).begin(), CGAL::faces(m_sm).end(), [&point, this](MeshTypes::SimpleCartesian::SM_FaceDescriptor& face)
+        auto face = std::find_if(CGAL::faces(m_sm).begin(), CGAL::faces(m_sm).end(), [&point, this](MeshTypes::SimpleCartesian::SM_FaceDescriptor face)
         {
             // Extract vertices
             QVector<MeshTypes::SimpleCartesian::Point_2> points;

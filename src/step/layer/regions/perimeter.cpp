@@ -272,7 +272,8 @@ namespace ORNL {
                        m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting))
                           CurveFitting::Fit(newPath, m_sb);
 
-                    calculateModifiers(newPath, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), QVector<Path>());
+                    QVector<Path> temp_path;
+                    calculateModifiers(newPath, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), temp_path);
                     PathModifierGenerator::GenerateTravel(newPath, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
                     current_location = newPath.back()->end();
                     m_paths.push_back(newPath);

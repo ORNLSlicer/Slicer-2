@@ -909,7 +909,8 @@ namespace ORNL {
                 {
                     for(Path path : paths)
                     {
-                        calculateModifiers(path, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), QVector<Path>());
+                        QVector<Path> temp_path;
+                        calculateModifiers(path, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), temp_path);
                         PathModifierGenerator::GenerateTravel(path, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
                         current_location = path.back()->end();
                         m_paths.push_back(path);
