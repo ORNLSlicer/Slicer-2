@@ -220,7 +220,7 @@ namespace ORNL
             {
                 rv += "M12 (PERIMETER SPINDLE ADJUSTMENT)\n";
             }
-            else if (type == RegionType::kInset || type == RegionType::kSkeleton)
+            else if (type == RegionType::kInset)
             {
                 rv += "M13 (INSET SPINDLE ADJUSTMENT)\n";
             }
@@ -231,6 +231,17 @@ namespace ORNL
             else if (type == RegionType::kInfill)
             {
                 rv += "M14 (INFILL SPINDLE ADJUSTMENT)\n";
+            }
+            else if (type == RegionType::kSkeleton)
+            {
+                if(m_sb->setting<bool>(Constants::ProfileSettings::Skeleton::kUseSkinMcode))
+                {
+                    rv += "M15 (SKIN SPINDLE ADJUSTMENT)\n";
+                }
+                else
+                {
+                    rv += "M13 (INSET SPINDLE ADJUSTMENT)\n";
+                }
             }
         }
         return rv;
@@ -468,12 +479,23 @@ namespace ORNL
         }
 
         rv += m_G1;
-        //update feedrate and speed if needed | forces first motion of layer to issue speed (needed for spiralize mode so that feedrate is scaled properly)
-        if (getFeedrate() != speed || m_layer_start)
+        // Forces first motion of layer to issue speed (needed for spiralize mode so that feedrate is scaled properly)
+        if (m_layer_start)
         {
             setFeedrate(speed);
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
+
+            rv += m_s % QString::number(output_rpm);
+            m_current_rpm = rpm;
+
             m_layer_start = false;
+        }
+
+        // Update feedrate and extruder speed if needed
+        if (getFeedrate() != speed)
+        {
+            setFeedrate(speed);
+            rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         }
 
         if (rpm != m_current_rpm)

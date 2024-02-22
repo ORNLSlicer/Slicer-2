@@ -93,44 +93,42 @@ namespace ORNL {
             }
         }
 
-        this->createPaths();
+        for(Polyline line : m_computed_geometry)
+            m_paths.push_back(createPath(line));
     }
 
-    void PerimeterSector::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    void PerimeterSector::optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
     {
         //NOP
     }
 
-    void PerimeterSector::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location)
+    void PerimeterSector::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour)
     {
         //NOP
     }
 
-    void PerimeterSector::createPaths() {
+    Path PerimeterSector::createPath(Polyline line) {
         Distance width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Perimeter::kBeadWidth);
         Distance height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
         Velocity speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed);
         Acceleration acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kPerimeter);
         AngularVelocity extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Perimeter::kExtruderSpeed);
 
-        for(Polyline line : m_computed_geometry)
-        {
-            Path newPath;
-            for (int i = 0, end = line.size() - 1; i < end; ++i) {
+        Path newPath;
+        for (int i = 0, end = line.size() - 1; i < end; ++i) {
 
-                QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line[i], line[i + 1]);
+            QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line[i], line[i + 1]);
 
-                segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kPerimeter);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kPerimeter);
 
-                newPath.append(segment);
-            }
-            m_paths.push_back(newPath);
+            newPath.append(segment);
         }
+        return newPath;
     }
 
     void PerimeterSector::setComputedGeometry(QVector<Polyline> perimeters)

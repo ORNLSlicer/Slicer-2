@@ -2,7 +2,7 @@
 #include "step/layer/regions/inset.h"
 
 #include <geometry/segments/line.h>
-#include <optimizers/path_order_optimizer.h>
+#include <optimizers/polyline_order_optimizer.h>
 #include "geometry/path_modifier.h"
 #include "utilities/mathutils.h"
 #include "geometry/curve_fitting.h"
@@ -52,152 +52,156 @@ namespace ORNL {
         int ring_nr = 0;
         while (!path_line.isEmpty() && ring_nr < rings)
         {
-            m_computed_geometry.append(path_line);
-            path_line = path_line.offset(-beadWidth, -beadWidth / 2);
+            for(Polygon poly : path_line)
+            {
+                Polyline line = poly.toPolyline();
+                line.pop_back();
+                m_computed_geometry.push_back(line);
+            }
+
             ring_nr++;
+
+            if(ring_nr >= rings && !m_computed_geometry.isEmpty())
+                m_geometry = path_line.offset(-beadWidth / 2, -beadWidth / 2);
+            else
+                path_line = path_line.offset(-beadWidth, -beadWidth / 2);
         }
 
-        #ifdef HAVE_SINGLE_PATH
-            if(!m_sb->setting<bool>(Constants::ExperimentalSettings::SinglePath::kEnableSinglePath))
-                this->createPaths();
-        #else
-            this->createPaths();
-        #endif
+        //Have to test with refactor
+//        #ifdef HAVE_SINGLE_PATH
+//            if(!m_sb->setting<bool>(Constants::ExperimentalSettings::SinglePath::kEnableSinglePath))
+//                this->createPaths();
+//        #else
+//            this->createPaths();
+//        #endif
+    }
 
-        if(m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting) ||
-           m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting))
-            for(auto& path : this->m_paths) // Try to fit both arcs and splines
-                CurveFitting::Fit(path, m_sb);
+    void Inset::optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    {
+        PolylineOrderOptimizer poo(current_location, layerNumber);
 
-        if (!m_computed_geometry.isEmpty())
-            m_geometry = m_computed_geometry.last().offset(-beadWidth / 2, -beadWidth / 2);
-
-        if(static_cast<PrintDirection>(m_sb->setting<int>(Constants::ProfileSettings::Ordering::kInsetReverseDirection))
-                != PrintDirection::kReverse_off)
+        PathOrderOptimization pathOrderOptimization = static_cast<PathOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder));
+        if(pathOrderOptimization == PathOrderOptimization::kCustomPoint)
         {
-            for(Path& path : m_paths)
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathYLocation));
+
+            poo.setStartOverride(startOverride);
+        }
+
+        PointOrderOptimization pointOrderOptimization = static_cast<PointOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
+
+        if(pointOrderOptimization == PointOrderOptimization::kCustomPoint)
+        {
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointYLocation));
+
+            poo.setStartPointOverride(startOverride);
+        }
+
+        poo.setPointParameters(pointOrderOptimization, getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kMinDistanceEnabled),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kMinDistanceThreshold),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kConsecutiveDistanceThreshold),
+                               getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kLocalRandomnessEnable),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kLocalRandomnessRadius));
+
+        m_paths.clear();
+
+        if(static_cast<PrintDirection>(m_sb->setting<int>(Constants::ProfileSettings::Ordering::kInsetReverseDirection)) != PrintDirection::kReverse_off)
+            for(Polyline& line : m_computed_geometry)
+                line = line.reverse();
+
+        poo.setGeometryToEvaluate(m_computed_geometry, RegionType::kInset, static_cast<PathOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder)));
+
+        while(poo.getCurrentPolylineCount() > 0)
+        {
+            Polyline result = poo.linkNextPolyline();
+            Path newPath = createPath(result);
+
+            if(newPath.size() > 0)
             {
-                path.reverseSegments();
+                if(m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting) ||
+                        m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting))
+                    CurveFitting::Fit(newPath, m_sb);
+
+                QVector<Path> temp_path;
+                calculateModifiers(newPath, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), temp_path);
+                PathModifierGenerator::GenerateTravel(newPath, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
+                current_location = newPath.back()->end();
+                m_paths.push_back(newPath);
             }
         }
     }
 
-    void Inset::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    Path Inset::createPath(Polyline line)
     {
-        poo->setPathsToEvaluate(m_paths);
-        poo->setParameters(shouldNextPathBeCCW);
-        m_paths.clear();
-        while(poo->getCurrentPathCount() > 0)
-        {
-            Path nextPath = poo->linkNextPath();
+        Path new_path;
 
-            QVector<Path> tmp_path;
-            calculateModifiers(nextPath, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), tmp_path, poo->getCurrentLocation());
-            m_paths.push_back(nextPath);
-        }
-        shouldNextPathBeCCW = poo->getCurrentCCW();
-    }
+        Distance default_width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Inset::kBeadWidth);
+        Distance default_height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
+        Velocity default_speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Inset::kSpeed);
+        Acceleration default_acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kInset);
+        AngularVelocity default_extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Inset::kExtruderSpeed);
+        float default_esp_value                 = m_sb->setting< float >(Constants::PrinterSettings::Embossing::kESPNominalValue);
+        int material_number                     = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kPerimterNum);
 
-    void Inset::createPaths()
-    {
-        const Point origin(m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kXOffset), m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kYOffset));
-        for(int i = 0, end = m_computed_geometry.size(); i < end; ++i)
+        bool embossing_enable = m_sb->setting<bool>(Constants::PrinterSettings::Embossing::kEnableEmbossing);
+
+        for (int j = 0, end_cond = line.size(); j < end_cond; ++j)
         {
-            PolygonList& polygon_list = m_computed_geometry[i];
-            for (Polygon polygon: polygon_list)
+            Point start = line[j];
+            Point end = line[(j + 1) % end_cond];
+
+            bool is_settings_region = false;
+
+            QVector<Point> intersections;
+            for(auto settings_poly : m_settings_polygons)
             {
-                Path new_path;
+                QSharedPointer<SettingsBase> updatedBase = QSharedPointer<SettingsBase>::create(*m_sb);
+                updatedBase->populate(settings_poly.getSettings());
+                bool contains_start = settings_poly.inside(start);
+                bool contains_end   = settings_poly.inside(end);
 
-                new_path.setCCW(polygon.orientation());
-                new_path.setContainsOrigin(polygon.inside(origin));
+                if (contains_start) start.setSettings(updatedBase);
+                else start.setSettings(m_sb);
 
-                Distance default_width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Inset::kBeadWidth);
-                Distance default_height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
-                Velocity default_speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Inset::kSpeed);
-                Acceleration default_acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kInset);
-                AngularVelocity default_extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Inset::kExtruderSpeed);
-                float default_esp_value                 = m_sb->setting< float >(Constants::PrinterSettings::Embossing::kESPNominalValue);
-                int material_number                     = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kInsetNum);
+                if (contains_end) end.setSettings(updatedBase);
+                else end.setSettings(m_sb);
 
-                bool embossing_enable = m_sb->setting<bool>(Constants::PrinterSettings::Embossing::kEnableEmbossing);
+                if (contains_start) is_settings_region = true;
+                else if (contains_end) is_settings_region = false;
 
-                for (int j = 0, end_cond = polygon.size(); j <  end_cond; ++j)
+                // Find if/ where this line intersects with a settings polygon
+                QVector<Point> poly_intersect = settings_poly.clipLine(start, end);
+
+                for (Point& point : poly_intersect)
+                    point.setSettings(updatedBase);
+
+                intersections.append(poly_intersect);
+            }
+
+            // Divide lines into subsections
+            if(intersections.size() > 0)
+            {
+                // Sort points in order to start
+                std::sort(intersections.begin(), intersections.end(), [start](auto lhs, auto rhs){
+                    return start.distance(lhs) < start.distance(rhs);
+                });
+
+                for(Point& point : intersections)
                 {
-                    Point start = polygon[j];
-                    Point end = polygon[(j + 1) % end_cond];
+                    // If no settings change, skip this point
+                    if(point.getSettings()->json() == m_sb->json())
+                        continue;
 
-                    bool is_settings_region = false;
 
-                    QVector<Point> intersections;
-                    for(auto settings_poly : m_settings_polygons)
-                    {
-                        QSharedPointer<SettingsBase> updatedBase = QSharedPointer<SettingsBase>::create(*m_sb);
-                        updatedBase->populate(settings_poly.getSettings());
-                        bool contains_start = settings_poly.inside(start);
-                        bool contains_end   = settings_poly.inside(end);
+                    QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(start, point);
 
-                        if (contains_start) start.setSettings(updatedBase);
-                        else start.setSettings(m_sb);
-
-                        if (contains_end) end.setSettings(updatedBase);
-                        else end.setSettings(m_sb);
-
-                        if (contains_start) is_settings_region = true;
-                        else if (contains_end) is_settings_region = false;
-
-                        if(settings_poly.inside(end))
-                            end.setSettings(updatedBase);
-
-                        // Find if/ where this line intersects with a settings polygon
-                        QVector<Point> poly_intersect = settings_poly.clipLine(start, end);
-                        for (Point& point : poly_intersect) {
-                            point.setSettings(updatedBase);
-                        }
-
-                        intersections.append(poly_intersect);
-                    }
-
-                    // Divide lines into subsections
-                    if(intersections.size() > 1)
-                    {
-                        // Sort points in order to start
-                        std::sort(intersections.begin(), intersections.end(), [start](auto lhs, auto rhs){
-                            return start.distance(lhs) < start.distance(rhs);
-                        });
-
-                        for(Point& point : intersections)
-                        {
-                            // If no settings change, skip this point
-                            if(point.getSettings()->json() == m_sb->json()) {
-                                continue;
-                            }
-
-                            QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(start, point);
-
-                            segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Inset::kBeadWidth) : default_width);
-                            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
-                            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Inset::kSpeed) : default_speed);
-                            segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            is_settings_region ? start.getSettings()->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kInset) : default_acceleration);
-                            segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    is_settings_region ? start.getSettings()->setting< AngularVelocity >(Constants::ProfileSettings::Inset::kExtruderSpeed) : default_extruder_speed);
-                            segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
-                            segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kInset);
-
-                            if (embossing_enable) {
-                                segment->getSb()->setSetting(Constants::SegmentSettings::kESP, is_settings_region ? start.getSettings()->setting< float >(Constants::PrinterSettings::Embossing::kESPEmbossingValue) : default_esp_value);
-                                if (is_settings_region) segment->getSb()->setSetting(Constants::SegmentSettings::kPathModifiers, PathModifiers::kEmbossing);
-                            }
-
-                            new_path.append(segment);
-                            is_settings_region = !is_settings_region;
-                            start = point;
-                        }
-                    }
-
-                    // Add final segment
-                    QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(start, end);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Inset::kBeadWidth) : default_width);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Inset::kSpeed) : default_speed);
+                    segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
+                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Inset::kSpeed) : default_speed);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            is_settings_region ? start.getSettings()->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kInset) : default_acceleration);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    is_settings_region ? start.getSettings()->setting< AngularVelocity >(Constants::ProfileSettings::Inset::kExtruderSpeed) : default_extruder_speed);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
@@ -209,21 +213,36 @@ namespace ORNL {
                     }
 
                     new_path.append(segment);
-                }
-
-                if (new_path.calculateLength() > m_sb->setting< Distance >(Constants::ProfileSettings::Inset::kMinPathLength))
-                {
-                    m_paths.append(new_path);
-                    if (i == 0)
-                        m_outer_most_path_set.append(new_path);
-                    if(i == end - 1)
-                        m_inner_most_path_set.append(new_path);
+                    is_settings_region = !is_settings_region;
+                    start = point;
                 }
             }
+
+            // Add final segment
+            QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(start, end);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Inset::kBeadWidth) : default_width);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,       is_settings_region ? start.getSettings()->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight) : default_height);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,        is_settings_region ? start.getSettings()->setting< Velocity >(Constants::ProfileSettings::Inset::kSpeed) : default_speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            is_settings_region ? start.getSettings()->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kInset) : default_acceleration);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    is_settings_region ? start.getSettings()->setting< AngularVelocity >(Constants::ProfileSettings::Inset::kExtruderSpeed) : default_extruder_speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kInset);
+
+            if (embossing_enable) {
+                segment->getSb()->setSetting(Constants::SegmentSettings::kESP, is_settings_region ? start.getSettings()->setting< float >(Constants::PrinterSettings::Embossing::kESPEmbossingValue) : default_esp_value);
+                if (is_settings_region) segment->getSb()->setSetting(Constants::SegmentSettings::kPathModifiers, PathModifiers::kEmbossing);
+            }
+
+            new_path.append(segment);
         }
+
+        if (new_path.calculateLength() > m_sb->setting< Distance >(Constants::ProfileSettings::Inset::kMinPathLength))
+            return new_path;
+        else
+            return Path();
     }
 
-    void Inset::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location)
+    void Inset::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour)
     {
         if(m_sb->setting<bool>(Constants::ExperimentalSettings::Ramping::kTrajectoryAngleEnabled))
         {
@@ -267,7 +286,6 @@ namespace ORNL {
                                                        m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kInsetExtruderSpeed),
                                                        m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInsetLiftHeight),
                                                        m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInsetCutoffDistance));
-            current_location = path.back()->end();
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::SpiralLift::kInsetEnable))
         {
@@ -275,7 +293,6 @@ namespace ORNL {
                                                       m_sb->setting<Distance>(Constants::MaterialSettings::SpiralLift::kLiftHeight),
                                                       m_sb->setting<int>(Constants::MaterialSettings::SpiralLift::kLiftPoints),
                                                       m_sb->setting<Velocity>(Constants::MaterialSettings::SpiralLift::kLiftSpeed), supportsG3);
-            current_location = path.back()->end();
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::Startup::kInsetEnable))
         {
@@ -382,7 +399,7 @@ namespace ORNL {
         return m_inner_most_path_set;
     }
 
-    QVector<PolygonList> Inset::getComputedGeometry()
+    QVector<Polyline> Inset::getComputedGeometry()
     {
         return m_computed_geometry;
     }

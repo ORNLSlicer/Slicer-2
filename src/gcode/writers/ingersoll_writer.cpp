@@ -21,7 +21,9 @@ namespace ORNL
         m_layer_start = true;
         m_min_z = 0.0f;
         m_material_number = -1;
-        m_wire_feed = m_final_wire_feed = false;
+        m_wire_feed = false;
+        m_wire_feed_total = 0;
+
         QString rv;
         if (m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableStartupCode))
         {
@@ -131,15 +133,13 @@ namespace ORNL
     {
         QString rv;
         Point new_start_location;
-        RegionType rType = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
-        if(params->contains(Constants::SegmentSettings::kWireFeed))
-            m_wire_feed = true;
 
-        if(m_wire_feed)
-        {
-            rv += "H54" % commentSpaceLine("Zero UA and UT");
-            rv += "H122" % commentSpaceLine("Engage add roller");
-        }
+        bool isWireFeed = false;
+        if(params->contains(Constants::SegmentSettings::kWireFeed))
+            isWireFeed = true;
+
+        if(isWireFeed)
+            m_wire_feed_total = 0;
 
         //Use updated start location if this is the first travel
         if(m_first_travel)
@@ -166,8 +166,22 @@ namespace ORNL
         if (travel_lift_required && !m_first_travel && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly))
         {
             Point lift_destination = new_start_location + travel_lift; //lift destination is above start location
-            rv += m_G0 % writeCoordinates(lift_destination) % commentSpaceLine("TRAVEL LIFT Z");
-            setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed));
+            if(isWireFeed)
+            {
+                rv += m_G1 % writeCoordinates(lift_destination);
+                Velocity speed = m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed);
+                if (getFeedrate() != speed)
+                {
+                    setFeedrate(speed);
+                    rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
+                }
+                 rv += commentSpaceLine("TRAVEL LIFT Z");
+            }
+            else
+            {
+                rv += m_G0 % writeCoordinates(lift_destination) % commentSpaceLine("TRAVEL LIFT Z");
+                setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed));
+            }
         }
 
         //write the travel
@@ -177,23 +191,51 @@ namespace ORNL
         else if (travel_lift_required)
             travel_destination = travel_destination + travel_lift; //travel destination is above the target point
 
-        rv += m_G0 % writeCoordinates(travel_destination);
-
-        if(m_wire_feed)
-            rv += QString::number(params->setting<double>(Constants::SegmentSettings::kWireFeed));
+        if(isWireFeed)
+        {
+            rv += "H54" % commentSpaceLine("Zero UA and UT");
+            rv += "H122" % commentSpaceLine("Engage add roller");
+            rv += m_G1 % writeCoordinates(travel_destination);
+            rv += " UA=" + QString::number(params->setting<Distance>(Constants::SegmentSettings::kWireFeed).to(m_meta.m_distance_unit));
+            m_wire_feed_total += params->setting<Distance>(Constants::SegmentSettings::kWireFeed);
+            Velocity speed = params->setting<Velocity>(Constants::SegmentSettings::kSpeed);
+            if (getFeedrate() != speed)
+            {
+                setFeedrate(speed);
+                rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
+            }
+        }
+        else
+        {
+            rv += m_G0 % writeCoordinates(travel_destination);
+        }
 
         rv += commentSpaceLine("TRAVEL");
         setFeedrate(m_sb->setting< Velocity >(Constants::ProfileSettings::Travel::kSpeed));
 
+        if(isWireFeed)
+            rv += "H123" % commentSpaceLine("Disengage add roller");
+
         //write the travel lower (undo the lift)
         if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftLowerOnly))
         {
-            rv += m_G0 % writeCoordinates(target_location) % commentSpaceLine("TRAVEL LOWER Z");
-            setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed));
+            if(isWireFeed)
+            {
+                rv += m_G1 % writeCoordinates(target_location);
+                Velocity speed = m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed);
+                if (getFeedrate() != speed)
+                {
+                    setFeedrate(speed);
+                    rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
+                }
+                rv += commentSpaceLine("TRAVEL LOWER Z");
+            }
+            else
+            {
+                rv += m_G0 % writeCoordinates(target_location) % commentSpaceLine("TRAVEL LOWER Z");
+                setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed));
+            }
         }
-
-        if(m_wire_feed)
-            rv += "H123" % commentSpaceLine("Disengage add roller");
 
         if (m_first_travel) //if this is the first travel
             m_first_travel = false; //update for next one
@@ -228,14 +270,15 @@ namespace ORNL
             }
         }
 
-        if(m_wire_feed)
+        if(!m_wire_feed && params->contains(Constants::SegmentSettings::kWireFeed))
         {
             rv += "H54" % commentSpaceLine("Zero UA and UT");
             rv += "H122" % commentSpaceLine("Engage add roller");
+            m_wire_feed = true;
         }
 
         rv += m_G1;
-        // Update feedrate and speed if needed
+        // Update feedrate if needed
         if (getFeedrate() != speed || m_layer_start)
         {
             setFeedrate(speed);
@@ -248,18 +291,18 @@ namespace ORNL
 
         if(m_wire_feed)
         {
-            rv += "UA=" % QString::number(params->setting<double>(Constants::SegmentSettings::kWireFeed));
-            if(m_final_wire_feed)
+            m_wire_feed_total += params->setting<Distance>(Constants::SegmentSettings::kWireFeed);
+            rv += " UA=" % QString::number(m_wire_feed_total.to(m_meta.m_distance_unit));
+
+            if(params->setting<bool>(Constants::SegmentSettings::kFinalWireCoast))
             {
-                rv += "H120";
-                m_final_wire_feed = false;
+                rv += " H120";
                 m_wire_feed = false;
             }
 
             if(params->setting<bool>(Constants::SegmentSettings::kFinalWireFeed))
             {
-                rv += "H123";
-                m_final_wire_feed = true;
+                rv += " H123";
             }
         }
 

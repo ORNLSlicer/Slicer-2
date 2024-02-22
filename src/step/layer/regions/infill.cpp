@@ -2,7 +2,7 @@
 #include "step/layer/regions/infill.h"
 #include "utilities/enums.h"
 #include "geometry/segments/line.h"
-#include "optimizers/path_order_optimizer.h"
+#include "optimizers/polyline_order_optimizer.h"
 #include "geometry/path_modifier.h"
 #include "geometry/pattern_generator.h"
 #include "utilities/mathutils.h"
@@ -32,7 +32,6 @@ namespace ORNL {
     void Infill::compute(uint layer_num, QSharedPointer<SyncManager>& sync) {
         m_layer_num = layer_num;
         m_paths.clear();
-        m_region_paths.clear();
 
 		setMaterialNumber(m_sb->setting<int>(Constants::MaterialSettings::MultiMaterial::kInfillNum));
 
@@ -68,17 +67,6 @@ namespace ORNL {
 
                 fillGeometry(geometry, region_settings);
             }
-        }
-
-        this->createPaths();
-
-        // Only fit arcs if the infill was concentric
-        if(static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)) == InfillPatterns::kConcentric)
-        {
-            if(m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting) ||
-               m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting))
-                for(auto& path : this->m_paths) // Try to fit both arcs and splines
-                    CurveFitting::Fit(path, m_sb);
         }
     }
 
@@ -153,145 +141,119 @@ namespace ORNL {
             this->reversePaths();
     }
 
-    void Infill::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    void Infill::optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
     {
-        bool supportsG3 = m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3);
-        InfillPatterns infillPattern = static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern));
-        poo->setPathsToEvaluate(m_paths);
-        poo->setParameters(infillPattern, m_geometry_copy);
+        PolylineOrderOptimizer poo(current_location, layerNumber);
 
-        QVector<Path> new_paths;
-        while(poo->getCurrentPathCount() > 0)
+        PathOrderOptimization pathOrderOptimization = static_cast<PathOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder));
+        if(pathOrderOptimization == PathOrderOptimization::kCustomPoint)
         {
-            Path new_path = poo->linkNextPath(new_paths);
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathYLocation));
 
-            if(new_path.size() > 0)
-            {
-                QVector<QSharedPointer<SegmentBase>> newSegments;
-                if(m_grid_info.m_grid.size() > 0)
-                {
-                    for(int i = 0; i < new_path.size(); ++i)
-                    {
-                         if (!dynamic_cast<TravelSegment*>(new_path[i].data()))
-                         {
-                             newSegments = applyGrid(new_path[i]);
-                             new_path.removeAt(i);
-                             for(int j = 0, end = newSegments.size(); j < end; ++j)
-                             {
-                                 new_path.insert(i + j, newSegments[j]);
-                             }
-                             i += newSegments.size() - 1;
-                         }
-                    }
-                }
-
-                calculateModifiers(new_path, supportsG3, innerMostClosedContour, poo->getCurrentLocation());
-                new_paths.append(new_path);
-            }
+            poo.setStartOverride(startOverride);
         }
 
-        for(QVector<Path> paths : m_region_paths)
-        {
-            poo->setPathsToEvaluate(paths);
-            poo->setParameters(infillPattern, m_geometry);
+        PointOrderOptimization pointOrderOptimization = static_cast<PointOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
 
-            while(poo->getCurrentPathCount() > 0)
+        if(pointOrderOptimization == PointOrderOptimization::kCustomPoint)
+        {
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointYLocation));
+
+            poo.setStartPointOverride(startOverride);
+        }
+        poo.setInfillParameters(static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)),
+                                m_geometry_copy, getSb()->setting<Distance>(Constants::ProfileSettings::Infill::kMinPathLength),
+                                getSb()->setting<Distance>(Constants::ProfileSettings::Travel::kMinLength));
+
+        poo.setPointParameters(pointOrderOptimization, getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kMinDistanceEnabled),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kMinDistanceThreshold),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kConsecutiveDistanceThreshold),
+                               getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kLocalRandomnessEnable),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kLocalRandomnessRadius));
+
+        for(QVector<Polyline> lines : m_computed_geometry)
+        {
+            poo.setGeometryToEvaluate(lines, RegionType::kInfill, static_cast<PathOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder)));
+
+            QVector<Polyline> previouslyLinkedLines;
+            while(poo.getCurrentPolylineCount() > 0)
             {
-                Path new_path = poo->linkNextPath(new_paths);
-                if(new_path.size() > 0)
+                Polyline result = poo.linkNextPolyline(previouslyLinkedLines);
+                if(result.size() > 0)
                 {
-                    QVector<QSharedPointer<SegmentBase>> newSegments;
-                    if(m_grid_info.m_grid.size() > 0)
+                    Path newPath = createPath(result);
+                    if(newPath.size() > 0)
                     {
-                        for(int i = 0; i < new_path.size(); ++i)
+                        // Only fit arcs if the infill was concentric
+                        if(static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)) == InfillPatterns::kConcentric)
                         {
-                             if (!dynamic_cast<TravelSegment*>(new_path[i].data()))
-                             {
-                                 newSegments = applyGrid(new_path[i]);
-                                 new_path.removeAt(i);
-                                 for(int j = 0, end = newSegments.size(); j < end; ++j)
-                                 {
-                                     new_path.insert(i + j, newSegments[j]);
-                                 }
-                                 i += newSegments.size() - 1;
-                             }
+                            if(m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting) ||
+                               m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting))
+                                    CurveFitting::Fit(newPath, m_sb);
                         }
-                    }
 
-                    calculateModifiers(new_path, supportsG3, innerMostClosedContour, poo->getCurrentLocation());
-                    new_paths.append(new_path);
+
+                        calculateModifiers(newPath, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), innerMostClosedContour);
+                        PathModifierGenerator::GenerateTravel(newPath, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
+                        current_location = newPath.back()->end();
+                        previouslyLinkedLines.push_back(result);
+                        m_paths.push_back(newPath);
+                    }
                 }
             }
         }
-
-        m_paths = new_paths;
     }
 
-    void Infill::createPaths() {
+    Path Infill::createPath(Polyline line) {
 
         Distance width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Infill::kBeadWidth);
         Distance height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
-        Distance half_height            = height / 2;
         Velocity speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Infill::kSpeed);
-        Velocity double_speed           = speed * 2;
         Acceleration acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kInfill);
         AngularVelocity extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Infill::kExtruderSpeed);
         int material_number             = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kInfillNum);
 
-        m_region_paths.resize(m_computed_geometry.size() - 1);
-        for(int i = 0, end = m_computed_geometry.size(); i < end; ++i)
-            //for (Polyline polyline : m_computed_geometry)
+        Path newPath;
+        for (int j = 0, polyEnd = line.size() - 1; j < polyEnd; ++j)
         {
-            QVector<Polyline> polylineList = m_computed_geometry[i];
+            QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line[j], line[j + 1]);
 
-            int polylineNum = 0;
-            for(Polyline polyline : polylineList)
-            {
-                Path newPath;
-                for (int j = 0, polyEnd = polyline.size() - 1; j < polyEnd; ++j)
-                {
-                    QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(polyline[j], polyline[j + 1]);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kInfill);
 
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kInfill);
-
-                    newPath.append(segment);
-                }
-
-                //! Creates closing segment if infill pattern is concentric
-                if (static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)) == InfillPatterns::kConcentric ||
-                        static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)) == InfillPatterns::kInsideOutConcentric)
-                {
-                    QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(polyline.last(), polyline.first());
-
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kInfill);
-
-                    newPath.append(segment);
-                }
-
-                if(i == 0){
-                    m_paths.append(newPath);
-                }
-                else
-                    m_region_paths[i - 1].append(newPath);
-
-                polylineNum++;
-            }
+            newPath.append(segment);
         }
+
+        //! Creates closing segment if infill pattern is concentric
+        if (static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)) == InfillPatterns::kConcentric ||
+                static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)) == InfillPatterns::kInsideOutConcentric)
+        {
+            QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line.last(), line.first());
+
+            segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kInfill);
+
+            newPath.append(segment);
+        }
+
+        return newPath;
     }
 
-    void Infill::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location)
+    void Infill::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour)
     {
         if(m_sb->setting<bool>(Constants::ExperimentalSettings::Ramping::kTrajectoryAngleEnabled))
         {
@@ -356,7 +318,6 @@ namespace ORNL {
                                                        m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kInfillExtruderSpeed),
                                                        m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillLiftHeight),
                                                        m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillCutoffDistance));
-            current_location = path.back()->end();
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::SpiralLift::kInfillEnable))
         {
@@ -364,7 +325,6 @@ namespace ORNL {
                                                       m_sb->setting<Distance>(Constants::MaterialSettings::SpiralLift::kLiftHeight),
                                                       m_sb->setting<int>(Constants::MaterialSettings::SpiralLift::kLiftPoints),
                                                       m_sb->setting<Velocity>(Constants::MaterialSettings::SpiralLift::kLiftSpeed), supportsG3);
-            current_location = path.back()->end();
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::Startup::kInfillEnable))
         {

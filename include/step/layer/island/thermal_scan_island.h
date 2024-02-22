@@ -19,7 +19,7 @@ namespace ORNL {
 
             //! \brief Override from base. Filters down to individual regions to add
             //! travels and apply path modifiers
-            void optimize(QSharedPointer<PathOrderOptimizer> poo, Point& currentLocation, QVector<QSharedPointer<RegionBase>>& previousRegions) override;
+            void optimize(int layerNumber, Point& currentLocation, QVector<QSharedPointer<RegionBase>>& previousRegions) override;
     };
 }
 #endif // THERMAL_SCAN_ISLAND_H

@@ -33,6 +33,10 @@
 #include <gcode/writers/ornl_writer.h>
 #include <gcode/writers/okuma_writer.h>
 #include <gcode/writers/tormach_writer.h>
+#include <gcode/writers/aml3d_writer.h>
+#include <gcode/writers/kraussmaffei_writer.h>
+#include <gcode/writers/sandia_writer.h>
+#include <gcode/writers/five_axis_marlin_writer.h>
 
 #include <gcode/gcode_meta.h>
 
@@ -68,6 +72,12 @@ namespace ORNL {
         m_syntax = GSM->getGlobal()->setting<GcodeSyntax>(Constants::PrinterSettings::MachineSetup::kSyntax);
         switch(m_syntax)
         {
+        case GcodeSyntax::k5AxisMarlin:
+            m_base = QSharedPointer<FiveAxisMarlinWriter>(new FiveAxisMarlinWriter(GcodeMetaList::MarlinMeta, GSM->getGlobal()));
+            break;
+        case GcodeSyntax::kAML3D:
+            m_base = QSharedPointer<AML3DWriter>(new AML3DWriter(GcodeMetaList::AML3DMeta, GSM->getGlobal()));
+            break;
         case GcodeSyntax::kCincinnati:
             m_base = QSharedPointer<CincinnatiWriter>(new CincinnatiWriter(GcodeMetaList::CincinnatiMeta, GSM->getGlobal()));
             break;
@@ -95,6 +105,9 @@ namespace ORNL {
         case GcodeSyntax::kIngersoll:
             m_base = QSharedPointer<IngersollWriter>(new IngersollWriter(GcodeMetaList::IngersollMeta, GSM->getGlobal()));
             break;
+        case GcodeSyntax::kKraussMaffei:
+            m_base = QSharedPointer<KraussMaffeiWriter>(new KraussMaffeiWriter(GcodeMetaList::KraussMaffeiMeta, GSM->getGlobal()));
+            break;
         case GcodeSyntax::kMarlin:
             m_base = QSharedPointer<MarlinWriter>(new MarlinWriter(GcodeMetaList::MarlinMeta, GSM->getGlobal()));
             break;
@@ -121,6 +134,9 @@ namespace ORNL {
             break;
         case GcodeSyntax::kRPBF:
             m_base = QSharedPointer<RPBFWriter>(new RPBFWriter(GcodeMetaList::RPBFMeta, GSM->getGlobal()));
+            break;
+        case GcodeSyntax::kSandia:
+            m_base = QSharedPointer<SandiaWriter>(new SandiaWriter(GcodeMetaList::SandiaMeta, GSM->getGlobal()));
             break;
         case GcodeSyntax::kSiemens:
             m_base = QSharedPointer<SiemensWriter>(new SiemensWriter(GcodeMetaList::SiemensMeta, GSM->getGlobal()));

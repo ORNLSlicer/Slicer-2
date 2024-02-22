@@ -69,9 +69,6 @@ namespace ORNL {
         //start index = index of last visited island
         IslandBaseOrderOptimizer ioo(start, m_islands.values(), start_index, islandOrderOptimization); //mode 1
 
-
-        QSharedPointer<PathOrderOptimizer> poo = QSharedPointer<PathOrderOptimizer>(new PathOrderOptimizer(start, getLayerNumber(), getSb()));
-
         //seam adjustment
         if(islandOrderOptimization == IslandOrderOptimization::kCustomPoint)
         {
@@ -88,7 +85,7 @@ namespace ORNL {
         if(currentIslands.size() > 0)
         {
             m_island_order.push_back(currentIslands[0]);
-            m_island_order.last()->optimize(poo, start, previousRegions);
+            m_island_order.last()->optimize(m_layer_nr, start, previousRegions);
         }
 
         QList<QList<QSharedPointer<IslandBase>>> islandsToProcess;
@@ -137,7 +134,7 @@ namespace ORNL {
                 QSharedPointer<IslandBase> currentIsland = islandSet[index];
                 if(!alreadyVisited.contains(currentIsland))
                 {
-                    currentIsland->optimize(poo, start, previousRegions);
+                    currentIsland->optimize(m_layer_nr, start, previousRegions);
                     m_island_order.push_back(currentIsland);
                     alreadyVisited.push_back(currentIsland);
                 }
@@ -149,7 +146,7 @@ namespace ORNL {
                     {
                         int index = ioo.computeNextIndex();
                         QSharedPointer<IslandBase> currentIsland = childrenSet[index];
-                        currentIsland->optimize(poo, start, previousRegions);
+                        currentIsland->optimize(m_layer_nr, start, previousRegions);
                         m_island_order.push_back(currentIsland);
                         childrenSet.removeAt(index);
                     }
@@ -168,7 +165,7 @@ namespace ORNL {
                 int index = ioo.computeNextIndex();
                 QSharedPointer<IslandBase> isl = currentIslands[index];
                 currentIslands.removeAt(index);
-                isl->optimize(poo, start, previousRegions);
+                isl->optimize(m_layer_nr, start, previousRegions);
                 m_island_order.push_back(isl);
             }
         }
@@ -183,7 +180,7 @@ namespace ORNL {
                 int index = ioo.computeNextIndex();
                 QSharedPointer<IslandBase> isl = currentIslands[index];
                 currentIslands.removeAt(index);
-                isl->optimize(poo, start, previousRegions);
+                isl->optimize(m_layer_nr, start, previousRegions);
                 m_island_order.push_back(isl);
             }
         }

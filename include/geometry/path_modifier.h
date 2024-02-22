@@ -12,6 +12,10 @@ namespace ORNL {
     class PathModifierGenerator
     {
     public:
+
+        static void GenerateRotationAndTilt(Path& path, Point origin, bool rotate, bool& next_ccw, bool tilt);
+        static void GenerateTravel(Path &path, Point current_location, Velocity velocity);
+
         /**
          * @brief GeneratePreStart generates a pre-start path.
          * @param path: The path to modify.
@@ -21,6 +25,14 @@ namespace ORNL {
          * @param outerPath: The enclosing path that "path" will try to connect to.
          */
         static void GeneratePreStart(Path& path, Distance prestartDistance, Velocity prestartSpeed, AngularVelocity prestartExtruderSpeed, QVector<Path>& outerPath);
+
+        /**
+         * @brief GenerateFlyingStart generates a flying start path which begins motion before enabling extrusion.
+         * @param path: The path to modify.
+         * @param flyingStartDistance: The length of the flying start motion.
+         * @param flyingStartSpeed: The speed for the flying start motion speed.
+         */
+        static void GenerateFlyingStart(Path& path, Distance flyingStartDistance, Velocity flyingStartSpeed);
 
         /**
          * @brief GenerateInitialStartup generates an initial startup path.

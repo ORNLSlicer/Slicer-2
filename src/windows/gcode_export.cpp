@@ -13,6 +13,8 @@
 #include "threading/gcode_rpbf_saver.h"
 #include "threading/gcode_meld_saver.h"
 #include "threading/gcode_tormach_saver.h"
+#include "threading/gcode_aml3d_saver.h"
+#include "threading/gcode_sandia_saver.h"
 
 namespace ORNL
 {
@@ -307,6 +309,24 @@ namespace ORNL
                 GCodeTormachSaver* saver = new GCodeTormachSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
                 connect(saver, &GCodeTormachSaver::finished, saver, &GCodeTormachSaver::deleteLater);
                 connect(saver, &GCodeTormachSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
+                saver->start();
+            }
+            else if(m_most_recent_meta == GcodeMetaList::AML3DMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kAML3DOutput))
+            {
+                bool ok;
+
+                GCodeAML3DSaver* saver = new GCodeAML3DSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
+                connect(saver, &GCodeAML3DSaver::finished, saver, &GCodeAML3DSaver::deleteLater);
+                connect(saver, &GCodeAML3DSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
+                saver->start();
+            }
+            else if(m_most_recent_meta == GcodeMetaList::SandiaMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kSandiaOutput))
+            {
+                bool ok;
+
+                GCodeSandiaSaver* saver = new GCodeSandiaSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
+                connect(saver, &GCodeSandiaSaver::finished, saver, &GCodeSandiaSaver::deleteLater);
+                connect(saver, &GCodeSandiaSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
             else

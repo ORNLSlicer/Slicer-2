@@ -48,7 +48,7 @@ namespace ORNL {
         m_island_type = IslandType::kPowderSector;
     }
 
-    void PowderSectorIsland::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& currentLocation, QVector<QSharedPointer<RegionBase>>& previousRegions)
+    void PowderSectorIsland::optimize(int layerNumber, Point& currentLocation, QVector<QSharedPointer<RegionBase>>& previousRegions)
     {
         //NOP
     }

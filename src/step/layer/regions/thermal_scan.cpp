@@ -36,29 +36,29 @@ namespace ORNL {
 
         m_computed_geometry = Polyline({start, end});
 
-        this->createPaths();
+        m_paths.push_back(createPath(m_computed_geometry));
     }
 
-    void ThermalScan::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    void ThermalScan::optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
     {
         //NOP?
     }
 
-    void ThermalScan::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location)
+    void ThermalScan::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour)
     {
        //NOP
     }
 
-    void ThermalScan::createPaths()
+    Path ThermalScan::createPath(Polyline line)
     {
         Path newPath;
 
-        QSharedPointer<ScanSegment> segment = QSharedPointer<ScanSegment>::create(m_computed_geometry.first(), m_computed_geometry.last());
+        QSharedPointer<ScanSegment> segment = QSharedPointer<ScanSegment>::create(line.first(), line.last());
         segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kThermalScan);
 
         newPath.append(segment);
 
-        m_paths.append(newPath);
+        return newPath;
     }
 }
 

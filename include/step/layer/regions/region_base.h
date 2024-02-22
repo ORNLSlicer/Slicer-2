@@ -53,14 +53,13 @@ namespace ORNL {
             virtual void compute(uint layer_num, QSharedPointer<SyncManager>& sync) = 0;
 
             //! \brief Performs the optimization for this region.
-            //! \param poo: path optimizer that controls optimization behavior
+            //! \param layerNumber: current layer
             //! \param current_location: current location
             //! \param innerMostClosedContour: inner most contour used in conjunction with path modifiers
             //! \param outerMostClosedContour: used for subsequent path modifiers
             //! \param shouldNextPathBeCCW: CW or CCW state of last contour when using additional DOF
-            virtual void optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location,
-                                  QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour,
-                                  bool& shouldNextPathBeCCW) = 0;
+            virtual void optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour,
+                                  QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW) = 0;
 
             //! \brief Get the paths generated from this region.
             //! \return Reference to region paths
@@ -127,7 +126,9 @@ namespace ORNL {
 
         protected:
             //! \brief Generates paths for the region.
-            virtual void createPaths() = 0;
+            //! \param line: polyline representing path
+            //! \return Polyline converted to path
+            virtual Path createPath(Polyline line) = 0;
 
             //! \brief Adds a path to the region.
             //! \param path: path to append
@@ -137,8 +138,7 @@ namespace ORNL {
             //! \param path: path to add modifiers to
             //! \param supportsG3: whether or not the system supports G3 command
             //! \param innerMostClosedContour: inner most closed contour for use with path modifiers/open paths
-            //! \param current_location: used to update start points of travel segments after modifiers
-            virtual void calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location) = 0;
+            virtual void calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour) = 0;
 
             //! \brief The geometery this region will work on.
             PolygonList m_geometry;

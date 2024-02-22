@@ -141,6 +141,17 @@ namespace ORNL
                               Angle rotation_angle,
                               QVector3D axis = {0, 0, 1});
 
+
+        /*!
+         * \brief Returns whether the point is inside the polyline if the polyline is closed
+         */
+        bool inside(const Point& point, bool border_result = false) const;
+
+        /*!
+         * \brief Returns whether the polyline is clockwise or counter clockwise if the polyline is closed
+         */
+        bool orientation() const;
+
         /*!
          * \brief joins the two polylines together
          *

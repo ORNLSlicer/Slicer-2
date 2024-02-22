@@ -1,6 +1,5 @@
 // Main Module
 #include "step/layer/regions/skin.h"
-#include <optimizers/path_order_optimizer.h>
 #include <geometry/segments/line.h>
 #include "geometry/path_modifier.h"
 #include "geometry/pattern_generator.h"
@@ -92,23 +91,6 @@ namespace ORNL {
             }
             anyGeometry = true;
         }
-
-        if(anyGeometry)
-        {
-            this->createPaths();
-
-            // Only fit arcs if the skin was concentric
-            if(static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Skin::kPattern)) == InfillPatterns::kConcentric)
-            {
-                if(m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting) ||
-                   m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting)) // Fit both arcs and spline
-                    for(auto& path : this->m_paths) // Try to fit both arcs and splines
-                        CurveFitting::Fit(path, m_sb);
-            }
-        }
-
-        if(static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Skin::kPattern)) == InfillPatterns::kInsideOutConcentric)
-            this->reversePaths();
     }
 
     QVector<Polyline> Skin::createPatternForArea(InfillPatterns pattern, PolygonList& geometry, Distance beadWidth,
@@ -185,45 +167,88 @@ namespace ORNL {
         }
     }
 
-    void Skin::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    void Skin::optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
     {
-        bool supportsG3 = m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3);
-        InfillPatterns skinPattern = static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Skin::kPattern));
-        QVector<Path> result = optimizeHelper(poo, supportsG3, innerMostClosedContour, current_location,
-                       skinPattern, m_paths, m_skin_geometry);
+        PolylineOrderOptimizer poo(current_location, layerNumber);
+
+        PathOrderOptimization pathOrderOptimization = static_cast<PathOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder));
+        if(pathOrderOptimization == PathOrderOptimization::kCustomPoint)
+        {
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathYLocation));
+
+            poo.setStartOverride(startOverride);
+        }
+
+        PointOrderOptimization pointOrderOptimization = static_cast<PointOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
+
+        if(pointOrderOptimization == PointOrderOptimization::kCustomPoint)
+        {
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointYLocation));
+
+            poo.setStartPointOverride(startOverride);
+        }
+
+        poo.setPointParameters(pointOrderOptimization, getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kMinDistanceEnabled),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kMinDistanceThreshold),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kConsecutiveDistanceThreshold),
+                               getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kLocalRandomnessEnable),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kLocalRandomnessRadius));
 
         m_paths.clear();
-        m_paths.append(result);
+        bool supportsG3 = m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3);
+        InfillPatterns skinPattern = static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Skin::kPattern));
+        optimizeHelper(poo, supportsG3, innerMostClosedContour, current_location,
+                       skinPattern, m_computed_geometry, m_skin_geometry);
 
         InfillPatterns gradualPattern = InfillPatterns::kLines;
-        for(int i = 0, end = m_gradual_paths.size(); i < end; ++i)
+        for(int i = 0, end = m_gradual_computed_geometry.size(); i < end; ++i)
         {
-            m_paths.append(optimizeHelper(poo, supportsG3, innerMostClosedContour, current_location,
-                           gradualPattern, m_gradual_paths[i], m_gradual_skin_geometry[i]));
+            optimizeHelper(poo, supportsG3, innerMostClosedContour, current_location,
+                           gradualPattern, m_gradual_computed_geometry[i], m_gradual_skin_geometry[i]);
         }
     }
 
-    QVector<Path> Skin::optimizeHelper(QSharedPointer<PathOrderOptimizer> poo, bool supportsG3, QVector<Path> &innerMostClosedContour,
-                              Point &current_location, InfillPatterns pattern, QVector<Path> paths, PolygonList geometry)
+    void Skin::optimizeHelper(PolylineOrderOptimizer poo, bool supportsG3, QVector<Path> &innerMostClosedContour,
+                              Point &current_location, InfillPatterns pattern, QVector<Polyline> lines, PolygonList geometry)
     {
-        poo->setPathsToEvaluate(paths);
-        poo->setParameters(pattern, geometry);
+        poo.setInfillParameters(pattern, geometry, getSb()->setting<Distance>(Constants::ProfileSettings::Skin::kMinPathLength),
+                                getSb()->setting<Distance>(Constants::ProfileSettings::Travel::kMinLength));
 
-        QVector<Path> new_paths;
-        while(poo->getCurrentPathCount() > 0)
+        poo.setGeometryToEvaluate(lines, RegionType::kSkin, static_cast<PathOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder)));
+
+        QVector<Polyline> previouslyLinkedLines;
+        while(poo.getCurrentPolylineCount() > 0)
         {
-            Path new_path = poo->linkNextPath(new_paths);
-            if(new_path.size() > 0)
+            Polyline result = poo.linkNextPolyline(previouslyLinkedLines);
+            if(result.size() > 0)
             {
-                calculateModifiers(new_path, supportsG3, innerMostClosedContour, poo->getCurrentLocation());
-                new_paths.append(new_path);
+                Path newPath = createPath(result);
+                if(newPath.size() > 0)
+                {
+                    // Only fit arcs if the infill was concentric
+                    if(static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Skin::kPattern)) == InfillPatterns::kConcentric)
+                    {
+                        if(m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting) ||
+                                m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting))
+                            CurveFitting::Fit(newPath, m_sb);
+                    }
+
+
+                    calculateModifiers(newPath, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), innerMostClosedContour);
+                    PathModifierGenerator::GenerateTravel(newPath, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
+                    current_location = newPath.back()->end();
+                    previouslyLinkedLines.push_back(result);
+                    m_paths.push_back(newPath);
+                }
             }
         }
-
-        return new_paths;
     }
 
-    void Skin::createPaths() {
+    Path Skin::createPath(Polyline line) {
 
         Distance width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Skin::kBeadWidth);
         Distance height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
@@ -232,70 +257,40 @@ namespace ORNL {
         AngularVelocity extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Skin::kExtruderSpeed);
         int material_number             = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kSkinNum);
 
-            for (Polyline polyline : m_computed_geometry)
-            {
-                Path newPath;
+        Path newPath;
+        for (int i = 0; i < line.size() - 1; i++)
+        {
+            QSharedPointer<LineSegment> line_segment = QSharedPointer<LineSegment>::create(line[i], line[i + 1]);
 
-                for (int i = 0; i < polyline.size() - 1; i++)
-                {
-                    QSharedPointer<LineSegment> line_segment = QSharedPointer<LineSegment>::create(polyline[i], polyline[i + 1]);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kSkin);
 
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kSkin);
+            newPath.append(line_segment);
+        }
 
-                    newPath.append(line_segment);
-                }
+        //! Creates closing segment if infill pattern is concentric
+        if (static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Skin::kPattern)) == InfillPatterns::kConcentric ||
+                static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Skin::kPattern)) == InfillPatterns::kInsideOutConcentric)
+        {
+            QSharedPointer<LineSegment> line_segment = QSharedPointer<LineSegment>::create(line.last(), line.first());
 
-                //! Creates closing segment if infill pattern is concentric
-                if (static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Skin::kPattern)) == InfillPatterns::kConcentric ||
-                        static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Skin::kPattern)) == InfillPatterns::kInsideOutConcentric)
-                {
-                    QSharedPointer<LineSegment> line_segment = QSharedPointer<LineSegment>::create(polyline.last(), polyline.first());
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
+            line_segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kSkin);
 
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
-                    line_segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kSkin);
+            newPath.append(line_segment);
+        }
 
-                    newPath.append(line_segment);
-                }
-
-                m_paths.append(newPath);
-            }
-
-            for(QVector<Polyline> area : m_gradual_computed_geometry)
-            {
-                QVector<Path> m_extra_path;
-                for (Polyline polyline : area)
-                {
-                    Path newPath;
-
-                    for (int i = 0; i < polyline.size() - 1; i++)
-                    {
-                        QSharedPointer<LineSegment> line_segment = QSharedPointer<LineSegment>::create(polyline[i], polyline[i + 1]);
-
-                        line_segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                        line_segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
-                        line_segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
-                        line_segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
-                        line_segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
-                        line_segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
-                        line_segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kSkin);
-
-                        newPath.append(line_segment);
-                    }
-                    m_extra_path.append(newPath);
-                }
-                m_gradual_paths.push_back(m_extra_path);
-            }
+        return newPath;
     }
 
     void Skin::addUpperGeometry(const PolygonList& poly_list) {
@@ -316,7 +311,7 @@ namespace ORNL {
         m_gradual_geometry_includes_top = gradual;
     }
 
-    void Skin::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location)
+    void Skin::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour)
     {
         if(m_sb->setting<bool>(Constants::ExperimentalSettings::Ramping::kTrajectoryAngleEnabled))
         {
@@ -382,7 +377,6 @@ namespace ORNL {
                                                        m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkinExtruderSpeed),
                                                        m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinLiftHeight),
                                                        m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinCutoffDistance));
-            current_location = path.back()->end();
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::SpiralLift::kSkinEnable))
         {
@@ -390,7 +384,6 @@ namespace ORNL {
                                                       m_sb->setting<Distance>(Constants::MaterialSettings::SpiralLift::kLiftHeight),
                                                       m_sb->setting<int>(Constants::MaterialSettings::SpiralLift::kLiftPoints),
                                                       m_sb->setting<Velocity>(Constants::MaterialSettings::SpiralLift::kLiftSpeed), supportsG3);
-            current_location = path.back()->end();
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::Startup::kSkinEnable))
         {

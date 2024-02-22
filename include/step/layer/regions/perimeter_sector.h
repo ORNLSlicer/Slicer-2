@@ -22,17 +22,18 @@ namespace ORNL {
             void compute(uint layer_num, QSharedPointer<SyncManager>& sync) override;
 
             //! \brief Optimizes the region.
-            //! \param poo: currently loaded path optimizer
+            //! \param layerNumber: current layer number
             //! \param innerMostClosedContour: used for subsequent path modifiers
             //! \param outerMostClosedContour: used for subsequent path modifiers
             //! \param current_location: most recent location
             //! \param shouldNextPathBeCCW: state as to CW or CCW of previous path for use with additional DOF
-            void optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location,
-                          QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour,
-                          bool& shouldNextPathBeCCW) override;
+            void optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour,
+                          QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW) override;
 
             //! \brief Creates paths for the perimeter region.
-            void createPaths();
+            //! \param line: polyline representing path
+            //! \return Polyline converted to path
+            Path createPath(Polyline line);
 
             //! \brief Set geometry as computed in RPBF slicer
             //! \param perimeters: polyline representation of perimeters in sector
@@ -47,8 +48,7 @@ namespace ORNL {
             //! \param path: Current path to add modifiers to
             //! \param supportsG3: Whether or not G2/G3 is supported for spiral lift
             //! \param innerMostClosedContour: used for Prestarts (currently only skins/infill)
-            //! \param current_location: used to update start points of travels after modifiers are added
-            void calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location) override;
+            void calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour) override;
 
             //! \brief Holds the computed geometry (perimeters) before it is converted into paths
             QVector<Polyline> m_computed_geometry;

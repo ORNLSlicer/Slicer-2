@@ -276,7 +276,7 @@ namespace ORNL
         }
 
         rv += m_G1;
-        //update feedrate and speed if needed
+        //update feedrate if needed
         if (getFeedrate() != speed || m_layer_start)
         {
             setFeedrate(speed);

@@ -2,7 +2,7 @@
 #include "step/layer/regions/ironing.h"
 #include "utilities/enums.h"
 #include "geometry/segments/line.h"
-#include "optimizers/path_order_optimizer.h"
+#include "optimizers/polyline_order_optimizer.h"
 #include "geometry/path_modifier.h"
 #include "geometry/pattern_generator.h"
 #include "utilities/mathutils.h"
@@ -31,7 +31,6 @@ namespace ORNL {
 
     void Ironing::compute(uint layer_num, QSharedPointer<SyncManager>& sync) {
         m_paths.clear();
-        m_region_paths.clear();
 
         bool useLayerGeometry = true;
         if(m_sb->setting<bool>(Constants::ExperimentalSettings::Ironing::kTop)){
@@ -65,8 +64,6 @@ namespace ORNL {
                 fillGeometry(geometry, region_settings);
             }
         }
-
-        this->createPaths();
     }
 
     void Ironing::fillGeometry(PolygonList geometry, const QSharedPointer<SettingsBase>& sb)
@@ -102,46 +99,64 @@ namespace ORNL {
         }
     }
 
-    void Ironing::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    void Ironing::optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
     {
-        if(m_paths.count() < 1) return;
+        PolylineOrderOptimizer poo(current_location, layerNumber);
 
-        bool supportsG3 = m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3);
-        InfillPatterns IroningPattern = static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern));
-        poo->setPathsToEvaluate(m_paths);
-        poo->setParameters(IroningPattern, m_geometry_copy);
-
-        QVector<Path> new_paths;
-        while(poo->getCurrentPathCount() > 0)
+        PathOrderOptimization pathOrderOptimization = static_cast<PathOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder));
+        if(pathOrderOptimization == PathOrderOptimization::kCustomPoint)
         {
-            Path new_path = poo->linkNextPath(new_paths);
-            if(new_path.size() > 0)
-            {
-                calculateModifiers(new_path, supportsG3, innerMostClosedContour, poo->getCurrentLocation());
-                new_paths.append(new_path);
-            }
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathYLocation));
+
+            poo.setStartOverride(startOverride);
         }
 
-        for(QVector<Path> paths : m_region_paths)
-        {
-            poo->setPathsToEvaluate(paths);
-            poo->setParameters(IroningPattern, m_geometry);
+        PointOrderOptimization pointOrderOptimization = static_cast<PointOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
 
-            while(poo->getCurrentPathCount() > 0)
+        if(pointOrderOptimization == PointOrderOptimization::kCustomPoint)
+        {
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointYLocation));
+
+            poo.setStartPointOverride(startOverride);
+        }
+        poo.setInfillParameters(static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)),
+                                m_geometry_copy, getSb()->setting<Distance>(Constants::ProfileSettings::Infill::kMinPathLength),
+                                getSb()->setting<Distance>(Constants::ProfileSettings::Travel::kMinLength));
+
+        poo.setPointParameters(pointOrderOptimization, getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kMinDistanceEnabled),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kMinDistanceThreshold),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kConsecutiveDistanceThreshold),
+                               getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kLocalRandomnessEnable),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kLocalRandomnessRadius));
+
+        for(QVector<Polyline> lines : m_computed_geometry)
+        {
+            poo.setGeometryToEvaluate(lines, RegionType::kInfill, static_cast<PathOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder)));
+
+            QVector<Polyline> previouslyLinkedLines;
+            while(poo.getCurrentPolylineCount() > 0)
             {
-                Path new_path = poo->linkNextPath(new_paths);
-                if(new_path.size() > 0)
+                Polyline result = poo.linkNextPolyline(previouslyLinkedLines);
+                if(result.size() > 0)
                 {
-                    calculateModifiers(new_path, supportsG3, innerMostClosedContour, poo->getCurrentLocation());
-                    new_paths.append(new_path);
+                    Path newPath = createPath(result);
+                    if(newPath.size() > 0)
+                    {
+                        PathModifierGenerator::GenerateTravel(newPath, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
+                        current_location = newPath.back()->end();
+                        previouslyLinkedLines.push_back(result);
+                        m_paths.push_back(newPath);
+                    }
                 }
             }
         }
-
-        m_paths = new_paths;
     }
 
-    void Ironing::createPaths() {
+    Path Ironing::createPath(Polyline line) {
         Distance width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Infill::kBeadWidth);
         Distance height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
         Velocity speed                  = m_sb->setting< Velocity >(Constants::ExperimentalSettings::Ironing::kSpeed);
@@ -149,38 +164,29 @@ namespace ORNL {
         AngularVelocity extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ExperimentalSettings::Ironing::kExtruderSpeed);
         int material_number             = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kInfillNum);
 
-        m_region_paths.resize(m_computed_geometry.size() - 1);
-        for(int i = 0, end = m_computed_geometry.size(); i < end; ++i)
+        Path newPath;
+        for(int i = 0, end = line.size() - 1; i < end; ++i)
         {
-            QVector<Polyline> polylineList = m_computed_geometry[i];
+            QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line[i], line[i + 1]);
 
-            for(Polyline polyline : polylineList)
-            {
-                Path newPath;
-                for (int j = 0, polyEnd = polyline.size() - 1; j < polyEnd; ++j)
-                {
-                    QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(polyline[j], polyline[j + 1]);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kIroning);
 
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kIroning);
-
-                    newPath.append(segment);
-                }
-
-                if(i == 0)
-                    m_paths.append(newPath);
-                else
-                    m_region_paths[i - 1].append(newPath);
-            }
+            newPath.append(segment);
         }
+
+        if(newPath.calculateLength() > m_sb->setting<Distance>(Constants::ProfileSettings::Layer::kMinExtrudeLength))
+            return newPath;
+        else
+            return Path();
     }
 
-    void Ironing::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location) {
+    void Ironing::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour) {
     }
 
     void Ironing::addUpperGeometry(const PolygonList& poly_list) {

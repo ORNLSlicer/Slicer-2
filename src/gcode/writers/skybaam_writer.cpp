@@ -196,11 +196,23 @@ namespace ORNL
         }
 
         rv += m_G1;
-        if (getFeedrate() != speed || m_layer_start)
+        // Forces first motion of layer to issue speed (needed for spiralize mode so that feedrate is scaled properly)
+        if (m_layer_start)
         {
             setFeedrate(speed);
-            rv += m_f % QString::number(speed.to(GcodeMetaList::SkyBaamMeta.m_velocity_unit));
+            rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
+
+            rv += m_s % QString::number(output_rpm);
+            m_current_rpm = rpm;
+
             m_layer_start = false;
+        }
+
+        // Update feedrate and extruder speed if needed
+        if (getFeedrate() != speed)
+        {
+            setFeedrate(speed);
+            rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         }
 
         if (rpm != m_current_rpm)

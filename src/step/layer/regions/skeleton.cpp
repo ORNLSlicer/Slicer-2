@@ -1,7 +1,7 @@
 // Local
 #include "step/layer/regions/skeleton.h"
 #include "geometry/segments/line.h"
-#include "optimizers/path_order_optimizer.h"
+#include "optimizers/polyline_order_optimizer.h"
 #include "geometry/path_modifier.h"
 #include "utilities/mathutils.h"
 
@@ -106,8 +106,6 @@ namespace ORNL {
                     m_computed_geometry.push_front(m_computed_anchor_lines.first());
                     m_computed_geometry.push_back(m_computed_anchor_lines.last());
                 }
-
-                this->createPaths();
             }
             else
                 qDebug() << "\t\tNo permitted skeletons generated from geometry on layer " << layer_num;
@@ -801,7 +799,7 @@ namespace ORNL {
         return segments;
     }
 
-    void Skeleton::createPaths()
+    Path Skeleton::createPath(Polyline line)
     {
         Distance width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kBeadWidth);
         Distance height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
@@ -810,93 +808,41 @@ namespace ORNL {
         AngularVelocity extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Skeleton::kExtruderSpeed);
         int material_number             = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kPerimterNum);
 
-        for (Polyline &poly_path : m_computed_geometry)
+        Path newPath;
+
+        for (uint i = 0, end = line.size() - 1; i < end; ++i)
         {
-            Path path;
+            QVector<QSharedPointer<LineSegment>> segments;
 
-            for (uint i = 0, end = poly_path.size() - 1; i < end; ++i)
+            if(m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt) //! Adaptive bead width
+                    && m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptDiscretizationDistance) > 0)
             {
-                QVector<QSharedPointer<LineSegment>> segments;
-
-                if(m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt) //! Adaptive bead width
-                        && m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptDiscretizationDistance) > 0)
-                {
-                    segments = adaptBeadWidth(poly_path[i], poly_path[i + 1]);
-                }
-                else //! Static bead width
-                {
-                    QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(poly_path[i], poly_path[i + 1]);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
-                    segments += segment;
-                }
-
-                for (QSharedPointer<LineSegment> &segment : segments)
-                {
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kSkeleton);
-
-                    if(m_computed_anchor_lines.size() != 0)
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kWireFeed, true);
-
-                    path.append(segment);
-                }
-            }
-
-
-            //! Filter adapted path by removing segments whose widths are not within the tolerated range
-            if (m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt))
-            {
-                Distance min_width = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonMinWidth);
-                Distance max_width = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonMaxWidth);
-
-                Path filtered_path;
-
-                for (QSharedPointer<SegmentBase>& segment : path)
-                {
-                    Distance width = segment->getSb()->setting<Distance>(Constants::SegmentSettings::kWidth);
-
-                    if (width >= min_width && width <= max_width) //! Within tolerated range
-                    {
-                        filtered_path.append(segment);
-                    }
-                    else if (width > max_width)
-                    {
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kWidth, max_width);
-                        filtered_path.append(segment);
-                    }
-                    else //! Outside tolerated range
-                    {
-                        if (filtered_path.size() > 0)
-                        {
-                            if (filtered_path.isClosed())
-                                filtered_path.setCCW(Polygon(filtered_path).orientation());
-
-                            m_paths.append(filtered_path);
-                            filtered_path.clear();
-                        }
-                    }
-                }
-
-                if (filtered_path.size() > 0)
-                {
-                    if (filtered_path.isClosed())
-                        filtered_path.setCCW(Polygon(filtered_path).orientation());
-
-                    m_paths.append(filtered_path);
-                }
+                segments = adaptBeadWidth(line[i], line[i + 1]);
             }
             else //! Static bead width
             {
-                if (path.isClosed())
-                    path.setCCW(Polygon(path).orientation());
+                QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line[i], line[i + 1]);
+                segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
+                segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
+                segments += segment;
+            }
 
-                m_paths.append(path);
+            for (QSharedPointer<LineSegment> &segment : segments)
+            {
+                segment->getSb()->setSetting(Constants::SegmentSettings::kHeight,           height);
+                segment->getSb()->setSetting(Constants::SegmentSettings::kAccel,            acceleration);
+                segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    extruder_speed);
+                segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
+                segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kSkeleton);
+
+                if(m_computed_anchor_lines.size() != 0)
+                    segment->getSb()->setSetting(Constants::SegmentSettings::kWireFeed, true);
+
+                newPath.append(segment);
             }
         }
+
+        return newPath;
     }
 
     void Skeleton::setAnchorWireFeed(QVector<Polyline> anchor_lines)
@@ -904,8 +850,31 @@ namespace ORNL {
         m_computed_anchor_lines = anchor_lines;
     }
 
-    void Skeleton::optimize(QSharedPointer<PathOrderOptimizer> poo, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
+    void Skeleton::optimize(int layerNumber, Point& current_location, QVector<Path>& innerMostClosedContour, QVector<Path>& outerMostClosedContour, bool& shouldNextPathBeCCW)
     {
+        PolylineOrderOptimizer poo(current_location, layerNumber);
+
+        PathOrderOptimization pathOrderOptimization = static_cast<PathOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder));
+        if(pathOrderOptimization == PathOrderOptimization::kCustomPoint)
+        {
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPathYLocation));
+
+            poo.setStartOverride(startOverride);
+        }
+
+        PointOrderOptimization pointOrderOptimization = static_cast<PointOrderOptimization>(
+                    this->getSb()->setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
+
+        if(pointOrderOptimization == PointOrderOptimization::kCustomPoint)
+        {
+            Point startOverride(getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointXLocation),
+                                getSb()->setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointYLocation));
+
+            poo.setStartPointOverride(startOverride);
+        }
+
         //! Uncomment if erroneous skeletons are being generated outside geometry
         if (!outerMostClosedContour.isEmpty())
         {
@@ -914,27 +883,100 @@ namespace ORNL {
                 _outerMostClosedContour += Polygon(path);
 
             //! Removes skeletons generated outside outerMostClosedContour
-            QVector<Path> containedPaths;
-            for (Path path : m_paths)
-                if (std::all_of(path.begin(), path.end(), [_outerMostClosedContour] (const QSharedPointer<SegmentBase> &segment) mutable {return _outerMostClosedContour.inside(segment->start());}))
-                    containedPaths += path;
-            m_paths = containedPaths;
+            QVector<Polyline> containedPaths;
+            for (Polyline line : m_computed_geometry)
+                if (std::all_of(line.begin(), line.end(), [_outerMostClosedContour] (const Point &pt) mutable {return _outerMostClosedContour.inside(pt);}))
+                    containedPaths += line;
+            m_computed_geometry = containedPaths;
         }
 
-        poo->setPathsToEvaluate(m_paths);
-        QVector<Path> new_paths;
-        while(poo->getCurrentPathCount() > 0)
+        poo.setPointParameters(pointOrderOptimization, getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kMinDistanceEnabled),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kMinDistanceThreshold),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kConsecutiveDistanceThreshold),
+                               getSb()->setting<bool>(Constants::ProfileSettings::Optimizations::kLocalRandomnessEnable),
+                               getSb()->setting<Distance>(Constants::ProfileSettings::Optimizations::kLocalRandomnessRadius));
+
+        poo.setGeometryToEvaluate(m_computed_geometry, RegionType::kSkeleton, static_cast<PathOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder)));
+
+        while(poo.getCurrentPolylineCount() > 0)
         {
-            Path new_path = poo->linkNextPath();
-            QVector<Path> tmp_path;
-            calculateModifiers(new_path, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), tmp_path, poo->getCurrentLocation());
-            new_paths.append(new_path);
+            Polyline result = poo.linkNextPolyline();
+            if(result.size() > 0)
+            {
+                Path newPath = createPath(result);
+                QVector<Path> paths = breakPath(newPath);
+                if(paths.size() > 0)
+                {
+                    for(Path path : paths)
+                    {
+                        QVector<Path> temp_path;
+                        calculateModifiers(path, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), temp_path);
+                        PathModifierGenerator::GenerateTravel(path, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
+                        current_location = path.back()->end();
+                        m_paths.push_back(path);
+                    }
+                }
+            }
         }
-
-        m_paths = new_paths;
     }
 
-    void Skeleton::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour, Point& current_location)
+    QVector<Path> Skeleton::breakPath(Path path)
+    {
+        QVector<Path> paths;
+        //! Filter adapted path by removing segments whose widths are not within the tolerated range
+        if (m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt))
+        {
+            Distance min_width = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonMinWidth);
+            Distance max_width = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonMaxWidth);
+
+            Path filtered_path;
+
+            for (QSharedPointer<SegmentBase>& segment : path)
+            {
+                Distance width = segment->getSb()->setting<Distance>(Constants::SegmentSettings::kWidth);
+
+                if (width >= min_width && width <= max_width) //! Within tolerated range
+                {
+                    filtered_path.append(segment);
+                }
+                else if (width > max_width)
+                {
+                    segment->getSb()->setSetting(Constants::SegmentSettings::kWidth, max_width);
+                    filtered_path.append(segment);
+                }
+                else //! Outside tolerated range
+                {
+                    if (filtered_path.size() > 0)
+                    {
+                        if (filtered_path.isClosed())
+                            filtered_path.setCCW(Polygon(filtered_path).orientation());
+
+                        paths.append(filtered_path);
+                        filtered_path.clear();
+                    }
+                }
+            }
+
+            if (filtered_path.size() > 0)
+            {
+                if (filtered_path.isClosed())
+                    filtered_path.setCCW(Polygon(filtered_path).orientation());
+
+                paths.append(filtered_path);
+            }
+        }
+        else //! Static bead width
+        {
+            if (path.isClosed())
+                path.setCCW(Polygon(path).orientation());
+
+            paths.append(path);
+        }
+
+        return paths;
+    }
+
+    void Skeleton::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour)
     {
         if(m_sb->setting<bool>(Constants::ExperimentalSettings::Ramping::kTrajectoryAngleEnabled))
         {
@@ -977,7 +1019,6 @@ namespace ORNL {
                                                        m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkeletonExtruderSpeed),
                                                        m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonLiftHeight),
                                                        m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonCutoffDistance));
-             current_location = path.back()->end();
         }
 
         if(m_sb->setting<bool>(Constants::MaterialSettings::Startup::kSkeletonEnable))

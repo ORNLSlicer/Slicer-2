@@ -16,6 +16,11 @@ namespace ORNL {
         m_segments.append(ps);
     }
 
+    void Path::append(Path path) {
+        for(QSharedPointer<SegmentBase> seg : path.getSegments())
+            m_segments.append(seg);
+    }
+
     void Path::prepend(const QSharedPointer<SegmentBase>& ps) {
         m_segments.prepend(ps);
     }
