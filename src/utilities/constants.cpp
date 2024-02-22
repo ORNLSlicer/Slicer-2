@@ -502,6 +502,7 @@ namespace ORNL
     const QString Constants::MaterialSettings::Extruder::kOnDelaySkeleton = "extruder_on_delay_skeleton";
     const QString Constants::MaterialSettings::Extruder::kOffDelay = "extruder_off_delay";
     const QString Constants::MaterialSettings::Extruder::kServoToTravelSpeed = "servo_extruder_to_travel_speed";
+    const QString Constants::MaterialSettings::Extruder::kEnableM3S = "enable_m3s";
 
     //Filament
     const QString Constants::MaterialSettings::Filament::kDiameter = "filament_diameter";

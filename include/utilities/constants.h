@@ -532,6 +532,7 @@ namespace ORNL
                 static const QString kOnDelaySkeleton;
                 static const QString kOffDelay;
                 static const QString kServoToTravelSpeed;
+                static const QString kEnableM3S;
             };
 
             class Filament
