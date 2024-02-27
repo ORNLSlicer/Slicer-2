@@ -354,11 +354,20 @@ namespace ORNL
             {
                 // If using a variable Z, find the value added to the variable, calculate the total value of Z by replacing the variable with the value from the printer settings
                 // then create a new line of g-code to be sent to the parser that is formatted the way a line is normally formatted (without the variable)
-                int first = m_upper_lines[m_current_line].indexOf("+")+2;
+                double zVal;
                 int second = m_upper_lines[m_current_line].indexOf("]");
                 int zLoc = m_upper_lines[m_current_line].indexOf("Z");
-                QString zAdditionString = m_upper_lines[m_current_line].mid(first, second-first);
-                double zVal = zAdditionString.toDouble(&no_error);
+                if(m_upper_lines[m_current_line].contains("+"))
+                {
+                    int first = m_upper_lines[m_current_line].indexOf("+")+2;
+                    QString zAdditionString = m_upper_lines[m_current_line].mid(first, second-first);
+                    zVal = zAdditionString.toDouble(&no_error);
+                }
+                else
+                {
+                    zVal = 0;
+                }
+
                 if (!no_error)
                 {
                     throwFloatConversionErrorException();
