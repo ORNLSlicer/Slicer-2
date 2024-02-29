@@ -362,16 +362,16 @@ namespace ORNL
                     int first = m_upper_lines[m_current_line].indexOf("+")+2;
                     QString zAdditionString = m_upper_lines[m_current_line].mid(first, second-first);
                     zVal = zAdditionString.toDouble(&no_error);
+                    if (!no_error)
+                    {
+                        throwFloatConversionErrorException();
+                    }
                 }
                 else
                 {
                     zVal = 0;
                 }
 
-                if (!no_error)
-                {
-                    throwFloatConversionErrorException();
-                }
                 zVal += currentZOffset;
                 newCurrentLine = m_upper_lines[m_current_line].mid(0, zLoc+1) % QString::number(zVal, 'f', 4) % m_upper_lines[m_current_line].mid(second+1);
             }            
