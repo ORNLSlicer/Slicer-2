@@ -206,6 +206,7 @@ namespace ORNL
     QString Constants::PrinterSettings::SyntaxString::kMarlinPellet = "Marlin-Pellet";
     QString Constants::PrinterSettings::SyntaxString::kMazak = "Mazak";
     QString Constants::PrinterSettings::SyntaxString::kMeld = "Meld";
+    QString Constants::PrinterSettings::SyntaxString::kMeltio = "Meltio";
     QString Constants::PrinterSettings::SyntaxString::kMVP = "MVP";
     QString Constants::PrinterSettings::SyntaxString::kOkuma = "Okuma";
     QString Constants::PrinterSettings::SyntaxString::kORNL = "ORNL";

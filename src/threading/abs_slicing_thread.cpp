@@ -37,6 +37,7 @@
 #include <gcode/writers/kraussmaffei_writer.h>
 #include <gcode/writers/sandia_writer.h>
 #include <gcode/writers/five_axis_marlin_writer.h>
+#include <gcode/writers/meltio_writer.h>
 
 #include <gcode/gcode_meta.h>
 
@@ -119,6 +120,9 @@ namespace ORNL {
             break;
         case GcodeSyntax::kMeld:
             m_base = QSharedPointer<MeldWriter>(new MeldWriter(GcodeMetaList::MeldMeta, GSM->getGlobal()));
+            break;
+        case GcodeSyntax::kMeltio:
+            m_base = QSharedPointer<MeltioWriter>(new MeltioWriter(GcodeMetaList::MeltioMeta, GSM->getGlobal()));
             break;
         case GcodeSyntax::kMVP:
             m_base = QSharedPointer<MVPWriter>(new MVPWriter(GcodeMetaList::MVPMeta, GSM->getGlobal()));

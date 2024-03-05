@@ -532,6 +532,10 @@ namespace ORNL
                     m_parser.reset(new CommonParser(GcodeMetaList::MeldMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::MeldMeta;
                 }
+                else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kMeltio).toUpper())) {
+                    m_parser.reset(new CommonParser(GcodeMetaList::MeltioMeta, m_adjust_file, originalLines, lines));
+                    m_selected_meta = GcodeMetaList::MeltioMeta;
+                }
                 else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kMVP).toUpper())) {
                     m_parser.reset(new MVPParser(GcodeMetaList::MVPMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::MVPMeta;

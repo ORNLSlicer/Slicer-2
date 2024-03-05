@@ -323,6 +323,7 @@ namespace ORNL
                 static QString kMarlinPellet;
                 static QString kMazak;
                 static QString kMeld;
+                static QString kMeltio;
                 static QString kMVP;
                 static QString kOkuma;
                 static QString kORNL;
