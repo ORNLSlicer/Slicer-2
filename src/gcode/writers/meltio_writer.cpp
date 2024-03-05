@@ -32,12 +32,20 @@ QString MeltioWriter::writeInitialSetup(Distance minimum_x, Distance minimum_y, 
     if (m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableStartupCode))
     {
         rv += commentLine("SAFETY BLOCK - ESTABLISH OPERATIONAL MODES");
-        rv += "G1 F120 " % commentLine("SET INITIAL FEEDRATE");
-        if (m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableWaitForUser))
-        {
-            rv += "M0" % commentSpaceLine("WAIT FOR USER");
-        }
-        rv += writeDwell(0.25);
+        rv += "G20\n";
+        rv += "G0 G17 G40 G49 G80 G90 G94\n";
+        rv += "G0 G90 G53 Z0.0" % commentSpaceLine("FORCE HEAD UP AT START OF PGM");
+        rv += "T60 M6\n";
+        rv += "M64 P2" % commentSpaceLine("ADDITIVE PROCESS INITIALIZE");
+        rv += "M66 P1 L3 Q10" % commentSpaceLine("WAIT FOR CONFIRMATION");
+        rv += "M65 P2" % commentSpaceLine("TURN OFF RELAY");
+        rv += writeDwell(.0005);
+        rv += "M64 P10" % commentSpaceLine("SWAP TO T0");
+        rv += "M66 P1 L3 Q10" % commentSpaceLine("WAIT FOR CONFIRMATION");
+        rv += "M65 P10" % commentSpaceLine("TURN RELAY OFF");
+        rv += writeDwell(.0005);
+        rv += "G43 H60 Z1.0\n";
+        rv += "Z0.25\n";
     }
 
     if(m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableBoundingBox))
@@ -51,17 +59,6 @@ QString MeltioWriter::writeInitialSetup(Distance minimum_x, Distance minimum_y, 
               % "M0" % commentSpaceLine("WAIT FOR USER");
 
         m_start_point = Point(minimum_x, minimum_y, 0);
-    }
-
-    if (m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableMaterialLoad))
-    {
-        rv += writePurge(m_sb->setting< int >(Constants::MaterialSettings::Purge::kInitialScrewRPM),
-                         m_sb->setting< int >(Constants::MaterialSettings::Purge::kInitialDuration),
-                         m_sb->setting< int >(Constants::MaterialSettings::Purge::kInitialTipWipeDelay));
-        if (m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableWaitForUser))
-        {
-            rv += "M0" % commentSpaceLine("WAIT FOR USER");
-        }
     }
 
     if(m_sb->setting< QString >(Constants::PrinterSettings::GCode::kStartCode) != "")
@@ -394,7 +391,9 @@ QString MeltioWriter::writeAfterLayer()
 QString MeltioWriter::writeShutdown()
 {
     QString rv;
-
+    rv += "M5\n";
+    rv += "G0 G90 G53 Z0.0\n";
+    rv += "G53 Y0.0\n";
     rv += m_sb->setting< QString >(Constants::PrinterSettings::GCode::kEndCode) % m_newline %
           "M30" % commentSpaceLine("END OF G-CODE");
     rv += "%";
