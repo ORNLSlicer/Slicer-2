@@ -69,8 +69,7 @@ namespace ORNL
 
         layout->addLayout(gpu_layout, 3, 0, 1, 2, Qt::AlignCenter);
 
-        QLabel *lblContact = new QLabel("Questions or comments? Email us at: <a href='mailto:borishmc@ornl.gov'>borishmc@ornl.gov</a> or "
-                                        "<a href='mailto:roschliac@ornl.gov'>roschliac@ornl.gov</a>");
+        QLabel *lblContact = new QLabel("Questions or comments? Email us at: <a href='mailto:slicer@ornl.gov'>slicer@ornl.gov</a>");
         connect(lblContact, &QLabel::linkActivated, [](const QString &link) { QDesktopServices::openUrl(QUrl(link));});
         layout->addWidget(lblContact, 4, 0, 1, 2, Qt::AlignCenter);
 
