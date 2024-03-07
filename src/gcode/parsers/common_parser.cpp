@@ -2138,6 +2138,9 @@ namespace ORNL
                     QRegularExpressionMatch myMatch = m_q_param_and_value.match(line);
                     double value = myMatch.capturedRef().mid(1).toDouble();
                     double extruderModifier = sb->setting< double >(Constants::MaterialSettings::Cooling::kExtruderScaleFactor);
+                    // If slowing down, the multiplier for the extruder should be the inverse of the scale factor
+                    if(modifier < 1)
+                        extruderModifier = 1 / extruderModifier;
                     line = line.leftRef(myMatch.capturedStart()) % m_q_parameter %
                             QString::number(value * modifier * extruderModifier, 'f', 4) % line.midRef(myMatch.capturedEnd());
                     current_layer_motion_end->addParameter(m_q_parameter.toLatin1(),
@@ -2149,6 +2152,9 @@ namespace ORNL
                     QRegularExpressionMatch myMatch = m_s_param_and_value.match(line);
                     double value = myMatch.capturedRef().mid(1).toDouble();
                     double extruderModifier = sb->setting< double >(Constants::MaterialSettings::Cooling::kExtruderScaleFactor);
+                    // If slowing down, the multiplier for the extruder should be the inverse of the scale factor
+                    if(modifier < 1)
+                        extruderModifier = 1 / extruderModifier;
                     line = line.leftRef(myMatch.capturedStart()) % m_s_parameter %
                             QString::number(value * modifier * extruderModifier, 'f', 4)
                             % line.midRef(myMatch.capturedEnd());
