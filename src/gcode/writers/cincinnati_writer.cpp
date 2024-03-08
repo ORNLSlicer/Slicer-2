@@ -964,6 +964,7 @@ namespace ORNL
         QString rv;
         //write vertical coordinate along the correct axis (Z or W) according to printer settings
         //only output Z/W coordinate if there was a change in Z/W
+        bool shouldBeFalse = m_sb->setting< bool >(Constants::PrinterSettings::Dimensions::kUseVariableForZ);
         Distance temp_dest_z = destination.z();
         Distance temp_last_z = m_last_z;
         Distance z_offset = m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset);

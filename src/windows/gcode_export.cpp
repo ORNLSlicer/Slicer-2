@@ -15,6 +15,7 @@
 #include "threading/gcode_tormach_saver.h"
 #include "threading/gcode_aml3d_saver.h"
 #include "threading/gcode_sandia_saver.h"
+#include "threading/gcode_marlin_saver.h"
 
 namespace ORNL
 {
@@ -327,6 +328,15 @@ namespace ORNL
                 GCodeSandiaSaver* saver = new GCodeSandiaSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
                 connect(saver, &GCodeSandiaSaver::finished, saver, &GCodeSandiaSaver::deleteLater);
                 connect(saver, &GCodeSandiaSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
+                saver->start();
+            }
+            else if(m_most_recent_meta == GcodeMetaList::MarlinMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kMarlinOutput))
+            {
+                bool ok;
+
+                GCodeMarlinSaver* saver = new GCodeMarlinSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
+                connect(saver, &GCodeMarlinSaver::finished, saver, &GCodeMarlinSaver::deleteLater);
+                connect(saver, &GCodeMarlinSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
             else

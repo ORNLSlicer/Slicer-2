@@ -902,6 +902,8 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::FileOutput::kAML3DWeaveLength = "aml3d_weave_length";
     const QString Constants::ExperimentalSettings::FileOutput::kAML3DWeaveWidth = "aml3d_weave_width";
     const QString Constants::ExperimentalSettings::FileOutput::kSandiaOutput = "sandia_file_output";
+    const QString Constants::ExperimentalSettings::FileOutput::kMarlinOutput = "marlin_file_output";
+    const QString Constants::ExperimentalSettings::FileOutput::kMarlinTravels = "marlin_include_travels";
 
     //Rotation Origin
     const QString Constants::ExperimentalSettings::RotationOrigin::kXOffset = "rotation_origin_offset_x";

@@ -1057,6 +1057,8 @@ namespace ORNL
                 static const QString kAML3DWeaveLength;
                 static const QString kAML3DWeaveWidth;
                 static const QString kSandiaOutput;
+                static const QString kMarlinOutput;
+                static const QString kMarlinTravels;
             };
 
             class RotationOrigin
