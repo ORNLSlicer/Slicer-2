@@ -740,7 +740,7 @@ namespace ORNL
     const QString Constants::ProfileSettings::Optimizations::kPointOrder = "point_order_optimization";
     const QString Constants::ProfileSettings::Optimizations::kLocalRandomnessEnable = "local_randomness_enable";
     const QString Constants::ProfileSettings::Optimizations::kLocalRandomnessRadius = "local_randomness_radius";
-    const QString Constants::ProfileSettings::Optimizations::kMinDistanceEnabled = "min_distance_enabled";
+    const QString Constants::ProfileSettings::Optimizations::kMinDistanceEnabled = "enable_min_distance";
     const QString Constants::ProfileSettings::Optimizations::kMinDistanceThreshold = "min_distance_threshold";
     const QString Constants::ProfileSettings::Optimizations::kConsecutiveDistanceThreshold = "consecutive_path_distance_threshold";
     const QString Constants::ProfileSettings::Optimizations::kCustomPointXLocation = "custom_point_order_x_location";
