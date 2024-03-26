@@ -118,7 +118,9 @@ namespace ORNL
         // Once done, delete entire switch statement, except for the code isside the kBeam case.
         //
 
-        if (syntax == GcodeSyntax::kMarlin)
+        if (syntax != GcodeSyntax::kCincinnati && syntax != GcodeSyntax::kHaasInch && syntax != GcodeSyntax::kMeld &&
+            syntax != GcodeSyntax::kORNL && syntax != GcodeSyntax::kSheetLamination && syntax != GcodeSyntax::kSiemens &&
+            syntax != GcodeSyntax::kSkyBaam)
         {
             text += commentLine(
                 QString("Nozzle Diameter: %0mm")
@@ -136,7 +138,9 @@ namespace ORNL
                 QString("Filament Diameter: %0mm")
                 .arg(m_sb->setting< Distance >(Constants::MaterialSettings::Filament::kDiameter).to(mm)));
         }
-        if (syntax == GcodeSyntax::kMarlin)
+        if (syntax != GcodeSyntax::kCincinnati && syntax != GcodeSyntax::kHaasInch && syntax != GcodeSyntax::kMeld &&
+            syntax != GcodeSyntax::kORNL && syntax != GcodeSyntax::kSheetLamination && syntax != GcodeSyntax::kSiemens &&
+            syntax != GcodeSyntax::kSkyBaam)
         {
             text += commentLine(
                 QString("Printer Base Offset: %0mm")
@@ -154,7 +158,9 @@ namespace ORNL
                 QString("Minimum Table Value: %0in")
                     .arg(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kWMin).to(in)));
         }
-        if (syntax == GcodeSyntax::kMarlin)
+        if (syntax != GcodeSyntax::kCincinnati && syntax != GcodeSyntax::kHaasInch && syntax != GcodeSyntax::kMeld &&
+            syntax != GcodeSyntax::kORNL && syntax != GcodeSyntax::kSheetLamination && syntax != GcodeSyntax::kSiemens &&
+            syntax != GcodeSyntax::kSkyBaam)
         {
             text += commentLine(
                 QString("Layer Height: %0mm")
