@@ -118,30 +118,60 @@ namespace ORNL
         // Once done, delete entire switch statement, except for the code isside the kBeam case.
         //
 
-        text += commentLine(
-            QString("Nozzle Diameter: %0in")
-                .arg(m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kNozzleDiameter).to(in)));
-        if (syntax == GcodeSyntax::kMarlin) // Marlin
+        if (syntax == GcodeSyntax::kMarlin)
         {
             text += commentLine(
-                QString("Filament Diameter: %0in")
-                .arg(m_sb->setting< Distance >(Constants::MaterialSettings::Filament::kDiameter).to(in)));
+                QString("Nozzle Diameter: %0mm")
+                    .arg(m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kNozzleDiameter).to(mm)));
         }
-        text += commentLine(
-            QString("Printer Base Offset: %0in")
-                .arg(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset).to(in)));
+        else
+        {
+            text += commentLine(
+                QString("Nozzle Diameter: %0in")
+                    .arg(m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kNozzleDiameter).to(in)));
+        }
+        if (m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) == 1) // If filament machine type
+        {
+            text += commentLine(
+                QString("Filament Diameter: %0mm")
+                .arg(m_sb->setting< Distance >(Constants::MaterialSettings::Filament::kDiameter).to(mm)));
+        }
+        if (syntax == GcodeSyntax::kMarlin)
+        {
+            text += commentLine(
+                QString("Printer Base Offset: %0mm")
+                    .arg(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset).to(mm)));
+        }
+        else
+        {
+            text += commentLine(
+                QString("Printer Base Offset: %0in")
+                    .arg(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset).to(in)));
+        }
         if(m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kEnableW))
         {
             text += commentLine(
                 QString("Minimum Table Value: %0in")
                     .arg(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kWMin).to(in)));
         }
-        text += commentLine(
-            QString("Layer Height: %0in")
-                .arg(m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight).to(in)));
-        text += commentLine(
-            QString("Default Extrusion Width: %0in")
-                .arg(m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kBeadWidth).to(in)));
+        if (syntax == GcodeSyntax::kMarlin)
+        {
+            text += commentLine(
+                QString("Layer Height: %0mm")
+                    .arg(m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight).to(mm)));
+            text += commentLine(
+                QString("Default Extrusion Width: %0mm")
+                    .arg(m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kBeadWidth).to(mm)));
+        }
+        else
+        {
+            text += commentLine(
+                QString("Layer Height: %0in")
+                    .arg(m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight).to(in)));
+            text += commentLine(
+                QString("Default Extrusion Width: %0in")
+                    .arg(m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kBeadWidth).to(in)));
+        }
 
         if(m_sb->setting< int >(Constants::ProfileSettings::SpecialModes::kEnableSpiralize))
         {
