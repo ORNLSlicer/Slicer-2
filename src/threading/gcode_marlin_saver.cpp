@@ -121,12 +121,12 @@ void GCodeMarlinSaver::run()
             // Write output
             if(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::FileOutput::kMarlinTravels))
             {
-                timeStep += 0.1;
+                timeStep += 0.01;
                 out << timeStep << space << xOut % space % yOut % space % zOut % space % xFeedrateOut % space % yFeedrateOut % space % zFeedrateOut % space % temperature % space % isTravel % newline;
             }
-            else if(isTravel == "0")
+            else
             {
-                timeStep += 0.1;
+                timeStep += 0.01;
                 out << timeStep << space << xOut % space % yOut % space % zOut % space % xFeedrateOut % space % yFeedrateOut % space % zFeedrateOut % space % temperature % newline;
             }
 
