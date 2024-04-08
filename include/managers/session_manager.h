@@ -165,6 +165,9 @@ namespace ORNL {
             //! \brief Signals the internal slicing thread has complete computation.
             bool sliceComplete();
 
+            //! \brief Returns the time elapsed for the current slice.
+            qint64 getSliceTimeElapsed();
+
             //! \brief Changes which slicer is used for computation.
             //! \todo Currently, there is only one slicer (the PolymerSlicer). When more methods are added, more Slicer types should be added
             //!       Both here and in the SlicerType enum. A dialog still needs to be written to run this function.

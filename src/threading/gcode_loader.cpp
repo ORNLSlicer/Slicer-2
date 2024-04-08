@@ -312,6 +312,10 @@ namespace ORNL
                         % "Approximate Weight (" % toString(m_material) % "): "
                         % QString::number(massValue) % " " % PM->getMassUnit().toString() % "\n";
 
+                QTime qt(0, 0);
+                qt = qt.addMSecs(CSM->getSliceTimeElapsed());
+                keyInfo = keyInfo % "Total Slice Time (excluding gcode writing/parsing): " % qt.toString("hh:mm:ss.zzz");
+
                 emit forwardInfoToMainWindow(keyInfo);
 
                 //reduce size to fit screen appropriately, found through testing

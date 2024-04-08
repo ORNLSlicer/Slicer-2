@@ -649,6 +649,11 @@ namespace ORNL
         m_step_connectivity[(int)type] = state;
     }
 
+    qint64 SessionManager::getSliceTimeElapsed()
+    {
+        return m_ast->getTimeElapsed();
+    }
+
     bool SessionManager::changeSlicer(SlicerType type)
     {
         // Disconnect the signals from the AST.

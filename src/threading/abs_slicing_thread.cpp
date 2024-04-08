@@ -69,6 +69,10 @@ namespace ORNL {
         return m_max;
     }
 
+    qint64 AbstractSlicingThread::getTimeElapsed() {
+        return m_elapsed_time;
+    }
+
     void AbstractSlicingThread::setGcodeOutput(QString output) {
         m_syntax = GSM->getGlobal()->setting<GcodeSyntax>(Constants::PrinterSettings::MachineSetup::kSyntax);
         switch(m_syntax)
