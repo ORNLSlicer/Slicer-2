@@ -40,6 +40,43 @@ namespace ORNL
         return result;
     }
 
+    bool PointOrderOptimizer::findSkeletonPointOrder(Point current_location, Polyline polyline, PointOrderOptimization pointOptimization, bool min_dist_enabled, Distance min_dist_threshold)
+    {
+        bool result = false;
+        int index;
+
+        switch(pointOptimization)
+        {
+            case PointOrderOptimization::kNextClosest:
+                if(findClosestEnd(polyline, current_location, min_dist_enabled, min_dist_threshold) == 0)
+                    return false;
+                else
+                    return true;
+                break;
+            case PointOrderOptimization::kNextFarthest:
+                if(findClosestEnd(polyline, current_location, min_dist_enabled, min_dist_threshold) == 0)
+                    return true;
+                else
+                    return false;
+                break;
+            case PointOrderOptimization::kRandom:
+                if(QRandomGenerator::global()->generate() % 2)
+                    result = true;
+                break;
+            case PointOrderOptimization::kCustomPoint:
+                if(findClosestEnd(polyline, current_location, min_dist_enabled, min_dist_threshold) == 0)
+                    return false;
+                else
+                    return true;
+                break;
+            default:
+                result = false;
+                break;
+        }
+
+        return result;
+    }
+
     int PointOrderOptimizer::findShortestOrLongestDistance(Polyline polyline, Point startPoint, bool minThresholdEnable, Distance minThreshold, bool shortest)
     {
         int pointIndex = -1;
@@ -75,6 +112,29 @@ namespace ORNL
             pointIndex = findShortestOrLongestDistance(polyline, startPoint, false, Distance(0), false);
 
         return pointIndex;
+    }
+
+    int PointOrderOptimizer::findClosestEnd(Polyline polyline, Point currentPoint, bool minThresholdEnable, Distance minThreshold)
+    {
+        // Check which end is closer. Return 0 for front and non-zero for back.
+        // Both could be closer than the minimum distance, but ultimately one has to be chosen.
+        // If the front is closer, but less than the minimum distance, use the back.
+        // If the back is closer, but less than the minimum distance, use the front.
+
+        if (currentPoint.distance(polyline.front()) < currentPoint.distance(polyline.back()))
+        {
+            if (minThresholdEnable && currentPoint.distance(polyline.front()) < minThreshold)
+                return polyline.size();
+            else
+                return 0;
+        }
+        else
+        {
+            if (minThresholdEnable && currentPoint.distance(polyline.back()) < minThreshold)
+                return 0;
+            else
+                return polyline.size();
+        }
     }
 
     int PointOrderOptimizer::linkToRandom(Polyline polyline)

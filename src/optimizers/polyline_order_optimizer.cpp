@@ -202,6 +202,18 @@ namespace ORNL
 
             m_polylines.remove(index);
         }
+
+        Point queryPoint;
+        if(m_point_optimization == PointOrderOptimization::kCustomPoint)
+            queryPoint = m_point_override_location;
+        else
+            queryPoint = m_current_location;
+
+        // Check with point order optimizer to determine which end of the skeleton should be the start point
+        if (PointOrderOptimizer::findSkeletonPointOrder(queryPoint, new_polyline, m_point_optimization, m_min_point_distance_enable,
+                                                     m_min_point_distance))
+            new_polyline = new_polyline.reverse();
+
         return new_polyline;
     }
 

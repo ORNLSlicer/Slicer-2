@@ -35,6 +35,13 @@ namespace ORNL {
                                    bool min_dist_enabled, Distance min_dist_threshold, Distance consecutive_dist_threshold, bool local_randomness_enable,
                                    Distance randomness_radius);
 
+            //! \brief Constructor
+            //! \param current_location: The current location
+            //! \param polyline: The polyline to link to
+            //! \param pointOptimization: the optimization method to use
+            //! \return True if the order should be reversed or false if the order is correct
+            static bool findSkeletonPointOrder(Point current_location, Polyline polyline, PointOrderOptimization pointOptimization, bool min_dist_enabled, Distance min_dist_threshold);
+
         private:
 
             //! \brief Finds the shortest or longest distance between the current location and the points in the polyline
@@ -45,6 +52,14 @@ namespace ORNL {
             //! \param shortest: Whether or not to find the shortest distance
             //! \return The index of the point with the shortest or longest distance
             static int findShortestOrLongestDistance(Polyline polyline, Point startPoint, bool minThresholdEnable, Distance minThreshold, bool shortest = true);
+
+            //! \brief Finds the closest end point of an open-loop polyline
+            //! \param polyline: The polyline to find the closest end point
+            //! \param currentPoint: The current location
+            //! \param minThresholdEnable: Whether or not to use the minimum threshold
+            //! \param minThreshold: The minimum threshold to use
+            //! \return The index of the point with the shortest or longest distance
+            static int findClosestEnd(Polyline polyline, Point currentPoint, bool minThresholdEnable, Distance minThreshold);
 
             //! \brief Links to a random point in the polyline
             //! \param polyline: The polyline to link to
