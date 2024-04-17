@@ -681,6 +681,10 @@ namespace ORNL
 
     qint64 SessionManager::getSliceTimeElapsed()
     {
+        if (m_ast.isNull()) {
+            return 0;
+        }
+
         return m_ast->getTimeElapsed();
     }
 
