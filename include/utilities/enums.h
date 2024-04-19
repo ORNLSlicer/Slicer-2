@@ -195,7 +195,8 @@ namespace ORNL
         kKraussMaffei,
         kSandia,
         k5AxisMarlin,
-        kMeltio
+        kMeltio,
+	kAdamantine
     };
 
     inline QString toString(GcodeSyntax syntax) {
@@ -266,6 +267,8 @@ namespace ORNL
             return Constants::PrinterSettings::SyntaxString::kAeroBasic;
         case GcodeSyntax::kSheetLamination:
             return Constants::PrinterSettings::SyntaxString::kSheetLamination;
+        case GcodeSyntax::kAdamantine:
+            return Constants::PrinterSettings::SyntaxString::kAdamantine;
         default:
             return Constants::PrinterSettings::SyntaxString::kCommon;
         }

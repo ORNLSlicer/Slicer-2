@@ -222,6 +222,7 @@ namespace ORNL
     QString Constants::PrinterSettings::SyntaxString::kMach4 = "Mach4";
     QString Constants::PrinterSettings::SyntaxString::kAeroBasic = "AeroBasic";
     QString Constants::PrinterSettings::SyntaxString::kSheetLamination = "SheetLamination";
+    QString Constants::PrinterSettings::SyntaxString::kAdamantine = "Adamantine";
 
     //================================================================================
     // Optimizations

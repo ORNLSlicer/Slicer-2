@@ -1109,6 +1109,8 @@ namespace ORNL {
                 emit statusUpdate(StatusUpdateStepType::kGcodeGeneraton, (current_layer + 1) / num_layers * 100);
                 ++current_layer;
             }
+
+            stream << m_base->writeAfterPart();
         }
     }
 }

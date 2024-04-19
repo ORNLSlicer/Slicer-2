@@ -404,6 +404,19 @@ static GcodeMeta MeltioMeta = {
     ".nc"
 };
 
+static GcodeMeta AdamantineMeta = {
+            GcodeSyntax::kAdamantine,
+            QString("("),
+            QString(")"),
+            m,
+            s,
+            degree,
+            lbm,
+            m / s,
+            m / s / s,
+            rev / s,
+            ".txt"
+};
 static QHash<int, GcodeMeta> createMapping()
 {
     QHash<int, GcodeMeta> result;
@@ -439,6 +452,7 @@ static QHash<int, GcodeMeta> createMapping()
     result.insert((int)GcodeSyntax::kSheetLamination, SheetLaminationMeta);
     result.insert((int)GcodeSyntax::kORNL, ORNLMeta);
     result.insert((int)GcodeSyntax::kTormach, TormachMeta);
+    result.insert((int)GcodeSyntax::kAdamantine, AdamantineMeta);
     return result;
 }
 

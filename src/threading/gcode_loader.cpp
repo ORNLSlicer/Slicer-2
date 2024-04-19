@@ -30,6 +30,7 @@
 #include "gcode/parsers/rpbf_parser.h"
 #include "gcode/parsers/siemens_parser.h"
 #include "gcode/parsers/aerobasic_parser.h"
+#include "gcode/parsers/adamantine_parser.h"
 
 #include "geometry/segments/arc.h"
 #include "geometry/segments/bezier.h"
@@ -583,6 +584,10 @@ namespace ORNL
                 else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kAeroBasic).toUpper())) {
                     m_parser.reset(new AeroBasicParser(GcodeMetaList::AeroBasicMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::AeroBasicMeta;
+                }
+                else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kAdamantine).toUpper())) {
+                    m_parser.reset(new AdamantineParser(GcodeMetaList::AdamantineMeta, m_adjust_file, originalLines, lines));
+                    m_selected_meta = GcodeMetaList::AdamantineMeta;
                 }
 //                else if(m_lines[m_current_line].contains("WOLF"))
 //                    m_syntax = GcodeSyntax::kWolf;

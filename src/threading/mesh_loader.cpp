@@ -126,10 +126,12 @@ namespace ORNL
                     {
                         MeshTypes::SurfaceMesh sm = BuildSurfaceMesh(mesh);
                         new_mesh = QSharedPointer<OpenMesh>::create(sm, name, file_info.fileName());
+                        dynamic_cast<OpenMesh*>(new_mesh.data())->shortestPath();
 
-                    }else
+                    }else{
                         new_mesh = QSharedPointer<ClosedMesh>::create(polyhedron, name, file_info.fileName());
 
+                    }
                     new_mesh->setType(mt);
 
                     // Center the mesh about itself

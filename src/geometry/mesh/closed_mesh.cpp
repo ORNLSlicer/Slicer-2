@@ -16,8 +16,79 @@
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
 #include <CGAL/boost/graph/helpers.h>
 
+
+#include <CGAL/Shape_detection/Efficient_RANSAC.h>
+#include <CGAL/Point_with_normal_3.h>
+#include <CGAL/property_map.h>
+#include <QTextStream>
+
+typedef ORNL::MeshTypes::Kernel Kernel;
+typedef Kernel::FT FT;
+typedef std::pair<Kernel::Point_3, Kernel::Vector_3> Point_with_normal;
+typedef std::vector<Point_with_normal> Pwn_vector;
+typedef CGAL::First_of_pair_property_map<Point_with_normal>  Point_map;
+typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
+typedef CGAL::Shape_detection::Efficient_RANSAC_traits
+<Kernel, Pwn_vector, Point_map, Normal_map>             surfTraits;
+typedef CGAL::Shape_detection::Efficient_RANSAC<surfTraits> Efficient_ransac;
+typedef CGAL::Shape_detection::Cone<surfTraits>             Cone;
+typedef CGAL::Shape_detection::Cylinder<surfTraits>         Cylinder;
+typedef CGAL::Shape_detection::Plane<surfTraits>            Planer;
+typedef CGAL::Shape_detection::Sphere<surfTraits>           Sphere;
+typedef CGAL::Shape_detection::Torus<surfTraits>            Torus;
+
 namespace ORNL
 {
+
+    std::vector<Traits3::Point_3> ClosedMesh::shortestPath()
+    {
+        /* shortestPath is an algorithm to compute geodesic shortest paths on a triangulated surface mesh.
+         * The algorithm implemented in this package builds a data structure to efficiently answer
+         * queries of the following form: Given a triangulated surface mesh M, a set of source points S on
+         * M, and a target point t also on M, find a shortest path λ between t and any element in S, where
+         * λ is constrained to the surface of M.
+         * See https://doc.cgal.org/latest/Surface_mesh_shortest_path/index.html#Chapter_Surface_mesh_shortest_path
+         * example 3.2*/
+
+        Triangle_mesh3 tmesh = m_representation;
+
+        // initialize indices of vertices, halfedges and faces
+        CGAL::set_halfedgeds_items_id(tmesh);
+
+        /* A source point can be specified using either a vertex of the input surface mesh or a face of the input
+         * surface mesh with some barycentric coordinates. Given a point p that lies inside a triangle face (A,B,C),
+         * its barycentric coordinates are a weight triple (b0,b1,b2) such that p=b0\cdotA+b1\cdotB+b2\cdotC, and
+         * b0+b1+b2=1.*/
+        // first, pick a face (this one is random)
+        const unsigned int randSeed = 5;
+        CGAL::Random rand(randSeed);
+        const int target_face_index = rand.get_int(0, static_cast<int>(num_faces(tmesh)));
+        face_iterator3 face_it = CGAL::faces(tmesh).first;
+        std::advance(face_it,target_face_index);
+        // then, define a barycentric coordinates inside the face
+        Traits3::Barycentric_coordinates face_location = {{0.25, 0.5, 0.25}}; //CHECK outside of given examples
+
+        // construct a shortest path query object and add a source point
+        Surface_mesh_shortest_path3 shortest_paths(tmesh);
+        shortest_paths.add_source_point(*face_it, face_location);
+        // For all vertices in the tmesh, compute the points of the shortest path to the source point and write
+        // them into a file readable using the CGAL Polyhedron demo
+        std::ofstream output("shortest_paths_with_id.polylines.txt");
+        vertex_iterator3 vit, vit_end;
+        std::vector<Traits3::Point_3> points;
+        for ( boost::tie(vit, vit_end) = CGAL::vertices(tmesh);
+             vit != vit_end; ++vit)
+        {
+            shortest_paths.shortest_path_points_to_source_points(*vit, std::back_inserter(points));
+            // print the points
+            output << points.size() << " ";
+            for (std::size_t i = 0; i < points.size(); ++i)
+                output << " " << points[i];
+            output << std::endl;
+        }
+        return points;
+    }
+
     ClosedMesh::ClosedMesh() : MeshBase()
     {
         m_is_closed = true;
@@ -455,5 +526,73 @@ namespace ORNL
             }
         }
         return false;
+    }
+
+    void ClosedMesh::Sandbox()
+    {
+        // Points with normals.
+        Pwn_vector points;
+
+        for (MeshVertex vertex : this->vertices())
+        {
+            QVector3D normal = vertex.normal;
+            Kernel::Vector_3 converted_normal(normal.x(), normal.y(), normal.z());
+            points.push_back(std::make_pair(vertex.toPoint3(), converted_normal));
+
+        }
+
+        // Instantiate shape detection engine.
+        Efficient_ransac ransac;
+        // Provide input data.
+        ransac.set_input(points);
+        // Register shapes for detection.
+        ransac.add_shape_factory<Planer>();
+        ransac.add_shape_factory<Sphere>();
+        ransac.add_shape_factory<Cylinder>();
+        ransac.add_shape_factory<Cone>();
+        ransac.add_shape_factory<Torus>();
+        // Set parameters for shape detection.
+        Efficient_ransac::Parameters parameters;
+        // Set probability to miss the largest primitive at each iteration.
+        parameters.probability = 0.05;
+        // Detect shapes with at least 200 points.
+        parameters.min_points = 200;
+        // Set maximum Euclidean distance between a point and a shape.
+        parameters.epsilon = 0.002;
+        // Set maximum Euclidean distance between points to be clustered.
+        parameters.cluster_epsilon = 0.01;
+        // Set maximum normal deviation.
+        // 0.9 < dot(surface_normal, point_normal);
+        parameters.normal_threshold = 0.9;
+        // Detect shapes.
+        ransac.detect(parameters);
+        // Print number of detected shapes and unassigned points.
+        //std::cout << ransac.shapes().end() - ransac.shapes().begin()
+        //          << " detected shapes, "
+        //          << ransac.number_of_unassigned_points()
+        //          << " unassigned points." << std::endl;
+        // Efficient_ransac::shapes() provides
+        // an iterator range to the detected shapes.
+        Efficient_ransac::Shape_range shapes = ransac.shapes();
+        Efficient_ransac::Shape_range::iterator it = shapes.begin();
+        while (it != shapes.end()) {
+            // Get specific parameters depending on the detected shape.
+            if (Planer* plane = dynamic_cast<Planer*>(it->get())) {
+                Kernel::Vector_3 normal = plane->plane_normal();
+                QVector3D temp(normal.x(), normal.y(),normal.z());
+                qDebug() << "Plane with normal " << temp;
+            } else if (Cylinder* cyl = dynamic_cast<Cylinder*>(it->get())) {
+                Kernel::Line_3 axis = cyl->axis();
+                FT radius = cyl->radius();
+                //std::cout << "Cylinder with axis "
+                //          << axis << " and radius " << radius << std::endl;
+            } else {
+                // Print the parameters of the detected shape.
+                // This function is available for any type of shape.
+                //std::cout << (*it)->info() << std::endl;
+            }
+            // Proceed with the next detected shape.
+            it++;
+        }
     }
 }

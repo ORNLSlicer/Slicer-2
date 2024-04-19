@@ -339,6 +339,7 @@ namespace ORNL
                 static QString kMach4;
                 static QString kAeroBasic;
                 static QString kSheetLamination;
+                static QString kAdamantine;
             };
         };
 

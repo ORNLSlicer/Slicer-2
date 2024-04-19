@@ -39,6 +39,7 @@
 #include <gcode/writers/five_axis_marlin_writer.h>
 #include <gcode/writers/meltio_writer.h>
 
+#include <gcode/writers/adamantine_writer.h>
 #include <gcode/gcode_meta.h>
 
 namespace ORNL {
@@ -169,6 +170,9 @@ namespace ORNL {
             break;
         case GcodeSyntax::kSheetLamination:
             m_base = QSharedPointer<SheetLaminationWriter>(new SheetLaminationWriter(GcodeMetaList::SheetLaminationMeta, GSM->getGlobal()));
+            break;
+        case GcodeSyntax::kAdamantine:
+            m_base = QSharedPointer<AdamantineWriter>(new AdamantineWriter(GcodeMetaList::AdamantineMeta, GSM->getGlobal()));
             break;
         default:
             m_base = QSharedPointer<CincinnatiWriter>(new CincinnatiWriter(GcodeMetaList::CincinnatiMeta, GSM->getGlobal()));
