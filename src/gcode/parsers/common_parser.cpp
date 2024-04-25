@@ -63,6 +63,8 @@ namespace ORNL
         config();
 
         MotionEstimation::m_total_distance = 0;
+        MotionEstimation::m_printing_distance = 0;
+        MotionEstimation::m_travel_distance = 0;
     }
 
     Distance CommonParser::getCurrentGXDistance()
@@ -685,6 +687,16 @@ namespace ORNL
         return MotionEstimation::m_total_distance;
     }
 
+    Distance CommonParser::getPrintingDistance()
+    {
+        return MotionEstimation::m_printing_distance;
+    }
+
+    Distance CommonParser::getTravelDistance()
+    {
+        return MotionEstimation::m_travel_distance;
+    }
+
     bool CommonParser::getWasModified()
     {
         return m_was_modified;
@@ -893,7 +905,21 @@ namespace ORNL
             m_motion_commands[m_current_layer].push_back(m_current_gcode_command);
         }
 
-        MotionEstimation::m_total_distance += getCurrentGXDistance();
+        Distance temp = getCurrentGXDistance();
+        MotionEstimation::m_total_distance += temp;
+
+        bool isPrinting = false;
+        for (int i = 0; i < m_extruders_on.size(); i++)
+        {
+            if(m_extruders_on[i])
+            {
+                MotionEstimation::m_printing_distance += temp;
+                isPrinting = true;
+                break;
+            }
+        }
+        if(!isPrinting)
+            MotionEstimation::m_travel_distance += temp;
     }
 
     void CommonParser::G1Handler(QVector<QStringRef> params)
@@ -1099,7 +1125,23 @@ namespace ORNL
         }
 
         m_with_F_value = m_current_spindle_speed != 0;
-        MotionEstimation::m_total_distance += getCurrentGXDistance();
+
+        Distance temp = getCurrentGXDistance();
+        MotionEstimation::m_total_distance += temp;
+
+        bool isPrinting = false;
+        for (int i = 0; i < m_extruders_on.size(); i++)
+        {
+            if(m_extruders_on[i])
+            {
+                    MotionEstimation::m_printing_distance += temp;
+                    isPrinting = true;
+                    break;
+            }
+        }
+        if(!isPrinting)
+            MotionEstimation::m_travel_distance += temp;
+
         m_with_F_value = false;
         // Checks if the command did not use a movement command, but only a flow
         // command. Not needed. if( x_not_used && y_not_used && z_not_used &&

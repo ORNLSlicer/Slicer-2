@@ -307,9 +307,13 @@ namespace ORNL
 
                 double volumeValue = total_volume() / pow<3>(PM->getDistanceUnit())();
                 double distanceValue = (m_parser->getTotalDistance() / PM->getDistanceUnit())();
+                double printingDistanceValue = (m_parser->getPrintingDistance() / PM->getDistanceUnit())();
+                double travelDistanceValue = (m_parser->getTravelDistance() / PM->getDistanceUnit())();
                 double massValue = (total_mass / PM->getMassUnit())();
                 keyInfo = keyInfo % "Volume: " % QString::number(volumeValue) % " " % PM->getDistanceUnit().toString() % "³\n"
-                        % "Distance: " % QString::number(distanceValue) % " " % PM->getDistanceUnit().toString() % "\n"
+                        % "Printing Distance: " % QString::number(printingDistanceValue) % " " % PM->getDistanceUnit().toString() % "\n"
+                        % "Travel Distance: " % QString::number(travelDistanceValue) % " " % PM->getDistanceUnit().toString() % "\n"
+                        % "Total Distance: " % QString::number(distanceValue) % " " % PM->getDistanceUnit().toString() % "\n"
                         % "Approximate Weight (" % toString(m_material) % "): "
                         % QString::number(massValue) % " " % PM->getMassUnit().toString() % "\n";
 

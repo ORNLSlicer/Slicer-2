@@ -187,6 +187,14 @@ namespace ORNL
         //! \return total distance in gcode file
         Distance getTotalDistance();
 
+        //! \brief Returns the total printing distance for the gcode file
+        //! \return printing distance in gcode file
+        Distance getPrintingDistance();
+
+        //! \brief Returns the total travel distance for the gcode file
+        //! \return travel distance in gcode file
+        Distance getTravelDistance();
+
         //! \brief Returns whether or not any lines were altered to enforce minimum layer times or expand/contract
         bool getWasModified();
 

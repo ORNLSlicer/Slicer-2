@@ -372,6 +372,8 @@ namespace ORNL
 
     Distance MotionEstimation::m_previous_distance;
     Distance MotionEstimation::m_total_distance;
+    Distance MotionEstimation::m_printing_distance;
+    Distance MotionEstimation::m_travel_distance;
 
     Distance MotionEstimation::initialLayerThickness;
     Distance MotionEstimation::layer0extrusionWidth;

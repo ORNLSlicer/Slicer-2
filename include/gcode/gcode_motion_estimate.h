@@ -48,6 +48,8 @@ namespace ORNL
 
         static Distance m_previous_distance;
         static Distance m_total_distance;
+        static Distance m_printing_distance;
+        static Distance m_travel_distance;
 
         static Distance initialLayerThickness;
         static Distance layer0extrusionWidth;
