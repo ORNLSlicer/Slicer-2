@@ -271,6 +271,12 @@ namespace ORNL
                         .arg(m_sb->setting<Time>(Constants::MaterialSettings::Cooling::kMaxLayerTime)()));
             if (SettingsManager::getInstance()->getGlobal()->setting< bool >("useSmoothing"))
                 text += commentLine("Smoothing is turned ON");
+            if(m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw) != 0 ||
+                m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch) != 0 ||
+                m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll) != 0)
+            {
+                text += commentLine("ANGLED SLICING ENABLED");
+            }
             if (m_sb->setting< int >(Constants::ProfileSettings::SpecialModes::kEnableOversize))
             {
                 text += commentLine(
