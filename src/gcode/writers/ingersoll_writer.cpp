@@ -246,7 +246,7 @@ namespace ORNL
     QString IngersollWriter::writeLine(const Point& start_point, const Point& target_point, const QSharedPointer<SettingsBase> params)
     {
         Velocity speed = params->setting<Velocity>(Constants::SegmentSettings::kSpeed);
-        int rpm = params->setting<int>(Constants::SegmentSettings::kExtruderSpeed);
+        float rpm = params->setting<float>(Constants::SegmentSettings::kExtruderSpeed);
         int material_number = params->setting<int>(Constants::SegmentSettings::kMaterialNumber);
         RegionType region_type = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
         PathModifiers path_modifiers = params->setting<PathModifiers>(Constants::SegmentSettings::kPathModifiers);
@@ -525,7 +525,7 @@ namespace ORNL
             return {};
     }
 
-    QString IngersollWriter::writeExtruderOn(RegionType type, int rpm, int extruder_number)
+    QString IngersollWriter::writeExtruderOn(RegionType type, float rpm, int extruder_number)
     {
         QString rv;
         float output_rpm;

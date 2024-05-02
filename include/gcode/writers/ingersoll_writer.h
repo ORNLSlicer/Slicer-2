@@ -105,7 +105,7 @@ namespace ORNL
     private:
 
         //! \brief Writes G-Code to enable the extruder
-        QString writeExtruderOn(RegionType type, int rpm, int extruder_number);
+        QString writeExtruderOn(RegionType type, float rpm, int extruder_number);
         //! \brief Writes G-Code to disable the extruder
         QString writeExtruderOff(int extruder_number);
 
