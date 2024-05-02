@@ -389,6 +389,7 @@ namespace ORNL
                     if (m_extruders_active[i])
                         m_extruders_on[i] = false;
                 }
+                continue;
             }
             else if(m_upper_lines[m_current_line].contains("EXTRUDER("))
             {
@@ -397,6 +398,7 @@ namespace ORNL
                     if (m_extruders_active[i])
                         m_extruders_on[i] = true;
                 }
+                continue;
             }
             else
             {
