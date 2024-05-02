@@ -382,6 +382,22 @@ namespace ORNL
                 // Ignore lines with variable definition if variable Z is not enabled
                 continue;
             }
+            else if(m_upper_lines[m_current_line].contains("EXTRUDER(0)"))
+            {
+                for (int i = 0, end = m_extruders_on.size(); i < end; ++i)
+                {
+                    if (m_extruders_active[i])
+                        m_extruders_on[i] = false;
+                }
+            }
+            else if(m_upper_lines[m_current_line].contains("EXTRUDER("))
+            {
+                for (int i = 0, end = m_extruders_on.size(); i < end; ++i)
+                {
+                    if (m_extruders_active[i])
+                        m_extruders_on[i] = true;
+                }
+            }
             else
             {
                 // Save the current line to be sent for the parseCommand function
