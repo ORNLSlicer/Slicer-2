@@ -206,6 +206,7 @@ namespace ORNL
     QString Constants::PrinterSettings::SyntaxString::kMarlinPellet = "Marlin-Pellet";
     QString Constants::PrinterSettings::SyntaxString::kMazak = "Mazak";
     QString Constants::PrinterSettings::SyntaxString::kMeld = "Meld";
+    QString Constants::PrinterSettings::SyntaxString::kMeltio = "Meltio";
     QString Constants::PrinterSettings::SyntaxString::kMVP = "MVP";
     QString Constants::PrinterSettings::SyntaxString::kOkuma = "Okuma";
     QString Constants::PrinterSettings::SyntaxString::kORNL = "ORNL";
@@ -221,6 +222,7 @@ namespace ORNL
     QString Constants::PrinterSettings::SyntaxString::kMach4 = "Mach4";
     QString Constants::PrinterSettings::SyntaxString::kAeroBasic = "AeroBasic";
     QString Constants::PrinterSettings::SyntaxString::kSheetLamination = "SheetLamination";
+    QString Constants::PrinterSettings::SyntaxString::kAdamantine = "Adamantine";
 
     //================================================================================
     // Optimizations
@@ -502,6 +504,7 @@ namespace ORNL
     const QString Constants::MaterialSettings::Extruder::kOnDelaySkeleton = "extruder_on_delay_skeleton";
     const QString Constants::MaterialSettings::Extruder::kOffDelay = "extruder_off_delay";
     const QString Constants::MaterialSettings::Extruder::kServoToTravelSpeed = "servo_extruder_to_travel_speed";
+    const QString Constants::MaterialSettings::Extruder::kEnableM3S = "enable_m3s";
 
     //Filament
     const QString Constants::MaterialSettings::Filament::kDiameter = "filament_diameter";
@@ -738,7 +741,7 @@ namespace ORNL
     const QString Constants::ProfileSettings::Optimizations::kPointOrder = "point_order_optimization";
     const QString Constants::ProfileSettings::Optimizations::kLocalRandomnessEnable = "local_randomness_enable";
     const QString Constants::ProfileSettings::Optimizations::kLocalRandomnessRadius = "local_randomness_radius";
-    const QString Constants::ProfileSettings::Optimizations::kMinDistanceEnabled = "min_distance_enabled";
+    const QString Constants::ProfileSettings::Optimizations::kMinDistanceEnabled = "enable_min_distance";
     const QString Constants::ProfileSettings::Optimizations::kMinDistanceThreshold = "min_distance_threshold";
     const QString Constants::ProfileSettings::Optimizations::kConsecutiveDistanceThreshold = "consecutive_path_distance_threshold";
     const QString Constants::ProfileSettings::Optimizations::kCustomPointXLocation = "custom_point_order_x_location";
@@ -900,6 +903,8 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::FileOutput::kAML3DWeaveLength = "aml3d_weave_length";
     const QString Constants::ExperimentalSettings::FileOutput::kAML3DWeaveWidth = "aml3d_weave_width";
     const QString Constants::ExperimentalSettings::FileOutput::kSandiaOutput = "sandia_file_output";
+    const QString Constants::ExperimentalSettings::FileOutput::kMarlinOutput = "marlin_file_output";
+    const QString Constants::ExperimentalSettings::FileOutput::kMarlinTravels = "marlin_include_travels";
 
     //Rotation Origin
     const QString Constants::ExperimentalSettings::RotationOrigin::kXOffset = "rotation_origin_offset_x";

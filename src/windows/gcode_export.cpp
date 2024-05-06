@@ -11,10 +11,12 @@
 #include "managers/session_manager.h"
 #include "managers/settings/settings_manager.h"
 #include "threading/gcode_rpbf_saver.h"
+#include "threading/gcode_adamantine_saver.h"
 #include "threading/gcode_meld_saver.h"
 #include "threading/gcode_tormach_saver.h"
 #include "threading/gcode_aml3d_saver.h"
 #include "threading/gcode_sandia_saver.h"
+#include "threading/gcode_marlin_saver.h"
 
 namespace ORNL
 {
@@ -125,8 +127,13 @@ namespace ORNL
                 QDir dir(filepath);
                 dir.mkdir(filepath);
             }
-
-            QString gcodeFileName = filepath % '/' % partName % m_most_recent_meta.m_file_suffix;
+            QString gcodeFileName;
+            if(m_most_recent_meta == GcodeMetaList::AdamantineMeta){
+                gcodeFileName = filepath % '/' % partName % "_scan_path" % m_most_recent_meta.m_file_suffix;
+            }
+            else{
+                gcodeFileName = filepath % '/' % partName % m_most_recent_meta.m_file_suffix;
+            }
             if(QFile::exists(gcodeFileName))
                 QFile::remove(gcodeFileName);
 
@@ -327,6 +334,22 @@ namespace ORNL
                 GCodeSandiaSaver* saver = new GCodeSandiaSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
                 connect(saver, &GCodeSandiaSaver::finished, saver, &GCodeSandiaSaver::deleteLater);
                 connect(saver, &GCodeSandiaSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
+                saver->start();
+            }
+            else if(m_most_recent_meta == GcodeMetaList::MarlinMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kMarlinOutput))
+            {
+                bool ok;
+
+                GCodeMarlinSaver* saver = new GCodeMarlinSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
+                connect(saver, &GCodeMarlinSaver::finished, saver, &GCodeMarlinSaver::deleteLater);
+                connect(saver, &GCodeMarlinSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
+                saver->start();
+            }
+            else if(m_most_recent_meta == GcodeMetaList::AdamantineMeta)
+            {
+                GCodeAdamantineSaver* saver = new GCodeAdamantineSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
+                connect(saver, &GCodeAdamantineSaver::finished, saver, &GCodeAdamantineSaver::deleteLater);
+                connect(saver, &GCodeAdamantineSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
             else

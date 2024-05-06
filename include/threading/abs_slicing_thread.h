@@ -4,6 +4,7 @@
 // Qt
 #include <QThread>
 #include <QQueue>
+#include <QElapsedTimer>
 
 // Local
 #include "threading/step_thread.h"
@@ -53,6 +54,9 @@ namespace ORNL {
             //! \param stage: processing step to set info for (currently only after gcode generation)
             //! \param data: data to set (currently gcode)
             void setNetworkData(StatusUpdateStepType stage, QString data);
+
+            //! \brief Get the time it took to slice
+            qint64 getTimeElapsed();
 
         public slots:
             //! \brief Main function that starts slice.
@@ -147,6 +151,10 @@ namespace ORNL {
 
             //! \brief Max Step Count
             int m_max_steps;
+
+            //! \brief Timer for tracking time to slice
+            QElapsedTimer m_timer;
+            qint64 m_elapsed_time = 0;
 
         protected slots:
             //! \brief Upon completion of thread running step object, this slot will clean up the thread.

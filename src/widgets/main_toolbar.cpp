@@ -457,10 +457,12 @@ namespace ORNL
     {
         IslandOrderOptimization islandOrder = static_cast<IslandOrderOptimization>(GSM->getGlobal()->setting<int>(Constants::ProfileSettings::Optimizations::kIslandOrder));
         PathOrderOptimization pathOrder = static_cast<PathOrderOptimization>(GSM->getGlobal()->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder));
+        PointOrderOptimization pointOrder = static_cast<PointOrderOptimization>(GSM->getGlobal()->setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
         bool secondPointEnabled = GSM->getGlobal()->setting<bool>(Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation);
 
         // Disable button.
-        if (islandOrder != IslandOrderOptimization::kCustomPoint && pathOrder != PathOrderOptimization::kCustomPoint && !secondPointEnabled) {
+        if (islandOrder != IslandOrderOptimization::kCustomPoint && pathOrder != PathOrderOptimization::kCustomPoint
+            && pointOrder != PointOrderOptimization::kCustomPoint && !secondPointEnabled) {
             m_seam_btn->setDisabled(true);
             m_seam_btn->setToolTip("Custom optimization points are not set");
             m_seam_btn->setChecked(false);

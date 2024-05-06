@@ -21,8 +21,150 @@
 #include <CGAL/disable_warnings.h>
 #include <CGAL/Polygon_mesh_processing/transform.h>
 
+
+
 namespace ORNL
 {
+    void OpenMesh::Sandbox()
+    {
+        //NOTE: This does not work yet. In order to implent the algorithm presented by Xiao,
+        //we need to find the edges of the shapes from the triangulated mesh. This "Sandbox"
+        //is a partial implementation of the first step in the algorith described by Sun et al.
+        //there are a few more things that need to happen in the loop, I've left off at the n'*n'T
+        //step. Need to change the structures.
+
+        //Might explore CGAL alternative to segmentation:
+        //https://doc.cgal.org/latest/Surface_mesh_segmentation/index.html
+
+        // Define CGAL kernel and types
+        typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+        typedef K::Point_3 Point_3;
+        typedef CGAL::Surface_mesh<Point_3> Mesh;
+        typedef K::Vector_3 Vector_3;
+        typedef Mesh::Property_map<Mesh::Vertex_index, double> Vertex_distance_map;
+
+        // Define constants
+        const double delta = 0.3;
+        const double beta = 0.2;
+
+        //Define lambda function for n_i
+        auto niprime = [](QVector3D ni, QVector3D wi){
+            return 2*(QVector3D::dotProduct(ni,wi)*wi-ni);
+        };
+
+        //Define lambda function for w_i
+        auto compute_wi = [](QVector3D pq, QVector3D ni){
+            QVector3D pq_cross_ni = QVector3D::crossProduct(pq,ni);
+            QVector3D pq_cross_ni_cross_pq = QVector3D::crossProduct(pq_cross_ni,pq);
+            double magnitude = pq_cross_ni_cross_pq.length();
+            return pq_cross_ni_cross_pq/magnitude;
+        };
+
+        // Create a CGAL surface mesh and populate it from your STL file
+        Mesh mesh = m_representation;//this is the open mesh that is already loaded
+
+        // Create property maps for vertex distances
+        Vertex_distance_map vertex_distances = mesh.add_property_map<Mesh::Vertex_index, double>("v:distance").first;
+
+        // Calculate geodesic distances using CGAL triangulated surface mesh shortest paths
+        std::vector<Traits::Point_3> distances = shortestPath();
+
+        // Extract vertices from the mesh
+        std::vector<Point_3> vertices;
+        for (const Point_3& p : mesh.points()) {
+            vertices.push_back(p);
+        }
+        // Get the normal of each face
+        QVector<QVector3D> normals;
+        for (MeshFace face : faces()){
+            normals.push_back(face.normal);
+        }
+
+        // Calculate edge strength for each vertex q
+        std::vector<double> edge_strength;
+        for (const Point_3& q : vertices) {
+            //NEED TO FIND THE FACE/TRIANGLE ASSOCIATED WITH VERTICES
+            // Calculate the new tensor T
+
+            QVector3D ni;
+            QVector3D ni_prime;
+            QVector3D pq;
+            QVector3D wi;
+            double mu_i;
+
+            Eigen::Matrix3d T = Eigen::Matrix3d::Zero();
+            for (std::size_t i = 0; i < vertices.size(); ++i) {
+                ni = normals[i];
+                wi = compute_wi(pq, ni);
+                ni_prime = niprime(ni,wi);//CHANGE back to wi
+                mu_i = std::exp(-1);//CHANGE 1 to the the geodesic distance
+      //          T += mu_i * (ni_prime * ni_prime.transpose());
+            }
+            // Calculate edge strength
+            Eigen::EigenSolver<Eigen::Matrix3d> eigen_solver(T);
+            Eigen::VectorXd eigenvalues = eigen_solver.eigenvalues().real();
+            Eigen::MatrixXd eigenvectors = eigen_solver.eigenvectors().real();
+            eigenvectors.colwise().normalize();
+            Vector_3 bar_n;
+            for (std::size_t i = 0; i < vertices.size(); ++i) {
+          //      bar_n += mu_i * ni_prime;
+            }
+            double v1 = eigenvalues.maxCoeff();
+            double v2 = eigenvalues(1);
+            double v3 = eigenvalues.minCoeff();
+            //Vector_3 e1 = eigenvectors.col(eigenvalues.maxCoeffIndex());
+            //double s = (std::abs(CGAL::scalar_product(bar_n, e1)) < delta) ? 1.0 :
+            //               (v3 > beta * (v1 - v2) && v3 > beta * (v2 - v3)) ? 1.0 :
+            //               (v2 - v3) / v1;
+            //edge_strength.push_back(s);
+        }
+        // Now, edge_strength contains the computed edge strength for each vertex q
+    }
+
+    std::vector<Traits::Point_3> OpenMesh::shortestPath()
+    {
+        /* shortestPath is an algorithm to compute geodesic shortest paths on a triangulated surface mesh.
+         * The algorithm implemented in this package builds a data structure to efficiently answer
+         * queries of the following form: Given a triangulated surface mesh M, a set of source points S on
+         * M, and a target point t also on M, find a shortest path λ between t and any element in S, where
+         * λ is constrained to the surface of M.
+         * See https://doc.cgal.org/latest/Surface_mesh_shortest_path/index.html#Chapter_Surface_mesh_shortest_path
+         * example 3.1*/
+        Triangle_mesh tmesh = m_representation;
+        /* A source point can be specified using either a vertex of the input surface mesh or a face of the input
+         * surface mesh with some barycentric coordinates. Given a point p that lies inside a triangle face (A,B,C),
+         * its barycentric coordinates are a weight triple (b0,b1,b2) such that p=b0\cdotA+b1\cdotB+b2\cdotC, and
+         * b0+b1+b2=1.*/
+        // first, pick a face (this one is random)
+        const unsigned int randSeed = 5;
+        CGAL::Random rand(randSeed);
+        const int target_face_index = rand.get_int(0, static_cast<int>(num_faces(tmesh)));
+        face_iterator face_it = CGAL::faces(tmesh).first;
+        std::advance(face_it,target_face_index);
+        // then, define a barycentric coordinates inside the face
+        Traits::Barycentric_coordinates face_location = {{0.25, 0.5, 0.25}}; //CHECK outside of given examples
+        // construct a shortest path query object and add a source point
+        Surface_mesh_shortest_path shortest_paths(tmesh);
+        shortest_paths.add_source_point(*face_it, face_location);
+        // For all vertices in the tmesh, compute the points of
+        // the shortest path to the source point and write them
+        // into a file readable using the CGAL Polyhedron demo
+        std::ofstream output("shortest_paths_with_id.polylines.txt");
+        vertex_iterator vit, vit_end;
+        std::vector<Traits::Point_3> points;
+        for ( boost::tie(vit, vit_end) = CGAL::vertices(tmesh);
+             vit != vit_end; ++vit)
+        {
+            shortest_paths.shortest_path_points_to_source_points(*vit, std::back_inserter(points));
+            // print the points
+            output << points.size() << " ";
+            for (std::size_t i = 0; i < points.size(); ++i)
+                output << " " << points[i];
+            output << std::endl;
+        }
+        return points;
+    }
+
     OpenMesh::OpenMesh() : MeshBase() {}
 
     OpenMesh::OpenMesh(const QVector<MeshVertex> &vertices, const QVector<MeshFace> &faces) : MeshBase(vertices, faces)
@@ -30,6 +172,7 @@ namespace ORNL
         m_representation = SurfaceMeshFromVerticesAndFaces(m_vertices, m_faces);
         m_original_representation = m_representation; // Create a copy
         updateDims();
+        Sandbox();
     }
 
     OpenMesh::OpenMesh(const QString& name, const QString& path,
@@ -39,6 +182,7 @@ namespace ORNL
         m_representation = SurfaceMeshFromVerticesAndFaces(m_vertices, m_faces);
         m_original_representation = m_representation; // Create a copy
         updateDims();
+        Sandbox();
     }
 
     OpenMesh::OpenMesh(MeshTypes::SurfaceMesh poly, QString name, QString file) : MeshBase()
@@ -53,12 +197,14 @@ namespace ORNL
         m_faces_original = m_faces = m_faces_aligned = vertices_and_faces.second;
         m_original_representation = m_representation;
         updateDims();
+        Sandbox();
     }
 
     OpenMesh::OpenMesh(QSharedPointer<OpenMesh> mesh) : MeshBase(mesh)
     {
         m_representation = mesh->m_representation;
         m_original_representation = mesh->m_original_representation;
+        Sandbox();
     }
 
     MeshTypes::SurfaceMesh OpenMesh::surface_mesh()

@@ -18,6 +18,8 @@ namespace ORNL {
             return;
         }
 
+        m_timer.start();
+
         m_step_threads.clear();
         m_step_queue.clear();
 
@@ -133,6 +135,8 @@ namespace ORNL {
                 if (m_step_threads.empty()) {
 
                     this->postProcess();
+
+                    m_elapsed_time = m_timer.elapsed();
 
                     if(this->shouldCancel())
                         return;

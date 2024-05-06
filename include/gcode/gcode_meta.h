@@ -390,7 +390,33 @@ static GcodeMeta SandiaMeta = {
     rev / minute,  //angular velocity
     ".gcode"
 };
+static GcodeMeta MeltioMeta = {
+    GcodeSyntax::kMarlin,
+    QString("("), //starting_delim
+    QString(")"), //ending_delim
+    mm, //distance
+    ms, //time
+    degree, //angle
+    g, //mass
+    mm / minute, //velocity
+    mm / s / s, //acceleration
+    rev / minute,  //angular velocity
+    ".nc"
+};
 
+static GcodeMeta AdamantineMeta = {
+            GcodeSyntax::kAdamantine,
+            QString("("),
+            QString(")"),
+            m,
+            s,
+            degree,
+            lbm,
+            m / s,
+            m / s / s,
+            rev / s,
+            ".txt"
+};
 static QHash<int, GcodeMeta> createMapping()
 {
     QHash<int, GcodeMeta> result;
@@ -411,6 +437,8 @@ static QHash<int, GcodeMeta> createMapping()
     result.insert((int)GcodeSyntax::kMarlin, MarlinMeta);
     result.insert((int)GcodeSyntax::kMarlinPellet, MarlinMeta);
     result.insert((int)GcodeSyntax::kMazak, MazakMeta);
+    result.insert((int)GcodeSyntax::kMeld, MeldMeta);
+    result.insert((int)GcodeSyntax::kMeltio, MeltioMeta);
     result.insert((int)GcodeSyntax::kMVP, MVPMeta);
     result.insert((int)GcodeSyntax::kRomiFanuc, RomiFanucMeta);
     result.insert((int)GcodeSyntax::kRPBF, RPBFMeta);
@@ -424,6 +452,7 @@ static QHash<int, GcodeMeta> createMapping()
     result.insert((int)GcodeSyntax::kSheetLamination, SheetLaminationMeta);
     result.insert((int)GcodeSyntax::kORNL, ORNLMeta);
     result.insert((int)GcodeSyntax::kTormach, TormachMeta);
+    result.insert((int)GcodeSyntax::kAdamantine, AdamantineMeta);
     return result;
 }
 

@@ -323,6 +323,7 @@ namespace ORNL
                 static QString kMarlinPellet;
                 static QString kMazak;
                 static QString kMeld;
+                static QString kMeltio;
                 static QString kMVP;
                 static QString kOkuma;
                 static QString kORNL;
@@ -338,6 +339,7 @@ namespace ORNL
                 static QString kMach4;
                 static QString kAeroBasic;
                 static QString kSheetLamination;
+                static QString kAdamantine;
             };
         };
 
@@ -532,6 +534,7 @@ namespace ORNL
                 static const QString kOnDelaySkeleton;
                 static const QString kOffDelay;
                 static const QString kServoToTravelSpeed;
+                static const QString kEnableM3S;
             };
 
             class Filament
@@ -1055,6 +1058,8 @@ namespace ORNL
                 static const QString kAML3DWeaveLength;
                 static const QString kAML3DWeaveWidth;
                 static const QString kSandiaOutput;
+                static const QString kMarlinOutput;
+                static const QString kMarlinTravels;
             };
 
             class RotationOrigin

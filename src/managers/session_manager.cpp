@@ -230,17 +230,47 @@ namespace ORNL
         QSharedPointer<Part> new_part = QSharedPointer<Part>::create(new_mesh, filename, mt);
 
         // Try to find a name for this part.
-        QString name = new_part->name();
-        QString org_name = name;
-        uint count = 1;
+        QString file_name;
+        if(filename == "") // filename is blank because the part is being loaded via project import
+        {
+            file_name = new_part->name();
+            QString org_name = file_name;
+            uint count = 1;
 
-        while (m_parts.contains(name)) {
-            name = org_name + "_" + QString::number(count);
-            count++;
+            while (m_parts.contains(file_name)) {
+                file_name = org_name + "_" + QString::number(count);
+                count++;
+            }
+        }
+        else // filename exists because the part is being loaded via UI button
+        {
+            // Find everything after the last /
+            QStringList full_name_parts = filename.split("/");
+            file_name = full_name_parts.at(full_name_parts.size()-1);
+            QString orig_file_name = file_name;
+
+            // Add a number to duplicated file names
+            uint count = 1;
+            while (m_parts.contains(file_name))
+            {
+                // Separate at the periods, then join everything before the last period
+                QStringList orig_file_name_parts = orig_file_name.split(".");
+                QString name;
+                for (int i = 0; i < orig_file_name_parts.size()-1; i++)
+                {
+                    name += orig_file_name_parts[i] + ".";
+                }
+                name.chop(1); // Without this, the file name will always include an extra period
+                // Add a number to signify a new instance of an existing file name
+                file_name = name + "_" + QString::number(count);
+                // Re-add the file extension
+                file_name += "." + orig_file_name_parts[orig_file_name_parts.size()-1];
+                count++;
+            }
         }
 
-        new_part->setName(name);
-        m_parts.insert(name, new_part);
+        new_part->setName(file_name);
+        m_parts.insert(file_name, new_part);
 
         emit partAdded(new_part);
         m_load_mutex.unlock();
@@ -647,6 +677,15 @@ namespace ORNL
     void SessionManager::setServerStepConnectivity(StatusUpdateStepType type, bool state)
     {
         m_step_connectivity[(int)type] = state;
+    }
+
+    qint64 SessionManager::getSliceTimeElapsed()
+    {
+        if (m_ast.isNull()) {
+            return 0;
+        }
+
+        return m_ast->getTimeElapsed();
     }
 
     bool SessionManager::changeSlicer(SlicerType type)

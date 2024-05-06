@@ -478,6 +478,13 @@ namespace ORNL
             }
         }
 
+        // Update extruder speed if not correct and if M3 S is desired rather than G* S which is issued later
+        if(m_sb->setting<int>(Constants::MaterialSettings::Extruder::kEnableM3S) && rpm != m_current_rpm)
+        {
+            rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("UPDATE EXTRUDER RPM");
+            m_current_rpm = rpm;
+        }
+
         rv += m_G1;
         // Forces first motion of layer to issue speed (needed for spiralize mode so that feedrate is scaled properly)
         if (m_layer_start)
@@ -485,7 +492,10 @@ namespace ORNL
             setFeedrate(speed);
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
 
-            rv += m_s % QString::number(output_rpm);
+            if(!m_sb->setting<int>(Constants::MaterialSettings::Extruder::kEnableM3S))
+            {
+                rv += m_s % QString::number(output_rpm);
+            }
             m_current_rpm = rpm;
 
             m_layer_start = false;
@@ -498,7 +508,7 @@ namespace ORNL
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         }
 
-        if (rpm != m_current_rpm)
+        if (!m_sb->setting<int>(Constants::MaterialSettings::Extruder::kEnableM3S) && rpm != m_current_rpm)
         {
             rv += m_s % QString::number(output_rpm);
             m_current_rpm = rpm;
@@ -564,6 +574,13 @@ namespace ORNL
             }
         }
 
+        // Update extruder speed if not correct and if M3 S is desired rather than G* S which is issued later
+        if(m_sb->setting<int>(Constants::MaterialSettings::Extruder::kEnableM3S) && rpm != m_current_rpm)
+        {
+            rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("UPDATE EXTRUDER RPM");
+            m_current_rpm = rpm;
+        }
+
         rv += ((ccw) ? m_G3 : m_G2);
 
         if (getFeedrate() != speed)
@@ -572,7 +589,7 @@ namespace ORNL
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         }
 
-        if (rpm != m_current_rpm)
+        if (!m_sb->setting<int>(Constants::MaterialSettings::Extruder::kEnableM3S) && rpm != m_current_rpm)
         {
             rv += m_s % QString::number(output_rpm);
             m_current_rpm = rpm;
@@ -639,6 +656,13 @@ namespace ORNL
             }
         }
 
+        // Update extruder speed if not correct and if M3 S is desired rather than G* S which is issued later
+        if(m_sb->setting<int>(Constants::MaterialSettings::Extruder::kEnableM3S) && rpm != m_current_rpm)
+        {
+            rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("UPDATE EXTRUDER RPM");
+            m_current_rpm = rpm;
+        }
+
         rv += m_G5;
 
         if (getFeedrate() != speed)
@@ -647,7 +671,7 @@ namespace ORNL
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         }
 
-        if (rpm != m_current_rpm)
+        if (!m_sb->setting<int>(Constants::MaterialSettings::Extruder::kEnableM3S) && rpm != m_current_rpm)
         {
             rv += m_s % QString::number(output_rpm);
             m_current_rpm = rpm;
@@ -940,6 +964,7 @@ namespace ORNL
         QString rv;
         //write vertical coordinate along the correct axis (Z or W) according to printer settings
         //only output Z/W coordinate if there was a change in Z/W
+        bool shouldBeFalse = m_sb->setting< bool >(Constants::PrinterSettings::Dimensions::kUseVariableForZ);
         Distance temp_dest_z = destination.z();
         Distance temp_last_z = m_last_z;
         Distance z_offset = m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset);

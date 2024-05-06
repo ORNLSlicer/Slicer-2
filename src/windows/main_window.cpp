@@ -403,7 +403,7 @@ namespace ORNL {
         m_actions["last_session"]      = {"Restore Last Session",          ":/icons/restore_session_black.png",false,  QKeySequence(),                     nullptr};
         m_actions["slice"]             = {"Slice",                         ":/icons/layers_black.png",         false,  QKeySequence(tr("Ctrl+g")),         nullptr};
         m_actions["screenshot"]        = {"Take Screenshot",               ":/icons/screenshot_black.png",     false,  QKeySequence(),                     nullptr};
-        m_actions["exit"]              = {"Exit",                          ":/icons/exit_black.png",           false,  QKeySequence(tr("Ctrl+q")),         nullptr};
+        m_actions["exit"]              = {"Exit",                          ":/icons/exit_black.png",           false,  QKeySequence(),                     nullptr};
 
         // Menu Edit
         m_actions["undo"]           = {"Undo",                          ":/icons/undo_black.png",           false,  QKeySequence(),                     nullptr};

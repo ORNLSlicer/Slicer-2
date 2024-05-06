@@ -37,6 +37,8 @@ namespace ORNL
         //! \param mesh: a mesh
         MeshBase(const QSharedPointer<MeshBase> mesh);
 
+        virtual std::vector<MeshTypes::Point_3> shortestPath()=0;
+
         //! \brief Get the vertices.
         //! \return a vector of the mesh vertices
         const QVector<MeshVertex> vertices();

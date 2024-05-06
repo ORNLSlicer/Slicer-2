@@ -37,7 +37,9 @@
 #include <gcode/writers/kraussmaffei_writer.h>
 #include <gcode/writers/sandia_writer.h>
 #include <gcode/writers/five_axis_marlin_writer.h>
+#include <gcode/writers/meltio_writer.h>
 
+#include <gcode/writers/adamantine_writer.h>
 #include <gcode/gcode_meta.h>
 
 namespace ORNL {
@@ -66,6 +68,10 @@ namespace ORNL {
 
     int AbstractSlicingThread::getMaxBound() {
         return m_max;
+    }
+
+    qint64 AbstractSlicingThread::getTimeElapsed() {
+        return m_elapsed_time;
     }
 
     void AbstractSlicingThread::setGcodeOutput(QString output) {
@@ -120,6 +126,9 @@ namespace ORNL {
         case GcodeSyntax::kMeld:
             m_base = QSharedPointer<MeldWriter>(new MeldWriter(GcodeMetaList::MeldMeta, GSM->getGlobal()));
             break;
+        case GcodeSyntax::kMeltio:
+            m_base = QSharedPointer<MeltioWriter>(new MeltioWriter(GcodeMetaList::MeltioMeta, GSM->getGlobal()));
+            break;
         case GcodeSyntax::kMVP:
             m_base = QSharedPointer<MVPWriter>(new MVPWriter(GcodeMetaList::MVPMeta, GSM->getGlobal()));
             break;
@@ -161,6 +170,9 @@ namespace ORNL {
             break;
         case GcodeSyntax::kSheetLamination:
             m_base = QSharedPointer<SheetLaminationWriter>(new SheetLaminationWriter(GcodeMetaList::SheetLaminationMeta, GSM->getGlobal()));
+            break;
+        case GcodeSyntax::kAdamantine:
+            m_base = QSharedPointer<AdamantineWriter>(new AdamantineWriter(GcodeMetaList::AdamantineMeta, GSM->getGlobal()));
             break;
         default:
             m_base = QSharedPointer<CincinnatiWriter>(new CincinnatiWriter(GcodeMetaList::CincinnatiMeta, GSM->getGlobal()));

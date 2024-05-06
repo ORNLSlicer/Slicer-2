@@ -272,8 +272,20 @@ namespace ORNL {
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::TipWipe::kInfillEnable))
         {
+            // If angled slicing, force tip wipe to be reverse
+            if(m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw) != 0 ||
+                m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch) != 0 ||
+                m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll) != 0)
+            {
+                PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kReverseTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillDistance),
+                                                       m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kInfillSpeed),
+                                                       m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kInfillAngle),
+                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kInfillExtruderSpeed),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillLiftHeight),
+                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillCutoffDistance));
+            }
             // if Forward OR (if Optimal AND (Perimeter OR Inset)) OR (if Optimal AND (Concentric or Inside Out Concentric))
-            if(static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kInfillDirection)) == TipWipeDirection::kForward ||
+            else if(static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kInfillDirection)) == TipWipeDirection::kForward ||
                     (static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kInfillDirection)) == TipWipeDirection::kOptimal &&
                      (m_sb->setting<int>(Constants::ProfileSettings::Perimeter::kEnable) || m_sb->setting<int>(Constants::ProfileSettings::Inset::kEnable))) ||
                     (static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kInfillDirection)) == TipWipeDirection::kOptimal &&
@@ -321,10 +333,16 @@ namespace ORNL {
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::SpiralLift::kInfillEnable))
         {
-            PathModifierGenerator::GenerateSpiralLift(path, m_sb->setting<Distance>(Constants::MaterialSettings::SpiralLift::kLiftRadius),
-                                                      m_sb->setting<Distance>(Constants::MaterialSettings::SpiralLift::kLiftHeight),
-                                                      m_sb->setting<int>(Constants::MaterialSettings::SpiralLift::kLiftPoints),
-                                                      m_sb->setting<Velocity>(Constants::MaterialSettings::SpiralLift::kLiftSpeed), supportsG3);
+            // Prevent spiral lifts during angled slicing to avoid collisions
+            if(m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw) == 0 &&
+                m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch) == 0 &&
+                m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll) == 0)
+            {
+                PathModifierGenerator::GenerateSpiralLift(path, m_sb->setting<Distance>(Constants::MaterialSettings::SpiralLift::kLiftRadius),
+                                                          m_sb->setting<Distance>(Constants::MaterialSettings::SpiralLift::kLiftHeight),
+                                                          m_sb->setting<int>(Constants::MaterialSettings::SpiralLift::kLiftPoints),
+                                                          m_sb->setting<Velocity>(Constants::MaterialSettings::SpiralLift::kLiftSpeed), supportsG3);
+            }
         }
         if(m_sb->setting<bool>(Constants::MaterialSettings::Startup::kInfillEnable))
         {

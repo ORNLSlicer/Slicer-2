@@ -241,6 +241,11 @@ namespace ORNL {
 
     void GcodeBar::setMaxSegment(int max_value)
     {
+        // If layer has no geometry, max_value will be negative one
+        // Make max_value zero to show no geometry exists
+        if (max_value < 0)
+            max_value = 0;
+
         m_segment_lower->setMaximum(max_value);
         m_segment_lower_slider->setMaximum(max_value);
         m_segment_upper->setMaximum(max_value);

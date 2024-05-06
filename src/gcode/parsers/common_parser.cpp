@@ -63,6 +63,8 @@ namespace ORNL
         config();
 
         MotionEstimation::m_total_distance = 0;
+        MotionEstimation::m_printing_distance = 0;
+        MotionEstimation::m_travel_distance = 0;
     }
 
     Distance CommonParser::getCurrentGXDistance()
@@ -354,21 +356,48 @@ namespace ORNL
             {
                 // If using a variable Z, find the value added to the variable, calculate the total value of Z by replacing the variable with the value from the printer settings
                 // then create a new line of g-code to be sent to the parser that is formatted the way a line is normally formatted (without the variable)
-                int first = m_upper_lines[m_current_line].indexOf("+")+2;
+                double zVal;
                 int second = m_upper_lines[m_current_line].indexOf("]");
                 int zLoc = m_upper_lines[m_current_line].indexOf("Z");
-                QString zAdditionString = m_upper_lines[m_current_line].mid(first, second-first);
-                double zVal = zAdditionString.toDouble(&no_error);
-                if (!no_error)
+                if(m_upper_lines[m_current_line].contains("+"))
                 {
-                    throwFloatConversionErrorException();
+                    int first = m_upper_lines[m_current_line].indexOf("+")+2;
+                    QString zAdditionString = m_upper_lines[m_current_line].mid(first, second-first);
+                    zVal = zAdditionString.toDouble(&no_error);
+                    if (!no_error)
+                    {
+                        throwFloatConversionErrorException();
+                    }
                 }
+                else
+                {
+                    zVal = 0;
+                }
+
                 zVal += currentZOffset;
                 newCurrentLine = m_upper_lines[m_current_line].mid(0, zLoc+1) % QString::number(zVal, 'f', 4) % m_upper_lines[m_current_line].mid(second+1);
             }            
             else if(m_upper_lines[m_current_line].contains("[#"))
             {
                 // Ignore lines with variable definition if variable Z is not enabled
+                continue;
+            }
+            else if(m_upper_lines[m_current_line].contains("EXTRUDER(0)"))
+            {
+                for (int i = 0, end = m_extruders_on.size(); i < end; ++i)
+                {
+                    if (m_extruders_active[i])
+                        m_extruders_on[i] = false;
+                }
+                continue;
+            }
+            else if(m_upper_lines[m_current_line].contains("EXTRUDER("))
+            {
+                for (int i = 0, end = m_extruders_on.size(); i < end; ++i)
+                {
+                    if (m_extruders_active[i])
+                        m_extruders_on[i] = true;
+                }
                 continue;
             }
             else
@@ -676,6 +705,16 @@ namespace ORNL
         return MotionEstimation::m_total_distance;
     }
 
+    Distance CommonParser::getPrintingDistance()
+    {
+        return MotionEstimation::m_printing_distance;
+    }
+
+    Distance CommonParser::getTravelDistance()
+    {
+        return MotionEstimation::m_travel_distance;
+    }
+
     bool CommonParser::getWasModified()
     {
         return m_was_modified;
@@ -884,7 +923,21 @@ namespace ORNL
             m_motion_commands[m_current_layer].push_back(m_current_gcode_command);
         }
 
-        MotionEstimation::m_total_distance += getCurrentGXDistance();
+        Distance temp = getCurrentGXDistance();
+        MotionEstimation::m_total_distance += temp;
+
+        bool isPrinting = false;
+        for (int i = 0; i < m_extruders_on.size(); i++)
+        {
+            if(m_extruders_on[i])
+            {
+                MotionEstimation::m_printing_distance += temp;
+                isPrinting = true;
+                break;
+            }
+        }
+        if(!isPrinting)
+            MotionEstimation::m_travel_distance += temp;
     }
 
     void CommonParser::G1Handler(QVector<QStringRef> params)
@@ -1090,7 +1143,23 @@ namespace ORNL
         }
 
         m_with_F_value = m_current_spindle_speed != 0;
-        MotionEstimation::m_total_distance += getCurrentGXDistance();
+
+        Distance temp = getCurrentGXDistance();
+        MotionEstimation::m_total_distance += temp;
+
+        bool isPrinting = false;
+        for (int i = 0; i < m_extruders_on.size(); i++)
+        {
+            if(m_extruders_on[i])
+            {
+                    MotionEstimation::m_printing_distance += temp;
+                    isPrinting = true;
+                    break;
+            }
+        }
+        if(!isPrinting)
+            MotionEstimation::m_travel_distance += temp;
+
         m_with_F_value = false;
         // Checks if the command did not use a movement command, but only a flow
         // command. Not needed. if( x_not_used && y_not_used && z_not_used &&
@@ -2129,6 +2198,9 @@ namespace ORNL
                     QRegularExpressionMatch myMatch = m_q_param_and_value.match(line);
                     double value = myMatch.capturedRef().mid(1).toDouble();
                     double extruderModifier = sb->setting< double >(Constants::MaterialSettings::Cooling::kExtruderScaleFactor);
+                    // If slowing down, the multiplier for the extruder should be the inverse of the scale factor
+                    if(modifier < 1)
+                        extruderModifier = 1 / extruderModifier;
                     line = line.leftRef(myMatch.capturedStart()) % m_q_parameter %
                             QString::number(value * modifier * extruderModifier, 'f', 4) % line.midRef(myMatch.capturedEnd());
                     current_layer_motion_end->addParameter(m_q_parameter.toLatin1(),
@@ -2140,6 +2212,9 @@ namespace ORNL
                     QRegularExpressionMatch myMatch = m_s_param_and_value.match(line);
                     double value = myMatch.capturedRef().mid(1).toDouble();
                     double extruderModifier = sb->setting< double >(Constants::MaterialSettings::Cooling::kExtruderScaleFactor);
+                    // If slowing down, the multiplier for the extruder should be the inverse of the scale factor
+                    if(modifier < 1)
+                        extruderModifier = 1 / extruderModifier;
                     line = line.leftRef(myMatch.capturedStart()) % m_s_parameter %
                             QString::number(value * modifier * extruderModifier, 'f', 4)
                             % line.midRef(myMatch.capturedEnd());

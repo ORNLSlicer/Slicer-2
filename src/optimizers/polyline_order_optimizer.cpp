@@ -202,6 +202,35 @@ namespace ORNL
 
             m_polylines.remove(index);
         }
+
+        Point queryPoint;
+        if(m_point_optimization == PointOrderOptimization::kCustomPoint)
+            queryPoint = m_point_override_location;
+        else
+            queryPoint = m_current_location;
+
+        // If polyline is closed loop, apply point optimization strategies for a closed-loop path not a skeleton
+        if(new_polyline.front() == new_polyline.back())
+        {
+            // Remove last element because it is a duplicate of the first. It will be re-added after re-ordering the vector.
+            new_polyline.removeLast();
+
+            // Find index of the point that needs to be first.
+            int pointIndex = PointOrderOptimizer::linkToPoint(queryPoint, new_polyline, m_layer_num, m_point_optimization, m_min_point_distance_enable,
+                                                              m_min_point_distance, m_consecutive_threshold, m_randomness_enable, m_randomness_radius);
+
+            // Rotate the order of points to get the proper point at the start of the path
+            for(int i = 0; i < pointIndex; ++i)
+                new_polyline.move(0, new_polyline.size() - 1);
+
+            // Re-add the first point to the end to close the loop.
+            new_polyline.push_back(new_polyline.front());
+        }
+        // For open loop skeletons, check with point order optimizer to determine which end of the skeleton should be the start point
+        else if (PointOrderOptimizer::findSkeletonPointOrder(queryPoint, new_polyline, m_point_optimization, m_min_point_distance_enable,
+                                                     m_min_point_distance))
+            new_polyline = new_polyline.reverse();
+
         return new_polyline;
     }
 

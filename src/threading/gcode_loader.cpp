@@ -30,6 +30,7 @@
 #include "gcode/parsers/rpbf_parser.h"
 #include "gcode/parsers/siemens_parser.h"
 #include "gcode/parsers/aerobasic_parser.h"
+#include "gcode/parsers/adamantine_parser.h"
 
 #include "geometry/segments/arc.h"
 #include "geometry/segments/bezier.h"
@@ -306,11 +307,19 @@ namespace ORNL
 
                 double volumeValue = total_volume() / pow<3>(PM->getDistanceUnit())();
                 double distanceValue = (m_parser->getTotalDistance() / PM->getDistanceUnit())();
+                double printingDistanceValue = (m_parser->getPrintingDistance() / PM->getDistanceUnit())();
+                double travelDistanceValue = (m_parser->getTravelDistance() / PM->getDistanceUnit())();
                 double massValue = (total_mass / PM->getMassUnit())();
                 keyInfo = keyInfo % "Volume: " % QString::number(volumeValue) % " " % PM->getDistanceUnit().toString() % "³\n"
-                        % "Distance: " % QString::number(distanceValue) % " " % PM->getDistanceUnit().toString() % "\n"
+                        % "Printing Distance: " % QString::number(printingDistanceValue) % " " % PM->getDistanceUnit().toString() % "\n"
+                        % "Travel Distance: " % QString::number(travelDistanceValue) % " " % PM->getDistanceUnit().toString() % "\n"
+                        % "Total Distance: " % QString::number(distanceValue) % " " % PM->getDistanceUnit().toString() % "\n"
                         % "Approximate Weight (" % toString(m_material) % "): "
                         % QString::number(massValue) % " " % PM->getMassUnit().toString() % "\n";
+
+                QTime qt(0, 0);
+                qt = qt.addMSecs(CSM->getSliceTimeElapsed());
+                keyInfo = keyInfo % "Total Slice Time (excluding gcode writing/parsing): " % qt.toString("hh:mm:ss.zzz");
 
                 emit forwardInfoToMainWindow(keyInfo);
 
@@ -532,6 +541,10 @@ namespace ORNL
                     m_parser.reset(new CommonParser(GcodeMetaList::MeldMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::MeldMeta;
                 }
+                else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kMeltio).toUpper())) {
+                    m_parser.reset(new CommonParser(GcodeMetaList::MeltioMeta, m_adjust_file, originalLines, lines));
+                    m_selected_meta = GcodeMetaList::MeltioMeta;
+                }
                 else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kMVP).toUpper())) {
                     m_parser.reset(new MVPParser(GcodeMetaList::MVPMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::MVPMeta;
@@ -575,6 +588,10 @@ namespace ORNL
                 else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kAeroBasic).toUpper())) {
                     m_parser.reset(new AeroBasicParser(GcodeMetaList::AeroBasicMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::AeroBasicMeta;
+                }
+                else if(m_lines[m_current_line].contains(toString(GcodeSyntax::kAdamantine).toUpper())) {
+                    m_parser.reset(new AdamantineParser(GcodeMetaList::AdamantineMeta, m_adjust_file, originalLines, lines));
+                    m_selected_meta = GcodeMetaList::AdamantineMeta;
                 }
 //                else if(m_lines[m_current_line].contains("WOLF"))
 //                    m_syntax = GcodeSyntax::kWolf;
