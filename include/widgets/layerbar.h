@@ -165,6 +165,9 @@ namespace ORNL {
             //! \brief Slot to popup a dialog to set the layer manually.
             void setLayer();
 
+            //! \brief Slot to move a layer pair manually
+            void setPairLayers();
+
             //! \brief Slot to make a pair from two layer dots.
             void makePair();
 
@@ -305,6 +308,7 @@ namespace ORNL {
             QAction *m_add_pair;
             QAction *m_pair_from_one;
             QAction *m_set_layer_act;
+            QAction *m_set_range_layers_act;
             QAction *m_add_act;
             QAction *m_add_group;
             QAction *m_delete_act;
