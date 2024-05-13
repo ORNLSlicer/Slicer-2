@@ -20,6 +20,7 @@ namespace ORNL
         m_reset_transformation_action = new QAction("Reset Transformation", this);
         m_reload_part_action = new QAction("Reload Part(s) STL", this);
         m_delete_part_action = new QAction("Delete Part(s)", this);
+        m_lock_part_action = new QAction("Toggle Part Lock(s)", this);
 
         m_switch_to_clipper_action->setIcon(QIcon(":/icons/clip.png"));
         m_switch_to_build_action->setIcon(QIcon(":/icons/print_head.png"));
@@ -27,11 +28,13 @@ namespace ORNL
         m_reset_transformation_action->setIcon(QIcon(":/icons/restore.png"));
         m_reload_part_action->setIcon(QIcon(":/icons/file_refresh_black.png"));
         m_delete_part_action->setIcon(QIcon(":/icons/delete_black.png"));
+        m_lock_part_action->setIcon(QIcon(":/icons/lock.png"));
 
         this->addAction(m_switch_to_build_action);
         this->addAction(m_switch_to_clipper_action);
         this->addAction(m_switch_to_setting_action);
         this->addSeparator();
+        this->addAction(m_lock_part_action);
         this->addAction(m_reset_transformation_action);
         this->addAction(m_reload_part_action);
         this->addAction(m_delete_part_action);
@@ -145,6 +148,13 @@ namespace ORNL
                         item->setSolidWireframe(false);
                         m_solidwireframe_action->setChecked(false);
                         item->setWireframe(m_wireframe_action->isChecked());
+                    }
+                }
+        );
+        connect(m_lock_part_action,  &QAction::triggered, this,
+                [this]() {
+                    for (auto item : m_selected_items) {
+                        item->graphicsPart()->setLocked(!item->graphicsPart()->locked());
                     }
                 }
         );
