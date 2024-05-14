@@ -255,6 +255,8 @@ namespace ORNL
 
             if (m_selected_items.size() == 1) {
                 m_replace_part_action->setDisabled(false);
+            } else {
+                m_replace_part_action->setDisabled(true);
             }
         }
         else
@@ -264,12 +266,12 @@ namespace ORNL
             m_switch_to_build_action->setDisabled(true);
             m_switch_to_setting_action->setDisabled(true);
             m_reset_transformation_action->setDisabled(true);
+            m_replace_part_action->setDisabled(true);
             m_reload_part_action->setDisabled(true);
             m_delete_part_action->setDisabled(true);
             m_transparency_menu->setDisabled(true);
             m_wireframe_action->setDisabled(true);
             m_solidwireframe_action->setDisabled(true);
-            m_replace_part_action->setDisabled(true);
         }
     }
 }
