@@ -42,6 +42,10 @@ namespace ORNL {
         emit modified(PartMetaUpdateType::kAddUpdate);
     }
 
+    void PartMetaItem::replaceInModel(QString filename) {
+        m_model->replaceItem(this->sharedFromThis(), filename);
+    }
+
     void PartMetaItem::reloadInModel()
     {
         m_model->reloadItem(this->sharedFromThis());

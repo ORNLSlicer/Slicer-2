@@ -136,6 +136,8 @@ namespace ORNL {
             //! \brief Reloads a part.
             void reloadPart(QSharedPointer<PartMetaItem> pm);
 
+            void replacePart(QSharedPointer<PartMetaItem> pm, QString filename);
+
             //! \brief Remove a part from the session by pointer.
             bool removePart(QSharedPointer<Part> part);
 
