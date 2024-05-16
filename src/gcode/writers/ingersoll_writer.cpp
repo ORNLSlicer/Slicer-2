@@ -538,7 +538,7 @@ namespace ORNL
         //write dwell and initial extruder turn on depending on region type
         if (m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed) > 0)
         {
-            output_rpm = m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio) * m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed);
+            output_rpm = m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio) * m_sb->setting< float >(Constants::MaterialSettings::Extruder::kInitialSpeed);
 
             rv += "EXTRUDER(" % QString::number(output_rpm) % ")" % commentSpaceLine("TURN EXTRUDER ON");
 
