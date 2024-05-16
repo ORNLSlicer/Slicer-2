@@ -509,6 +509,7 @@ namespace ORNL
     {
         QString rv;
         rv += writeExtruderOff(0); //update to turn off appropriate extruders
+        rv += m_sb->setting< QString >(Constants::PrinterSettings::GCode::kEndCode);
         return rv;
     }
 
