@@ -66,3 +66,6 @@ license: GPL-3.0
 commit: d480b5a
 version: 1.0
 date-released: '2024-05-06'
+identifiers:
+ - type: doi
+   value: 10.11578/dc.20240520.1
