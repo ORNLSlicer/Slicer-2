@@ -41,6 +41,9 @@ namespace ORNL {
             void addItem(QSharedPointer<PartMetaItem> pm);
 
             //! \brief Reloads an item.
+            void replaceItem(QSharedPointer<PartMetaItem> pm, QString filename);
+
+            //! \brief Reloads an item.
             void reloadItem(QSharedPointer<PartMetaItem> pm);
 
             //! \brief Removes an item.

@@ -3,6 +3,10 @@
 // Qt
 #include <QLabel>
 #include <QWidgetAction>
+#include <QFileDialog>
+
+// Local
+#include <managers/session_manager.h>
 
 namespace ORNL
 {
@@ -18,21 +22,27 @@ namespace ORNL
         m_switch_to_clipper_action = new QAction("Switch to Clipper", this);
         m_switch_to_setting_action = new QAction("Switch to Setting", this);
         m_reset_transformation_action = new QAction("Reset Transformation", this);
+        m_replace_part_action = new QAction("Replace Part STL", this);
         m_reload_part_action = new QAction("Reload Part(s) STL", this);
         m_delete_part_action = new QAction("Delete Part(s)", this);
+        m_lock_part_action = new QAction("Toggle Part Lock(s)", this);
 
         m_switch_to_clipper_action->setIcon(QIcon(":/icons/clip.png"));
         m_switch_to_build_action->setIcon(QIcon(":/icons/print_head.png"));
         m_switch_to_setting_action->setIcon(QIcon(":/icons/settings_black.png"));
         m_reset_transformation_action->setIcon(QIcon(":/icons/restore.png"));
+        m_replace_part_action->setIcon(QIcon(":/icons/folder_black.png"));
         m_reload_part_action->setIcon(QIcon(":/icons/file_refresh_black.png"));
         m_delete_part_action->setIcon(QIcon(":/icons/delete_black.png"));
+        m_lock_part_action->setIcon(QIcon(":/icons/lock.png"));
 
         this->addAction(m_switch_to_build_action);
         this->addAction(m_switch_to_clipper_action);
         this->addAction(m_switch_to_setting_action);
         this->addSeparator();
+        this->addAction(m_lock_part_action);
         this->addAction(m_reset_transformation_action);
+        this->addAction(m_replace_part_action);
         this->addAction(m_reload_part_action);
         this->addAction(m_delete_part_action);
         this->addSeparator();
@@ -112,6 +122,21 @@ namespace ORNL
                 }
         );
 
+        connect(m_replace_part_action, &QAction::triggered, this, [this]() {
+            QString filepath = QFileDialog::getOpenFileName(
+                nullptr,
+                QObject::tr("Open STL clipping file"),
+                CSM->getMostRecentModelLocation(),
+                QObject::tr("Model File (*.stl *.3mf *.obj *.amf)")
+            );
+
+            if (filepath.isNull()) {
+                return;
+            }
+
+            m_selected_items.first()->replaceInModel(filepath);
+        });
+
         connect(m_reload_part_action, &QAction::triggered, this,
                 [this]() {
                     for (auto item : m_selected_items) {
@@ -145,6 +170,13 @@ namespace ORNL
                         item->setSolidWireframe(false);
                         m_solidwireframe_action->setChecked(false);
                         item->setWireframe(m_wireframe_action->isChecked());
+                    }
+                }
+        );
+        connect(m_lock_part_action,  &QAction::triggered, this,
+                [this]() {
+                    for (auto item : m_selected_items) {
+                        item->graphicsPart()->setLocked(!item->graphicsPart()->locked());
                     }
                 }
         );
@@ -220,6 +252,12 @@ namespace ORNL
             m_transparency_menu->setDisabled(false);
             m_wireframe_action->setDisabled(false);
             m_solidwireframe_action->setDisabled(false);
+
+            if (m_selected_items.size() == 1) {
+                m_replace_part_action->setDisabled(false);
+            } else {
+                m_replace_part_action->setDisabled(true);
+            }
         }
         else
         {
@@ -228,6 +266,7 @@ namespace ORNL
             m_switch_to_build_action->setDisabled(true);
             m_switch_to_setting_action->setDisabled(true);
             m_reset_transformation_action->setDisabled(true);
+            m_replace_part_action->setDisabled(true);
             m_reload_part_action->setDisabled(true);
             m_delete_part_action->setDisabled(true);
             m_transparency_menu->setDisabled(true);
