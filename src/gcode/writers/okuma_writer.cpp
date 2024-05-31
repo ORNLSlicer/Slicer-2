@@ -247,9 +247,6 @@ namespace ORNL
             setFeedrate(speed);
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
 
-            rv += m_s % QString::number(output_rpm);
-            m_current_rpm = rpm;
-
             m_layer_start = false;
         }
 
@@ -260,11 +257,6 @@ namespace ORNL
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         }
 
-        if (rpm != m_current_rpm)
-        {
-            rv += m_s % QString::number(output_rpm);
-            m_current_rpm = rpm;
-        }
 
         //writes WXYZ to destination
         rv += writeCoordinates(target_point);
@@ -308,11 +300,6 @@ namespace ORNL
         {
             setFeedrate(speed);
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
-        }
-        if (rpm != m_current_rpm)
-        {
-            rv += m_s % QString::number(output_rpm);
-            m_current_rpm = rpm;
         }
 
         rv += m_i % QString::number(Distance(center_point.x() - start_point.x()).to(m_meta.m_distance_unit), 'f', 4) %
