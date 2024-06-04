@@ -29,8 +29,10 @@ namespace ORNL
                     "T100 M6" % m_newline %
                     "( -------------------- )" % m_newline %
                     "( -------------------- MOVED FROM LASER TECH FILE --- )" % m_newline %
-                    "(DISK_SPEED        = DISK_SPEED)" % m_newline %
-                    "(CARRIER_GAS       = CARRIER_GAS)" % m_newline %
+                    "(DISK_SPEED      XX  = DISK_SPEED)" % m_newline %
+                    "(CARRIER_GAS     5   = CARRIER_GAS)" % m_newline %
+                    "(SHIELDING	10	= hyperMILL_AM_SHIELDING_GAS)" % m_newline %
+                    "M369    (MIST COLLECTOR ON)" % m_newline %
                     "M130                (OK TO RUN WITH NO SPINDLE RPM)" % m_newline %
                     "M1510               (LASER HEAD DOWN)" % m_newline %
                     "/G115 SPS=3.5  (SPOT SIZE SET TO VARIABLE)" % m_newline %
@@ -39,18 +41,20 @@ namespace ORNL
                     "/LPWW=2000         (SET VARIABLE FOR LASER POWER, WATTS)" % m_newline %
                     "/M1500             (CHANGE FOCAL POINT)" % m_newline %
                     "/M1508             (FOCAL CONTROL OFF)" % m_newline %
+                    "DW = 0.01 (Dwell time between border and layer)" % m_newline %
                     "/M1501             (LASER READY)" % m_newline %
                     "/LPW=0             (LASER POWER IS ZERO)" % m_newline %
                     "/M1541             (HOPPER-OFF: HOPPER_OFF)" % m_newline %
-                    "(/G04 F=15) " % m_newline %
                     "/M1503     (LASER ON)" % m_newline %
                     "( -------------------- MOVED FROM LASER TECH FILE --- )" % m_newline %
                     "( --- files_x\\job_start.txt --- )" % m_newline %
                     "( OPERATION 2 )" % m_newline %
                     "( T100 Additive Manufacturing )" % m_newline %
                     "( --- )" % m_newline %
-                    "M510 (CAS OFF)" % m_newline % m_newline %
+                    "M510 (CAS OFF)" % m_newline %
+                    "G00 G17 G21 G40 G80 G90" % m_newline % m_newline %
                     "( --- sP.txt ---)" % m_newline %
+                    "G0 Z=VPSLZ" % m_newline %
                     "G15 H1" % m_newline %
                     "M11" % m_newline %
                     "M27" % m_newline %
@@ -235,10 +239,10 @@ namespace ORNL
         }
 
         //turn off extruder with an M5 before the line, rather than in-line with S0
-        if (rpm == 0 && m_extruders_on[0] == true)
-        {
-            rv += writeExtruderOff();
-        }
+        //if (rpm == 0 && m_extruders_on[0] == true)
+        //{
+        //    rv += writeExtruderOff();
+        //}
 
         rv += m_G1;
         // Forces first motion of layer to issue speed (needed for spiralize mode so that feedrate is scaled properly)
@@ -246,9 +250,6 @@ namespace ORNL
         {
             setFeedrate(speed);
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
-
-            rv += m_s % QString::number(output_rpm);
-            m_current_rpm = rpm;
 
             m_layer_start = false;
         }
@@ -260,11 +261,6 @@ namespace ORNL
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         }
 
-        if (rpm != m_current_rpm)
-        {
-            rv += m_s % QString::number(output_rpm);
-            m_current_rpm = rpm;
-        }
 
         //writes WXYZ to destination
         rv += writeCoordinates(target_point);
@@ -308,11 +304,6 @@ namespace ORNL
         {
             setFeedrate(speed);
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
-        }
-        if (rpm != m_current_rpm)
-        {
-            rv += m_s % QString::number(output_rpm);
-            m_current_rpm = rpm;
         }
 
         rv += m_i % QString::number(Distance(center_point.x() - start_point.x()).to(m_meta.m_distance_unit), 'f', 4) %
@@ -455,7 +446,7 @@ namespace ORNL
     QString OkumaWriter::writeExtruderOff()
     {
         QString rv;
-        m_extruders_on[0] = true;
+        m_extruders_on[0] = false;
         rv += "( -------------------- laser_off.txt --- )" % m_newline;
         rv += "/LPW=0               (LASER POWER)" % m_newline;
         rv += "(/)" % m_newline;

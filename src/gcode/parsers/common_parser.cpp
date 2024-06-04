@@ -382,6 +382,11 @@ namespace ORNL
                 // Ignore lines with variable definition if variable Z is not enabled
                 continue;
             }
+            else if(m_upper_lines[m_current_line].contains("Z=VPSLZ"))
+            {
+                // Ignore this line from the Okuma header
+                continue;
+            }
             else if(m_upper_lines[m_current_line].contains("EXTRUDER(0)"))
             {
                 for (int i = 0, end = m_extruders_on.size(); i < end; ++i)

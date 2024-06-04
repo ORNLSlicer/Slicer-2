@@ -1443,7 +1443,7 @@ namespace ORNL {
     }
 
     void MainWindow::loadLayerTemplate() {
-        QFileDialog load_dialog;
+        /*QFileDialog load_dialog;
         load_dialog.setWindowTitle("Load Layer Template");
         load_dialog.setAcceptMode(QFileDialog::AcceptOpen);
         load_dialog.setNameFilters(QStringList()
@@ -1455,7 +1455,7 @@ namespace ORNL {
         QString filename = load_dialog.selectedFiles().first();
         if (filename.isEmpty()) return;
 
-        GSM->loadLayerSettings(filename);
+        GSM->loadLayerSettings(filename);*/
         }
 
     void MainWindow::setSettingFolder() {
