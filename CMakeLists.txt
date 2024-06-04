@@ -35,161 +35,127 @@ qt5_add_resources(RCC ${RESOURCES})
 # Tell executable where to find headers.
 include_directories(PUBLIC "include" ${CMAKE_BINARY_DIR})
 
-if(DEFINED ENV{S2_USE_NIX})
-    # TODO: use actual find_package for these.
-    # No need to find includes within nix; being in the shell sets $CMAKE_INCLUDE_PATH automatically.
-    # We do still need to tell it what its supposed to link to.
-    find_library(AssImp NAMES libassimp.so)
-    find_library(Zip NAMES libzip.so)
-    find_library(ORNLTCP NAMES libORNL_TCP_Sockets.a)
-    find_library(S2Clipper NAMES libpolyclipping.a)
+find_package(assimp        REQUIRED)
+find_package(Boost         REQUIRED COMPONENTS system)
+find_package(CGAL          REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
-    find_package(Boost REQUIRED)
-    find_package(CGAL REQUIRED)
-    find_package(Eigen3 3.3.0 REQUIRED)
-    find_package(QtXlsxWriter REQUIRED)
+# Find Eigen
+add_definitions(-DEIGEN_NO_CUDA=1) # Eigen does not have CUDA support for MSVC yet
+find_package(Eigen3 3.3.0 REQUIRED NO_MODULE)
+include(CGAL_Eigen3_support)
 
-    list(APPEND libs ${AssImp} ${Zip} ${S2Clipper} ${ORNLTCP} ${Boost_LIBRARIES} CGAL::CGAL QtXlsxWriter)
+list(APPEND libs assimp::assimp Boost::system CGAL::CGAL Eigen3::Eigen nlohmann_json)
 
-    # Weird thing to get Eigen support in CGAL.
-    include(CGAL_Eigen3_support)
-    if(TARGET CGAL::Eigen3_support)
-        message(STATUS "Eigen found and configred with CGAL")
-        list(APPEND libs CGAL::Eigen3_support)
-    else()
-        message(FATAL_ERROR "Eigen NOT Found")
-    endif()
-
-    # Setup exec & linker.
-    add_executable(${PROJECT_NAME} ${GUI_TYPE} ${RCC} ${UI_HEADERS} ${MOC_HEADERS} ${SOURCES} ${HEADERS})
-
-    # GCC doesn't have/need -bigobj but does need -fpermissive
-    target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fpermissive -Wno-deprecated-declarations>)
-    target_link_libraries(${PROJECT_NAME} ${libs})
+# Check if CGAL was configured with Eigen
+if(TARGET CGAL::Eigen3_support)
+    message(STATUS "Eigen found and configred with CGAL")
+    list(APPEND libs CGAL::Eigen3_support)
 else()
-    find_package(assimp        REQUIRED)
-    find_package(Boost         REQUIRED COMPONENTS system)
-    find_package(CGAL          REQUIRED)
-    find_package(nlohmann_json REQUIRED)
+    message(FATAL_ERROR "Eigen NOT Found")
+endif()
 
-    # Find Eigen
-    add_definitions(-DEIGEN_NO_CUDA=1) # Eigen does not have CUDA support for MSVC yet
-    find_package(Eigen3 3.3.0 REQUIRED NO_MODULE)
-    include(CGAL_Eigen3_support)
 
-    list(APPEND libs assimp::assimp Boost::system CGAL::CGAL Eigen3::Eigen nlohmann_json)
+# Find the other libraries in the contrib folder
+add_subdirectory(contrib)
+add_subdirectory("contrib/ORNL-TCP-Sockets")
+list(APPEND libs_include ${ORNL_TCP_SOCKETS_INCLUDE})
+list(APPEND libs ${ORNL_TCP_SOCKETS_LIB})
 
-    # Check if CGAL was configured with Eigen
-    if(TARGET CGAL::Eigen3_support)
-        message(STATUS "Eigen found and configred with CGAL")
-        list(APPEND libs CGAL::Eigen3_support)
+# Add library include dirs
+include_directories(${libs_include})
+
+# Set some Win32 Specific Settings.  For now, set GUI type to suppress console.
+IF(WIN32)
+    SET(GUI_TYPE WIN32)
+ENDIF(WIN32)
+
+option(ENABLE_OPENMP "Enable OpenMP Support" ON)
+if(ENABLE_OPENMP)
+    # OpenMP is optional
+    find_package(OpenMP)
+    if(OpenMP_CXX_FOUND)
+        message(STATUS "OpenMP found. Enabling support")
+
     else()
-        message(FATAL_ERROR "Eigen NOT Found")
+        message(WARNING "OpenMP not found. Install for support")
     endif()
+endif(ENABLE_OPENMP)
 
-
-    # Find the other libraries in the contrib folder
-    add_subdirectory(contrib)
-    add_subdirectory("contrib/ORNL-TCP-Sockets")
-    list(APPEND libs_include ${ORNL_TCP_SOCKETS_INCLUDE})
-    list(APPEND libs ${ORNL_TCP_SOCKETS_LIB})
-
-    # Add library include dirs
-    include_directories(${libs_include})
-
-    # Set some Win32 Specific Settings.  For now, set GUI type to suppress console.
-    IF(WIN32)
-        SET(GUI_TYPE WIN32)
-    ENDIF(WIN32)
-
-    option(ENABLE_OPENMP "Enable OpenMP Support" ON)
-    if(ENABLE_OPENMP)
-        # OpenMP is optional
-        find_package(OpenMP)
-        if(OpenMP_CXX_FOUND)
-            message(STATUS "OpenMP found. Enabling support")
-
+# If NVCC is found, set flag, enable lang and find files
+include(CheckLanguage)
+check_language(CUDA)
+if(CMAKE_CUDA_COMPILER)
+    option(USE_CUDA "Enable CUDA Support" ON)
+    if(USE_CUDA)
+        enable_language(CUDA)
+        if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 10.0.0)
+            message(WARNING "Outdated version(${CMAKE_CUDA_COMPILER_VERSION}) of CUDA found. Please update to enable support")
         else()
-            message(WARNING "OpenMP not found. Install for support")
-        endif()
-    endif(ENABLE_OPENMP)
+            message(STATUS "Found CUDA compiler version ${CMAKE_CUDA_COMPILER_VERSION}")
+            set(CUDA_VALID ${CMAKE_CUDA_COMPILER_VERSION})
 
-    # If NVCC is found, set flag, enable lang and find files
-    include(CheckLanguage)
-    check_language(CUDA)
-    if(CMAKE_CUDA_COMPILER)
-        option(USE_CUDA "Enable CUDA Support" ON)
-        if(USE_CUDA)
-            enable_language(CUDA)
-            if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 10.0.0)
-                message(WARNING "Outdated version(${CMAKE_CUDA_COMPILER_VERSION}) of CUDA found. Please update to enable support")
-            else()
-                message(STATUS "Found CUDA compiler version ${CMAKE_CUDA_COMPILER_VERSION}")
-                set(CUDA_VALID ${CMAKE_CUDA_COMPILER_VERSION})
-
-                # Find and add CUDA files (.cu and .cuh)
-                file(GLOB_RECURSE CU "src/**.cu")
-                file(GLOB_RECURSE CUH "include/**.cuh")
-                list(APPEND cuda_files  ${CU} ${CUH})
-                if(NOT DEFINED CMAKE_CUDA_STANDARD)
-                    set(CMAKE_CUDA_STANDARD 11)
-                    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-                endif()
+            # Find and add CUDA files (.cu and .cuh)
+            file(GLOB_RECURSE CU "src/**.cu")
+            file(GLOB_RECURSE CUH "include/**.cuh")
+            list(APPEND cuda_files  ${CU} ${CUH})
+            if(NOT DEFINED CMAKE_CUDA_STANDARD)
+                set(CMAKE_CUDA_STANDARD 11)
+                set(CMAKE_CUDA_STANDARD_REQUIRED ON)
             endif()
         endif()
-    endif(CMAKE_CUDA_COMPILER)
-
-    # Build the executable using Qt GUI files, resources, heads, CPP files and CUDA files
-    add_executable(${PROJECT_NAME} ${GUI_TYPE} ${RCC} ${UI_HEADERS} ${MOC_HEADERS} ${SOURCES} ${HEADERS} ${cuda_files})
-
-    # If Single Path lib was found set flag
-    if(SINGLE_PATH_FOUND)
-        message(STATUS "Single Path Library Found")
-        target_compile_definitions(${PROJECT_NAME} PUBLIC HAVE_SINGLE_PATH)
-    else()
-        message(WARNING "Single Path Library NOT Found")
-    endif(SINGLE_PATH_FOUND)
-
-    # Set wire feed flag if found
-    if(WIRE_FEED_FOUND)
-        message("Wire Feed Library Found")
-        target_compile_definitions(${PROJECT_NAME} PUBLIC HAVE_WIRE_FEED)
-    else()
-        message("Wire Feed Library NOT Found")
-    endif(WIRE_FEED_FOUND)
-
-    # CUDA config
-    if(CUDA_VALID AND USE_CUDA)
-        target_compile_definitions(${PROJECT_NAME} PUBLIC NVCC_FOUND) # Set flag for conditional compilation
-
-        # Generate code for all major versions of CUDA since 5.3 (Maxwell)
-        # See this page for more: https://en.wikipedia.org/wiki/CUDA
-        set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES 52 53 60 61 70 75 80 86 87)
-        set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-        set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
-
-        # NVCC Flags
-        target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
-                --relocatable-device-code=true;
-                --expt-extended-lambda;
-                --default-stream per-thread;
-                --disable-warnings>)
-
-        # Find CUDA libs
-        find_package(CUDAToolkit)
-        list(APPEND libs CUDA::cublas)
     endif()
+endif(CMAKE_CUDA_COMPILER)
 
-    if (WIN32)
-        # Needed for large file obj files sizes. This is required due to heavy template lib use in CGAL and BOOST
-        target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -bigobj>)
-        target_link_libraries( ${PROJECT_NAME} ${libs}) # Link to the libs
-    else()
-        # GCC doesn't have/need -bigobj but does need -fpermissive
-        target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fpermissive>)
-        target_link_libraries( ${PROJECT_NAME} ${libs}) # Link to the libs
-    endif()
+# Build the executable using Qt GUI files, resources, heads, CPP files and CUDA files
+add_executable(${PROJECT_NAME} ${GUI_TYPE} ${RCC} ${UI_HEADERS} ${MOC_HEADERS} ${SOURCES} ${HEADERS} ${cuda_files})
 
+# If Single Path lib was found set flag
+if(SINGLE_PATH_FOUND)
+    message(STATUS "Single Path Library Found")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC HAVE_SINGLE_PATH)
+else()
+    message(WARNING "Single Path Library NOT Found")
+endif(SINGLE_PATH_FOUND)
+
+# Set wire feed flag if found
+if(WIRE_FEED_FOUND)
+    message("Wire Feed Library Found")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC HAVE_WIRE_FEED)
+else()
+    message("Wire Feed Library NOT Found")
+endif(WIRE_FEED_FOUND)
+
+# CUDA config
+if(CUDA_VALID AND USE_CUDA)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC NVCC_FOUND) # Set flag for conditional compilation
+
+    # Generate code for all major versions of CUDA since 5.3 (Maxwell)
+    # See this page for more: https://en.wikipedia.org/wiki/CUDA
+    set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES 52 53 60 61 70 75 80 86 87)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
+
+    # NVCC Flags
+    target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+            --relocatable-device-code=true;
+            --expt-extended-lambda;
+            --default-stream per-thread;
+            --disable-warnings>)
+
+    # Find CUDA libs
+    find_package(CUDAToolkit)
+    list(APPEND libs CUDA::cublas)
+endif()
+
+if(WIN32)
+    # Needed for large file obj files sizes. This is required due to heavy template lib use in CGAL and BOOST
+    target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -bigobj>)
+    target_link_libraries( ${PROJECT_NAME} ${libs}) # Link to the libs
+else()
+    # Clang doesn't have/need -bigobj but does need -fpermissive
+    target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fpermissive -Wno-deprecated-declarations>)
+    target_link_libraries( ${PROJECT_NAME} ${libs}) # Link to the libs
 endif()
 
 # Copy user guide and setting templates to output dir if necessary
