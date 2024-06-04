@@ -68,6 +68,8 @@ namespace ORNL {
                 fillGeometry(geometry, region_settings);
             }
         }
+
+        m_geometry.clear();
     }
 
     void Infill::fillGeometry(PolygonList geometry, const QSharedPointer<SettingsBase>& sb)
