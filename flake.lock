@@ -3,11 +3,11 @@
     "kubazip-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1666738563,
-        "narHash": "sha256-24UqTly3eGtvNSGyJ/BFruIM4T5FXvpmBzQiLIALR9Q=",
+        "lastModified": 1719671985,
+        "narHash": "sha256-/KwU9xX5fXDxvxNCKpVmhA/WowU8ZyGVErRHTEG2UI4=",
         "owner": "kuba--",
         "repo": "zip",
-        "rev": "fefb8d6acc78b5f63d5a78b86a4900e694bd2862",
+        "rev": "1682607f8a6b748587f7bba354553f1af3849e84",
         "type": "github"
       },
       "original": {
@@ -18,16 +18,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1714587979,
-        "narHash": "sha256-478jz2xZixQxGVzU8+oVo7M6KvQDNGus89x2yqUP7ao=",
+        "lastModified": 1720028023,
+        "narHash": "sha256-xHhc9VmLrElpCxchkMB3cVz2BwXYvv73tk22g+e3clQ=",
         "owner": "mdfbaam",
         "repo": "nixpkgs",
-        "rev": "8902b2588a9aa317726aafd2f06437bdcca653b0",
+        "rev": "9c8bbb60c1be295619daa1b9b97497bb3c61020e",
         "type": "github"
       },
       "original": {
         "owner": "mdfbaam",
-        "ref": "pathcompiler",
+        "ref": "pathcompiler-staging",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -86,7 +86,41 @@
         "nixpkgs": "nixpkgs",
         "nlohmann-fifomap-src": "nlohmann-fifomap-src",
         "psimpl-src": "psimpl-src",
-        "qtxlsxwriter-src": "qtxlsxwriter-src"
+        "qtxlsxwriter-src": "qtxlsxwriter-src",
+        "utils": "utils"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
+    "utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1710146030,
+        "narHash": "sha256-SZ5L6eA7HJ/nmkzGG7/ISclqe6oZdOZTNoesiInkXPQ=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "b1d9ab70662946ef0850d488da1c9019f3a9752a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
       }
     }
   },

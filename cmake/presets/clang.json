@@ -1,0 +1,18 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name":        "base-llvm",
+            "displayName": "Base (LLVM)",
+            "description": "Base configuration with the LLVM toolchain",
+            "generator":   "Ninja Multi-Config",
+            "binaryDir":   "${sourceDir}/build/${presetName}",
+            "hidden":      true,
+            "cacheVariables": {
+                "CMAKE_C_COMPILER":   "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "QT_CREATOR_SKIP_VCPKG_SETUP": "ON"
+            }
+        }
+    ]
+}
