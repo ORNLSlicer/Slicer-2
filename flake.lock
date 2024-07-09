@@ -1,21 +1,5 @@
 {
   "nodes": {
-    "kubazip-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1719671985,
-        "narHash": "sha256-/KwU9xX5fXDxvxNCKpVmhA/WowU8ZyGVErRHTEG2UI4=",
-        "owner": "kuba--",
-        "repo": "zip",
-        "rev": "1682607f8a6b748587f7bba354553f1af3849e84",
-        "type": "github"
-      },
-      "original": {
-        "owner": "kuba--",
-        "repo": "zip",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1720028023,
@@ -32,61 +16,9 @@
         "type": "github"
       }
     },
-    "nlohmann-fifomap-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1649919558,
-        "narHash": "sha256-97k0/Bg/YiZD7Wf8vP9CLVEBY0vvHz2W2TlHp2rLUo0=",
-        "owner": "nlohmann",
-        "repo": "fifo_map",
-        "rev": "d732aaf9a315415ae8fd7eb11e3a4c1f80e42a48",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nlohmann",
-        "repo": "fifo_map",
-        "type": "github"
-      }
-    },
-    "psimpl-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1367489920,
-        "narHash": "sha256-1el1zTX0Bmi3pZJ9MfWttSWkPFx/Q0VLeKpr1Wkair4=",
-        "owner": "skyrpex",
-        "repo": "psimpl",
-        "rev": "8a204f87f1471d368ae1f687a70bd2ea551b179b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "skyrpex",
-        "repo": "psimpl",
-        "type": "github"
-      }
-    },
-    "qtxlsxwriter-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1623402228,
-        "narHash": "sha256-luIBQLbgrRO5/UvU1FimiYs9XMkiphT+YW5fQ4lpSUU=",
-        "owner": "VSRonin",
-        "repo": "QtXlsxWriter",
-        "rev": "01eb671564b05bd11470046d0eaeef6d806bb9e6",
-        "type": "github"
-      },
-      "original": {
-        "owner": "VSRonin",
-        "repo": "QtXlsxWriter",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
-        "kubazip-src": "kubazip-src",
         "nixpkgs": "nixpkgs",
-        "nlohmann-fifomap-src": "nlohmann-fifomap-src",
-        "psimpl-src": "psimpl-src",
-        "qtxlsxwriter-src": "qtxlsxwriter-src",
         "utils": "utils"
       }
     },

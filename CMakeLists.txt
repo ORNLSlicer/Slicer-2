@@ -159,9 +159,9 @@ else()
 endif()
 
 # Copy user guide and setting templates to output dir if necessary
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/doc/Slicer_2_User_Guide.pdf" $<TARGET_FILE_DIR:${PROJECT_NAME}> )
-file(COPY "templates" DESTINATION "${CMAKE_BINARY_DIR}")
-file(COPY "layerbartemplates" DESTINATION "${CMAKE_BINARY_DIR}")
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/doc/Slicer_2_User_Guide.pdf" "$<TARGET_FILE_DIR:${PROJECT_NAME}>" )
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/templates"                      "$<TARGET_FILE_DIR:${PROJECT_NAME}>/templates" )
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/layerbartemplates"              "$<TARGET_FILE_DIR:${PROJECT_NAME}>/layerbartemplates" )
 find_package (Python COMPONENTS Interpreter)
 if(Python_FOUND)
     message(STATUS "Python interpreter found")
