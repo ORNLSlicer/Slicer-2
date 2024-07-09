@@ -38,6 +38,8 @@ namespace ORNL {
             //! \param p: Part to creat from.
             PartMetaItem(QSharedPointer<Part> p);
 
+            void replaceInModel(QString filename);
+
             //! \brief Reloads from source STL file this item in the model.
             void reloadInModel();
 

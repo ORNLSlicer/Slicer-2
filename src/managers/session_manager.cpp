@@ -307,6 +307,37 @@ namespace ORNL
         loader->start();
     }
 
+    void SessionManager::replacePart(QSharedPointer<PartMetaItem> pm, QString filename) {
+        if(filename.isNull() || filename.isEmpty() || !(QFileInfo(filename).exists() && QFileInfo(filename).isFile())) {
+            emit forwardStatusUpdate("Part reload failed, file \"" + filename + "\", no such source file available");
+            return;
+        }
+
+        QFileInfo file_info(filename);
+
+        MeshLoader* loader = new MeshLoader(filename, pm->part()->getMeshType(), QMatrix4x4(), PM->getImportUnit());
+
+        connect(loader, &MeshLoader::finished, loader, &MeshLoader::deleteLater);
+
+        connect(loader, &MeshLoader::error, this, [this](QString msg)
+        {
+            emit forwardStatusUpdate(msg);
+        });
+
+        connect(loader, &MeshLoader::newMesh, this, [this, file_info, pm](MeshLoader::MeshData mesh_data)
+        {
+            pm->part()->setSourceFile(file_info.fileName());
+
+            pm->part()->setRootMesh(mesh_data.mesh);
+
+            m_models[file_info.fileName()] = {mesh_data.raw_data, mesh_data.size};
+
+            emit partReloaded(pm);
+            emit forwardStatusUpdate("Reloaded Part STL, file \"" + file_info.fileName() + "\"");
+        });
+        loader->start();
+    }
+
     void SessionManager::addCopiedPart(QSharedPointer<Part> new_part) {
         // Try to find a name for this part.
         QString name = new_part->name();

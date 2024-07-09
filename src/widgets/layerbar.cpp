@@ -420,6 +420,72 @@ namespace ORNL
         }
     }
 
+    void LayerBar::setPairLayers()
+    {
+        LayerDot* first_layer  = m_selection.back();
+        LayerDot* second_layer = m_selection.front();
+
+        // Dialog prompt to get user input for range start and end
+        QDialog dialog(this);
+        QFormLayout form(&dialog);
+        dialog.setWindowTitle("Move existing layer range");
+
+        // Input for first and last in range
+        QSpinBox* spinbox_first = new QSpinBox(&dialog); //start of range
+        QSpinBox* spinbox_second = new QSpinBox(&dialog); //end of range
+        spinbox_first->setRange(1, m_layers - 1);
+        spinbox_second->setRange(1, m_layers);
+
+        spinbox_first->setValue(first_layer->getLayer() + 1);
+        spinbox_second->setValue(second_layer->getLayer() + 1);
+
+        // Add inputs into a layout and the form
+        QGroupBox* groupBox = new QGroupBox(tr("Alter the layer numbers to the desired location."));
+        QGridLayout* grid = new QGridLayout;
+        grid->addWidget(new QLabel("First layer"), 1, 1);
+        grid->addWidget(new QLabel("Last layer"), 2, 1);
+        grid->addWidget(spinbox_first, 1, 2);
+        grid->addWidget(spinbox_second, 2, 2);
+        grid->setColumnStretch(2, 2);
+        groupBox->setLayout(grid);
+        groupBox->setEnabled(true);
+        form.addRow(groupBox);
+
+        // Add some standard buttons (Cancel/Ok) at the bottom of the dialog
+        QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+        form.addRow(&buttonBox);
+        QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+        QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+        bool result = dialog.exec();
+
+        while (result == QDialog::Accepted) {
+            int first_val = spinbox_first->value() - 1;
+            int second_val = spinbox_second->value() - 1;
+
+            if (first_val == first_layer->getLayer() && second_val == second_layer->getLayer()) {
+                break;
+            }
+
+            if (
+                (this->layerValid(first_val)  || m_position[first_val] == first_layer) &&
+                (this->layerValid(second_val) || m_position[second_val] == second_layer)
+            ) {
+                m_part->updateRangeLimits(first_layer->getLayer(), second_layer->getLayer(), first_val, second_val);
+
+                this->moveDotToLayer(first_layer, first_val);
+                this->moveDotToLayer(second_layer, second_val);
+                break;
+            }
+
+            groupBox->setTitle(tr("The selected layer numbers are not available, please enter unoccupied layers for the new locations."));
+
+            result = dialog.exec();
+        }
+
+        this->clearSelection();
+    }
+
     void LayerBar::addSelection()
     {
         //QAction function to add selection
@@ -437,7 +503,7 @@ namespace ORNL
             new_layer--;
         }
 
-        if(ok)           
+        if(ok)
             addSingle(new_layer);
     }
 
@@ -878,7 +944,7 @@ namespace ORNL
                 // If either CTRL or ALT is held,
                 //    then select multiple dots
                 // Otherwise,
-                //    select/deselect the dot depending on its current status              
+                //    select/deselect the dot depending on its current status
                 if (QGuiApplication::queryKeyboardModifiers() == Qt::ShiftModifier && m_selection.size() > 0)
                 {
                     int min = qMin(m_last_clicked_dot->getLayer(), dot->getLayer());
@@ -888,7 +954,7 @@ namespace ORNL
                 }
                 else if (QGuiApplication::queryKeyboardModifiers() == Qt::AltModifier
                             || QGuiApplication::queryKeyboardModifiers() == Qt::ControlModifier)
-                { 
+                {
                     if (dot->isSelected())
                     {
                         deselectDot(dot);
@@ -1069,8 +1135,10 @@ namespace ORNL
                 {
                     menu.addAction(m_join_act);
                 }
-                else if (a->getRange() == b->getRange() && a->getGroup() == nullptr && b->getGroup() == nullptr)
+                else if (a->getRange() == b->getRange() && a->getGroup() == nullptr && b->getGroup() == nullptr) {
                     menu.addAction(m_split_act);
+                    menu.addAction(m_set_range_layers_act);
+                }
 
             }
 
@@ -1096,8 +1164,9 @@ namespace ORNL
             if (can_group)
                 menu.addAction(m_group_dots);
 
-            if (can_ungroup)
+            if (can_ungroup) {
                 menu.addAction(m_ungroup_dots);
+            }
 
             menu.addSeparator();
 
@@ -1861,32 +1930,34 @@ namespace ORNL
     void LayerBar::setupActions()
     {
         // Setup actions.
-        m_set_layer_act = new QAction("Set Layer Number", this);
-        m_delete_act    = new QAction("Delete Selected Layer Settings", this);
-        m_add_act       = new QAction("Add Layer Settings", this);
-        m_add_group     = new QAction("Add a Group of Layer Settings", this);
-        m_join_act      = new QAction("Pair Selected Layers", this);
-        m_split_act     = new QAction("Split Pair", this);
-        m_add_pair      = new QAction("Add a Range of Layer Settings", this);
-        m_pair_from_one = new QAction("Select a Range from This Layer", this);
-        m_clear_act     = new QAction("Clear Selection", this);
-        m_group_dots    = new QAction("Group Selected Layer Settings", this);
-        m_ungroup_dots  = new QAction("Ungroup Selected Layer Settings", this);
-        m_select_all    = new QAction("Select All", this);
+        m_set_layer_act        = new QAction("Set Layer Number", this);
+        m_set_range_layers_act = new QAction("Set Range Layer Numbers", this);
+        m_delete_act           = new QAction("Delete Selected Layer Settings", this);
+        m_add_act              = new QAction("Add Layer Settings", this);
+        m_add_group            = new QAction("Add a Group of Layer Settings", this);
+        m_join_act             = new QAction("Pair Selected Layers", this);
+        m_split_act            = new QAction("Split Pair", this);
+        m_add_pair             = new QAction("Add a Range of Layer Settings", this);
+        m_pair_from_one        = new QAction("Select a Range from This Layer", this);
+        m_clear_act            = new QAction("Clear Selection", this);
+        m_group_dots           = new QAction("Group Selected Layer Settings", this);
+        m_ungroup_dots         = new QAction("Ungroup Selected Layer Settings", this);
+        m_select_all           = new QAction("Select All", this);
 
         // Connect our actions to our signals.
-        connect(m_set_layer_act, &QAction::triggered, this, &LayerBar::setLayer);
-        connect(m_delete_act,    &QAction::triggered, this, &LayerBar::deleteSelection);
-        connect(m_add_act,       &QAction::triggered, this, &LayerBar::addSelection);
-        connect(m_add_group,     &QAction::triggered, this, &LayerBar::addGroup);
-        connect(m_join_act,      &QAction::triggered, this, &LayerBar::makePair);
-        connect(m_split_act,     &QAction::triggered, this, &LayerBar::splitPair);
-        connect(m_add_pair,      &QAction::triggered, this, &LayerBar::addPair);
-        connect(m_pair_from_one, &QAction::triggered, this, &LayerBar::addPair);
-        connect(m_clear_act,     &QAction::triggered, this, &LayerBar::clearSelection);
-        connect(m_group_dots,    &QAction::triggered, this, &LayerBar::groupDots);
-        connect(m_ungroup_dots,  &QAction::triggered, this, &LayerBar::ungroupDots);
-        connect(m_select_all,    &QAction::triggered, this, &LayerBar::selectAll);
+        connect(m_set_layer_act,        &QAction::triggered, this, &LayerBar::setLayer);
+        connect(m_set_range_layers_act, &QAction::triggered, this, &LayerBar::setPairLayers);
+        connect(m_delete_act,           &QAction::triggered, this, &LayerBar::deleteSelection);
+        connect(m_add_act,              &QAction::triggered, this, &LayerBar::addSelection);
+        connect(m_add_group,            &QAction::triggered, this, &LayerBar::addGroup);
+        connect(m_join_act,             &QAction::triggered, this, &LayerBar::makePair);
+        connect(m_split_act,            &QAction::triggered, this, &LayerBar::splitPair);
+        connect(m_add_pair,             &QAction::triggered, this, &LayerBar::addPair);
+        connect(m_pair_from_one,        &QAction::triggered, this, &LayerBar::addPair);
+        connect(m_clear_act,            &QAction::triggered, this, &LayerBar::clearSelection);
+        connect(m_group_dots,           &QAction::triggered, this, &LayerBar::groupDots);
+        connect(m_ungroup_dots,         &QAction::triggered, this, &LayerBar::ungroupDots);
+        connect(m_select_all,           &QAction::triggered, this, &LayerBar::selectAll);
     }
 
 } // ORNL Namespace

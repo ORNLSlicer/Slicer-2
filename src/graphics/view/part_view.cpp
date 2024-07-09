@@ -427,11 +427,6 @@ namespace ORNL
         auto picked_part = this->pickPart(mouse_ndc_pos, m_part_objects);
 
         if (!picked_part.isNull()) {
-            if (picked_part->locked()) {
-                QToolTip::showText(QCursor::pos(), "This object is locked.", nullptr, QRect(), 300000);
-                return;
-            }
-
             // Unselect
             if (m_selected_objects.contains(picked_part)) {
                 picked_part->unselect();
@@ -526,6 +521,11 @@ namespace ORNL
         // Actual translation.
         QVector3D v = intersect - m_state.translate_start;
         for (auto& gop : m_selected_objects) {
+            if (gop->locked()) {
+                QToolTip::showText(QCursor::pos(), "This object is locked.", nullptr, QRect(), 300000);
+                continue;
+            }
+
             gop->translateAbsolute(v + m_state.part_trans_start[gop]);
             m_model->lookupByGraphic(gop)->setTranslation(gop->translation() - m_printer->minimum());
         }
@@ -549,6 +549,11 @@ namespace ORNL
         m_state.rotate_start = mouse_ndc_pos;
 
         for (auto& gop : m_selected_objects) {
+            if (gop->locked()) {
+                QToolTip::showText(QCursor::pos(), "This object is locked.", nullptr, QRect(), 300000);
+                continue;
+            }
+
             m_state.part_rot_start[gop] = gop->rotation();
             gop->axes()->show();
         }
@@ -586,6 +591,11 @@ namespace ORNL
         //qDebug() << "Applied rotation" << qr.toEulerAngles();
 
         for (auto& gop : m_selected_objects) {
+            if (gop->locked()) {
+                QToolTip::showText(QCursor::pos(), "This object is locked.", nullptr, QRect(), 300000);
+                continue;
+            }
+
             m_model->lookupByGraphic(gop)->setRotation(gop->rotation(), true);
 
             //qDebug() << gop->name() << "rotates to" << gop->rotation().toEulerAngles() << gop->rotation();
@@ -607,6 +617,13 @@ namespace ORNL
             m_state.rotate_start = QPointF();
 
             for (auto& gop : m_selected_objects) {
+                gop->axes()->hide();
+
+                if (gop->locked()) {
+                    QToolTip::showText(QCursor::pos(), "This object is locked.", nullptr, QRect(), 300000);
+                    continue;
+                }
+
                 QQuaternion r = gop->rotation();
                 QVector3D er = r.toEulerAngles();
 
@@ -624,12 +641,15 @@ namespace ORNL
                 }
 
                 gop->rotateAbsolute(QQuaternion::fromEulerAngles(er));
-
-                gop->axes()->hide();
             }
 
             auto tmp_selected = m_selected_objects;
             for (auto& gop : tmp_selected) {
+                if (gop->locked()) {
+                    QToolTip::showText(QCursor::pos(), "This object is locked.", nullptr, QRect(), 300000);
+                    continue;
+                }
+
                 m_model->lookupByGraphic(gop)->setRotation(gop->rotation());
             }
 
@@ -638,6 +658,11 @@ namespace ORNL
 
             this->blockModel();
             for (auto& gop : m_part_objects) {
+                if (gop->locked()) {
+                    QToolTip::showText(QCursor::pos(), "This object is locked.", nullptr, QRect(), 300000);
+                    continue;
+                }
+
                 m_model->lookupByGraphic(gop)->setTransformation(gop->transformation());
                 m_model->lookupByGraphic(gop)->setTranslation(gop->translation() - m_printer->minimum());
             }

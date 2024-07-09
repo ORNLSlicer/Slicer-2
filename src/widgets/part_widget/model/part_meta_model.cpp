@@ -85,6 +85,12 @@ namespace ORNL {
         }
     }
 
+    void PartMetaModel::replaceItem(QSharedPointer<PartMetaItem> pm, QString filename) {
+        if (pm.isNull()) return;
+
+        CSM->replacePart(pm, filename);
+    }
+
     void PartMetaModel::reloadItem(QSharedPointer<PartMetaItem> pm) {
         if (pm.isNull()) return;
 
