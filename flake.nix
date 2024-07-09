@@ -4,23 +4,6 @@
     inputs = {
         nixpkgs.url = github:mdfbaam/nixpkgs/pathcompiler-staging;
         utils.url = github:numtide/flake-utils;
-
-        kubazip-src = {
-            url = github:kuba--/zip;
-            flake = false;
-        };
-        nlohmann-fifomap-src = {
-            url = github:nlohmann/fifo_map;
-            flake = false;
-        };
-        psimpl-src = {
-            url = github:skyrpex/psimpl;
-            flake = false;
-        };
-        qtxlsxwriter-src = {
-            url = github:VSRonin/QtXlsxWriter;
-            flake = false;
-        };
     };
 
     outputs = attrs @ { self, ... }: attrs.utils.lib.eachDefaultSystem (system: rec {
@@ -46,10 +29,6 @@
                     src = self;
 
                     buildInputs = [
-                        pkgs.cmake
-                        pkgs.pkg-config
-                        pkgs.ninja
-                        pkgs.libGL
                         pkgs.qt5.qtbase
                         pkgs.qt5.qtcharts
 
@@ -60,16 +39,12 @@
                         pkgs.gmp
                         pkgs.nlohmann_json
                         pkgs.mpfr
-
-                        libs.kubazip
-                        libs.nlohmann_fifomap
-                        libs.s2clipper
-                        libs.ornltcp-sockets
-                        libs.psimpl
-                        libs.qtxlsxwriter
                     ];
 
                     nativeBuildInputs = [
+                        pkgsNative.cmake
+                        pkgsNative.ninja
+                        pkgsNative.pkg-config
                         pkgsNative.breakpointHook
                         pkgsNative.qt5.wrapQtAppsHook
                     ];
@@ -98,17 +73,6 @@
 
                     meta.mainProgram = "slicer2";
                 };
-            };
-
-            libs = {
-                kubazip          = import contrib/nix/kubazip.nix      { inherit pkgs; source = attrs.kubazip-src; };
-                nlohmann_fifomap = import contrib/nix/fifomap.nix      { inherit pkgs; source = attrs.nlohmann-fifomap-src; };
-                ornltcp-sockets  = import contrib/nix/tcpsockets.nix   { inherit pkgs; source = "${contrib/ORNL-TCP-Sockets}"; };
-                psimpl           = import contrib/nix/psimpl.nix       { inherit pkgs; source = attrs.psimpl-src; };
-                qtxlsxwriter     = import contrib/nix/qtxlsxwriter.nix { inherit pkgs; source = attrs.qtxlsxwriter-src; };
-                # Clipper lib is a bit different since we use a version not available anywhere else.
-                # So we have to use the one from the slicer 2 repo itself.
-                s2clipper        = import contrib/nix/s2clipper.nix    { inherit pkgs; source = "${contrib/clipper}"; };
             };
 
             ide = {
@@ -170,7 +134,7 @@
                   ++ self.outputs.packages.${system}.ornl.slicer2.nativeBuildInputs;
 
                 nativeBuildInputs = [
-                    pkgsNative.qt6.wrapQtAppsHook
+                    pkgsNative.qt5.wrapQtAppsHook
                     pkgsNative.makeWrapper
                     pkgsNative.openssl
                 ];
@@ -193,28 +157,20 @@
 
                     # Utility function to update tools in the cmake preset, called manually.
                     function manualUpdatePreset() {
-                        export NIX_CMAKE_PRESET_FILE="$FLAKE_ROOT/cmake/presets/nix.json"
+                        local NIX_CMAKE_PRESET_FILE="$FLAKE_ROOT/cmake/presets/nix.json"
+                        local QT5_PLUGIN_PATH="${pkgsNative.qt5.qtbase}/${pkgsNative.qt5.qtbase.qtPluginPrefix}:${pkgsNative.qt5.qtdeclarative}/${pkgsNative.qt5.qtbase.qtPluginPrefix}"
+
                         jq --indent 4 '.configurePresets[0].cmakeExecutable                   = "${pkgsNative.cmake}/bin/cmake"' "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
                         jq --indent 4 '.configurePresets[0].cacheVariables.CMAKE_C_COMPILER   = "${llvm.clang}/bin/clang"'       "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
                         jq --indent 4 '.configurePresets[0].cacheVariables.CMAKE_CXX_COMPILER = "${llvm.clang}/bin/clang++"'     "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
                         jq --indent 4 '.configurePresets[0].cacheVariables.CMAKE_MAKE_PROGRAM = "${pkgsNative.ninja}/bin/ninja"' "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
+                        jq --indent 4 '.configurePresets[0].environment.QT_PLUGIN_PATH        = "'"$QT5_PLUGIN_PATH"'"'          "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
 
                         jq --indent 4 '.configurePresets[0].vendor."qt.io/QtCreator/1.0".debugger.Binary  = "${llvm.lldb}/bin/lldb"' "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
                         jq --indent 4 '.configurePresets[0].vendor."qt.io/QtCreator/1.0".debugger.Version = "${llvm.lldb.version}"'  "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
 
                         echo "Updated cmake preset."
                     }
-
-                    # Bit of a weird one - Qt programs can't find plugin path unwrapped, so we make a temporary wrapper and source its env.
-                    # See: https://discourse.nixos.org/t/python-qt-woes/11808/10
-                    setQtEnvironment=$(mktemp)
-                    random=$(openssl rand -base64 20 | sed "s/[^a-zA-Z0-9]//g")
-                    makeWrapper "$(type -p sh)" "$setQtEnvironment" "''${qtWrapperArgs[@]}" --argv0 "$random"
-                    sed "/$random/d" -i "$setQtEnvironment"
-                    source "$setQtEnvironment"
-
-                    # Make sure that git hooks are enabled.
-                    git config core.hooksPath "$FLAKE_ROOT/.gitsetup/hooks"
 
                     # Allow software to find OpenGL drivers.
                     export LD_FALLBACK_PATH=/usr/lib/x86_64-linux-gnu
