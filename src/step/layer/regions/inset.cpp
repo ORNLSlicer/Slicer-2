@@ -61,10 +61,8 @@ namespace ORNL {
 
             ring_nr++;
 
-            if(ring_nr >= rings && !m_computed_geometry.isEmpty())
-                m_geometry = path_line.offset(-beadWidth / 2, -beadWidth / 2);
-            else
-                path_line = path_line.offset(-beadWidth, -beadWidth / 2);
+            m_geometry = path_line.offset(-beadWidth / 2, -beadWidth / 2);
+            path_line = path_line.offset(-beadWidth, -beadWidth / 2);
         }
 
         //Have to test with refactor

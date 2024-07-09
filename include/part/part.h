@@ -45,6 +45,8 @@ namespace ORNL {
         //! \param Mesh type mode, defaults to build
         Part(QSharedPointer<MeshBase> root_mesh, QString file_name = "", MeshType mt = MeshType::kBuild);
 
+        void setSourceFile(QString file_name) { m_file_name = file_name; }
+
         //! \brief Source file for part
         QString sourceFilePath() { return m_file_name; }
 

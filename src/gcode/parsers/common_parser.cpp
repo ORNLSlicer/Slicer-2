@@ -48,7 +48,7 @@ namespace ORNL
 
         MotionEstimation::Init();
 
-        if(meta == GcodeMetaList::SkyBaamMeta)
+        if(meta == GcodeMetaList::SkyBaamMeta || meta == GcodeMetaList::KraussMaffeiMeta)
             m_g4_prefix = "G4 S";
 
         if(meta == GcodeMetaList::MVPMeta){
@@ -380,6 +380,11 @@ namespace ORNL
             else if(m_upper_lines[m_current_line].contains("[#"))
             {
                 // Ignore lines with variable definition if variable Z is not enabled
+                continue;
+            }
+            else if(m_upper_lines[m_current_line].contains("Z=VPSLZ"))
+            {
+                // Ignore this line from the Okuma header
                 continue;
             }
             else if(m_upper_lines[m_current_line].contains("EXTRUDER(0)"))

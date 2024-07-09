@@ -46,9 +46,11 @@ namespace ORNL
         QAction* m_switch_to_setting_action;
         QAction* m_reset_transformation_action;
         QAction* m_reload_part_action;
+        QAction* m_replace_part_action;
         QAction* m_delete_part_action;
         QAction* m_wireframe_action;
         QAction* m_solidwireframe_action;
+        QAction* m_lock_part_action;
 
         //! \brief Menu to hold transparency
         QMenu* m_transparency_menu;
