@@ -48,7 +48,7 @@ namespace ORNL
 
         MotionEstimation::Init();
 
-        if(meta == GcodeMetaList::SkyBaamMeta)
+        if(meta == GcodeMetaList::SkyBaamMeta || meta == GcodeMetaList::KraussMaffeiMeta)
             m_g4_prefix = "G4 S";
 
         if(meta == GcodeMetaList::MVPMeta){

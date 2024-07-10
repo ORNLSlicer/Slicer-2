@@ -44,6 +44,10 @@ namespace ORNL
 
     void LayerBar::addSingle(int layer)
     {
+        if (layer < 0) {
+            return;
+        }
+
         LayerDot* new_dot = addDot(layer, false); // visually add dot. Not from template
         m_part->createRange(layer, layer); //add range to part
         selectDot(new_dot);

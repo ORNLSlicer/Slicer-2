@@ -914,7 +914,7 @@ namespace ORNL
 
         rv += "( --- 5X_end.txt --- )" % m_newline;
         rv += "G170 " % m_newline;
-        rv += "G0 Z=VPSLZ " % m_newline;
+        rv += "G0 Z=VPSLZ" % m_newline;
         rv += "()" % m_newline;
         rv += "( --- files_x\\job_end.txt --- )" % m_newline;
         rv += "M511 (CAS ON)" % m_newline;
