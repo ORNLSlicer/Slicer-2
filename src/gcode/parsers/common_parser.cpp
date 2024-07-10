@@ -11,7 +11,7 @@
 #include "units/unit.h"
 #include "managers/settings/settings_manager.h"
 #include "gcode/gcode_motion_estimate.h"
-// test commit permission issues
+
 namespace ORNL
 {
     CommonParser::CommonParser(GcodeMeta meta, bool allowLayerAlter, QStringList& lines, QStringList& upperLines)
