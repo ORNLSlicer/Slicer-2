@@ -9,38 +9,38 @@
 
 #include "exceptions/exceptions.h"
 #include "units/unit.h"
-#include "windows/main_window.h"
+#include "managers/settings/settings_manager.h"
 #include "gcode/gcode_motion_estimate.h"
 
 namespace ORNL
 {
     CommonParser::CommonParser(GcodeMeta meta, bool allowLayerAlter, QStringList& lines, QStringList& upperLines)
-        : m_distance_unit(meta.m_distance_unit)
+        : m_e_absolute(true)
+        , m_space(' ')
+        , m_distance_unit(meta.m_distance_unit)
         , m_time_unit(meta.m_time_unit)
         , m_angle_unit(meta.m_angle_unit)
         , m_mass_unit(meta.m_mass_unit)
         , m_velocity_unit(meta.m_velocity_unit)
         , m_acceleration_unit(meta.m_acceleration_unit)
         , m_angular_velocity_unit(meta.m_angular_velocity_unit)
-        , m_layer_count_delimiter(meta.m_layer_count_delimiter)
         , m_layer_delimiter(meta.m_layer_delimiter)
+        , m_layer_count_delimiter(meta.m_layer_count_delimiter)
         , m_allow_layer_alter(allowLayerAlter)
-        , m_e_absolute(true)
-        , m_last_layer_line_start(0)
-        , m_was_modified(false)
-        , m_g4_prefix("G4 P")
-        , m_g4_comment("DWELL")
-        , m_space(' ')
-        , m_f_param_and_value("F[^\\D]\\d*\\.*\\d*")
-        , m_q_param_and_value("Q[^\\D]\\d*\\.*\\d*")
-        , m_s_param_and_value("S[^\\D]\\d*\\.*\\d*")        
-        , m_f_parameter('F')
-        , m_q_parameter('Q')
-        , m_s_parameter('S')
         , m_lines(lines)
         , m_upper_lines(upperLines)
         , m_current_line(0)
         , m_current_end_line(m_lines.size() - 1)
+        , m_was_modified(false)
+        , m_last_layer_line_start(0)
+        , m_g4_prefix("G4 P")
+        , m_g4_comment("DWELL")
+        , m_f_param_and_value("F[^\\D]\\d*\\.*\\d*")
+        , m_q_param_and_value("Q[^\\D]\\d*\\.*\\d*")
+        , m_s_param_and_value("S[^\\D]\\d*\\.*\\d*")
+        , m_f_parameter('F')
+        , m_q_parameter('Q')
+        , m_s_parameter('S')
         , m_should_cancel(false)
         , m_negate_z_value(false)
     {
@@ -444,14 +444,17 @@ namespace ORNL
                             Time increaseTime = m_min_layer_time_allowed - m_layer_times[m_current_layer][m_current_nozzle];
                             Time decreaseTime = m_layer_times[m_current_layer][m_current_nozzle] - m_max_layer_time_allowed;
 
+                            double minModifier = 999999;
+                            double maxModifier = 1;
+                            if(increaseTime > 0 || decreaseTime > 0)
+                                GetMinMaxModifier(minModifier, maxModifier);
+
                             if(increaseTime > 0) { // If layer time less than minimum, slow feedrate or add dwell
                                 if(m_min_layer_time_choice == ForceMinimumLayerTime::kSlow_Feedrate) {
                                     // Ratio uses the layer time as well as the total time for all G1 F moves, which are what get adjusted
                                     double ratio = (increaseTime / m_layer_G1F_times[m_current_layer])();
                                     double modifier = 1 / (1.0 + ratio);
 
-                                    double minModifier = (sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kMinXYSpeed) /
-                                                          sb->setting<Velocity>(Constants::ProfileSettings::Perimeter::kSpeed))();
                                     if(modifier < minModifier){
                                             modifier = minModifier;
                                             emit forwardInfoToMainWindow("Computed speed is lower than min machine speed, machine min speed will be used");
@@ -473,8 +476,6 @@ namespace ORNL
                                     double ratio = (decreaseTime / m_layer_G1F_times[m_current_layer])();
                                     double modifier = 1 / (1.0 - ratio);
 
-                                    double maxModifier = (sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kMaxXYSpeed) /
-                                                          sb->setting<Velocity>(Constants::ProfileSettings::Perimeter::kSpeed))();
                                     if(modifier > maxModifier){
                                             modifier = maxModifier;
                                             emit forwardInfoToMainWindow("Computed speed exceeds max machine speed, machine max speed will be used");
@@ -2169,6 +2170,46 @@ namespace ORNL
 
     }
 
+    void CommonParser::GetMinMaxModifier(double &minModifier, double &maxModifier) {
+        QSharedPointer<SettingsBase> sb = GSM->getGlobal();
+        if(m_motion_commands[m_current_layer].size() > 0)
+        {
+            double maxFeedRate = 1;
+            double minFeedRate = minModifier;
+
+            QList<GcodeCommand>::iterator current_layer_motion_end = m_motion_commands[m_current_layer].end();
+            --current_layer_motion_end;
+
+            QList<GcodeCommand>::const_iterator current_layer_motion_begin = m_motion_commands[m_current_layer].begin();
+            --current_layer_motion_begin;
+
+            while(current_layer_motion_end != current_layer_motion_begin &&
+                   current_layer_motion_end->getLineNumber() > m_last_layer_line_start)
+            {
+                auto parameters = current_layer_motion_end->getParameters();
+                if(parameters.contains(m_f_parameter.toLatin1()))
+                {
+                    QString& line = m_lines[current_layer_motion_end->getLineNumber()];
+                    QRegularExpressionMatch myMatch = m_f_param_and_value.match(line);
+                    double value = myMatch.capturedRef().mid(1).toDouble();
+
+                    if (value > maxFeedRate)
+                        maxFeedRate = value;
+
+                    if (value < minFeedRate)
+                        minFeedRate = value;
+                }
+                --current_layer_motion_end;
+            }
+
+            Velocity velocity;
+            maxModifier = (sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kMaxXYSpeed) /
+                           velocity.from(minFeedRate, m_velocity_unit))();
+            minModifier = (sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kMinXYSpeed) /
+                                  velocity.from(maxFeedRate, m_velocity_unit))();
+        }
+    }
+
     void CommonParser::AdjustFeedrate(double modifier)
     {
         QSharedPointer<SettingsBase> sb = GSM->getGlobal();
@@ -2188,6 +2229,26 @@ namespace ORNL
                 auto parameters = current_layer_motion_end->getParameters();
                 if(parameters.contains(m_f_parameter.toLatin1()))
                 {
+                    if(sb->setting<int>(Constants::MaterialSettings::Extruder::kEnableM3S)) {
+                        int cmdIndex = current_layer_motion_end->getLineNumber() - 1;
+                        QString& line = m_lines[cmdIndex];
+                        if(line.startsWith("M3 ")) {
+                            QRegularExpressionMatch myMatch = m_s_param_and_value.match(line);
+                            double value = myMatch.capturedRef().mid(1).toDouble();
+                            if(value != 0) {
+                                double extruderModifier = sb->setting< double >(Constants::MaterialSettings::Cooling::kExtruderScaleFactor);
+                                // If slowing down, the multiplier for the extruder should be the inverse of the scale factor
+                                if(modifier < 1)
+                                    extruderModifier = 1 / extruderModifier;
+                                line = line.leftRef(myMatch.capturedStart()) % m_s_parameter %
+                                       QString::number(value * modifier * extruderModifier, 'f', 4)
+                                       % line.midRef(myMatch.capturedEnd());
+                                m_lines.insert(cmdIndex + 1, line);
+                                m_lines.removeAt(cmdIndex);
+                            }
+                        }
+                    }
+
                     QString& line = m_lines[current_layer_motion_end->getLineNumber()];
                     QRegularExpressionMatch myMatch = m_f_param_and_value.match(line);
                     double value = myMatch.capturedRef().mid(1).toDouble();
@@ -2211,7 +2272,7 @@ namespace ORNL
                     current_layer_motion_end->addParameter(m_q_parameter.toLatin1(),
                                                 parameters[m_q_parameter.toLatin1()] * modifier);
                 }
-                if(current_layer_motion_end->getParameters().contains(m_s_parameter.toLatin1()) && !sb->setting< bool >(Constants::ProfileSettings::SpecialModes::kEnableWidthHeight))
+                if(parameters.contains(m_s_parameter.toLatin1()) && !sb->setting< bool >(Constants::ProfileSettings::SpecialModes::kEnableWidthHeight))
                 {
                     QString& line = m_lines[current_layer_motion_end->getLineNumber()];
                     QRegularExpressionMatch myMatch = m_s_param_and_value.match(line);
