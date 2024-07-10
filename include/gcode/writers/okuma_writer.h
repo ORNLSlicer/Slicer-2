@@ -6,7 +6,6 @@
 #include "gcode/writers/writer_base.h"
 #include "managers/settings/settings_manager.h"
 #include "gcode/gcode_meta.h"
-
 namespace ORNL
 {
     /*!
@@ -89,6 +88,7 @@ namespace ORNL
 
         //! \brief Writes gcode coordinates WXYZ for a move or travel to the destination point
         QString writeCoordinates(Point destination);
+        QString writeBrokenTravel(Point destination);
 
         AngularVelocity m_current_rpm;
 
@@ -99,8 +99,24 @@ namespace ORNL
         //! \brief true is first print motion of the layer
         bool m_layer_start;
 
+        //! \brief store the previous line in m
+        QString m_last_line;
+
         //! \brief preallocated prefixs commonly used in this syntax
         int m_material_number;
+
+        //! \brief true means the last segment was a travel.
+        int was_travel;
+
+        //! \brief keep track of C axis position
+        double c_angle;
+
+        //! \brief keep track of inner vs outer perimeter
+        bool m_inner_perimeter;
+        bool m_outer_perimeter;
+
+        //! \brief keep track of the layer
+        bool m_new_layer;
 
     };  // class OkumaWriter
 }  // namespace ORNL

@@ -119,12 +119,19 @@ namespace ORNL
         PointOrderOptimization pointOrder = static_cast<PointOrderOptimization>(setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
         if(pointOrder == PointOrderOptimization::kCustomPoint && setting<bool>(Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation))
         {
-            if(layer_number % 2 == 0)
+            /*if(layer_number % 2 == 0)
             {
                 setSetting(Constants::ProfileSettings::Optimizations::kCustomPointXLocation,
                                (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondXLocation));
                 setSetting(Constants::ProfileSettings::Optimizations::kCustomPointYLocation,
                                (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondYLocation));
+            }*/
+            if(layer_number >= 23)
+            {
+                setSetting(Constants::ProfileSettings::Optimizations::kCustomPointXLocation,
+                           (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondXLocation));
+                setSetting(Constants::ProfileSettings::Optimizations::kCustomPointYLocation,
+                           (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondYLocation));
             }
         }
 

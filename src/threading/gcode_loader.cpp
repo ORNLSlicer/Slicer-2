@@ -115,16 +115,16 @@ namespace ORNL
                     QString::number(translationMin.y()/1000000, 'f', 4) % ", Z" %
                     QString::number(translationMin.z()/1000000, 'f', 4) % " m" % closingDelim % "\n";
 
-        QString travelTypes  = openingDelim % "Travel Types:";
+        /*QString travelTypes  = openingDelim % "Travel Types:";
         QString travelColors = openingDelim % "Travel Colors:";
         for(const auto& color : PM->getVisualizationHexColors()){
             travelTypes  = travelTypes  % " " % QString::fromStdString(color.first);
             travelColors = travelColors % " " % QString::fromStdString(color.second).right(6);
         }
         travelTypes  = travelTypes  % closingDelim % "\n";
-        travelColors = travelColors % closingDelim % "\n";
+        travelColors = travelColors % closingDelim % "\n";*/
 
-        return partMinTranslation % travelTypes % travelColors;
+        return partMinTranslation; // % travelTypes % travelColors;
     }
 
     void GCodeLoader::savePartsModelObjFile()
@@ -405,10 +405,10 @@ namespace ORNL
             QString openingDelim = m_selected_meta.m_comment_starting_delimiter;
             QString closingDelim = m_selected_meta.m_comment_ending_delimiter;
             QString additionalHeaderBlock =
-            openingDelim % "Sliced on: " % QDateTime::currentDateTime().toString("MM/dd/yyyy") % closingDelim % "\n" %
-            openingDelim % "Expected Weight: " % weightInfo % closingDelim % "\n" %
+            //openingDelim % "Sliced on: " % QDateTime::currentDateTime().toString("MM/dd/yyyy") % closingDelim % "\n" %
+            //openingDelim % "Expected Weight: " % weightInfo % closingDelim % "\n" %
             openingDelim % "Expected Build Time: " % MathUtils::formattedTimeSpan(total_time()) % closingDelim % "\n" %
-            openingDelim % "Minimum Layer Time: " % MathUtils::formattedTimeSpan(min_time()) % closingDelim % "\n" %
+            //openingDelim % "Minimum Layer Time: " % MathUtils::formattedTimeSpan(min_time()) % closingDelim % "\n" %
             openingDelim % "Maximum Layer Time: " % MathUtils::formattedTimeSpan(max_time()) % closingDelim % "\n" %
             openingDelim % "XYZ Translation Data: " % QString::number(m_origin.x()) % ", " %
                     QString::number(m_origin.y()) % ", " % QString::number(m_z_offset) % closingDelim % "\n" % additionalExportComments();
