@@ -172,6 +172,11 @@ namespace ORNL
             }
         }
 
+        // Determine which end of infill path should be the start
+        if (m_point_override_location.distance(new_polyline.front()) >
+            m_point_override_location.distance(new_polyline.back()))
+            new_polyline = new_polyline.reverse();
+
         return new_polyline;
     }
 
@@ -272,10 +277,14 @@ namespace ORNL
         bool start;
 
         Point queryPoint;
-        if(m_override_used)
+        // 7/13/24 - Setting queryPoint to always use currentLocation.
+        // When m_override_location is used, infill lines become disconnected
+        // because all infill lines print in the same direction causing very long travels.
+        /*if(m_override_used)
             queryPoint = m_override_location;
         else
-            queryPoint = currentLocation;
+            queryPoint = currentLocation;*/
+        queryPoint = currentLocation;
 
         for (int i = 0, end = polylines.size(); i < end; ++i)
         {
