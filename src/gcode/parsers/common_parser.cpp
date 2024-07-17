@@ -334,6 +334,7 @@ namespace ORNL
             extruder_times.push_back(Time());
 
         m_layer_times.push_back(extruder_times);
+        m_layer_FR_modifiers.push_back(1.0);
         m_layer_G1F_times.push_back(Time());
         m_layer_volumes.push_back(Volume());
 
@@ -425,6 +426,7 @@ namespace ORNL
                             extruder_times.push_back(Time());
 
                         m_layer_times.push_back(extruder_times);
+                        m_layer_FR_modifiers.push_back(1.0);
                         m_layer_G1F_times.push_back(Time());
                         m_layer_volumes.push_back(Volume());
 
@@ -449,45 +451,47 @@ namespace ORNL
                             if(increaseTime > 0 || decreaseTime > 0)
                                 GetMinMaxModifier(minModifier, maxModifier);
 
-                            if(increaseTime > 0) { // If layer time less than minimum, slow feedrate or add dwell
-                                if(m_min_layer_time_choice == ForceMinimumLayerTime::kSlow_Feedrate) {
-                                    // Ratio uses the layer time as well as the total time for all G1 F moves, which are what get adjusted
-                                    double ratio = (increaseTime / m_layer_G1F_times[m_current_layer])();
-                                    double modifier = 1 / (1.0 + ratio);
+                            if(m_layer_G1F_times[m_current_layer] > 0) {
+                                if(increaseTime > 0) { // If layer time less than minimum, slow feedrate or add dwell
+                                    if(m_min_layer_time_choice == ForceMinimumLayerTime::kSlow_Feedrate) {
+                                        // Ratio uses the layer time as well as the total time for all G1 F moves, which are what get adjusted
+                                        double ratio = (increaseTime / m_layer_G1F_times[m_current_layer])();
+                                        double modifier = 1 / (1.0 + ratio);
 
-                                    if(modifier < minModifier){
-                                            modifier = minModifier;
-                                            emit forwardInfoToMainWindow("Computed speed is lower than min machine speed, machine min speed will be used");
+                                        if(modifier < minModifier && minModifier > 0 && minModifier < 1){
+                                                modifier = minModifier;
+                                                emit forwardInfoToMainWindow("Computed speed is lower than min machine speed, machine min speed will be used");
+                                        }
+
+                                        if(modifier > 0 && modifier < 1) {
+                                            AdjustFeedrate(modifier);
+                                            m_was_modified = true;
+                                        }
                                     }
-
-                                    if(modifier > 0 && modifier < 1) {
-                                        AdjustFeedrate(modifier);
+                                    else if(m_min_layer_time_choice == ForceMinimumLayerTime::kUse_Purge_Dwells) {
+                                        AddDwell(increaseTime());
                                         m_was_modified = true;
                                     }
                                 }
-                                else if(m_min_layer_time_choice == ForceMinimumLayerTime::kUse_Purge_Dwells) {
-                                    AddDwell(increaseTime());
-                                    m_was_modified = true;
-                                }
-                            }
-                            else if(decreaseTime > 0) { // If layer time more than maximum, increase feedrate
-                                if(m_min_layer_time_choice == ForceMinimumLayerTime::kSlow_Feedrate){
-                                    // Ratio uses the layer time as well as the total time for all G1 F moves, which are what get adjusted
-                                    double ratio = (decreaseTime / m_layer_G1F_times[m_current_layer])();
-                                    double modifier = 1 / (1.0 - ratio);
+                                else if(decreaseTime > 0) { // If layer time more than maximum, increase feedrate
+                                    if(m_min_layer_time_choice == ForceMinimumLayerTime::kSlow_Feedrate){
+                                        // Ratio uses the layer time as well as the total time for all G1 F moves, which are what get adjusted
+                                        double ratio = (decreaseTime / m_layer_G1F_times[m_current_layer])();
+                                        double modifier = 1 / (1.0 - ratio);
 
-                                    if(modifier > maxModifier){
-                                            modifier = maxModifier;
-                                            emit forwardInfoToMainWindow("Computed speed exceeds max machine speed, machine max speed will be used");
-                                    }
+                                        if(modifier > maxModifier && maxModifier > 1){
+                                                modifier = maxModifier;
+                                                emit forwardInfoToMainWindow("Computed speed exceeds max machine speed, machine max speed will be used");
+                                        }
 
-                                    if(modifier > 1) {
-                                        AdjustFeedrate(modifier);
-                                        m_was_modified = true;
+                                        if(modifier > 1) {
+                                            AdjustFeedrate(modifier);
+                                            m_was_modified = true;
+                                        }
                                     }
-                                }
-                                else if(m_min_layer_time_choice == ForceMinimumLayerTime::kUse_Purge_Dwells) {
-                                    emit forwardInfoToMainWindow("Add dwell time method was selected, can not modify layer times");
+                                    else if(m_min_layer_time_choice == ForceMinimumLayerTime::kUse_Purge_Dwells) {
+                                        emit forwardInfoToMainWindow("Add dwell time method was selected, can not modify layer times");
+                                    }
                                 }
                             }
                         }
@@ -508,6 +512,7 @@ namespace ORNL
                         	extruder_times.push_back(Time());
 
                     	m_layer_times.push_back(extruder_times);
+                        m_layer_FR_modifiers.push_back(1.0);
                         m_layer_G1F_times.push_back(Time());
                         m_layer_volumes.push_back(Volume());
 
@@ -699,6 +704,11 @@ namespace ORNL
     QList<QList<Time>> CommonParser::getLayerTimes()
     {
         return m_layer_times;
+    }
+
+    QList<double> CommonParser::getLayerFeedRateModifiers()
+    {
+        return m_layer_FR_modifiers;
     }
 
     QList<Volume> CommonParser::getLayerVolumes()
@@ -2204,9 +2214,9 @@ namespace ORNL
 
             Velocity velocity;
             maxModifier = (sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kMaxXYSpeed) /
-                           velocity.from(minFeedRate, m_velocity_unit))();
+                           velocity.from(maxFeedRate, m_velocity_unit))();
             minModifier = (sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kMinXYSpeed) /
-                                  velocity.from(maxFeedRate, m_velocity_unit))();
+                                  velocity.from(minFeedRate, m_velocity_unit))();
         }
     }
 
@@ -2215,6 +2225,8 @@ namespace ORNL
         QSharedPointer<SettingsBase> sb = GSM->getGlobal();
         if(m_motion_commands[m_current_layer].size() > 0)
         {
+            m_layer_FR_modifiers[m_current_layer] = modifier;
+
             QList<GcodeCommand>::iterator current_layer_motion_end =
                     m_motion_commands[m_current_layer].end();
             --current_layer_motion_end;

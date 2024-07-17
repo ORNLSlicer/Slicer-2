@@ -53,7 +53,7 @@ namespace ORNL
 
             //! \brief signal to layer time window with info
             //! \param layertimes: List of layer times for display
-            void forwardInfoToLayerTimeWindow(QList<QList<Time>> layer_times, Time min_layer_time, Time max_layer_time, bool adjusted_layer_time);
+            void forwardInfoToLayerTimeWindow(QList<QList<Time>> layer_times, QList<double> layer_FR_modifiers, bool adjusted_layer_time);
 
             //! \brief signal to export window with info
             //! \param filename: temp gcode filename to copy
