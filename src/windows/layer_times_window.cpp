@@ -65,7 +65,7 @@ namespace ORNL
                 m_max = current_time;
             }
 
-            m_total_adjusted_time += current_time * m_layer_FR_modifiers[i];
+            m_total_adjusted_time += current_time / m_layer_FR_modifiers[i];
 
             m_total_time += current_time;
         }
@@ -105,7 +105,7 @@ namespace ORNL
             }
             else if(current_time > 1 && m_adjusted_layer_time)
             {
-                double adjustedTime = current_time() * m_layer_FR_modifiers[i];
+                double adjustedTime = current_time() / m_layer_FR_modifiers[i];
                 if(m_layer_FR_modifiers[i] != 1) {
                     oneLayer += " Adjusted " % MathUtils::formattedTimeSpanHHMMSS(adjustedTime) % ",";
                 }
@@ -114,7 +114,7 @@ namespace ORNL
 
             oneLayer += " Total Time So Far " % MathUtils::formattedTimeSpanHHMMSS(currentTotal());
 
-            if(current_time() * m_layer_FR_modifiers[i] < layerTimeThreshold)
+            if(current_time() / m_layer_FR_modifiers[i] < layerTimeThreshold)
             {
                 layerTimeString += "<font color=\"red\">" % oneLayer % "</font><br>";
             }

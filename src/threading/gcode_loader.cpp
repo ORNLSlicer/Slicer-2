@@ -260,7 +260,7 @@ namespace ORNL
 
                     // add current layer to total printing and adjusted time
                     total_time += current;
-                    total_adjusted_time += current * layer_FR_modifiers[i];
+                    total_adjusted_time += current / layer_FR_modifiers[i];
                     total_volume += layer_volumes[i];
                 }
 
