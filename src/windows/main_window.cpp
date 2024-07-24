@@ -432,7 +432,6 @@ namespace ORNL {
 
         // Menu Settings
         m_actions["template_load"]  = {"Load from Template",            ":/icons/settings_file_black.png",  false,  QKeySequence(tr("Ctrl+t")),         nullptr};
-        m_actions["template_layer_load"]  = {"Load from Layer Template",            ":/icons/settings_file_black.png",  false,  QKeySequence(),         nullptr};
         m_actions["template_save"]  = {"Save as Template",              ":/icons/settings_save_black.png",  false,  QKeySequence(tr("Ctrl+Shift+t")),   nullptr};
         m_actions["template_layer_save"]  = {"Save as Layer Bar Template", ":/icons/settings_save_black.png",  false,  QKeySequence(),                 nullptr};
         m_actions["setting_folder"] = {"Additional Setting Location",   ":/icons/settings_folder_black.png",false,  QKeySequence()                  ,   nullptr};
@@ -554,7 +553,6 @@ namespace ORNL {
 
         // Settings
         m_menu_settings->addAction(m_actions["template_load"].action);
-        m_menu_settings->addAction(m_actions["template_layer_load"].action);
         m_menu_settings->addAction(m_actions["template_save"].action);
         m_menu_settings->addAction(m_actions["template_layer_save"].action);
         m_menu_settings->addSeparator();
@@ -715,7 +713,6 @@ namespace ORNL {
         connect(m_actions["exit"].action, &QAction::triggered, qApp, &QApplication::quit);
 
         connect(m_actions["template_load"].action, &QAction::triggered, this, &MainWindow::loadTemplate);
-        connect(m_actions["template_layer_load"].action, &QAction::triggered, this, &MainWindow::loadLayerTemplate);
         connect(m_actions["template_save"].action, &QAction::triggered, this, &MainWindow::saveTemplate);
         connect(m_actions["template_layer_save"].action, &QAction::triggered, this, &MainWindow::saveLayerTemplate);
         connect(m_actions["setting_folder"].action, &QAction::triggered, this, &MainWindow::setSettingFolder);
@@ -1441,22 +1438,6 @@ namespace ORNL {
         }
         m_settingbar->displayNewSetting(tabs, actualFilename);
     }
-
-    void MainWindow::loadLayerTemplate() {
-        /*QFileDialog load_dialog;
-        load_dialog.setWindowTitle("Load Layer Template");
-        load_dialog.setAcceptMode(QFileDialog::AcceptOpen);
-        load_dialog.setNameFilters(QStringList()
-                                   << "Slicer 2 Configuration/Layer Template File (*.s2c)"
-                                   << "Any Files (*)");
-        load_dialog.setDefaultSuffix("s2c");
-        if (!load_dialog.exec()) return;
-
-        QString filename = load_dialog.selectedFiles().first();
-        if (filename.isEmpty()) return;
-
-        GSM->loadLayerSettings(filename);*/
-        }
 
     void MainWindow::setSettingFolder() {
         QFileDialog load_dialog;

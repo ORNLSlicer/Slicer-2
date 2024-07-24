@@ -166,9 +166,6 @@ namespace ORNL {
             //! \brief Load a template.
             void loadTemplate();
 
-            //! \brief Load a layer bar template.
-            void loadLayerTemplate();
-
             //! \brief Set setting folder to load from.
             void setSettingFolder();
 
