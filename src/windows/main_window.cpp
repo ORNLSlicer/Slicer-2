@@ -12,7 +12,6 @@
 #include "configs/range.h"
 #include "step/layer/regions/perimeter.h"
 #include "windows/dialogs/template_save.h"
-#include "windows/dialogs/template_layer_save.h"
 #include "windows/dialogs/cs_dbg.h"
 #include "windows/dialogs/emboss_dialog.h"
 #include "threading/session_loader.h"
@@ -257,10 +256,6 @@ namespace ORNL {
         m_auto_orient_widget = new AutoOrientWidget(m_part_widget->getPartMeta());
         m_auto_orient_widget->setObjectName(QStringLiteral("m_auto_orient_tab"));
 
-        // Layer Template Tab
-        m_layer_template_widget = new LayerTemplateWidget();
-        m_layer_template_widget->setObjectName(QStringLiteral("m_layer_template_tab"));
-
         // Cmdbar Container
         m_cmdbar = new ORNL::CmdWidget;
         m_cmdbar->setObjectName(QStringLiteral("m_cmdbar"));
@@ -304,11 +299,6 @@ namespace ORNL {
         m_auto_orient_dock->setObjectName(QStringLiteral("m_auto_orient_dock"));
 //        m_external_file_dock->setFeatures(QDockWidget::NoDockWidgetFeatures);
         m_auto_orient_dock->setMinimumWidth(Constants::UI::MainWindow::SideDock::kExternalFileWidth);
-
-        // auto orient file dock
-        m_layer_template_dock = new QDockWidget(this);
-        m_layer_template_dock->setObjectName(QStringLiteral("m_layer_template_dock"));
-        m_layer_template_dock->setMinimumWidth(Constants::UI::MainWindow::SideDock::kExternalFileWidth);
 
         // CmdDock
         m_cmddock = new QDockWidget(this);
@@ -432,9 +422,7 @@ namespace ORNL {
 
         // Menu Settings
         m_actions["template_load"]  = {"Load from Template",            ":/icons/settings_file_black.png",  false,  QKeySequence(tr("Ctrl+t")),         nullptr};
-        m_actions["template_layer_load"]  = {"Load from Layer Template",            ":/icons/settings_file_black.png",  false,  QKeySequence(),         nullptr};
         m_actions["template_save"]  = {"Save as Template",              ":/icons/settings_save_black.png",  false,  QKeySequence(tr("Ctrl+Shift+t")),   nullptr};
-        m_actions["template_layer_save"]  = {"Save as Layer Bar Template", ":/icons/settings_save_black.png",  false,  QKeySequence(),                 nullptr};
         m_actions["setting_folder"] = {"Additional Setting Location",   ":/icons/settings_folder_black.png",false,  QKeySequence()                  ,   nullptr};
         m_actions["layer_bar_setting_folder"] = {"Additional Layer Bar Setting Location",   ":/icons/settings_folder_black.png", false, QKeySequence(), nullptr};
         m_actions["pref"]           = {"Application Preferences",       ":/icons/settings_black.png",       false,  QKeySequence(tr("Ctrl+p")),         nullptr};
@@ -554,9 +542,7 @@ namespace ORNL {
 
         // Settings
         m_menu_settings->addAction(m_actions["template_load"].action);
-        m_menu_settings->addAction(m_actions["template_layer_load"].action);
         m_menu_settings->addAction(m_actions["template_save"].action);
-        m_menu_settings->addAction(m_actions["template_layer_save"].action);
         m_menu_settings->addSeparator();
         m_menu_settings->addAction(m_actions["setting_folder"].action);
         m_menu_settings->addAction(m_actions["layer_bar_setting_folder"].action);
@@ -615,7 +601,6 @@ namespace ORNL {
         m_layertimesdock->setWidget(m_layertimebar);
         m_external_file_dock->setWidget(m_external_file_window);
         m_auto_orient_dock->setWidget(m_auto_orient_widget);
-        m_layer_template_dock->setWidget(m_layer_template_widget);
         m_statusbar->addPermanentWidget(m_progressbar);
 
         m_tab_widget->addTab(m_part_widget, "Object View");
@@ -628,7 +613,6 @@ namespace ORNL {
         this->addDockWidget(static_cast<Qt::DockWidgetArea>(2), m_layertimesdock);
         this->addDockWidget(static_cast<Qt::DockWidgetArea>(2), m_external_file_dock);
         this->addDockWidget(static_cast<Qt::DockWidgetArea>(2), m_auto_orient_dock);
-        this->addDockWidget(static_cast<Qt::DockWidgetArea>(2), m_layer_template_dock);
 
         m_cmddock->setMaximumHeight(Constants::UI::MainWindow::kStatusBarMaxHeight);
 
@@ -636,7 +620,6 @@ namespace ORNL {
         this->tabifyDockWidget(m_gcodedock, m_layertimesdock);
         this->tabifyDockWidget(m_layertimesdock, m_external_file_dock);
         this->tabifyDockWidget(m_external_file_dock, m_auto_orient_dock);
-        this->tabifyDockWidget(m_auto_orient_dock, m_layer_template_dock);
         this->setTabPosition(static_cast<Qt::DockWidgetArea>(2), QTabWidget::West);
         this->addDockWidget(static_cast<Qt::DockWidgetArea>(2), m_cmddock);
         m_settingdock->raise();
@@ -715,9 +698,7 @@ namespace ORNL {
         connect(m_actions["exit"].action, &QAction::triggered, qApp, &QApplication::quit);
 
         connect(m_actions["template_load"].action, &QAction::triggered, this, &MainWindow::loadTemplate);
-        connect(m_actions["template_layer_load"].action, &QAction::triggered, this, &MainWindow::loadLayerTemplate);
         connect(m_actions["template_save"].action, &QAction::triggered, this, &MainWindow::saveTemplate);
-        connect(m_actions["template_layer_save"].action, &QAction::triggered, this, &MainWindow::saveLayerTemplate);
         connect(m_actions["setting_folder"].action, &QAction::triggered, this, &MainWindow::setSettingFolder);
         connect(m_actions["layer_bar_setting_folder"].action, &QAction::triggered, this, &MainWindow::setLayerBarSettingFolder);
         connect(m_actions["pref"].action, &QAction::triggered, m_pref_window, [this] { m_pref_window->raise(); m_pref_window->showNormal(); });
@@ -832,8 +813,6 @@ namespace ORNL {
         connect(m_settingbar, &SettingBar::settingModified, this, &MainWindow::handleModifiedSetting);
         connect(m_settingbar, &SettingBar::tabHidden, this, &MainWindow::addHiddenSetting);
         connect(GSM.get(), &SettingsManager::globalLoaded, this, &MainWindow::updateSettings);
-        connect(GSM.get(), &SettingsManager::newLayerBarTemplateSaved, m_layer_template_widget, &LayerTemplateWidget::loadLayerBar);
-        connect(m_layer_template_widget, &LayerTemplateWidget::layerbarTemplateChanged, m_layerbar, &LayerBar::reselectPart);
 //        //Set intial configs and connect for Http update from window
 //        if(CSM->getMostRecentHTTPConfig() != "")
 //        {
@@ -1026,7 +1005,6 @@ namespace ORNL {
         m_layertimesdock->setWindowTitle(QApplication::translate("MainWindow", "Layer Times", nullptr));
         m_external_file_dock->setWindowTitle(QApplication::translate("MainWindow", "External File Input", nullptr));
         m_auto_orient_dock->setWindowTitle(QApplication::translate("MainWindow", "Auto Orientation", nullptr));
-        m_layer_template_dock->setWindowTitle(QApplication::translate("MainWindow", "Layer Template", nullptr));
         m_cmddock->setWindowTitle(QApplication::translate("MainWindow", "Status", nullptr));
     }
 
@@ -1403,11 +1381,6 @@ namespace ORNL {
         updateSettings(fileInfo.baseName());
     }
 
-    void MainWindow::saveLayerTemplate(){
-        TemplateLayerDialog dialog;
-        if (!dialog.exec()) return;
-    }
-
     void MainWindow::loadTemplate() {
         QFileDialog load_dialog;
         load_dialog.setWindowTitle("Load Template");
@@ -1442,22 +1415,6 @@ namespace ORNL {
         m_settingbar->displayNewSetting(tabs, actualFilename);
     }
 
-    void MainWindow::loadLayerTemplate() {
-        /*QFileDialog load_dialog;
-        load_dialog.setWindowTitle("Load Layer Template");
-        load_dialog.setAcceptMode(QFileDialog::AcceptOpen);
-        load_dialog.setNameFilters(QStringList()
-                                   << "Slicer 2 Configuration/Layer Template File (*.s2c)"
-                                   << "Any Files (*)");
-        load_dialog.setDefaultSuffix("s2c");
-        if (!load_dialog.exec()) return;
-
-        QString filename = load_dialog.selectedFiles().first();
-        if (filename.isEmpty()) return;
-
-        GSM->loadLayerSettings(filename);*/
-        }
-
     void MainWindow::setSettingFolder() {
         QFileDialog load_dialog;
         load_dialog.setFileMode(QFileDialog::Directory);
@@ -1488,7 +1445,6 @@ namespace ORNL {
 
         CSM->setMostRecentLayerBarSettingFolderLocation(path);
         GSM->loadLayerBarTemplate(path);
-        m_layer_template_widget->setCurrentFolder(path);
     }
 
     void MainWindow::setLock(bool lock) {
@@ -1508,7 +1464,6 @@ namespace ORNL {
         m_settingbar->setLock(lock);
         m_gcodebar->setDisabled(lock);
         m_auto_orient_widget->setDisabled(lock);
-        m_layer_template_widget->setDisabled(lock);
     }
 
     void MainWindow::setTitleInfo(QString str) {
