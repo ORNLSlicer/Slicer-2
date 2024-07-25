@@ -52,11 +52,11 @@ This work has also benefitied from cooperative research agreements with numerous
 
 ## Engagement
 
-If expanding on this work is of interest, please feel free to contact us. We are always on the lookout for new partners! We also strongly believe in developing the pathing community. We hold a yearly seminar for all things path planning related where we bring together representatives from various partners and users to discuss topics of interest and lay out our future plans. This seminar is known as the **SL**licer **U**ser **G**roup (SLUG) and is usually held in May. Archived recordings can be found on the wiki.
+If expanding on this work is of interest, please feel free to contact us. We are always on the lookout for new partners! We also strongly believe in developing the toolpathing community. We hold a yearly workshop for all things toolpath planning related where we bring together members of the community to discuss broader issues with toolpathing for additive manufacturing. This seminar is known as the **SL**icing **U**sers **G**roup (SLUG) and is normally held in late spring. Archived recordings can be found on the wiki.
 
 ## Contact
 
-Questions regarding Slicer 2 can be directed to Michael Borish (borishmc@ornl.gov) or Alex Roschli (acroschli@ornl.gov).
+Questions regarding Slicer 2 can be directed to slicer@ornl.gov.
 
 ## Share
 Need an easy way to share/connect to the repo? Use our QR code! A copy can be found in the docs folder of the repo.

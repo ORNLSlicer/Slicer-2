@@ -1,6 +1,6 @@
 # Each line is a file pattern followed by one or more owners.
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence,
-# @mborish and @aroschli will be requested for
-# review when someone opens a pull request.
-*       @aroschli @cadkin @liamnwhite1
+# all of these owners will be required for
+# review when a pull request is opened.
+*       @aroschli @cadkin @liamnwhite1 @mborish

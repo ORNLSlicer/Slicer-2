@@ -13,7 +13,6 @@
 #include "utilities/mathutils.h"
 #include "managers/settings/settings_version_control.h"
 #include <nlohmann/json.hpp>
-#include "widgets/layer_template_widget.h"
 
 namespace ORNL
 {
