@@ -28,7 +28,6 @@
 #include "widgets/gcode_widget.h"
 #include "widgets/main_toolbar.h"
 #include "widgets/auto_orient_widget.h"
-#include "widgets/layer_template_widget.h"
 
 // Local Windows
 #include "windows/preferences_window.h"
@@ -159,9 +158,6 @@ namespace ORNL {
 
             //! \brief Save a template.
             void saveTemplate();
-
-            //! \brief Save a layer bar template.
-            void saveLayerTemplate();
 
             //! \brief Load a template.
             void loadTemplate();
@@ -338,7 +334,6 @@ namespace ORNL {
             QDockWidget *m_layertimesdock;
             QDockWidget *m_external_file_dock;
             QDockWidget *m_auto_orient_dock;
-            QDockWidget *m_layer_template_dock;
 
             QTabWidget* m_tab_widget;
 
@@ -353,7 +348,6 @@ namespace ORNL {
             QScopedPointer<SliceDialog> m_slice_dialog;
             ExternalFileWindow *m_external_file_window;
             AutoOrientWidget *m_auto_orient_widget;
-            LayerTemplateWidget *m_layer_template_widget;
 
             //! \brief All other widgets
             QWidget *m_main_widget;
