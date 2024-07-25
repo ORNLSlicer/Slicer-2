@@ -173,9 +173,11 @@ namespace ORNL
         }
 
         // Determine which end of infill path should be the start
-        if (m_point_override_location.distance(new_polyline.front()) >
+        if (!new_polyline.empty() && m_point_override_location.distance(new_polyline.front()) >
             m_point_override_location.distance(new_polyline.back()))
+        {
             new_polyline = new_polyline.reverse();
+        }
 
         return new_polyline;
     }
