@@ -52,7 +52,7 @@ This work has also benefitied from cooperative research agreements with numerous
 
 ## Engagement
 
-If expanding on this work is of interest, please feel free to contact us. We are always on the lookout for new partners! We also strongly believe in developing the pathing community. We hold a yearly seminar for all things path planning related where we bring together representatives from various partners and users to discuss topics of interest and lay out our future plans. This seminar is known as the **SL**icer **U**ser **G**roup (SLUG) and is usually held in May. Archived recordings can be found on the wiki.
+If expanding on this work is of interest, please feel free to contact us. We are always on the lookout for new partners! We also strongly believe in developing the pathing community. We hold a yearly workshop for all things path planning related where we bring together members of the community to discuss broader issues with toolpathing for additive manufacturing. This seminar is known as the **SL**icing **U**sers **G**roup (SLUG) and is usually held in late spring. Archived recordings can be found on the wiki.
 
 ## Contact
 
