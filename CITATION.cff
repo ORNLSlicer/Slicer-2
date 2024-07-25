@@ -64,5 +64,6 @@ keywords:
   - Slicer
 license: GPL-3.0
 commit: d480b5a
-version: 0.99.10
-date-released: '2024-02-13'
+version: 1.0
+date-released: '2024-05-06'
+doi: 10.11578/dc.20240520.1
