@@ -2,7 +2,7 @@
     description = "ORNL Slicer 2 - An advanced object slicer";
 
     inputs = {
-        nixpkgs.url = github:NixOS/nixpkgs/nixos-22.11;
+        nixpkgs.url = github:mdfbaam/nixpkgs/pathcompiler;
 
         kubazip-src = {
             url = github:kuba--/zip;
@@ -24,17 +24,25 @@
 
     outputs = attrs @ { self, nixpkgs, ... }: rec {
         system = "x86_64-linux";
+
         pkgs = import nixpkgs {
             inherit system;
+            config = {
+                glibc.withLdFallbackPatch = true;
+            };
         };
+
+        llvm   = pkgs.llvmPackages_18;
+        stdenv = llvm.stdenv;
+
 
         packages.${system} = rec {
             default = ornl-slicer2;
 
             # Main Slicer 2 derivation.
-            ornl-slicer2 = pkgs.stdenv.mkDerivation rec {
+            ornl-slicer2 = stdenv.mkDerivation rec {
                 pname = "ornl-slicer2";
-                version = "0.99.10-" + (builtins.substring 0 8 (if (self ? rev) then self.rev else "dirty"));
+                version = "1.0-" + (builtins.substring 0 8 (if (self ? rev) then self.rev else "dirty"));
 
                 src = self;
 
@@ -47,7 +55,7 @@
                     pkgs.qt5.qtcharts
 
                     pkgs.assimp
-                    pkgs.boost172
+                    pkgs.boost184
                     pkgs.cgal_5
                     pkgs.eigen
                     pkgs.gmp
@@ -66,8 +74,6 @@
                     pkgs.breakpointHook
                     pkgs.qt5.wrapQtAppsHook
                 ];
-
-                S2_USE_NIX = true;
 
                 # Workaround for non-NixOS to find GPU drivers
                 # TODO: add more linux distro paths as they are found or query ldconfig
@@ -121,25 +127,45 @@
             default = ornl-slicer2-dev;
 
             # Main developer shell.
-            ornl-slicer2-dev = pkgs.mkShell rec {
+            ornl-slicer2-dev = pkgs.mkShell.override { stdenv = stdenv; } rec {
                 name = "s2-dev";
 
                 packages = [
-                    pkgs.llvmPackages_14.llvm
-                    pkgs.llvmPackages_14.clang
-                    pkgs.llvmPackages_14.libclang
+                    pkgs.cntr
+                    pkgs.doxygen
+                    pkgs.graphviz
+                    pkgs.ccache
+                    llvm.lldb
+                    pkgs.clazy
+                    ( pkgs.clang-tools.override { llvmPackages = llvm; stdenv = stdenv; } )
                 ] ++ self.outputs.packages.${system}.ornl-slicer2.buildInputs;
 
-                inputsFrom = [
-                    # NOP
+                nativeBuildInputs = [
+                    pkgs.qt6.wrapQtAppsHook
+                    pkgs.makeWrapper
+                    pkgs.openssl
+                ];
+
+                # For dev, we want to disable hardening.
+                hardeningDisable = [
+                    "bindnow"
+                    "format"
+                    "fortify"
+                    "fortify3"
+                    "pic"
+                    "relro"
+                    "stackprotector"
+                    "strictoverflow"
                 ];
 
                 shellHook = ''
-                    export PS1='\n\[\033[1;36m\][${name}:\W]\$\[\033[0m\] '
-                    export S2_USE_NIX=true
-                    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/x86_64-linux-gnu"
-                    # Bit of a weird one - Qt programs can't find plugin path unwrapped, so we define it here instead for dev.
-                    export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
+                    # Bit of a weird one - Qt programs can't find plugin path unwrapped, so we make a temporary wrapper and source its env.
+                    # See: https://discourse.nixos.org/t/python-qt-woes/11808/10
+                    setQtEnvironment=$(mktemp)
+                    random=$(openssl rand -base64 20 | sed "s/[^a-zA-Z0-9]//g")
+                    makeWrapper "$(type -p sh)" "$setQtEnvironment" "''${qtWrapperArgs[@]}" --argv0 "$random"
+                    sed "/$random/d" -i "$setQtEnvironment"
+                    source "$setQtEnvironment"
                 '';
             };
         };
