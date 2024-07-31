@@ -449,7 +449,7 @@ namespace ORNL
                             double minModifier = 999999;
                             double maxModifier = 1;
                             if(increaseTime > 0 || decreaseTime > 0)
-                                GetMinMaxModifier(minModifier, maxModifier);
+                                getMinMaxModifier(minModifier, maxModifier);
 
                             if(m_layer_G1F_times[m_current_layer] > 0) {
                                 if(increaseTime > 0) { // If layer time less than minimum, slow feedrate or add dwell
