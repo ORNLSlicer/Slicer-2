@@ -2213,7 +2213,7 @@ namespace ORNL
             maxModifier = (sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kMaxXYSpeed) /
                            velocity.from(maxFeedRate, m_velocity_unit))();
             minModifier = (sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kMinXYSpeed) /
-                                  velocity.from(minFeedRate, m_velocity_unit))();
+                           velocity.from(minFeedRate, m_velocity_unit))();
         }
     }
 
