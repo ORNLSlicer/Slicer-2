@@ -435,10 +435,10 @@ namespace ORNL
         //! \param dwellTime Amount of time to dwell
         virtual void AddDwell(double dwellTime);
 
-        //! \brief Get layer motions min and max Modifier for adjusting feedrate
-        //! \param minFeedRate minimum feedrate
-        //! \param maxFeedRate maximum feedrate
-        virtual void GetMinMaxModifier(double &minModifier, double &maxModifier);
+        //! \brief Gets min and max modifiers for adjusting feedrate
+        //! \param minModifier minimum feedrate modifying factor
+        //! \param maxModifier maximum feedrate modifying factor
+        virtual void getMinMaxModifier(double &minModifier, double &maxModifier);
 
         //! \brief Modify layer time by adjusting feedrate for motions for that layer
         //! \param modifier Amount to modify feedrate from 0 to 1
