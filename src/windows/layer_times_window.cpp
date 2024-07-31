@@ -105,11 +105,11 @@ namespace ORNL
             }
             else if(current_time > 1 && m_adjusted_layer_time)
             {
-                double adjustedTime = current_time() / m_layer_FR_modifiers[i];
+                double adjusted_time = current_time() / m_layer_FR_modifiers[i];
                 if(m_layer_FR_modifiers[i] != 1) {
-                    oneLayer += " Adjusted " % MathUtils::formattedTimeSpanHHMMSS(adjustedTime) % ",";
+                    oneLayer += " Adjusted " % MathUtils::formattedTimeSpanHHMMSS(adjusted_time) % ",";
                 }
-                currentTotal += adjustedTime;
+                currentTotal += adjusted_time;
             }
 
             oneLayer += " Total Time So Far " % MathUtils::formattedTimeSpanHHMMSS(currentTotal());
