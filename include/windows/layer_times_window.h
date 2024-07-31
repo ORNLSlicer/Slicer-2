@@ -51,7 +51,7 @@ namespace ORNL
             //! \brief Local copy of layer times received from gcode parse
             QList<QList<Time>> m_layer_times;
 
-            //! \brief Local copy of layer calculated feedrate modifier for each layer
+            //! \brief Local copy of layer calculated feedrate modifiers for each layer
             QList<double> m_layer_FR_modifiers;
 
             //! \brief bool value indicating if layer time was adjusted
