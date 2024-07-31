@@ -2180,7 +2180,7 @@ namespace ORNL
 
     }
 
-    void CommonParser::GetMinMaxModifier(double &minModifier, double &maxModifier) {
+    void CommonParser::getMinMaxModifier(double &minModifier, double &maxModifier) {
         QSharedPointer<SettingsBase> sb = GSM->getGlobal();
         if(m_motion_commands[m_current_layer].size() > 0)
         {
