@@ -100,7 +100,7 @@ namespace ORNL
 
 
             QString oneLayer = "Layer " % QString::number(i) % " " % MathUtils::formattedTimeSpanHHMMSS(current_time()) % ",";
-            if(i ==0) {
+            if(i == 0) {
                 currentTotal += current_time;
             }
             else if(current_time > 1 && m_adjusted_layer_time)
