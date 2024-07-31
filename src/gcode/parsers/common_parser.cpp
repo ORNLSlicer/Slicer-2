@@ -2239,21 +2239,28 @@ namespace ORNL
                 if(parameters.contains(m_f_parameter.toLatin1()))
                 {
                     if(sb->setting<int>(Constants::MaterialSettings::Extruder::kEnableM3S)) {
-                        int cmdIndex = current_layer_motion_end->getLineNumber() - 1;
-                        QString& line = m_lines[cmdIndex];
+                        int cmd_index = current_layer_motion_end->getLineNumber() - 1;
+                        QString& line = m_lines[cmd_index];
+                        
                         if(line.startsWith("M3 ")) {
                             QRegularExpressionMatch myMatch = m_s_param_and_value.match(line);
                             double value = myMatch.capturedRef().mid(1).toDouble();
+                            
                             if(value != 0) {
                                 double extruderModifier = sb->setting< double >(Constants::MaterialSettings::Cooling::kExtruderScaleFactor);
+                                
                                 // If slowing down, the multiplier for the extruder should be the inverse of the scale factor
-                                if(modifier < 1)
+                                if(modifier < 1) {
                                     extruderModifier = 1 / extruderModifier;
-                                line = line.leftRef(myMatch.capturedStart()) % m_s_parameter %
-                                       QString::number(value * modifier * extruderModifier, 'f', 4)
-                                       % line.midRef(myMatch.capturedEnd());
-                                m_lines.insert(cmdIndex + 1, line);
-                                m_lines.removeAt(cmdIndex);
+                                }
+                                
+                                line = line.leftRef(myMatch.capturedStart()) %
+                                       m_s_parameter %
+                                       QString::number(value * modifier * extruderModifier, 'f', 4) %
+                                       line.midRef(myMatch.capturedEnd());
+                                
+                                m_lines.insert(cmd_index + 1, line);
+                                m_lines.removeAt(cmd_index);
                             }
                         }
                     }
