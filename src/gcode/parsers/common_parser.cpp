@@ -446,7 +446,7 @@ namespace ORNL
                             Time increaseTime = m_min_layer_time_allowed - m_layer_times[m_current_layer][m_current_nozzle];
                             Time decreaseTime = m_layer_times[m_current_layer][m_current_nozzle] - m_max_layer_time_allowed;
 
-                            double minModifier = 999999;
+                            double minModifier = std::numeric_limits<double>::max();
                             double maxModifier = 1;
                             if(increaseTime > 0 || decreaseTime > 0)
                                 getMinMaxModifier(minModifier, maxModifier);
