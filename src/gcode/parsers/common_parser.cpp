@@ -2203,11 +2203,8 @@ namespace ORNL
                     QRegularExpressionMatch myMatch = m_f_param_and_value.match(line);
                     double value = myMatch.capturedRef().mid(1).toDouble();
 
-                    if (value > maxFeedRate)
-                        maxFeedRate = value;
-
-                    if (value < minFeedRate)
-                        minFeedRate = value;
+                    minFeedRate = std::min(minFeedRate, value);
+                    maxFeedRate = std::max(maxFeedRate, value);
                 }
                 --current_layer_motion_end;
             }
