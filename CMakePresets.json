@@ -1,0 +1,7 @@
+{
+    "version": 6,
+    "include": [
+        "cmake/presets/clang.json",
+        "cmake/presets/nix.json"
+    ]
+}

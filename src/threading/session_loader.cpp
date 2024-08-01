@@ -38,7 +38,11 @@ namespace ORNL {
         {
             QString file_name = it.key();
             QFileInfo file_info(file_name);
-            if(meshes.contains(file_info.baseName())) // If this mesh was in the list of active meshes
+
+            // Hack to make sure mesh can be found if loaded from project or stl.
+            // This is bad.
+            QString basename = file_info.baseName();
+            if(meshes.contains(basename) || meshes.contains(file_name)) // If this mesh was in the list of active meshes
             {
                 // To and back from QString in a single line. What an adventure.
                 std::string filename = it.key().split("/").back().toStdString();
