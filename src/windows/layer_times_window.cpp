@@ -34,11 +34,10 @@ namespace ORNL
         connect(m_min_layer_time_edit, &QLineEdit::textChanged, this, &LayerTimesWindow::updateText);
     }
 
-    void LayerTimesWindow::updateTimeInformation(QList<QList<Time>> layer_times, Time min_layer_time, Time max_layer_time, bool adjusted_layer_time)
+    void LayerTimesWindow::updateTimeInformation(QList<QList<Time>> layer_times, QList<double> layer_FR_modifiers, bool adjusted_layer_time)
     {
         m_layer_times = layer_times;
-        m_minimum_layer_time = min_layer_time;
-        m_maximum_layer_time = max_layer_time;
+        m_layer_FR_modifiers = layer_FR_modifiers;
         m_adjusted_layer_time = adjusted_layer_time;
         m_min = INT_MAX, m_max = INT_MIN;
         m_min_index = -1, m_max_index = -1;
@@ -66,12 +65,7 @@ namespace ORNL
                 m_max = current_time;
             }
 
-            if (current_time < m_minimum_layer_time)
-                m_total_adjusted_time += m_minimum_layer_time;
-            else if (current_time > m_maximum_layer_time)
-                m_total_adjusted_time += m_maximum_layer_time;
-            else
-                m_total_adjusted_time += current_time;
+            m_total_adjusted_time += current_time / m_layer_FR_modifiers[i];
 
             m_total_time += current_time;
         }
@@ -87,7 +81,7 @@ namespace ORNL
 
         QString layerTimeString = "Total print time: " % MathUtils::formattedTimeSpan(m_total_time()) % "<br>";
 
-        if ((m_minimum_layer_time > 0 || m_maximum_layer_time > 0) && m_adjusted_layer_time)
+        if (m_adjusted_layer_time)
             layerTimeString = layerTimeString % "Total adjusted time: " % MathUtils::formattedTimeSpan(m_total_adjusted_time()) % "<br>";
 
         layerTimeString = layerTimeString %
@@ -106,27 +100,21 @@ namespace ORNL
 
 
             QString oneLayer = "Layer " % QString::number(i) % " " % MathUtils::formattedTimeSpanHHMMSS(current_time()) % ",";
-            if(i > 0 && current_time > 1 && m_adjusted_layer_time)
+            if(i == 0) {
+                currentTotal += current_time;
+            }
+            else if(current_time > 1 && m_adjusted_layer_time)
             {
-                if(m_minimum_layer_time > 0 && current_time < m_minimum_layer_time)
-                {
-                    oneLayer += " Adjusted " % MathUtils::formattedTimeSpanHHMMSS(m_minimum_layer_time) % ",";
-                    currentTotal += m_minimum_layer_time;
+                double adjusted_time = current_time() / m_layer_FR_modifiers[i];
+                if(m_layer_FR_modifiers[i] != 1) {
+                    oneLayer += " Adjusted " % MathUtils::formattedTimeSpanHHMMSS(adjusted_time) % ",";
                 }
-                else if(m_maximum_layer_time > 0 && current_time > m_maximum_layer_time)
-                {
-                    oneLayer += " Adjusted " % MathUtils::formattedTimeSpanHHMMSS(m_maximum_layer_time) % ",";
-                    currentTotal += m_maximum_layer_time;
-                }
-                else
-                {
-                    currentTotal += current_time;
-                }
+                currentTotal += adjusted_time;
             }
 
-            oneLayer += " Total Time So Far " % MathUtils::formattedTimeSpanHHMMSS(currentTotal);
+            oneLayer += " Total Time So Far " % MathUtils::formattedTimeSpanHHMMSS(currentTotal());
 
-            if(max(current_time, m_minimum_layer_time) < layerTimeThreshold)
+            if(current_time() / m_layer_FR_modifiers[i] < layerTimeThreshold)
             {
                 layerTimeString += "<font color=\"red\">" % oneLayer % "</font><br>";
             }

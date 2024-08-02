@@ -224,12 +224,6 @@ namespace ORNL
             }
 
             Time min_time(0), max_time(0), total_time(0), total_adjusted_time(0);
-            Time min_layer_time = 0, max_layer_time = 0;
-            if (m_adjust_file && GSM->getGlobal()->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime)){
-                min_layer_time = GSM->getGlobal()->setting<Time>(Constants::MaterialSettings::Cooling::kMinLayerTime)();
-                max_layer_time = GSM->getGlobal()->setting<Time>(Constants::MaterialSettings::Cooling::kMaxLayerTime)();
-            }
-
             QString weightInfo = "No statistics calculated";
             //parse header looking for syntax
             setParser(m_original_lines, m_lines);
@@ -249,6 +243,7 @@ namespace ORNL
                 }
 
                 QList<QList<Time>> layer_times = m_parser->getLayerTimes();
+                QList<double> layer_FR_modifiers = m_parser->getLayerFeedRateModifiers();
                 QList<Volume> layer_volumes = m_parser->getLayerVolumes();
 
                 Volume total_volume;
@@ -265,18 +260,7 @@ namespace ORNL
 
                     // add current layer to total printing and adjusted time
                     total_time += current;
-                    if(current > 1){  //layer times less than 1 sec. are rounded down to 0 so don't count those
-                        if (current < min_layer_time)
-                            total_adjusted_time += min_layer_time;
-                        else if (current > max_layer_time)
-                            total_adjusted_time += max_layer_time;
-                        else
-                            total_adjusted_time += current;
-                    }
-                    else{
-                        total_adjusted_time += current;
-                    }
-
+                    total_adjusted_time += current / layer_FR_modifiers[i];
                     total_volume += layer_volumes[i];
                 }
 
@@ -290,7 +274,7 @@ namespace ORNL
                 Mass total_mass = total_volume * materialDensity;
 
                 //forward to layer_times_window
-                emit forwardInfoToLayerTimeWindow(layer_times, min_layer_time, max_layer_time, ForceMinimumLayerTime::kSlow_Feedrate ==
+                emit forwardInfoToLayerTimeWindow(layer_times, layer_FR_modifiers, ForceMinimumLayerTime::kSlow_Feedrate ==
                         static_cast<ForceMinimumLayerTime>(GSM->getGlobal()->setting<int>(Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod)));
 
                 weightInfo = QString::number((total_mass / m_selected_meta.m_mass_unit)()) % " " % m_selected_meta.m_mass_unit.toString();

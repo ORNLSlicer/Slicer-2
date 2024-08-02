@@ -178,6 +178,10 @@ namespace ORNL
         //! \return The time in seconds
         QList<QList<Time>> getLayerTimes();
 
+        //! \brief Returns the currently calculated feedrate modifier for each layer
+        //! \return The time in seconds
+        QList<double> getLayerFeedRateModifiers();
+
         //! \brief Returns the current sleep time of the extruder.
         //! \param time_unit Unit of time to convert the sleep time to.
         //! \return The number type converted to the defined time unit.
@@ -431,9 +435,15 @@ namespace ORNL
         //! \param dwellTime Amount of time to dwell
         virtual void AddDwell(double dwellTime);
 
+        //! \brief Gets min and max modifiers for adjusting feedrate
+        //! \param minModifier minimum feedrate modifying factor
+        //! \param maxModifier maximum feedrate modifying factor
+        virtual void getMinMaxModifier(double &minModifier, double &maxModifier);
+
         //! \brief Modify layer time by adjusting feedrate for motions for that layer
         //! \param modifier Amount to modify feedrate from 0 to 1
         virtual void AdjustFeedrate(double modifier);
+
         //! \brief Helper function that throws an IllegalParameterException when
         //! multiple of the same parameter are encountered. \param parameter
         //! Duplicate Parameter id. \throws IllegalParameterException
@@ -522,6 +532,9 @@ namespace ORNL
 
         //List of all calculated times/volumes for layers as well as total distance
         QList<QList<Time>> m_layer_times; // 2D list: row=layer #, col=extruder#
+
+        //! \brief layer "G1 F" lines feedrate modifier
+        QList<double> m_layer_FR_modifiers;
 
         //! \brief layer time from "G1 F" lines
         QList<Time> m_layer_G1F_times;

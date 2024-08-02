@@ -29,7 +29,7 @@ namespace ORNL
             //! \brief Slot to receive updated time information from gcode parse
             //! \param layerTimes list of times for each layer
             //! \param minlayerTime user-specified minimum layer time for cooling purpose
-            void updateTimeInformation(QList<QList<Time>> layer_times, Time min_layer_time, Time max_layer_time, bool adjusted_layer_time);
+            void updateTimeInformation(QList<QList<Time>> layer_times, QList<double> layer_FR_modifiers, bool adjusted_layer_time);
 
             //! \brief Clear Layer times text
             void clear();
@@ -51,11 +51,8 @@ namespace ORNL
             //! \brief Local copy of layer times received from gcode parse
             QList<QList<Time>> m_layer_times;
 
-            //! \brief Local copy of minimum layer time received from gcode parse
-            Time m_minimum_layer_time;
-
-            //! \brief Local copy of maximum layer time received from gcode parse
-            Time m_maximum_layer_time;
+            //! \brief Local copy of layer calculated feedrate modifiers for each layer
+            QList<double> m_layer_FR_modifiers;
 
             //! \brief bool value indicating if layer time was adjusted
             bool m_adjusted_layer_time;

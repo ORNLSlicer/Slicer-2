@@ -301,7 +301,11 @@ namespace ORNL {
             int hours = (seconds / 60 / 60);
             int minutes = (seconds / 60) % 60;
             int remainingSeconds = seconds % 60;
-            return QString::number(hours) + ":" + QString::number(minutes).rightJustified(2, '0') + ":" + QString::number(remainingSeconds).rightJustified(2, '0');
+            int milliseconds = round((sec - seconds) * 1000);
+            return QString::number(hours) + ":" +
+                   QString::number(minutes).rightJustified(2, '0') + ":" +
+                   QString::number(remainingSeconds).rightJustified(2, '0') + "." +
+                   QString::number(milliseconds).leftJustified(3, '0');
         }
 
         QString formattedTimeSpanHHMMSS(Time time)
