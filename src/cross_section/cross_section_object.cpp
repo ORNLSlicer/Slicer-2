@@ -20,12 +20,25 @@ namespace ORNL
      * If the distance between segments on adjacent faces is smaller than this,
      * then they are still considered connected
      */
-    Distance largest_neglected_gap_first_phase  = 0.1f * in;
-    Distance largest_neglected_gap_second_phase = 0.2f * in;
-    Distance max_stitch1                        = 1.0f * in;
+    Distance largest_neglected_gap_first_phase;
+    Distance largest_neglected_gap_second_phase;
+    Distance max_stitch1;
 
     CrossSectionObject::CrossSectionObject(QSharedPointer<SettingsBase> sb) : m_sb(sb)
-    {}
+    {
+        largest_neglected_gap_first_phase = m_sb->setting<double>(Constants::ExperimentalSettings::CrossSection::kLargestGap);
+
+        //if unset or 0, default to .1 inches
+        if(largest_neglected_gap_first_phase <= 0)
+            largest_neglected_gap_first_phase = 2540;
+
+        largest_neglected_gap_second_phase = 2.0 * largest_neglected_gap_first_phase;
+
+        //if unset or 0, default to 1 inch
+        max_stitch1 = m_sb->setting<double>(Constants::ExperimentalSettings::CrossSection::kMaxStitch);
+        if(max_stitch1 <= 0)
+            max_stitch1 = 25400;
+    }
 
     bool CrossSectionObject::shorterThan(const Point& p0, int32_t len)
     {

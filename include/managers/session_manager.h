@@ -113,6 +113,9 @@ namespace ORNL {
             //! \brief Checks preferences to see if TCP server should be started
             void setupTCPServer();
 
+            //! \brief Sets the default gcode dir to output location to skip copy/paste of files (useful for image slicing when there are 1000s of files)
+            void setDefaultGcodeDir(QString dir);
+
         public slots:
             //! \brief loads a model into the session
             //! \param filename the path to the file

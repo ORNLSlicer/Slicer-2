@@ -25,7 +25,7 @@ namespace ORNL {
         Q_OBJECT
         public:
             //! \brief Constructor
-            AbstractSlicingThread(QString outputLocation);
+            AbstractSlicingThread(QString outputLocation, bool skipGcode = false);
 
             //! \brief Destructor
             virtual ~AbstractSlicingThread();
@@ -152,6 +152,9 @@ namespace ORNL {
             //! \brief Max Step Count
             int m_max_steps;
 
+            //! \brief Whether to skip gcode file generation for specific syntaxes
+            bool m_skip_gcode;
+			
             //! \brief Timer for tracking time to slice
             QElapsedTimer m_timer;
             qint64 m_elapsed_time = 0;

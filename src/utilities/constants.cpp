@@ -916,6 +916,14 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::DirectedPerimeter::kEnableDiscardBulgingPerimeter = "enable_discard_bulging_perimeter";
     const QString Constants::ExperimentalSettings::DirectedPerimeter::kEnableLayerSpiralization = "enable_layer_spiralization";
 
+    //Image Resolution
+    const QString Constants::ExperimentalSettings::ImageResolution::kImageResolutionX = "image_resolution_x";
+    const QString Constants::ExperimentalSettings::ImageResolution::kImageResolutionY = "image_resolution_y";
+
+    //Cross-Section
+    const QString Constants::ExperimentalSettings::CrossSection::kLargestGap = "cross_section_largest_gap";
+    const QString Constants::ExperimentalSettings::CrossSection::kMaxStitch = "cross_section_max_stitch_distance";
+
     //================================================================================
     // Settings
     //================================================================================
@@ -1237,13 +1245,19 @@ namespace ORNL
 
     const QString Constants::ConsoleOptionStrings::kInputProjectFile = "input_project_file";
     const QString Constants::ConsoleOptionStrings::kInputStlFiles = "input_stl_files";
+    const QString Constants::ConsoleOptionStrings::kInputStlFilesDirectory = "input_stl_files_directory";
+    const QString Constants::ConsoleOptionStrings::kInputSupportStlFiles = "input_support_stl_files";
+    const QString Constants::ConsoleOptionStrings::kInputSupportStlFilesDirectory = "input_support_stl_files_directory";
     const QString Constants::ConsoleOptionStrings::kInputStlCount = "input_stl_count";
+    const QString Constants::ConsoleOptionStrings::kInputSupportStlCount = "input_support_stl_count";
     const QString Constants::ConsoleOptionStrings::kInputGlobalSettings = "input_global_settings";
     const QString Constants::ConsoleOptionStrings::kInputLocalSettings = "input_local_settings";
     const QString Constants::ConsoleOptionStrings::kInputSTLTransform = "input_stl_transform";
     const QString Constants::ConsoleOptionStrings::kOutputLocation = "output_location";
 
     const QString Constants::ConsoleOptionStrings::kShiftPartsOnLoad = "shift_parts_on_load";
+    const QString Constants::ConsoleOptionStrings::kAlignParts = "align_parts";
+    const QString Constants::ConsoleOptionStrings::kUseImplicitTransforms = "use_implicit_transforms";
 
     const QString Constants::ConsoleOptionStrings::kOverwriteOutputFile = "overwrite_output_file";
     const QString Constants::ConsoleOptionStrings::kIncludeAuxiliaryFiles = "include_auxiliary_files";
@@ -1261,5 +1275,7 @@ namespace ORNL
     const QString Constants::ConsoleOptionStrings::kRealTimeNetworkIP = "real_time_network_ip";
     const QString Constants::ConsoleOptionStrings::kRealTimeNetworkPort = "real_time_network_port";
     const QString Constants::ConsoleOptionStrings::kRealTimePrinter = "real_time_printer_name";
+    const QString Constants::ConsoleOptionStrings::kSingleSliceHeight = "single_slice_height";
+    const QString Constants::ConsoleOptionStrings::kSingleSliceLayerNumber = "single_slice_layer_number";
 
 }  // namespace ORNL

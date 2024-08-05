@@ -19,6 +19,7 @@
 #include "threading/slicers/rpbf_slicer.h"
 #include "threading/slicers/hybrid_slicer.h"
 #include "threading/slicers/real_time_rpbf_slicer.h"
+#include "threading/slicers/image_slicer.h"
 #include "threading/session_loader.h"
 #include "utilities/mathutils.h"
 #include "configs/settings_base.h"
@@ -233,13 +234,13 @@ namespace ORNL
         QString file_name;
         if(filename == "") // filename is blank because the part is being loaded via project import
         {
-            file_name = new_part->name();
-            QString org_name = file_name;
-            uint count = 1;
+        QString name = new_part->name();
+        QString org_name = name;
+        uint count = 1;
 
-            while (m_parts.contains(file_name)) {
-                file_name = org_name + "_" + QString::number(count);
-                count++;
+        while (m_parts.contains(name)) {
+            name = org_name + "_" + QString::number(count);
+            count++;
             }
         }
         else // filename exists because the part is being loaded via UI button
@@ -763,8 +764,12 @@ namespace ORNL
             case SlicerType::kSheetLamination:
                 m_ast.reset(new SheetLaminationSlicer(tempGcodeFile));
                 break;
-            case SlicerType::kSkeleton:
-                m_ast.reset(new SkeletonSlicer(tempGcodeFile));
+//            case SlicerType::kSkeleton:
+//                m_ast.reset(new SkeletonSlicer(tempGcodeFile));
+//                break;
+            case SlicerType::kImageSlice:
+                m_ast.reset(new ImageSlicer(tempGcodeFile));
+                break;
         }
 
         m_ast->setExternalData(m_grid_info);
@@ -918,5 +923,10 @@ namespace ORNL
     void SessionManager::setMostRecentHTTPConfig(QString config)
     {
         m_most_recent_http_config = config;
+    }
+
+    void SessionManager::setDefaultGcodeDir(QString dir)
+    {
+        defaultGcodeFile = dir + "\\gcode_output";
     }
 }  // namespace ORNL

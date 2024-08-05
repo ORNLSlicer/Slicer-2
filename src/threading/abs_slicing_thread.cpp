@@ -43,9 +43,10 @@
 #include <gcode/gcode_meta.h>
 
 namespace ORNL {
-    AbstractSlicingThread::AbstractSlicingThread(QString outputLocation)
+    AbstractSlicingThread::AbstractSlicingThread(QString outputLocation, bool skipGcode)
         : QObject(), m_min(0), m_max(INT_MAX), m_should_cancel(false), m_should_communicate(false)
     {
+        m_skip_gcode = skipGcode;
         setGcodeOutput(outputLocation);
 
         this->moveToThread(&m_internal_thread);
@@ -178,8 +179,11 @@ namespace ORNL {
             m_base = QSharedPointer<CincinnatiWriter>(new CincinnatiWriter(GcodeMetaList::CincinnatiMeta, GSM->getGlobal()));
         }
 
-        m_temp_gcode_output_file.setFileName(output);
-        m_temp_gcode_output_file.open(QIODevice::ReadWrite | QIODevice::Truncate | QIODevice::Text);
+        if(!m_skip_gcode)
+        {
+            m_temp_gcode_output_file.setFileName(output);
+            m_temp_gcode_output_file.open(QIODevice::ReadWrite | QIODevice::Truncate | QIODevice::Text);
+        }
 
         QFileInfo fi(output);
         m_temp_gcode_dir = fi.absoluteDir();
