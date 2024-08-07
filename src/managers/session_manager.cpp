@@ -234,13 +234,13 @@ namespace ORNL
         QString file_name;
         if(filename == "") // filename is blank because the part is being loaded via project import
         {
-        QString name = new_part->name();
-        QString org_name = name;
-        uint count = 1;
+            file_name = new_part->name();
+            QString org_name = file_name;
+            uint count = 1;
 
-        while (m_parts.contains(name)) {
-            name = org_name + "_" + QString::number(count);
-            count++;
+            while (m_parts.contains(file_name)) {
+                file_name = org_name + "_" + QString::number(count);
+                count++;
             }
         }
         else // filename exists because the part is being loaded via UI button
