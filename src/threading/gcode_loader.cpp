@@ -247,10 +247,10 @@ namespace ORNL
                 QList<Volume> layer_volumes = m_parser->getLayerVolumes();
 
                 Volume total_volume;
-                min_time = INT_MAX;
-                max_time = INT_MIN;
-                adjusted_min_time = INT_MAX;
-                adjusted_max_time = INT_MIN;
+                min_time = std::numeric_limits<int>::max();
+                max_time = std::numeric_limits<int>::min();
+                adjusted_min_time = std::numeric_limits<int>::max();
+                adjusted_max_time = std::numeric_limits<int>::min();
 
                 for(int i = 0; i < layer_times.size(); ++i)
                 {
