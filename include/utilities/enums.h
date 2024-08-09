@@ -44,7 +44,8 @@ namespace ORNL
         kBuild,
         kClipping,
         kEmbossSubmesh,
-        kSettings
+        kSettings,
+        kSupport
     };
 
     /*!
@@ -96,7 +97,7 @@ namespace ORNL
         kRealTimePolymer = 6,
         kRealTimeRPBF = 7,
         kSheetLamination = 8,
-        kSkeleton = 9,
+        kImageSlice = 9
     };
 
     //! \brief Function for going from json to SlicerType
@@ -196,7 +197,7 @@ namespace ORNL
         kSandia,
         k5AxisMarlin,
         kMeltio,
-	kAdamantine
+		kAdamantine
     };
 
     inline QString toString(GcodeSyntax syntax) {

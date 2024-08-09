@@ -14,7 +14,7 @@ namespace ORNL {
         Q_OBJECT
         public:
             //! \brief Constructor
-            TraditionalAST(QString outputLocation);
+            TraditionalAST(QString outputLocation, bool skipGcode = false);
 
         public slots:
             //! \brief Main function that starts slice.

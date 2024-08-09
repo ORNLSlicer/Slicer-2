@@ -27,14 +27,19 @@ namespace ORNL {
         //custom options needed for loading/slicing
         parser.addOption({Constants::ConsoleOptionStrings::kInputProjectFile, "Run Slicer 2 using project file at <directory>.", "directory", ""});
         parser.addOption({Constants::ConsoleOptionStrings::kInputStlFiles, "List of STLs to load for slicing. Parameter can be specified multiple times.", "file-list", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kInputSupportStlFiles, "List of support STLs to load for slicing. Parameter can be specified multiple times.", "file-list", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kInputStlFilesDirectory, "Loads all STLs for slicing at <directory>. Equivalent to listing the files individually using --input_stl_files.", "directory", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kInputSupportStlFilesDirectory, "Loads all STLs as supports for slicing at <directory>. Equivalent to listing the support files individual using --input_support_stl_files.", "directory", ""});
+
         parser.addOption({Constants::ConsoleOptionStrings::kInputGlobalSettings, "Valid settings file to extract global settings from.", "file", ""});
         //parser.addOption({Constants::ConsoleOptionStrings::kInputLocalSettings, "Comma separated pair: index,file. Where index is 0-based id for STL reference and file is the settings file to apply.", "index,file pair", ""});
         parser.addOption({Constants::ConsoleOptionStrings::kInputSTLTransform, "File containing stl transforms.", "file", ""});
         parser.addOption({Constants::ConsoleOptionStrings::kOutputLocation, "File to write out Gcode to.", "directory", ""});
 
         //preference option
-        parser.addOption({Constants::ConsoleOptionStrings::kShiftPartsOnLoad, "Specifies whether or not to shift STLs after load. Default is true."});
-        //parser.addOption({Constants::ConsoleOptionStrings::kCenterPartsOnLoad, "Specifies whether or not to center STLs after load.  Default is true."});
+        parser.addOption({Constants::ConsoleOptionStrings::kShiftPartsOnLoad, "Specifies whether or not to shift STLs after load. Default is true.", "bool", "true"});
+        parser.addOption({Constants::ConsoleOptionStrings::kAlignParts, "Specifies whether or not to align/center STLs after load.  Default is true.", "bool", "true"});
+        parser.addOption({Constants::ConsoleOptionStrings::kUseImplicitTransforms, "Specifies whether or not to use implicit transforms.  Default is false. Typically used in conjunction with center parts. Turn off center parts and turn this on to load parts in coordinate system as exported.", "bool", "false"});
 
         //control options for gcode export
         parser.addOption({Constants::ConsoleOptionStrings::kOverwriteOutputFile, "Specifies whether output will overwrite existing files.  Default is true."});
@@ -55,6 +60,8 @@ namespace ORNL {
                            "0/1",""});
         parser.addOption({Constants::ConsoleOptionStrings::kRealTimeNetworkAddress, "Comma separated pair: IP Address,Port. Specifies connection information for real-time mode. Default is localhost/12345.", "IP Address,Port pair", ""});
         parser.addOption({Constants::ConsoleOptionStrings::kRealTimePrinter, "The name of the printer to stream commands and gcode to over the network. This is set in Sensor Control 2. Default is \"Default\"", "Printer Name", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kSingleSliceHeight, "List of heights to slice in lieu of slicing the entire object. Mutually exclusive to single_slice_layer_number. Parameter can be specified multiple times.", "height-list", ""});
+        parser.addOption({Constants::ConsoleOptionStrings::kSingleSliceLayerNumber, "List of layer numbers to slice in lieu of slicing the entire object. Mutually exclusive to single_slice_height. Parameter can be specified multiple times.", "layer-list", ""});
 
 //        for(auto& el : m_master->json().items())
 //        {
@@ -64,11 +71,12 @@ namespace ORNL {
     }
 
     bool CommandLineConverter::checkRequiredSettings(QCommandLineParser& parser, QSharedPointer<SettingsBase> options)
-    {
+    {        
         //either both or neither stls/project file were specified.  Must have one or the other.
-        if(parser.isSet(Constants::ConsoleOptionStrings::kInputStlFiles) == parser.isSet(Constants::ConsoleOptionStrings::kInputProjectFile))
+        if(parser.isSet(Constants::ConsoleOptionStrings::kInputStlFiles) + parser.isSet(Constants::ConsoleOptionStrings::kInputProjectFile) +
+                parser.isSet(Constants::ConsoleOptionStrings::kInputStlFilesDirectory) != 1)
         {
-            qInfo() << "Either stls or a project file must be specified as input";
+            qInfo() << "Either stls, an stl directory, or a project file must be specified as input";
             return false;
         }
 
@@ -89,16 +97,32 @@ namespace ORNL {
                 if(!validSTL)
                     return false;
 
-                options->setSetting(Constants::ConsoleOptionStrings::kInputStlFiles, stlList[i], i);
+                options->setSetting(Constants::ConsoleOptionStrings::kInputStlFiles + "_" + QString::number(i), stlList[i]);
             }
             options->setSetting(Constants::ConsoleOptionStrings::kInputStlCount, stlList.size());
         }
         else
             options->setSetting(Constants::ConsoleOptionStrings::kInputStlCount, 0);
 
-        if(!validProject && !validSTL)
+
+        bool validSTLDirectory = false;
+        if(parser.isSet(Constants::ConsoleOptionStrings::kInputStlFilesDirectory))
         {
-            qInfo() << "No valid project or stl file was specified";
+            QDir dir(parser.value(Constants::ConsoleOptionStrings::kInputStlFilesDirectory));
+            QStringList names = dir.entryList(QStringList() << "*.stl");
+            if(names.size() == 0)
+                return false;
+
+            validSTLDirectory = true;
+            for(int i = 0; i < names.size(); ++i)
+                options->setSetting(Constants::ConsoleOptionStrings::kInputStlFiles + "_" + QString::number(i), dir.absoluteFilePath(names[i]));
+
+            options->setSetting(Constants::ConsoleOptionStrings::kInputStlCount, names.size());
+        }
+
+        if(!validProject && !validSTL && !validSTLDirectory)
+        {
+            qInfo() << "No valid stl file, directory, or project was specified";
             return false;
         }
 
@@ -122,7 +146,7 @@ namespace ORNL {
         {
             if(!parser.isSet(Constants::ConsoleOptionStrings::kInputStlFiles))
             {
-                qInfo() << "No stls specified for transform application.";
+                qInfo() << "No stls specified for transform application";
                 return false;
             }
             options->setSetting<QString>(Constants::ConsoleOptionStrings::kInputSTLTransform, parser.value(Constants::ConsoleOptionStrings::kInputSTLTransform));
@@ -138,6 +162,47 @@ namespace ORNL {
         {
             qInfo() << "Output location must be specified";
             return false;
+        }
+
+        //optional STLs
+        if(parser.isSet(Constants::ConsoleOptionStrings::kInputSupportStlFiles) && parser.isSet(Constants::ConsoleOptionStrings::kInputSupportStlFilesDirectory))
+        {
+            qInfo() << "Either support stls or a directory can be specified, not both";
+            return false;
+        }
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kInputSupportStlFiles))
+        {
+            QStringList stlList = parser.values(Constants::ConsoleOptionStrings::kInputSupportStlFiles);
+            for(int i = 0, end = stlList.size(); i < end; ++i)
+            {
+                validSTL = isValid(stlList[i], "stl");
+                if(!validSTL)
+                    return false;
+
+                options->setSetting(Constants::ConsoleOptionStrings::kInputSupportStlFiles + "_" + QString::number(i), stlList[i]);
+            }
+            options->setSetting(Constants::ConsoleOptionStrings::kInputSupportStlCount, stlList.size());
+        }
+        else
+            options->setSetting(Constants::ConsoleOptionStrings::kInputSupportStlCount, 0);
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kInputSupportStlFilesDirectory))
+        {
+            QDir dir(parser.value(Constants::ConsoleOptionStrings::kInputSupportStlFilesDirectory));
+            QStringList names = dir.entryList(QStringList() << "*.stl");
+            if(names.size() == 0)
+            {
+                options->setSetting(Constants::ConsoleOptionStrings::kInputSupportStlCount, 0);
+                qInfo() << "No support stls found in specified directory";
+            }
+            else
+            {
+                for(int i = 0; i < names.size(); ++i)
+                    options->setSetting(Constants::ConsoleOptionStrings::kInputSupportStlFiles + "_" + QString::number(i), dir.absoluteFilePath(names[i]));
+
+                options->setSetting(Constants::ConsoleOptionStrings::kInputSupportStlCount, names.size());
+            }
         }
 
         return true;
@@ -242,6 +307,16 @@ namespace ORNL {
             options->setSetting<bool>(Constants::ConsoleOptionStrings::kShiftPartsOnLoad, QVariant(parser.value(Constants::ConsoleOptionStrings::kShiftPartsOnLoad)).toBool());
         else
             options->setSetting<bool>(Constants::ConsoleOptionStrings::kShiftPartsOnLoad, true);
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kAlignParts))
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kAlignParts, QVariant(parser.value(Constants::ConsoleOptionStrings::kAlignParts)).toBool());
+        else
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kAlignParts, true);
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kUseImplicitTransforms))
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kUseImplicitTransforms, QVariant(parser.value(Constants::ConsoleOptionStrings::kUseImplicitTransforms)).toBool());
+        else
+            options->setSetting<bool>(Constants::ConsoleOptionStrings::kUseImplicitTransforms, false);
 
         return true;
     }
@@ -369,6 +444,50 @@ namespace ORNL {
         else
         {
             options->setSetting<QString>(Constants::ConsoleOptionStrings::kRealTimePrinter, "Default");
+        }
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kSingleSliceHeight) && parser.isSet(Constants::ConsoleOptionStrings::kSingleSliceLayerNumber))
+        {
+            qInfo() << "Either heights or layer numbers may be specified for single slice, not both";
+            return false;
+        }
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kSingleSliceHeight))
+        {
+            std::vector<double> heights;
+            QStringList heightStrings = parser.values(Constants::ConsoleOptionStrings::kSingleSliceHeight);
+            for(int i = 0, end = heightStrings.size(); i < end; ++i)
+            {
+                bool ok;
+                double val = heightStrings[i].toDouble(&ok);
+                if(ok)
+                    heights.push_back(val);
+                else
+                {
+                    qInfo() << "All heights must be valid doubles";
+                    return false;
+                }
+                options->setSetting(Constants::ConsoleOptionStrings::kSingleSliceHeight, heights);
+            }
+        }
+
+        if(parser.isSet(Constants::ConsoleOptionStrings::kSingleSliceLayerNumber))
+        {
+            std::vector<int> layers;
+            QStringList layerStrings = parser.values(Constants::ConsoleOptionStrings::kSingleSliceLayerNumber);
+            for(int i = 0, end = layerStrings.size(); i < end; ++i)
+            {
+                bool ok;
+                double val = layerStrings[i].toInt(&ok);
+                if(ok && val >= 0)
+                    layers.push_back(val);
+                else
+                {
+                    qInfo() << "All layers must be valid ints of at least 0";
+                    return false;
+                }
+                options->setSetting(Constants::ConsoleOptionStrings::kSingleSliceLayerNumber, layers);
+            }
         }
 
         return true;

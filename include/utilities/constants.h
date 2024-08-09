@@ -1068,6 +1068,20 @@ namespace ORNL
                 static const QString kXOffset;
                 static const QString kYOffset;
             };
+
+            class ImageResolution
+            {
+            public:
+                static const QString kImageResolutionX;
+                static const QString kImageResolutionY;
+            };
+
+            class CrossSection
+            {
+            public:
+                static const QString kLargestGap;
+                static const QString kMaxStitch;
+            };
         };
 
         class Settings
@@ -1415,13 +1429,19 @@ namespace ORNL
             public:
                 static const QString kInputProjectFile;
                 static const QString kInputStlFiles;
+                static const QString kInputStlFilesDirectory;
+                static const QString kInputSupportStlFiles;
+                static const QString kInputSupportStlFilesDirectory;
                 static const QString kInputStlCount;
+                static const QString kInputSupportStlCount;
                 static const QString kInputGlobalSettings;
                 static const QString kInputLocalSettings;
                 static const QString kInputSTLTransform;
                 static const QString kOutputLocation;
 
                 static const QString kShiftPartsOnLoad;
+                static const QString kAlignParts;
+                static const QString kUseImplicitTransforms;
 
                 static const QString kOverwriteOutputFile;
                 static const QString kIncludeAuxiliaryFiles;
@@ -1439,6 +1459,8 @@ namespace ORNL
                 static const QString kRealTimeNetworkIP;
                 static const QString kRealTimeNetworkPort;
                 static const QString kRealTimePrinter;
+                static const QString kSingleSliceHeight;
+                static const QString kSingleSliceLayerNumber;
         };
     };
 }  // namespace ORNL

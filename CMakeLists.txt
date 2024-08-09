@@ -39,13 +39,16 @@ find_package(assimp        REQUIRED)
 find_package(Boost         REQUIRED COMPONENTS system)
 find_package(CGAL          REQUIRED)
 find_package(nlohmann_json REQUIRED)
+find_package(VTK           REQUIRED)
+find_package(TBB           REQUIRED)
+find_package(OPENMP        REQUIRED)
 
 # Find Eigen
 add_definitions(-DEIGEN_NO_CUDA=1) # Eigen does not have CUDA support for MSVC yet
 find_package(Eigen3 3.3.0 REQUIRED NO_MODULE)
 include(CGAL_Eigen3_support)
 
-list(APPEND libs assimp::assimp Boost::system CGAL::CGAL Eigen3::Eigen nlohmann_json)
+list(APPEND libs assimp::assimp Boost::system CGAL::CGAL Eigen3::Eigen nlohmann_json ${VTK_LIBRARIES} OpenMP::OpenMP_CXX)
 
 # Check if CGAL was configured with Eigen
 if(TARGET CGAL::Eigen3_support)
@@ -66,21 +69,9 @@ list(APPEND libs ${ORNL_TCP_SOCKETS_LIB})
 include_directories(${libs_include})
 
 # Set some Win32 Specific Settings.  For now, set GUI type to suppress console.
-IF(WIN32)
-    SET(GUI_TYPE WIN32)
-ENDIF(WIN32)
-
-option(ENABLE_OPENMP "Enable OpenMP Support" ON)
-if(ENABLE_OPENMP)
-    # OpenMP is optional
-    find_package(OpenMP)
-    if(OpenMP_CXX_FOUND)
-        message(STATUS "OpenMP found. Enabling support")
-
-    else()
-        message(WARNING "OpenMP not found. Install for support")
-    endif()
-endif(ENABLE_OPENMP)
+#IF(WIN32)
+#    SET(GUI_TYPE WIN32)
+#ENDIF(WIN32)
 
 # If NVCC is found, set flag, enable lang and find files
 include(CheckLanguage)
