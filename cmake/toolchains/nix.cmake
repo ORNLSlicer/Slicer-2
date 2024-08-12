@@ -35,6 +35,36 @@ if(NOT "$ENV{NIX_PROFILE_LOADED}")
         endif()
     endfunction()
 
+    function(LoadAllEnvVars)
+        list(
+            APPEND EXCLUDE_VARS
+            "buildPhase"
+            "DETERMINISTIC_BUILD"
+            "TEMPDIR"
+            "TMPDIR"
+            "PWD"
+            "OLDPWD"
+            "PATH"
+        )
+
+        string(JSON VAR_COUNT ERROR_VARIABLE JSON_ERROR LENGTH "${NIX_DEVELOP_OUTPUT}" "variables")
+        foreach(VAR_INDEX RANGE 0 ${VAR_COUNT})
+            string(JSON VAR_NAME ERROR_VARIABLE JSON_ERROR MEMBER "${NIX_DEVELOP_OUTPUT}" "variables" ${VAR_INDEX})
+
+            if ("${VAR_NAME}" IN_LIST EXCLUDE_VARS)
+                continue()
+            endif()
+
+            string(JSON VAR_TYPE ERROR_VARIABLE JSON_ERROR GET "${NIX_DEVELOP_OUTPUT}" "variables" "${VAR_NAME}" "type")
+
+            if(NOT "${VAR_TYPE}" STREQUAL "exported")
+                continue()
+            endif()
+
+            LoadNixEnvVar("${VAR_NAME}")
+        endforeach()
+    endfunction()
+
     function(LoadNixProgToCMakeCache LOAD_VAR CACHE_VAR)
         string(JSON VAR_VALUE ERROR_VARIABLE JSON_ERROR GET "${NIX_DEVELOP_OUTPUT}" "variables" "${LOAD_VAR}" "value")
         if("${JSON_ERROR}" STREQUAL "NOTFOUND")
@@ -46,6 +76,8 @@ if(NOT "$ENV{NIX_PROFILE_LOADED}")
     endfunction()
 
     LoadNixPathVar()
+
+    #LoadAllEnvVars()
 
     LoadNixEnvVar("PKG_CONFIG_PATH")
     LoadNixEnvVar("PYTHONPATH")
