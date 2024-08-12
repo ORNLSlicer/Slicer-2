@@ -66,33 +66,6 @@ else()
     message(FATAL_ERROR "Eigen NOT Found")
 endif()
 
-
-# Find the other libraries in the contrib folder
-add_subdirectory(contrib)
-add_subdirectory("contrib/ORNL-TCP-Sockets")
-list(APPEND libs_include ${ORNL_TCP_SOCKETS_INCLUDE})
-list(APPEND libs ${ORNL_TCP_SOCKETS_LIB})
-
-# Add library include dirs
-include_directories(${libs_include})
-
-# Set some Win32 Specific Settings.  For now, set GUI type to suppress console.
-IF(WIN32)
-    SET(GUI_TYPE WIN32)
-ENDIF(WIN32)
-
-option(ENABLE_OPENMP "Enable OpenMP Support" ON)
-if(ENABLE_OPENMP)
-    # OpenMP is optional
-    find_package(OpenMP)
-    if(OpenMP_CXX_FOUND)
-        message(STATUS "OpenMP found. Enabling support")
-
-    else()
-        message(WARNING "OpenMP not found. Install for support")
-    endif()
-endif(ENABLE_OPENMP)
-
 # Find the other libraries in the contrib folder
 add_subdirectory(contrib)
 add_subdirectory("contrib/ORNL-TCP-Sockets")
