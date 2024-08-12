@@ -42,7 +42,7 @@
                         pkgs.hdf5
                         pkgs.vtk-qt5
                         pkgs.tbb
-
+                    ] ++ pkgs.lib.optionals (stdenv == llvm.stdenv) [
                         llvm.openmp
                     ];
 

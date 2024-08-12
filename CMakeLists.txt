@@ -41,14 +41,22 @@ find_package(CGAL          REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(VTK           REQUIRED)
 find_package(TBB           REQUIRED)
-find_package(OpenMP        REQUIRED)
+
+find_package(OpenMP)
+
+if(OpenMP_CXX_FOUND)
+    message(STATUS "OpenMP Found")
+    list(APPEND optional_libs OpenMP::OpenMP_CXX)
+else()
+    message(WARNING "OpenMP NOT Found")
+endif()
 
 # Find Eigen
 add_definitions(-DEIGEN_NO_CUDA=1) # Eigen does not have CUDA support for MSVC yet
 find_package(Eigen3 3.3.0 REQUIRED NO_MODULE)
 include(CGAL_Eigen3_support)
 
-list(APPEND libs assimp::assimp Boost::system CGAL::CGAL Eigen3::Eigen nlohmann_json ${VTK_LIBRARIES} OpenMP::OpenMP_CXX)
+list(APPEND libs assimp::assimp Boost::system CGAL::CGAL Eigen3::Eigen nlohmann_json ${VTK_LIBRARIES} ${optional_libs})
 
 # Check if CGAL was configured with Eigen
 if(TARGET CGAL::Eigen3_support)
