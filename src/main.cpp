@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
     qRegisterMetaType<QHash<QString,QTextCharFormat>>("QHash<QString,QTextCharFormat>");
     qRegisterMetaType<QList<ORNL::Time>>("QList<Time>");
     qRegisterMetaType<QList<int>>("QList<int>");
+    qRegisterMetaType<QList<double>>("QList<double>");
     qRegisterMetaType<ORNL::StatusUpdateStepType>("StatusUpdateStepType");
     qRegisterMetaType<ORNL::GcodeCommand>("GcodeCommand");
     qRegisterMetaType<ORNL::GcodeMeta>("GcodeMeta");

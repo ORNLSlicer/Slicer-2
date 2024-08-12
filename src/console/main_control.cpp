@@ -8,21 +8,23 @@
 #include "threading/gcode_rpbf_saver.h"
 #include "utilities/authenticity_checker.h"
 #include "gcode/gcode_meta.h"
+#include "managers/preferences_manager.h"
 
 namespace ORNL {
 
     MainControl::MainControl(QSharedPointer<SettingsBase> options) : QObject() {
         GSM->setConsoleSettings(options);
         m_options = options;
-        AuthenticityChecker* authChecker = new AuthenticityChecker(nullptr);
-        connect(authChecker, &AuthenticityChecker::done, this, [this](bool ok){
-            if(ok)
-                continueStartup();
-            else
-                emit finished();
-        });
+        continueStartup();
+//        AuthenticityChecker* authChecker = new AuthenticityChecker(nullptr);
+//        connect(authChecker, &AuthenticityChecker::done, this, [this](bool ok){
+//            if(ok)
+//                continueStartup();
+//            else
+//                emit finished();
+//        });
 
-        authChecker->startCheck();
+//        authChecker->startCheck();
     }
 
     void MainControl::continueStartup()
@@ -37,10 +39,31 @@ namespace ORNL {
 
     void MainControl::run()
     {
+        if(m_options->contains(Constants::ConsoleOptionStrings::kShiftPartsOnLoad))
+        {
+            if(m_options->setting<bool>(Constants::ConsoleOptionStrings::kShiftPartsOnLoad))
+                PM->setFileShiftPreference(PreferenceChoice::kPerformAutomatically);
+            else
+                PM->setFileShiftPreference(PreferenceChoice::kSkipAutomatically);
+        }
+        if(m_options->contains(Constants::ConsoleOptionStrings::kAlignParts))
+        {
+            if(m_options->setting<bool>(Constants::ConsoleOptionStrings::kAlignParts))
+                PM->setAlignPreference(PreferenceChoice::kPerformAutomatically);
+            else
+                PM->setAlignPreference(PreferenceChoice::kSkipAutomatically);
+        }
+        if(m_options->contains(Constants::ConsoleOptionStrings::kUseImplicitTransforms))
+            PM->setUseImplicitTransforms(m_options->setting<bool>(Constants::ConsoleOptionStrings::kUseImplicitTransforms));
+
+        if(static_cast<SlicerType>(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::PrinterConfig::kSlicerType)) == SlicerType::kImageSlice)
+            CSM->setDefaultGcodeDir(m_options->setting<QString>(Constants::ConsoleOptionStrings::kOutputLocation));
+
         int stlCount = m_options->setting<int>(Constants::ConsoleOptionStrings::kInputStlCount);
+        int supportStlCount = m_options->setting<int>(Constants::ConsoleOptionStrings::kInputSupportStlCount);
         if(stlCount > 0)
         {
-            m_parts_to_load = stlCount;
+            m_parts_to_load = stlCount + supportStlCount;
             for(int i = 0; i < stlCount; ++i)
             {
                 if(m_options->contains(Constants::ConsoleOptionStrings::kInputSTLTransform))
@@ -53,14 +76,17 @@ namespace ORNL {
                     fifojson j = fifojson::parse(transforms.toStdString());
 
                     for (auto it : j[Constants::Settings::Session::kParts].items())
-                        CSM->loadModel(m_options->setting<QString>(Constants::ConsoleOptionStrings::kInputStlFiles, i), false, MeshType::kBuild, true);
+                        CSM->loadModel(m_options->setting<QString>(Constants::ConsoleOptionStrings::kInputStlFiles + "_" + QString::number(i)), false, MeshType::kBuild, true);
 
                     CSM->loadPartsJson(j);
                 }
                 else
-
-                    CSM->loadModel(m_options->setting<QString>(Constants::ConsoleOptionStrings::kInputStlFiles, i), false, MeshType::kBuild, true);
+                    CSM->loadModel(m_options->setting<QString>(Constants::ConsoleOptionStrings::kInputStlFiles + "_" + QString::number(i)), false, MeshType::kBuild, true);
             }
+
+            if(supportStlCount > 0)
+                for(int i = 0; i < supportStlCount; ++i)
+                    CSM->loadModel(m_options->setting<QString>(Constants::ConsoleOptionStrings::kInputSupportStlFiles + "_" + QString::number(i)), false, MeshType::kSupport, true);
         }
         else
         {
@@ -84,26 +110,31 @@ namespace ORNL {
 
     void MainControl::sliceComplete(QString filepath, bool alterFile)
     {
-        if(m_options->setting<bool>(Constants::ConsoleOptionStrings::kRealTimeMode))
-        {
-            auto meta = GcodeMetaList::createMapping()[GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::PrinterConfig::kSlicerType)];
-            updateOutputInformation(filepath, meta);
-            gcodeParseComplete();
-        }else
-        {
-            if (filepath.mid(filepath.lastIndexOf(".") + 1) == "dxf")
-            { // Check if this is dxf file or not
-                DXFLoader* loader_two = new DXFLoader(filepath, alterFile);
-            } else
-            {
-                GCodeLoader* loader = new GCodeLoader(filepath, alterFile);
-                connect(loader, &GCodeLoader::finished, loader, &GCodeLoader::deleteLater);
-                connect(loader, &GCodeLoader::forwardInfoToBuildExportWindow, this, &MainControl::updateOutputInformation);
-                connect(loader, &GCodeLoader::finished, this, &MainControl::gcodeParseComplete);
-                connect(loader, &GCodeLoader::updateDialog, this, &MainControl::displayProgress);
-                loader->start();
-            }
-        }
+         if(static_cast<SlicerType>(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::PrinterConfig::kSlicerType)) != SlicerType::kImageSlice)
+         {
+             if(m_options->setting<bool>(Constants::ConsoleOptionStrings::kRealTimeMode))
+             {
+                 auto meta = GcodeMetaList::createMapping()[GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::PrinterConfig::kSlicerType)];
+                 updateOutputInformation(filepath, meta);
+                 gcodeParseComplete();
+             }else
+             {
+                 if (filepath.mid(filepath.lastIndexOf(".") + 1) == "dxf")
+                 { // Check if this is dxf file or not
+                     DXFLoader* loader_two = new DXFLoader(filepath, alterFile);
+                 } else
+                 {
+                     GCodeLoader* loader = new GCodeLoader(filepath, alterFile);
+                     connect(loader, &GCodeLoader::finished, loader, &GCodeLoader::deleteLater);
+                     connect(loader, &GCodeLoader::forwardInfoToBuildExportWindow, this, &MainControl::updateOutputInformation);
+                     connect(loader, &GCodeLoader::finished, this, &MainControl::gcodeParseComplete);
+                     connect(loader, &GCodeLoader::updateDialog, this, &MainControl::displayProgress);
+                     loader->start();
+                 }
+             }
+         }
+         else
+             emit finished();
     }
 
     void MainControl::updateOutputInformation(QString tempLocation, GcodeMeta meta)

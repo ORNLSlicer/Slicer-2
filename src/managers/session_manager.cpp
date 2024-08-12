@@ -19,6 +19,7 @@
 #include "threading/slicers/rpbf_slicer.h"
 #include "threading/slicers/hybrid_slicer.h"
 #include "threading/slicers/real_time_rpbf_slicer.h"
+#include "threading/slicers/image_slicer.h"
 #include "threading/session_loader.h"
 #include "utilities/mathutils.h"
 #include "configs/settings_base.h"
@@ -763,8 +764,12 @@ namespace ORNL
             case SlicerType::kSheetLamination:
                 m_ast.reset(new SheetLaminationSlicer(tempGcodeFile));
                 break;
-            case SlicerType::kSkeleton:
-                m_ast.reset(new SkeletonSlicer(tempGcodeFile));
+//            case SlicerType::kSkeleton:
+//                m_ast.reset(new SkeletonSlicer(tempGcodeFile));
+//                break;
+            case SlicerType::kImageSlice:
+                m_ast.reset(new ImageSlicer(tempGcodeFile));
+                break;
         }
 
         m_ast->setExternalData(m_grid_info);
@@ -918,5 +923,10 @@ namespace ORNL
     void SessionManager::setMostRecentHTTPConfig(QString config)
     {
         m_most_recent_http_config = config;
+    }
+
+    void SessionManager::setDefaultGcodeDir(QString dir)
+    {
+        defaultGcodeFile = dir + "\\gcode_output";
     }
 }  // namespace ORNL

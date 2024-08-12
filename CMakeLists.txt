@@ -39,13 +39,16 @@ find_package(assimp        REQUIRED)
 find_package(Boost         REQUIRED COMPONENTS system)
 find_package(CGAL          REQUIRED)
 find_package(nlohmann_json REQUIRED)
+find_package(VTK           REQUIRED)
+find_package(TBB           REQUIRED)
+find_package(OPENMP        REQUIRED)
 
 # Find Eigen
 add_definitions(-DEIGEN_NO_CUDA=1) # Eigen does not have CUDA support for MSVC yet
 find_package(Eigen3 3.3.0 REQUIRED NO_MODULE)
 include(CGAL_Eigen3_support)
 
-list(APPEND libs assimp::assimp Boost::system CGAL::CGAL Eigen3::Eigen nlohmann_json)
+list(APPEND libs assimp::assimp Boost::system CGAL::CGAL Eigen3::Eigen nlohmann_json ${VTK_LIBRARIES} OpenMP::OpenMP_CXX)
 
 # Check if CGAL was configured with Eigen
 if(TARGET CGAL::Eigen3_support)
@@ -82,11 +85,25 @@ if(ENABLE_OPENMP)
     endif()
 endif(ENABLE_OPENMP)
 
+# Find the other libraries in the contrib folder
+add_subdirectory(contrib)
+add_subdirectory("contrib/ORNL-TCP-Sockets")
+list(APPEND libs_include ${ORNL_TCP_SOCKETS_INCLUDE})
+list(APPEND libs ${ORNL_TCP_SOCKETS_LIB})
+
+# Add library include dirs
+include_directories(${libs_include})
+
+# Set some Win32 Specific Settings.  For now, set GUI type to suppress console.
+#IF(WIN32)
+#    SET(GUI_TYPE WIN32)
+#ENDIF(WIN32)
+
 # If NVCC is found, set flag, enable lang and find files
 include(CheckLanguage)
 check_language(CUDA)
 if(CMAKE_CUDA_COMPILER)
-    option(USE_CUDA "Enable CUDA Support" ON)
+    option(USE_CUDA "Enable CUDA Support" OFF)
     if(USE_CUDA)
         enable_language(CUDA)
         if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 10.0.0)

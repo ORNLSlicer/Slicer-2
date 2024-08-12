@@ -8,7 +8,7 @@
 #include "slicing/slicing_utilities.h"
 
 namespace ORNL {
-    TraditionalAST::TraditionalAST(QString outputLocation) : AbstractSlicingThread(outputLocation)
+    TraditionalAST::TraditionalAST(QString outputLocation, bool skipGcode) : AbstractSlicingThread(outputLocation, skipGcode)
     {
     }
 
@@ -92,11 +92,13 @@ namespace ORNL {
             if(this->shouldCancel())
                 return;
 
-            //Gcode output
-            this->writeGCodeSetup();
-            this->writeGCode();
-            this->writeGCodeShutdown();
-
+            if(!m_skip_gcode)
+            {
+                //Gcode output
+                this->writeGCodeSetup();
+                this->writeGCode();
+                this->writeGCodeShutdown();
+            }
             if(this->shouldCancel())
                 return;
 
@@ -141,11 +143,13 @@ namespace ORNL {
                     if(this->shouldCancel())
                         return;
 
-                    //Gcode output
-                    this->writeGCodeSetup();
-                    this->writeGCode();
-                    this->writeGCodeShutdown();
-
+                    if(!m_skip_gcode)
+                    {
+                        //Gcode output
+                        this->writeGCodeSetup();
+                        this->writeGCode();
+                        this->writeGCodeShutdown();
+                    }
                     if(this->shouldCancel())
                         return;
 
