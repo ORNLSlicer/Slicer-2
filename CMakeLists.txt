@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.17)
 include(contrib/vcpkg.cmake)
 
 # Define project name and base it on C++
-project(ornl_slicer_2 CXX)
+project(ornl_slicer_2 CXX C)
 
 option(CMAKE_VERBOSE_MAKEFILE "Verbose MAKE Files" ON)
 
@@ -41,7 +41,7 @@ find_package(CGAL          REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(VTK           REQUIRED)
 find_package(TBB           REQUIRED)
-find_package(OPENMP        REQUIRED)
+find_package(OpenMP        REQUIRED)
 
 # Find Eigen
 add_definitions(-DEIGEN_NO_CUDA=1) # Eigen does not have CUDA support for MSVC yet

@@ -2,16 +2,16 @@
   "nodes": {
     "nixpkgs": {
       "locked": {
-        "lastModified": 1720028023,
-        "narHash": "sha256-xHhc9VmLrElpCxchkMB3cVz2BwXYvv73tk22g+e3clQ=",
+        "lastModified": 1723474834,
+        "narHash": "sha256-5c/e7l3fDwdWbQzadnIn2zY8L1V0dCFN2i5JDViyEuw=",
         "owner": "mdfbaam",
         "repo": "nixpkgs",
-        "rev": "9c8bbb60c1be295619daa1b9b97497bb3c61020e",
+        "rev": "c3da6d68fe68ed3146c067e7e6b807b236133e87",
         "type": "github"
       },
       "original": {
         "owner": "mdfbaam",
-        "ref": "pathcompiler-staging",
+        "ref": "slicer2",
         "repo": "nixpkgs",
         "type": "github"
       }
