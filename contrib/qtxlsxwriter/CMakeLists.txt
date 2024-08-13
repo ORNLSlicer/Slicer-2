@@ -23,7 +23,11 @@ include_directories(
 	${Qt5Gui_INCLUDE_DIRS}
 	${Qt5Gui_PRIVATE_INCLUDE_DIRS} )
 
-add_library(QtXlsxWriter STATIC "${QtXlsxWriter_SOURCE_FILES}")
+if(WIN32)
+    add_library(QtXlsxWriter SHARED "${QtXlsxWriter_SOURCE_FILES}")
+else()
+    add_library(QtXlsxWriter STATIC "${QtXlsxWriter_SOURCE_FILES}")
+endif()
 
 # automatically add C++11 support with GCC
 if(NOT MSVC)
