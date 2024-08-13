@@ -11,7 +11,7 @@ endif()
 
 file(
 	GLOB
-	QtXlsxWriter_SOURCE_FILES 
+	QtXlsxWriter_SOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/xlsx/*.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/QtXlsxWriterTest_automoc.cpp
 )
@@ -19,11 +19,15 @@ file(
 find_package(Qt5 5.5 REQUIRED Core Gui Test)
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/src/xlsx/
-	${Qt5Core_INCLUDE_DIRS} 
+	${Qt5Core_INCLUDE_DIRS}
 	${Qt5Gui_INCLUDE_DIRS}
 	${Qt5Gui_PRIVATE_INCLUDE_DIRS} )
 
-add_library(QtXlsxWriter SHARED "${QtXlsxWriter_SOURCE_FILES}")
+if(WIN32)
+    add_library(QtXlsxWriter SHARED "${QtXlsxWriter_SOURCE_FILES}")
+else()
+    add_library(QtXlsxWriter STATIC "${QtXlsxWriter_SOURCE_FILES}")
+endif()
 
 # automatically add C++11 support with GCC
 if(NOT MSVC)
@@ -70,7 +74,7 @@ INSTALL(TARGETS QtXlsxWriter
 
 INSTALL(FILES  ${CMAKE_CURRENT_BINARY_DIR}/QtXlsxWriterConfig.cmake DESTINATION lib/cmake/${PROJECT_NAME})
 
-SET(INCLUDE_FILES 
+SET(INCLUDE_FILES
   src/xlsx/xlsxabstractooxmlfile.h
   src/xlsx/xlsxabstractsheet.h
   src/xlsx/xlsxcell.h

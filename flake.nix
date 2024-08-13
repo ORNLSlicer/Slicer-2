@@ -2,7 +2,7 @@
     description = "ORNL Slicer 2 - An advanced object slicer";
 
     inputs = {
-        nixpkgs.url = github:mdfbaam/nixpkgs/pathcompiler-staging;
+        nixpkgs.url = github:mdfbaam/nixpkgs/slicer2;
         utils.url = github:numtide/flake-utils;
     };
 
@@ -24,7 +24,7 @@
             ornl = {
                 slicer2 = stdenv.mkDerivation rec {
                     pname = "ornl-slicer2";
-                    version = "1.0-" + (builtins.substring 0 8 (if (self ? rev) then self.rev else "dirty"));
+                    version = "1.01-" + (builtins.substring 0 8 (if (self ? rev) then self.rev else "dirty"));
 
                     src = self;
 
@@ -39,6 +39,11 @@
                         pkgs.gmp
                         pkgs.nlohmann_json
                         pkgs.mpfr
+                        pkgs.hdf5
+                        pkgs.vtk-qt5
+                        pkgs.tbb
+                    ] ++ pkgs.lib.optionals (stdenv == llvm.stdenv) [
+                        llvm.openmp
                     ];
 
                     nativeBuildInputs = [
@@ -51,8 +56,8 @@
 
                     # Workaround for non-NixOS to find GPU drivers
                     # TODO: add more linux distro paths as they are found or query ldconfig
-                    qtWrapperArgs = [
-                        "--suffix LD_LIBRARY_PATH : /usr/lib/x86_64-linux-gnu"
+                    qtWrapperArgs = pkgs.lib.optionals stdenv.isLinux [
+                        "--suffix LD_FALLBACK_PATH : /usr/lib/x86_64-linux-gnu"
                     ];
 
                     # The current build system is a bit weird, so we have to do some manual copying.
@@ -181,4 +186,9 @@
             };
         };
     });
+
+    nixConfig = {
+        extra-substituters = [ "https://mdfbaam.cachix.org" ];
+        extra-trusted-public-keys = [ "mdfbaam.cachix.org-1:WCQinXaMJP7Ny4sMlKdisNUyhcO2MHnPoobUef5aTmQ=" ];
+    };
 }
