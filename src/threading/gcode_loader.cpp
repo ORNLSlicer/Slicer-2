@@ -223,7 +223,7 @@ namespace ORNL
                 return;
             }
 
-            Time min_time(0), max_time(0), total_time(0), total_adjusted_time(0);
+            Time min_time(0), max_time(0), total_time(0), total_adjusted_time(0), adjusted_min_time(0), adjusted_max_time(0), temp_time(0);
             QString weightInfo = "No statistics calculated";
             //parse header looking for syntax
             setParser(m_original_lines, m_lines);
@@ -247,8 +247,11 @@ namespace ORNL
                 QList<Volume> layer_volumes = m_parser->getLayerVolumes();
 
                 Volume total_volume;
-                min_time = INT_MAX;
-                max_time = INT_MIN;
+                min_time = std::numeric_limits<int>::max();
+                max_time = std::numeric_limits<int>::min();
+                adjusted_min_time = std::numeric_limits<int>::max();
+                adjusted_max_time = std::numeric_limits<int>::min();
+
                 for(int i = 0; i < layer_times.size(); ++i)
                 {
                     Time& current = layer_times[i][0]; // layer time is the max of the extruders time
@@ -257,6 +260,10 @@ namespace ORNL
 
                     min_time = qMin(current, min_time);
                     max_time = qMax(current, max_time);
+
+                    temp_time = current / layer_FR_modifiers[i];
+                    adjusted_min_time = qMin(temp_time, adjusted_min_time);
+                    adjusted_max_time = qMax(temp_time, adjusted_max_time);
 
                     // add current layer to total printing and adjusted time
                     total_time += current;
@@ -287,7 +294,9 @@ namespace ORNL
 
                 if (m_adjust_file && total_adjusted_time > 0 &&
                         GSM->getGlobal()->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime))
+                {
                         keyInfo = keyInfo % "Total Adjusted Time: " % MathUtils::formattedTimeSpan(total_adjusted_time()) % "\n";
+                }
 
                 double volumeValue = total_volume() / pow<3>(PM->getDistanceUnit())();
                 double distanceValue = (m_parser->getTotalDistance() / PM->getDistanceUnit())();
@@ -390,11 +399,21 @@ namespace ORNL
             QString closingDelim = m_selected_meta.m_comment_ending_delimiter;
             QString additionalHeaderBlock =
             openingDelim % "Sliced on: " % QDateTime::currentDateTime().toString("MM/dd/yyyy") % closingDelim % "\n" %
-            openingDelim % "Expected Weight: " % weightInfo % closingDelim % "\n" %
-            openingDelim % "Expected Build Time: " % MathUtils::formattedTimeSpan(total_time()) % closingDelim % "\n" %
-            openingDelim % "Minimum Layer Time: " % MathUtils::formattedTimeSpan(min_time()) % closingDelim % "\n" %
-            openingDelim % "Maximum Layer Time: " % MathUtils::formattedTimeSpan(max_time()) % closingDelim % "\n" %
-            openingDelim % "XYZ Translation Data: " % QString::number(m_origin.x()) % ", " %
+                                            openingDelim % "Expected Weight: " % weightInfo % closingDelim % "\n";
+            if (m_adjust_file && total_adjusted_time > 0 &&
+                GSM->getGlobal()->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime))
+            {
+                additionalHeaderBlock += openingDelim % "Expected Build Time: " % MathUtils::formattedTimeSpan(total_adjusted_time()) % closingDelim % "\n" %
+                                         openingDelim % "Minimum Layer Time: " % MathUtils::formattedTimeSpan(adjusted_min_time()) % closingDelim % "\n" %
+                                         openingDelim % "Maximum Layer Time: " % MathUtils::formattedTimeSpan(adjusted_max_time()) % closingDelim % "\n";
+            }
+            else
+            {
+                additionalHeaderBlock += openingDelim % "Expected Build Time: " % MathUtils::formattedTimeSpan(total_time()) % closingDelim % "\n" %
+                                         openingDelim % "Minimum Layer Time: " % MathUtils::formattedTimeSpan(min_time()) % closingDelim % "\n" %
+                                         openingDelim % "Maximum Layer Time: " % MathUtils::formattedTimeSpan(max_time()) % closingDelim % "\n";
+            }
+            additionalHeaderBlock += openingDelim % "XYZ Translation Data: " % QString::number(m_origin.x()) % ", " %
                     QString::number(m_origin.y()) % ", " % QString::number(m_z_offset) % closingDelim % "\n" % additionalExportComments();
 
             //if we are allowed to adjust file, add header block and write out file
