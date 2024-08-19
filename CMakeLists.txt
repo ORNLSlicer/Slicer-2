@@ -153,7 +153,7 @@ if(WIN32)
     target_link_libraries( ${PROJECT_NAME} ${libs}) # Link to the libs
 else()
     # Clang doesn't have/need -bigobj but does need -fpermissive
-    target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fpermissive -Wno-deprecated-declarations>)
+    target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fpermissive -Wno-deprecated-declarations -Wno-inconsistent-missing-override>)
     target_link_libraries( ${PROJECT_NAME} ${libs}) # Link to the libs
 endif()
 

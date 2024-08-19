@@ -24,7 +24,7 @@
             ornl = {
                 slicer2 = stdenv.mkDerivation rec {
                     pname = "ornl-slicer2";
-                    version = "1.01-" + (builtins.substring 0 8 (if (self ? rev) then self.rev else "dirty"));
+                    version = "1.0.1-" + (builtins.substring 0 8 (if (self ? rev) then self.rev else "dirty"));
 
                     src = self;
 
