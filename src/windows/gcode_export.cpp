@@ -17,6 +17,7 @@
 #include "threading/gcode_aml3d_saver.h"
 #include "threading/gcode_sandia_saver.h"
 #include "threading/gcode_marlin_saver.h"
+#include "threading/gcode_simulation_output.h"
 
 namespace ORNL
 {
@@ -298,6 +299,15 @@ namespace ORNL
                 GCodeRPBFSaver* saver = new GCodeRPBFSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta, clockAngle(), use_sector_offsetting, sector_width);
                 connect(saver, &GCodeRPBFSaver::finished, saver, &GCodeRPBFSaver::deleteLater);
                 connect(saver, &GCodeRPBFSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
+                saver->start();
+            }
+            else if((m_most_recent_meta == GcodeMetaList::MarlinMeta || m_most_recent_meta == GcodeMetaList::CincinnatiMeta)&& GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kSimulationOutput))
+            {
+                bool ok;
+
+                GCodeSimulationOutput* saver = new GCodeSimulationOutput(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
+                connect(saver, &GCodeSimulationOutput::finished, saver, &GCodeSimulationOutput::deleteLater);
+                connect(saver, &GCodeSimulationOutput::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
             else if(m_most_recent_meta == GcodeMetaList::MeldMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kMeldCompanionOutput))

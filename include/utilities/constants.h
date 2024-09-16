@@ -1060,6 +1060,7 @@ namespace ORNL
                 static const QString kSandiaOutput;
                 static const QString kMarlinOutput;
                 static const QString kMarlinTravels;
+                static const QString kSimulationOutput;
             };
 
             class RotationOrigin

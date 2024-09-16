@@ -107,7 +107,9 @@ if(CMAKE_CUDA_COMPILER)
 endif(CMAKE_CUDA_COMPILER)
 
 # Build the executable using Qt GUI files, resources, heads, CPP files and CUDA files
-add_executable(${PROJECT_NAME} ${GUI_TYPE} ${RCC} ${UI_HEADERS} ${MOC_HEADERS} ${SOURCES} ${HEADERS} ${cuda_files})
+add_executable(${PROJECT_NAME} ${GUI_TYPE} ${RCC} ${UI_HEADERS} ${MOC_HEADERS} ${SOURCES} ${HEADERS} ${cuda_files}
+    src/threading/gcode_simulation_output.cpp
+    include/threading/gcode_simulation_output.h)
 
 # If Single Path lib was found set flag
 if(SINGLE_PATH_FOUND)
