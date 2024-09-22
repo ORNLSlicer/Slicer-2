@@ -24,7 +24,7 @@ void GCodeSimulationOutput::run()
     QChar comma(','), newline('\n'), space(' '), x('X'), y('Y'), z('Z'), w('W'), f('F'), s('S'), zero('0');
     qint16 layerNum = 0;
     QStringList lines = m_text.split(newline);
-    QString G0("G0"), G1("G1"), M3("M3"), M5("M5"), commaSpace(", ");
+    QString G0("G0"), G1("G1"), M3("M3"), M5("M5"), M64("M64"), commaSpace(", ");
     QString xval("0"), yval("0"), zval, wval, sval("0"), extruding("0"), velocity;
     QString rapidVelocity = QString::number(GSM->getGlobal()->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed).to(m_selected_meta.m_velocity_unit), 'f', 4);
     zval = QString::number(GSM->getGlobal()->setting<Distance>(Constants::PrinterSettings::Dimensions::kZMax).to(m_selected_meta.m_distance_unit), 'f', 4);
@@ -60,6 +60,7 @@ void GCodeSimulationOutput::run()
     for(int i=0; i<lines.size(); i++)
     {
         line = lines[i];
+        sval = "1"; // reset sval
 
         // Cincinnati uses inches and inches/minute
         if(line.contains("Cincinnati"))
@@ -67,6 +68,38 @@ void GCodeSimulationOutput::run()
             useMetric = false;
         }
 
+        // Extrusion on/off needs to appear in the simulation txt file 1 line before it happens in the g-code\
+        // Look at the next line to determine the proper value for the "extruding" flag
+        if(i + 1 < lines.size() && lines[i+1].startsWith(G1)) //Check next motion to see if extrusion turns off with S0
+        {
+            QString temp = lines[i+1].mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
+            QVector<QStringRef> params = temp.splitRef(space);
+
+            if(params[0] == G1)
+            {
+                for(int i = 1, end = params.size(); i < end; ++i)
+                {
+                    if(params[i].startsWith(s))
+                        sval = params[i].mid(1).toString();
+                }
+                isG0 = false;
+            }
+
+            if(sval == "0" || sval == "0.0000")
+            {
+                extruding = "0";
+            }
+        }
+        else if(i + 1 < lines.size() && (lines[i+1].startsWith(M3) || lines[i+1].startsWith(M64)))
+        {
+            extruding = "1";
+        }
+        else if(i + 1 < lines.size() && lines[i+1].startsWith(M5))
+        {
+            extruding = "0";
+        }
+
+        // Look at current line to creat the output
         if(line.startsWith(G0))
         {
             QString temp = line.mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
@@ -126,14 +159,6 @@ void GCodeSimulationOutput::run()
             calculateTime(xval, yval, zval, wval, velocity);
 
             out << currentTime() << ", " % xval % ", " % yval % ", " << currentZ() << ", " % extruding % newline;
-        }
-        else if(line.startsWith(M3))
-        {
-            extruding = "1";
-        }
-        else if(line.startsWith(M5))
-        {
-            extruding = "0";
         }
     }
 
