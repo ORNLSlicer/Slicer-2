@@ -235,8 +235,10 @@ namespace ORNL
                 static const QString kPurgeZ;
                 static const QString kEnableGridX;
                 static const QString kGridXDistance;
+                static const QString kGridXOffset;
                 static const QString kEnableGridY;
                 static const QString kGridYDistance;
+                static const QString kGridYOffset;
             };
 
             class Auxiliary

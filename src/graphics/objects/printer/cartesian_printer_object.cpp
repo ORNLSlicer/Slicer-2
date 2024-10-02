@@ -18,7 +18,7 @@ namespace ORNL
         std::vector<float> vertices;
         std::vector<float> colors;
 
-        ShapeFactory::createBuildVolumeRectangle(m_min, m_max, m_x_grid, m_y_grid, Constants::Colors::kBlack, vertices, colors);
+        ShapeFactory::createBuildVolumeRectangle(m_min, m_max, m_x_grid, m_x_grid_offset, m_y_grid, m_y_grid_offset, Constants::Colors::kBlack, vertices, colors);
 
         std::vector<float> tmp_norm;
         this->populateGL(view, vertices, tmp_norm, colors, GL_LINES);
@@ -108,14 +108,18 @@ namespace ORNL
         QSharedPointer<SettingsBase> sb = this->getSettings();
 
         m_x_grid = 0;
+        m_x_grid_offset = 0;
         m_y_grid = 0;
+        m_y_grid_offset = 0;
 
         if(sb->setting<bool>(Constants::PrinterSettings::Dimensions::kEnableGridX)) {
             m_x_grid = sb->setting<float>(Constants::PrinterSettings::Dimensions::kGridXDistance);
+            m_x_grid_offset = sb->setting<float>(Constants::PrinterSettings::Dimensions::kGridXOffset);
         }
 
         if(sb->setting<bool>(Constants::PrinterSettings::Dimensions::kEnableGridY)) {
             m_y_grid = sb->setting<float>(Constants::PrinterSettings::Dimensions::kGridYDistance);
+            m_y_grid_offset = sb->setting<float>(Constants::PrinterSettings::Dimensions::kGridYOffset);
         }
 
         m_min = QVector3D(sb->setting<float>(Constants::PrinterSettings::Dimensions::kXMin),
@@ -149,7 +153,9 @@ namespace ORNL
         m_min *= Constants::OpenGL::kObjectToView;
         m_max *= Constants::OpenGL::kObjectToView;
         m_x_grid *= Constants::OpenGL::kObjectToView;
+        m_x_grid_offset *= Constants::OpenGL::kObjectToView;
         m_y_grid *= Constants::OpenGL::kObjectToView;
+        m_y_grid_offset *= Constants::OpenGL::kObjectToView;
 
         m_floor_center = QVector3D((m_min.x() + m_max.x()) / 2.0f, (m_min.y() + m_max.y()) / 2.0f, m_min.z());
 
@@ -163,7 +169,7 @@ namespace ORNL
         std::vector<float> vertices;
         std::vector<float> colors;
 
-        ShapeFactory::createBuildVolumeRectangle(m_min, m_max, m_x_grid, m_y_grid, Constants::Colors::kBlack, vertices, colors);
+        ShapeFactory::createBuildVolumeRectangle(m_min, m_max, m_x_grid, m_x_grid_offset, m_y_grid, m_y_grid_offset, Constants::Colors::kBlack, vertices, colors);
 
         this->replaceVertices(vertices);
         this->replaceColors(colors);

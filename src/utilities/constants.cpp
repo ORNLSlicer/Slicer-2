@@ -308,8 +308,10 @@ namespace ORNL
     const QString Constants::PrinterSettings::Dimensions::kPurgeZ = "purge_z";
     const QString Constants::PrinterSettings::Dimensions::kEnableGridX = "enable_grid_x";
     const QString Constants::PrinterSettings::Dimensions::kGridXDistance = "grid_x_distance";
+    const QString Constants::PrinterSettings::Dimensions::kGridXOffset = "grid_x_offset";
     const QString Constants::PrinterSettings::Dimensions::kEnableGridY = "enable_grid_y";
     const QString Constants::PrinterSettings::Dimensions::kGridYDistance = "grid_y_distance";
+    const QString Constants::PrinterSettings::Dimensions::kGridYOffset = "grid_y_offset";
 
     //Auxiliary
     const QString Constants::PrinterSettings::Auxiliary::kEnableTamper = "enable_tamper";
