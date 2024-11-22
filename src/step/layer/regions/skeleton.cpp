@@ -111,10 +111,11 @@ namespace ORNL {
     void Skeleton::computeSegmentVoronoi() {
         Distance bead_width = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
 
+        // Filter for Voronoi edges whose minimum distance to the boundary is less than the assigned bead width
         auto filter = [bead_width] (const Polyline& source1, const Polyline& source2, const Point& edge_start, const Point& edge_end) {
             Distance min_dist = std::numeric_limits<double>::max();
 
-            //! Compute minimum distance between each source segment and the Voronoi edge
+            // Compute minimum distance between each source segment and the Voronoi edge
             for (const auto& source : {source1, source2}) {
                 for (const auto& pt : {edge_start, edge_end}) {
                     Distance dist = get<0>(MathUtils::findClosestPointOnSegment(source.first(), source.last(), pt));
@@ -122,6 +123,7 @@ namespace ORNL {
                 }
             }
 
+            // Return true if the minimum distance is less than half the bead width
             return (min_dist * 2.0) < bead_width;
         };
 
@@ -158,17 +160,16 @@ namespace ORNL {
                                 if (source1.first() != source2.first() &&
                                     source1.first() != source2.last() &&
                                     source1.last() != source2.first() &&
-                                    source1.last() != source2.last()
-                                    ) {
+                                    source1.last() != source2.last())
+                                {
                                     Point start(edge->vertex0()->x(), edge->vertex0()->y());
                                     Point end(edge->vertex1()->x(), edge->vertex1()->y());
 
+                                    // Filter out skeleton segments whose minimum distance to the border geometry is less than half the bead width
                                     if (!filter(source1, source2, start, end)) {
+                                        // Add skeleton segment to geometry, ensuring it is contained within the input geometry
                                         m_skeleton_geometry += m_geometry & Polyline({start, end});
                                     }
-
-                                    //! Ensure skeleton segments fit within the border geometry
-                                    //m_skeleton_geometry += m_geometry & Polyline({start, end});
                                 }
                             }
                         }
