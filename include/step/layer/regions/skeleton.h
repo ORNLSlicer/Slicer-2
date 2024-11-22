@@ -17,21 +17,18 @@
 #include "boost/graph/subgraph.hpp"
 
 namespace ORNL {
-
     typedef boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, Point, Polyline> SkeletonGraph;
     typedef boost::graph_traits<SkeletonGraph>::vertex_descriptor SkeletonVertex;
     typedef boost::graph_traits<SkeletonGraph>::vertex_iterator Vertex_Iter;
     typedef boost::graph_traits<SkeletonGraph>::edge_descriptor Edge;
     typedef boost::graph_traits<SkeletonGraph>::out_edge_iterator Out_Edge_Iter;
 
-    struct subgraph_filter
-    {
+    struct subgraph_filter {
         subgraph_filter() = default;
 
         subgraph_filter(QMap<SkeletonVertex, int> vertex_subgraph_map_) : vertex_subgraph_map(vertex_subgraph_map_){}
 
-        bool operator()(const SkeletonVertex &v) const
-        {
+        bool operator()(const SkeletonVertex &v) const {
             return vertex_subgraph_map[v] == 0;
         }
 
@@ -41,7 +38,6 @@ namespace ORNL {
     typedef boost::filtered_graph<SkeletonGraph, boost::keep_all, subgraph_filter> SubGraph;
 
     class Skeleton : public RegionBase  {
-
         public:
             //! \brief Constructor
             //! \param sb: the settings
@@ -72,9 +68,6 @@ namespace ORNL {
 
             //! \brief Cleans output geometry according to ClipperLib2's cleanPolygons function
             void simplifyOutputGeometry();
-
-            //! \brief Extracts skeleton paths in a manner that minimizes the total number of paths
-            void extractSkeletonPaths();
 
             //! \brief Generates a graph representation of skeleton geometry for cleaning
             void generateSkeletonGraph();
