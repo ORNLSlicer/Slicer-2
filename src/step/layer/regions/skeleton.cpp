@@ -165,16 +165,18 @@ namespace ORNL {
                                     Point start(edge->vertex0()->x(), edge->vertex0()->y());
                                     Point end(edge->vertex1()->x(), edge->vertex1()->y());
 
-                                    // Filter out skeleton segments whose minimum distance to the border geometry is less than half the bead width
-                                    if (!filter(source1, source2, start, end)) {
-                                        // Add skeleton segment to geometry, ensuring it is contained within the input geometry
+                                    // If adaptive bead width is enabled, include all skeleton segments.
+                                    // Otherwise, filter skeleton segments whose minimum distance to the border geometry is less than half the bead width.
+                                    if (m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) { // Adaptive bead width
+                                        m_skeleton_geometry += m_geometry & Polyline({start, end});
+                                    }
+                                    else if (!filter(source1, source2, start, end)) { // Static bead width
                                         m_skeleton_geometry += m_geometry & Polyline({start, end});
                                     }
                                 }
                             }
                         }
                     }
-
                     edge = edge->next();
                 } while (edge != cell.incident_edge());
             }
