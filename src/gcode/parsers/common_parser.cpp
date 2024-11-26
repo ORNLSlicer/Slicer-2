@@ -347,13 +347,11 @@ namespace ORNL
         bool no_error;
 
         //parse each line
-        for(m_current_line; m_current_line <= m_current_end_line; ++m_current_line)
-        {
+        for (m_current_line; m_current_line <= m_current_end_line; ++m_current_line) {
             //extract components of command
             //handlers will also update appropriate state
             //if the line is not just an empty line or whitespace
-
-            if(m_upper_lines[m_current_line].contains("[#") && sb->setting<int>(Constants::PrinterSettings::Dimensions::kUseVariableForZ))
+            if (m_upper_lines[m_current_line].contains("[#") && sb->setting<int>(Constants::PrinterSettings::Dimensions::kUseVariableForZ))
             {
                 // If using a variable Z, find the value added to the variable, calculate the total value of Z by replacing the variable with the value from the printer settings
                 // then create a new line of g-code to be sent to the parser that is formatted the way a line is normally formatted (without the variable)
@@ -406,8 +404,7 @@ namespace ORNL
                 }
                 continue;
             }
-            else
-            {
+            else {
                 // Save the current line to be sent for the parseCommand function
                 newCurrentLine = m_upper_lines[m_current_line];
             }
@@ -1177,20 +1174,6 @@ namespace ORNL
             MotionEstimation::m_travel_distance += temp;
 
         m_with_F_value = false;
-        // Checks if the command did not use a movement command, but only a flow
-        // command. Not needed. if( x_not_used && y_not_used && z_not_used &&
-        // w_not_used )
-        // {
-        //     QString exceptionString;
-        //    QTextStream(&exceptionString) << "Error no movement command passed
-        //    with flow rate on GCode line "
-        //                                  <<
-        //                                  m_current_gcode_command.getLineNumber()
-        //                                  << "\n"
-        //                                  << "With GCode command string: "
-        //                                  << getCurrentCommandString();
-        //    throw IllegalParameterException(exceptionString);
-        // }
     }
 
     void CommonParser::G1HandlerHelper(QVector<QStringRef> params, QVector<QStringRef> optionalParams)
