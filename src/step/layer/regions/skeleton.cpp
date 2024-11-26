@@ -693,7 +693,7 @@ namespace ORNL {
         // Retrieve profile settings
         Distance reference_width = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
         Velocity reference_speed = m_sb->setting<Velocity>(Constants::ProfileSettings::Skeleton::kSpeed);
-        Distance discretization_step = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptDiscretizationDistance);
+        Distance discretization_step = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptStepSize);
 
         // Compute factor for speed calculation based on inverse proportionality
         double speed_factor = reference_speed() * reference_width();
@@ -793,7 +793,7 @@ namespace ORNL {
             QVector<QSharedPointer<LineSegment>> segments;
 
             if(m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt) //! Adaptive bead width
-                    && m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptDiscretizationDistance) > 0) {
+                    && m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptStepSize) > 0) {
                 segments = adaptBeadWidth(line[i], line[i + 1]);
             }
             else { //! Static bead width
@@ -892,24 +892,31 @@ namespace ORNL {
 
     QVector<Path> Skeleton::breakPath(Path path) {
         QVector<Path> paths;
-        //! Filter adapted path by removing segments whose widths are not within the tolerated range
+        // Filter adapted path by removing and clamping segments whose widths are not within the tolerated range
         if (m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) {
-            Distance min_width = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonMinWidth);
-            Distance max_width = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonMaxWidth);
+            // Retrieve profile settings
+            Distance reference_width = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
+            Velocity reference_speed = m_sb->setting<Velocity>(Constants::ProfileSettings::Skeleton::kSpeed);
+            Distance min_width = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMinWidth);
+            Distance max_width = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMaxWidth);
+
+            // Compute factor for speed calculation based on inverse proportionality
+            double speed_factor = reference_speed() * reference_width();
 
             Path filtered_path;
 
             for (QSharedPointer<SegmentBase>& segment : path) {
                 Distance width = segment->getSb()->setting<Distance>(Constants::SegmentSettings::kWidth);
 
-                if (width >= min_width && width <= max_width) { //! Within tolerated range
+                if (width >= min_width && width <= max_width) { // Within tolerated range
                     filtered_path.append(segment);
                 }
-                else if (width > max_width) {
+                else if (width > max_width) { // Clamp width to max_width
                     segment->getSb()->setSetting(Constants::SegmentSettings::kWidth, max_width);
+                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed, speed_factor / max_width());
                     filtered_path.append(segment);
                 }
-                else { //! Outside tolerated range
+                else { // Remove segment
                     if (filtered_path.size() > 0) {
                         if (filtered_path.isClosed()) {
                             filtered_path.setCCW(Polygon(filtered_path).orientation());
@@ -927,7 +934,7 @@ namespace ORNL {
                 paths.append(filtered_path);
             }
         }
-        else { //! Static bead width
+        else { // Static bead width
             if (path.isClosed()) {
                 path.setCCW(Polygon(path).orientation());
             }

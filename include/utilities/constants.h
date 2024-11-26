@@ -704,9 +704,9 @@ namespace ORNL
                     static const QString kBeadWidth;
                     static const QString kSpeed;
                     static const QString kSkeletonAdapt;
-                    static const QString kSkeletonAdaptDiscretizationDistance;
-                    static const QString kSkeletonMinWidth;
-                    static const QString kSkeletonMaxWidth;
+                    static const QString kSkeletonAdaptStepSize;
+                    static const QString kSkeletonAdaptMinWidth;
+                    static const QString kSkeletonAdaptMaxWidth;
                     static const QString kExtruderSpeed;
                     static const QString kExtrusionMultiplier;
                     static const QString kMinPathLength;

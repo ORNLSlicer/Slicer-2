@@ -624,21 +624,21 @@ namespace ORNL
     const QString Constants::ProfileSettings::Inset::kOverlap = "inset_overlap_distance";
 
     //Skeleton
-    const QString Constants::ProfileSettings::Skeleton::kEnable = "skeleton";
-    const QString Constants::ProfileSettings::Skeleton::kSkeletonInput = "skeleton_input";
-    const QString Constants::ProfileSettings::Skeleton::kSkeletonInputCleaningDistance = "skeleton_input_cleaning_distance";
-    const QString Constants::ProfileSettings::Skeleton::kSkeletonInputChamferingAngle = "skeleton_input_chamfering_angle";
+    const QString Constants::ProfileSettings::Skeleton::kEnable                         = "skeleton";
+    const QString Constants::ProfileSettings::Skeleton::kSkeletonInput                  = "skeleton_input";
+    const QString Constants::ProfileSettings::Skeleton::kSkeletonInputCleaningDistance  = "skeleton_input_cleaning_distance";
+    const QString Constants::ProfileSettings::Skeleton::kSkeletonInputChamferingAngle   = "skeleton_input_chamfering_angle";
     const QString Constants::ProfileSettings::Skeleton::kSkeletonOutputCleaningDistance = "skeleton_output_cleaning_distance";
-    const QString Constants::ProfileSettings::Skeleton::kBeadWidth = "skeleton_width";
-    const QString Constants::ProfileSettings::Skeleton::kSpeed = "skeleton_speed";
-    const QString Constants::ProfileSettings::Skeleton::kSkeletonAdapt = "skeleton_adapt";
-    const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptDiscretizationDistance = "skeleton_adapt_discretization_distance";
-    const QString Constants::ProfileSettings::Skeleton::kSkeletonMinWidth = "skeleton_minimum_width";
-    const QString Constants::ProfileSettings::Skeleton::kSkeletonMaxWidth = "skeleton_maximum_width";
-    const QString Constants::ProfileSettings::Skeleton::kExtruderSpeed = "skeleton_extruder_speed";
-    const QString Constants::ProfileSettings::Skeleton::kExtrusionMultiplier = "skeleton_extrusion_multiplier";
-    const QString Constants::ProfileSettings::Skeleton::kMinPathLength = "skeleton_minimum_path_length";
-    const QString Constants::ProfileSettings::Skeleton::kUseSkinMcode = "skeleton_skin_mcode";
+    const QString Constants::ProfileSettings::Skeleton::kBeadWidth                      = "skeleton_width";
+    const QString Constants::ProfileSettings::Skeleton::kSpeed                          = "skeleton_speed";
+    const QString Constants::ProfileSettings::Skeleton::kSkeletonAdapt                  = "skeleton_adapt";
+    const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptStepSize          = "skeleton_adapt_step_size";
+    const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptMinWidth          = "skeleton_adapt_min_width";
+    const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptMaxWidth          = "skeleton_adapt_max_width";
+    const QString Constants::ProfileSettings::Skeleton::kExtruderSpeed                  = "skeleton_extruder_speed";
+    const QString Constants::ProfileSettings::Skeleton::kExtrusionMultiplier            = "skeleton_extrusion_multiplier";
+    const QString Constants::ProfileSettings::Skeleton::kMinPathLength                  = "skeleton_minimum_path_length";
+    const QString Constants::ProfileSettings::Skeleton::kUseSkinMcode                   = "skeleton_skin_mcode";
 
     //Skin
     const QString Constants::ProfileSettings::Skin::kEnable = "skin";
