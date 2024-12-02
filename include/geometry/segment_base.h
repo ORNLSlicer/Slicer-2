@@ -50,13 +50,13 @@ namespace ORNL {
 
             //! \brief Sets the info for this segment corresponding to a loaded GCode file.
             //! \note This function is temporary pending a rework of the parser/writer architecture.
-            //! \param display_width: Height of display segment to generate.
-            //! \param display_height: Width of display segment to generate.
+            //! \param display_width: Width of display segment to generate.
+            //! \param display_length: Length of display segment to generate.
             //! \param type: Type of display segment to generate.
             //! \param color: Color of the display segment to generate.
             //! \param line_num: GCode line number that this segment corresponds to.
             //! \param layer_num: Layer that this GCode line segment belongs to.
-            void setGCodeInfo(float display_width, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num);
+            void setGCodeInfo(float display_width, float display_length, SegmentDisplayType type, QColor color, uint line_num, uint layer_num);
 
             //! \brief gets the width of this segment
             //! \return the width of the drawn gcode segment
@@ -169,8 +169,9 @@ namespace ORNL {
             } m_segment_info_meta;
 
         protected:
-            // Start point for segment.
+            //! \brief  Start point for segment.
             Point m_start;
+
             //! \brief End point for segment.
             Point m_end;
 
@@ -180,13 +181,23 @@ namespace ORNL {
             //! \brief Non build mods.
             PathModifiers m_non_build_modifiers;
 
-            //! \brief DIsplay information.
+            //! \brief Display information.
             QColor m_color;
+
+            //! \brief The display type for this segment.
             SegmentDisplayType m_display_type;
+
+            //! \brief The line number for this segment.
             uint m_line_num;
+
+            //! \brief The layer number for this segment.
             uint m_layer_num;
+
+            //! \brief The width of the segment in display units.
             float m_display_width;
-            float m_display_height;
+
+            //! \brief The length of the segment in display units.
+            float m_display_length;
 
     };
 }  // namespace ORNL

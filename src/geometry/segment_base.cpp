@@ -49,7 +49,7 @@ namespace ORNL {
     }
 
     float SegmentBase::displayHeight() {
-        return m_display_height;
+        return m_display_length;
     }
 
     SegmentDisplayType SegmentBase::displayType() {
@@ -60,9 +60,9 @@ namespace ORNL {
         return m_color;
     }
 
-    void SegmentBase::setGCodeInfo(float display_width, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num) {
+    void SegmentBase::setGCodeInfo(float display_width, float display_length, SegmentDisplayType type, QColor color, uint line_num, uint layer_num) {
         m_display_width = display_width;
-        m_display_height = display_height;
+        m_display_length = display_length;
         m_display_type = type;
         m_color = color;
         m_line_num = line_num;
