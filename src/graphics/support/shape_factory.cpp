@@ -762,9 +762,9 @@ namespace ORNL
     }
 
     void ShapeFactory::createGcodeCylinder(float width, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
-        float half_width = 0.5f*width; //half width of rectangle
-        float half_length = 0.6f*width; //half length of rectangle
-        float radius = qSqrt(half_width*half_width + half_length*half_length); //radius of circle must be the same as diagonal to meet up with corners of rectangle
+        float half_width = 0.5f * width; //half width of rectangle
+        float half_length = 0.6f * width; //half length of rectangle
+        float radius = qSqrt(half_width * half_width + half_length * half_length); //radius of circle must be the same as diagonal to meet up with corners of rectangle
         unsigned int slices = 6; //Number of arc segments used on each side to approximate a curve
         float theta = -float(M_PI_4);  //Start of arc
         float thetaIncrement = float(M_PI_2) / float(slices);
@@ -787,28 +787,17 @@ namespace ORNL
         temp_vertices.push_back(transform * QVector3D(0.0f, 0.0f, height));
 
         //Loop to create slices on right side
-        for (int i=0; i < slices+1; ++i) {
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)),
-                                                          radius*float(qSin(theta)),
-                                                          height));
-
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)),
-                                                          radius*float(qSin(theta)),
-                                                          0.0f));
-
+        for (int i = 0; i < slices + 1; ++i) {
+            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), height));
+            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), 0.0f));
             theta += thetaIncrement;
         }
 
-        theta = 3*M_PI_4;
+        theta = 3 * M_PI_4;
         //Loop to create slices on left side
-        for (int i=0; i < slices+1; ++i) {
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)),
-                                                          radius*float(qSin(theta)),
-                                                          height));
-
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)),
-                                                          radius*float(qSin(theta)),
-                                                          0.0f));
+        for (int i = 0; i < slices + 1; ++i) {
+            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), height));
+            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), 0.0f));
             theta += thetaIncrement;
         }
 
@@ -826,18 +815,18 @@ namespace ORNL
 
         center_top = 0;
 
-        center_bottom = 1 + 4*(slices+1);
+        center_bottom = 1 + 4 * (slices + 1);
 
         //Create slices
-        start_top = center_top+1;
-        start_bottom = start_top+1;
-        next_top = start_top+2;
-        next_bottom = start_bottom+2;
+        start_top = center_top + 1;
+        start_bottom = start_top + 1;
+        next_top = start_top + 2;
+        next_bottom = start_bottom + 2;
 
         //Make 4 triangles at a time like in the cylinder code
         QVector3D vertex1, vertex2, vertex3;
         QVector3D normal;
-        for (int i=0; i < 2*slices + 2; ++i) {
+        for (int i = 0; i < 2 * slices + 2; ++i) {
             //Triangle on top face
             vertex1 = temp_vertices.at(center_top);
             vertex2 = temp_vertices.at(start_top);
@@ -922,10 +911,9 @@ namespace ORNL
 
             //The last triangles join up with the rectangle
             if (next_bottom >= center_bottom) {
-                next_top = center_top+1;
-                next_bottom = next_top+1;
+                next_top = center_top + 1;
+                next_bottom = next_top + 1;
             }
-
         }
     }
 
