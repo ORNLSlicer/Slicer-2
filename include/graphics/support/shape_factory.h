@@ -264,12 +264,6 @@ namespace ORNL
          */
         static void createArcCylinderCCW(float cylinder_height, const Point& start, const Point& center, const Point& end, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
 
-        //! \brief Get axis of rotation if we want to rotate vector a to vector b
-        static QVector3D getAxis(QVector3D a, QVector3D b);
-
-        //! \brief Find angle to rotate a around axis to align a with b
-        static float getAngle(QVector3D a, QVector3D b, QVector3D axis);
-
         //! adds three vectors to array and computes normal/ colors
         //! \param a the first vector
         //! \param b the second vector

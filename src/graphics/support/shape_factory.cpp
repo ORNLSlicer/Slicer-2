@@ -1576,12 +1576,35 @@ namespace ORNL
         QMatrix4x4 transform;
         transform.translate(start);
 
-        QVector3D gcode_dir(0,0,1);
-        QVector3D axis = getAxis(gcode_dir, displacement);
-        float angle = getAngle(gcode_dir, displacement, axis);
-        QQuaternion rotation = QQuaternion::fromAxisAndAngle(axis, angle);
-        transform.rotate(rotation);
+        // Compute the forward vector (normalized displacement)
+        QVector3D forward = displacement.normalized();
 
+        // Define the global up vector (Z-axis)
+        QVector3D up(0, 0, 1);
+
+        // Compute the right vector
+        QVector3D right = QVector3D::crossProduct(forward, up);
+        if (right.lengthSquared() < std::numeric_limits<float>::epsilon()) {
+            // Up and forward are parallel or anti-parallel; choose a different up vector
+            up = QVector3D(1, 0, 0);
+            right = QVector3D::crossProduct(forward, up);
+        }
+        right.normalize();
+
+        // Recompute up vector to ensure orthogonality
+        up = QVector3D::crossProduct(right, forward);
+
+        // Build the rotation matrix
+        QMatrix4x4 rotation;
+        rotation.setColumn(0, QVector4D(right, 0));
+        rotation.setColumn(1, QVector4D(up, 0));
+        rotation.setColumn(2, QVector4D(forward, 0));
+        rotation.setColumn(3, QVector4D(0, 0, 0, 1));
+
+        // Apply the rotation to the transform
+        transform *= rotation;
+
+        // Call the standard method
         createGcodeCylinder(width, height, transform, color, vertices, colors, normals);
     }
 
@@ -1603,49 +1626,4 @@ namespace ORNL
         }
     }
 
-    QVector3D ShapeFactory::getAxis(QVector3D a, QVector3D b) {
-        QVector3D axis;
-        axis = QVector3D::crossProduct(a, b);
-
-        //Vectors are parallel/anti-parallel if the cross product is the zero vector,
-        //so arbitrarily choose to rotate around x-axis
-        if (axis == QVector3D(0,0,0)) {
-            return QVector3D(1,0,0);
-        }
-        else {
-            return axis;
-        }
-    }
-
-    float ShapeFactory::getAngle(QVector3D a, QVector3D b, QVector3D axis) {
-        //If either vector passed in is zero, the angle is 0 vacuously
-        if(a.length() < std::numeric_limits<float>::epsilon() || b.length() < std::numeric_limits<float>::epsilon()) {
-            return 0.0f;
-        }
-
-        //Explicitly bound arguments to acos and asin by -1 and 1 to avoid NaN
-        float acos_arg = std::max( std::min(QVector3D::dotProduct(a, b)/ (a.length()*b.length()), 1.0f), -1.0f);
-        float asin_arg = std::max( std::min(axis.length() / (a.length()*b.length()), 1.0f), -1.0f);
-        float acos_angle = qAcos(acos_arg);
-        float asin_angle = qAsin(asin_arg);
-
-        float angle;
-
-        //Get correct value and sign of angle from range of asin and acos
-        if (acos_angle < M_PI_2 && asin_angle > 0.0f) { // Quadrant I. Both angles would be correct in Quadrant I, but just pick one
-            angle = acos_angle;
-        }
-        else if (acos_angle > M_PI_2 && asin_angle > 0.0f) { // Quadrant II
-            angle = acos_angle;
-        }
-        else if (acos_angle > M_PI_2 && asin_angle < 0.0f) { // Quadrant III
-            angle = -acos_angle;
-        }
-        else { // Quadrant IV
-            angle = asin_angle;
-        }
-
-        return qRadiansToDegrees(angle);
-
-    }
 } //Namespace ORNL
