@@ -459,11 +459,21 @@ namespace ORNL {
         //writes WXYZ to destination
         rv += writeCoordinates(target_point);
 
-        //add comment for gcode parser
-        if (path_modifiers != PathModifiers::kNone)
-            rv += commentSpaceLine(toString(region_type) % m_space % toString(path_modifiers));
-        else
-            rv += commentSpaceLine(toString(region_type));
+        // Create comment for region type and path modifiers
+        QString comment = toString(region_type);
+
+        // Add bead width to adaptive skeleton comments
+        if (region_type == RegionType::kSkeleton && m_sb->setting<bool>(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) {
+            comment += "-" % QString::number(params->setting<Distance>(Constants::SegmentSettings::kWidth)());
+        }
+
+        // Add path modifiers to comments
+        if (path_modifiers != PathModifiers::kNone) {
+            comment += m_space % toString(path_modifiers);
+        }
+
+        // Add comment
+        rv += commentSpaceLine(comment);
 
         m_first_print = false;
 
