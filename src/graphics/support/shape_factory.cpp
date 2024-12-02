@@ -1343,14 +1343,13 @@ namespace ORNL
             }
         }
 
-        if(y_grid_dist > 0)
-        {
+        if (y_grid_dist > 0) {
             float totalDist = printer_y_max - printer_y_min;
-            if(y_grid_dist < totalDist)
-            {
+
+            if (y_grid_dist < totalDist) {
                 float currentY = printer_y_min + y_grid_dist;
-                while(currentY < printer_y_max)
-                {
+
+                while(currentY < printer_y_max) {
                     vertices.push_back(printer_x_min); vertices.push_back(currentY); vertices.push_back(printer_z_min);
                     vertices.push_back(printer_x_max); vertices.push_back(currentY); vertices.push_back(printer_z_min);
                     currentY += y_grid_dist;
@@ -1360,8 +1359,7 @@ namespace ORNL
 
         int colorSize = vertices.size() / 3 * 4;
         colors.reserve(colorSize);
-        for(int i = 0; i < colorSize; i += 4)
-        {
+        for (int i = 0; i < colorSize; i += 4) {
             colors.push_back(color.redF());
             colors.push_back(color.greenF());
             colors.push_back(color.blueF());
@@ -1381,11 +1379,10 @@ namespace ORNL
         std::vector<float> heights {0.0f, height};
 
         //draw two circles
-        for(float m_h : heights)
-        {
+        for (float m_h : heights) {
             theta = 0.0f;
-            for(int i = 0; i < segments; ++i)
-            {
+
+            for (int i = 0; i < segments; ++i) {
                 vertices.push_back(radius * qCos(theta));
                 vertices.push_back(radius * qSin(theta));
                 vertices.push_back(m_h);
@@ -1401,10 +1398,10 @@ namespace ORNL
         //draw vertical lines
         theta = 0.0;
         float verticalStep = 2.0f * M_PI / float(verticalIncrement);
-        for(int i = 0; i < verticalIncrement; ++i)
-        {
+        for (int i = 0; i < verticalIncrement; ++i) {
             float x = radius * qCos(theta);
             float y = radius * qSin(theta);
+
             vertices.push_back(x);
             vertices.push_back(y);
             vertices.push_back(0.0f);
@@ -1418,17 +1415,18 @@ namespace ORNL
 
         float r_squared = radius * radius;
         float diameter = 2.0 * radius;
-        if(x_grid_dist > 0)
-        {
+        if (x_grid_dist > 0) {
             float x = -radius;
-            while(x < diameter)
-            {
+
+            while (x < diameter) {
                 float x_squared = x * x;
                 float y = qSqrt(r_squared - x_squared);
+
                 if (std::isnan(y)) {
                     x += x_grid_dist;
                     continue;
                 }
+
                 vertices.push_back(x);
                 vertices.push_back(y);
                 vertices.push_back(0.0f);
@@ -1441,17 +1439,18 @@ namespace ORNL
             }
         }
 
-        if(y_grid_dist > 0)
-        {
+        if (y_grid_dist > 0) {
             float y = -radius;
-            while(y < diameter)
-            {
+
+            while (y < diameter) {
                 float y_squared = y * y;
                 float x = qSqrt(r_squared - y_squared);
+
                 if (std::isnan(x)) {
                     y += y_grid_dist;
                     continue;
                 }
+
                 vertices.push_back(x);
                 vertices.push_back(y);
                 vertices.push_back(0.0f);
@@ -1467,8 +1466,7 @@ namespace ORNL
         //set colors for all vertices
         int colorSize = vertices.size() / 3 * 4;
         colors.reserve(colorSize);
-        for(int i = 0; i < colorSize; i += 4)
-        {
+        for (int i = 0; i < colorSize; i += 4) {
             colors.push_back(color.redF());
             colors.push_back(color.greenF());
             colors.push_back(color.blueF());
@@ -1665,9 +1663,8 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createGcodeCylinder(float width, float height, const QVector3D& start, const QVector3D& displacement, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals)
-    {
-        //Convert the start position and displacement to a transform matrix we can use in the standard method
+    void ShapeFactory::createGcodeCylinder(float width, float height, const QVector3D& start, const QVector3D& displacement, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
+        // Convert the start position and displacement to a transform matrix we can use in the standard method
         QMatrix4x4 transform;
         transform.translate(start);
 
@@ -1697,61 +1694,47 @@ namespace ORNL
             createArcCylinder(cylinder_height, start, center, end, transform, color, vertices, colors, normals);
     }
 
-    QVector3D ShapeFactory::getAxis(QVector3D a, QVector3D b)
-    {
+    QVector3D ShapeFactory::getAxis(QVector3D a, QVector3D b) {
         QVector3D axis;
         axis = QVector3D::crossProduct(a, b);
 
         //Vectors are parallel/anti-parallel if the cross product is the zero vector,
         //so arbitrarily choose to rotate around x-axis
-        if(axis == QVector3D(0,0,0))
-        {
+        if (axis == QVector3D(0,0,0)) {
             return QVector3D(1,0,0);
         }
-        else
-        {
+        else {
             return axis;
         }
-
     }
 
-    float ShapeFactory::getAngle(QVector3D a, QVector3D b, QVector3D axis)
-    {
-        float acos_arg;
-        float asin_arg;
-        float acos_angle;
-        float asin_angle;
-        float angle;
-
+    float ShapeFactory::getAngle(QVector3D a, QVector3D b, QVector3D axis) {
         //If either vector passed in is zero, the angle is 0 vacuously
         if(a.length() < std::numeric_limits<float>::epsilon()
-           || b.length() < std::numeric_limits<float>::epsilon())
+            || b.length() < std::numeric_limits<float>::epsilon())
         {
             return 0.0f;
         }
 
         //Explicitly bound arguments to acos and asin by -1 and 1 to avoid NaN
-        acos_arg = std::max( std::min(QVector3D::dotProduct(a, b)/ (a.length()*b.length()), 1.0f), -1.0f);
-        asin_arg = std::max( std::min(axis.length() / (a.length()*b.length()), 1.0f), -1.0f);
-        acos_angle = qAcos(acos_arg);
-        asin_angle = qAsin(asin_arg);
+        float acos_arg = std::max( std::min(QVector3D::dotProduct(a, b)/ (a.length()*b.length()), 1.0f), -1.0f);
+        float asin_arg = std::max( std::min(axis.length() / (a.length()*b.length()), 1.0f), -1.0f);
+        float acos_angle = qAcos(acos_arg);
+        float asin_angle = qAsin(asin_arg);
+
+        float angle;
 
         //Get correct value and sign of angle from range of asin and acos
-        if(acos_angle < M_PI_2 && asin_angle > 0.0f) //Quadrant I
-        {
-            //Both angles would be correct in Quadrant I, but just pick one
+        if (acos_angle < M_PI_2 && asin_angle > 0.0f) { // Quadrant I. Both angles would be correct in Quadrant I, but just pick one
             angle = acos_angle;
         }
-        else if(acos_angle > M_PI_2 && asin_angle > 0.0f) //Quadrant II
-        {
+        else if (acos_angle > M_PI_2 && asin_angle > 0.0f) { // Quadrant II
             angle = acos_angle;
         }
-        else if(acos_angle > M_PI_2 && asin_angle < 0.0f) //Quadrant III
-        {
+        else if (acos_angle > M_PI_2 && asin_angle < 0.0f) { // Quadrant III
             angle = -acos_angle;
         }
-        else //Quadrant IV
-        {
+        else { // Quadrant IV
             angle = asin_angle;
         }
 
