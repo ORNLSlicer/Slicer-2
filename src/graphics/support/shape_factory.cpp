@@ -16,8 +16,7 @@ namespace ORNL
 {
     ShapeFactory::ShapeFactory() {}
 
-    void ShapeFactory::createRectangle(float length, float width, float height, const QMatrix4x4 &transform, const QColor &color, std::vector<float> &vertices, std::vector<float> &colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createRectangle(float length, float width, float height, const QMatrix4x4 &transform, const QColor &color, std::vector<float> &vertices, std::vector<float> &colors, std::vector<float>& normals) {
         QVector3D vertex0, vertex1, vertex2, vertex3, vertex4, vertex5, vertex6, vertex7;
 
         //Divide everything by 2 since we want to center the rectangle on the origin
@@ -54,8 +53,7 @@ namespace ORNL
         vertices.push_back(vertex4.x()); vertices.push_back(vertex4.y()); vertices.push_back(vertex4.z());
 
         //All vertices for each face have the same normal and color
-        for(int i=0; i<6; i++)
-        {
+        for(int i=0; i<6; i++) {
             normals.push_back(0.0f); normals.push_back(0.0f); normals.push_back(-1.0f);
             colors.push_back(color.redF()); colors.push_back(color.greenF()); colors.push_back(color.blueF()); colors.push_back(color.alphaF());
         }
@@ -69,8 +67,7 @@ namespace ORNL
         vertices.push_back(vertex2.x()); vertices.push_back(vertex2.y()); vertices.push_back(vertex2.z());
         vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
 
-        for(int i=0; i<6; i++)
-        {
+        for(int i=0; i<6; i++) {
             normals.push_back(0.0f); normals.push_back(0.0f); normals.push_back(1.0f);
             colors.push_back(color.redF()); colors.push_back(color.greenF()); colors.push_back(color.blueF()); colors.push_back(color.alphaF());
         }
@@ -84,8 +81,7 @@ namespace ORNL
         vertices.push_back(vertex7.x()); vertices.push_back(vertex7.y()); vertices.push_back(vertex7.z());
         vertices.push_back(vertex4.x()); vertices.push_back(vertex4.y()); vertices.push_back(vertex4.z());
 
-        for(int i=0; i<6; i++)
-        {
+        for(int i=0; i<6; i++) {
             normals.push_back(-1.0f); normals.push_back(0.0f); normals.push_back(0.0f);
             colors.push_back(color.redF()); colors.push_back(color.greenF()); colors.push_back(color.blueF()); colors.push_back(color.alphaF());
         }
@@ -99,8 +95,7 @@ namespace ORNL
         vertices.push_back(vertex6.x()); vertices.push_back(vertex6.y()); vertices.push_back(vertex6.z());
         vertices.push_back(vertex7.x()); vertices.push_back(vertex7.y()); vertices.push_back(vertex7.z());
 
-        for(int i=0; i<6; i++)
-        {
+        for(int i=0; i<6; i++) {
             normals.push_back(0.0f); normals.push_back(1.0f); normals.push_back(0.0f);
             colors.push_back(color.redF()); colors.push_back(color.greenF()); colors.push_back(color.blueF()); colors.push_back(color.alphaF());
         }
@@ -114,8 +109,7 @@ namespace ORNL
         vertices.push_back(vertex5.x()); vertices.push_back(vertex5.y()); vertices.push_back(vertex5.z());
         vertices.push_back(vertex6.x()); vertices.push_back(vertex6.y()); vertices.push_back(vertex6.z());
 
-        for(int i=0; i<6; i++)
-        {
+        for(int i=0; i<6; i++) {
             normals.push_back(1.0f); normals.push_back(0.0f); normals.push_back(0.0f);
             colors.push_back(color.redF()); colors.push_back(color.greenF()); colors.push_back(color.blueF()); colors.push_back(color.alphaF());
         }
@@ -129,15 +123,13 @@ namespace ORNL
         vertices.push_back(vertex4.x()); vertices.push_back(vertex4.y()); vertices.push_back(vertex4.z());
         vertices.push_back(vertex5.x()); vertices.push_back(vertex5.y()); vertices.push_back(vertex5.z());
 
-        for(int i=0; i<6; i++)
-        {
+        for(int i=0; i<6; i++) {
             normals.push_back(0.0f); normals.push_back(-1.0f); normals.push_back(0.0f);
             colors.push_back(color.redF()); colors.push_back(color.greenF()); colors.push_back(color.blueF()); colors.push_back(color.alphaF());
         }
     }
 
-    void ShapeFactory::createTorus(float inner_radius, float outer_radius, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createTorus(float inner_radius, float outer_radius, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         unsigned int segments = 50; //segments of torus
         unsigned int segment_slices = 30; //a segment is essentially a cylinder, this is the number of axial slices we want to use
         float theta = 0; //angle in plane of torus; used to distinguish segments
@@ -157,10 +149,8 @@ namespace ORNL
          */
 
         //Outer loop is segments, inner loop is going around each segment
-        for (int i=0; i<segments; ++i)
-        {
-            for (int j=0; j<segment_slices; ++j)
-            {
+        for (int i=0; i<segments; ++i) {
+            for (int j=0; j<segment_slices; ++j) {
                 //Parametric equations can be found on Wikipedia
                 temp_vertices.push_back(transform * QVector3D( (mid_radius + tube_radius*qCos(theta)) * qCos(phi),
                                                                tube_radius * qSin(theta),
@@ -184,8 +174,7 @@ namespace ORNL
 
         QVector3D vertex1, vertex2, vertex3; //vertices of a face(triangle)
         QVector3D normal; //normal of a face shared by each of its vertices
-        for (int i=0; i<segments; ++i)
-        {
+        for (int i=0; i<segments; ++i) {
             //Number from 0 to segments-1 of the next segment
             //Modulo so that the last segment connects to vertices at first theta
             next_radial_slice = (i+1) % segments;
@@ -194,8 +183,7 @@ namespace ORNL
             //of segment slices because it takes two triangles to connect four points
 
             //This loop constructs a segment (which is again, a cylinder) from two circles
-            for (int j=0; j<segment_slices; ++j)
-            {
+            for (int j=0; j<segment_slices; ++j) {
                 //Number from 0 to segment_slices-1 of the next slice of this segment
                 //Modulo so that the last segment connects to vertices at first theta
                 next_axial_slice = (j+1) % segment_slices;
@@ -219,8 +207,7 @@ namespace ORNL
                 //Every vertex in a triangle has the same normal
                 //Every vertex has the same color, this is just a convenient place to push back the color data
                 normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-                for(int i=0;i<3;++i)
-                {
+                for(int i=0;i<3;++i) {
                     normals.push_back(normal.x());
                     normals.push_back(normal.y());
                     normals.push_back(normal.z());
@@ -247,8 +234,7 @@ namespace ORNL
                 vertices.push_back(vertex3.z());
 
                 normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-                for(int i=0;i<3;++i)
-                {
+                for(int i=0;i<3;++i) {
                     normals.push_back(normal.x());
                     normals.push_back(normal.y());
                     normals.push_back(normal.z());
@@ -257,32 +243,33 @@ namespace ORNL
                     colors.push_back(color.blueF());
                     colors.push_back(color.alphaF());
                 }
-
             }
         }
     }
 
-    void ShapeFactory::createArcCylinderCCW(float cylinder_height, const Point& start, const Point& center, const Point& end, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createArcCylinderCCW(float cylinder_height, const Point& start, const Point& center, const Point& end, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         const unsigned int cross_sectional_resolution = 20; // number of points that make up a cross-sectional circle
         const unsigned int arc_segments = 75; // number of cylindrical segments that comprise an arc
 
         Angle angle;
-        if(MathUtils::orientation(start,center,end) == 0)
-        {
+        if (MathUtils::orientation(start,center,end) == 0) {
             // These are co-linear
-            if(start == end) // this is a circle
+            if(start == end) {
+                // this is a circle
                 angle = 2.0f * M_PI;
-            else
+            }
+            else {
                 angle = M_PI;
-        }else
-        {
+            }
+        }
+        else {
             double a = qAtan2(center.x() - start.x(), center.y() - start.y());
             double b = qAtan2(center.x() - end.x(), center.y() - end.y());
 
             angle = Angle(a - b);
-            if(angle < 0)
+            if (angle < 0) {
                 angle = (2.0f * M_PI) + angle;
+            }
         }
 
         float theta = 0; // angle around the cross-sectional circle
@@ -297,11 +284,9 @@ namespace ORNL
 
         auto height = float(0.0);
         auto height_increment = (end.z() - start.z()) / arc_segments;
-        for (auto & ring_vertices : temp_vertices)
-        {
+        for (auto & ring_vertices : temp_vertices) {
             theta = 0;
-            for (auto & vertex : ring_vertices)
-            {
+            for (auto & vertex : ring_vertices) {
                 vertex = transform * QVector3D(qCos(phi)    * (major_radius  +   (minor_radius * qCos(theta))),
                                                qSin(phi)    * (major_radius  +   (minor_radius * qCos(theta))),
                                                (qSin(theta)  * minor_radius) + height);
@@ -312,17 +297,16 @@ namespace ORNL
         }
 
         // Connect first vertex to cap start
-        for(int i = 0; i < cross_sectional_resolution; ++i)
+        for (int i = 0; i < cross_sectional_resolution; ++i) {
             appendTriangle(transform * QVector3D(major_radius,0,0),
                            temp_vertices[0][i],
                            temp_vertices[0][(i + 1) % cross_sectional_resolution],
                            color, vertices, colors, normals);
+        }
 
-        for(int slice_index = 0; slice_index < arc_segments; ++slice_index)
-        {
+        for (int slice_index = 0; slice_index < arc_segments; ++slice_index) {
             auto next_slice = slice_index + 1;
-            for(int vertex_index = 0; vertex_index < cross_sectional_resolution; ++vertex_index)
-            {
+            for(int vertex_index = 0; vertex_index < cross_sectional_resolution; ++vertex_index) {
                 auto next_point_index = (vertex_index + 1) % cross_sectional_resolution;
 
                 // Need to build two triangles per side of rectangle
@@ -339,8 +323,7 @@ namespace ORNL
         }
 
         // Cap the end
-        for(int i = 0; i < cross_sectional_resolution; ++i)
-        {
+        for (int i = 0; i < cross_sectional_resolution; ++i) {
             appendTriangle(temp_vertices[arc_segments][(i + 1) % cross_sectional_resolution],
                            temp_vertices[arc_segments][i],
                            transform * QVector3D(major_radius * qCos(angle()), major_radius * qSin(angle()),height),
@@ -348,28 +331,30 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createArcCylinder(float cylinder_height, const Point& start, const Point& center, const Point& end, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createArcCylinder(float cylinder_height, const Point& start, const Point& center, const Point& end, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         const unsigned int cross_sectional_resolution = 20; // number of points that make up a cross-sectional circle
         const unsigned int arc_segments = 75; // number of cylindrical segments that comprise an arc
 
         Angle angle;
         short orientation = MathUtils::orientation(start, center, end);
-        if(orientation == 0)
-        {
+        if (orientation == 0) {
             // These are co-linear
-            if(start == end) // this is a circle
+            if (start == end) {
+                // this is a circle
                 angle = 2.0f * M_PI;
-            else
+            }
+            else {
                 angle = M_PI;
-        }else
-        {
+            }
+        }
+        else {
             double a = qAtan2(center.x() - start.x(), center.y() - start.y());
             double b = qAtan2(center.x() - end.x(), center.y() - end.y());
 
             angle = Angle(b - a);
-            if(angle < 0)
+            if (angle < 0) {
                 angle = (2.0f * M_PI) + angle;
+            }
         }
 
         float theta = 0; // angle around the cross-sectional circle
@@ -384,11 +369,9 @@ namespace ORNL
 
         auto height = float(0.0);
         auto height_increment = (end.z() - start.z()) / arc_segments;
-        for (auto & ring_vertices : temp_vertices)
-        {
+        for (auto & ring_vertices : temp_vertices) {
             theta = 0;
-            for (auto & vertex : ring_vertices)
-            {
+            for (auto & vertex : ring_vertices) {
                 vertex = transform * QVector3D(qCos(phi)    * (major_radius  +   (minor_radius * qCos(theta))),
                                                qSin(phi)    * (major_radius  +   (minor_radius * qCos(theta))),
                                                (qSin(theta)  * minor_radius)  + height);
@@ -399,17 +382,16 @@ namespace ORNL
         }
 
         // Connect first vertex to cap start
-        for(int i = 0; i < cross_sectional_resolution; ++i)
+        for (int i = 0; i < cross_sectional_resolution; ++i) {
             appendTriangle(temp_vertices[0][(i + 1) % cross_sectional_resolution],
                            temp_vertices[0][i],
                            transform * QVector3D(major_radius,0,0),
                            color, vertices, colors, normals);
+        }
 
-        for(int slice_index = 0; slice_index < arc_segments; ++slice_index)
-        {
+        for (int slice_index = 0; slice_index < arc_segments; ++slice_index) {
             auto next_slice = slice_index + 1;
-            for(int vertex_index = 0; vertex_index < cross_sectional_resolution; ++vertex_index)
-            {
+            for(int vertex_index = 0; vertex_index < cross_sectional_resolution; ++vertex_index) {
                 auto next_point_index = (vertex_index + 1) % cross_sectional_resolution;
 
                 // Need to build two triangles per side of rectangle
@@ -426,8 +408,7 @@ namespace ORNL
         }
 
         // Cap the end
-        for(int i = 0; i < cross_sectional_resolution; ++i)
-        {
+        for(int i = 0; i < cross_sectional_resolution; ++i) {
             appendTriangle(transform * QVector3D(major_radius * qCos(angle() * -1), major_radius * qSin(angle() * -1),height),
                            temp_vertices[arc_segments][i],
                            temp_vertices[arc_segments][(i + 1) % cross_sectional_resolution],
@@ -436,8 +417,7 @@ namespace ORNL
     }
 
 
-    void ShapeFactory::createSplineCylinder(const float diameter, const Point& start, const Point& control_a, const Point& control_b, const Point& end, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createSplineCylinder(const float diameter, const Point& start, const Point& control_a, const Point& control_b, const Point& end, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         const unsigned int cross_sectional_resolution = 20; // number of points that make up a cross-sectional circle
         const unsigned int spline_segments = 75; // number of cylindrical segments that comprise an spline
 
@@ -450,14 +430,12 @@ namespace ORNL
         double increment = 1.0 / spline_segments;
         BezierSegment curve(start, control_a, control_b, end);
 
-        for(auto & ring_vertices : temp_vertices)
-        {
+        for (auto & ring_vertices : temp_vertices) {
             theta = 0;
             Point center = curve.getPointAlong(t);
             Point next_center = curve.getPointAlong(t + increment);
 
-            for (auto & vertex : ring_vertices)
-            {
+            for (auto & vertex : ring_vertices) {
                 Point p(center.x() + ((diameter / 2) * qCos(theta)),
                         center.y(),
                         center.z() + ((diameter / 2) * qSin(theta)));
@@ -472,17 +450,16 @@ namespace ORNL
         }
 
         // Connect first vertex to cap start
-        for(int i = 0; i < cross_sectional_resolution; ++i)
+        for (int i = 0; i < cross_sectional_resolution; ++i) {
             appendTriangle(curve.getPointAlong(0).toQVector3D(),
                            temp_vertices[0][i],
                            temp_vertices[0][(i + 1) % cross_sectional_resolution],
                            color, vertices, colors, normals);
+        }
 
-        for(int slice_index = 0; slice_index < spline_segments; ++slice_index)
-        {
+        for (int slice_index = 0; slice_index < spline_segments; ++slice_index) {
             auto next_slice = slice_index + 1;
-            for(int vertex_index = 0; vertex_index < cross_sectional_resolution; ++vertex_index)
-            {
+            for(int vertex_index = 0; vertex_index < cross_sectional_resolution; ++vertex_index) {
                 auto next_point_index = (vertex_index + 1) % cross_sectional_resolution;
 
                 // Need to build two triangles per side of rectangle
@@ -499,15 +476,15 @@ namespace ORNL
         }
 
         // Cap the end
-        for(int i = 0; i < cross_sectional_resolution; ++i)
+        for (int i = 0; i < cross_sectional_resolution; ++i) {
             appendTriangle(temp_vertices[spline_segments][(i + 1) % cross_sectional_resolution],
                            temp_vertices[spline_segments][i],
                            curve.getPointAlong(1.0).toQVector3D(),
                            color, vertices, colors, normals);
+        }
     }
 
-    void ShapeFactory::appendTriangle(QVector3D a, QVector3D b, QVector3D c, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::appendTriangle(QVector3D a, QVector3D b, QVector3D c, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         vertices.push_back(a.x());
         vertices.push_back(a.y());
         vertices.push_back(a.z());
@@ -522,8 +499,7 @@ namespace ORNL
 
         // Normals + Colors
         auto normal = QVector3D::crossProduct(c - b, a - b).normalized();
-        for(int j = 0; j < 3; ++j)
-        {
+        for (int j = 0; j < 3; ++j) {
             normals.push_back(normal.x());
             normals.push_back(normal.y());
             normals.push_back(normal.z());
@@ -534,8 +510,7 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createCylinder(float radius, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createCylinder(float radius, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         unsigned int segments = 50; //Number of arc segments used to approximate a cylinder
         float theta = 0.0f;  //Measure of angle at which each segment starts; first theta is just 0
         float thetaIncrement = 2.0f * float(M_PI) / float(segments);
@@ -556,16 +531,9 @@ namespace ORNL
 
         //Each iteration of this loop will create one vertex on the top circle and
         //another vertex on the bottom circle
-        for (int i=0; i < segments; ++i)
-        {
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)),
-                                                          radius*float(qSin(theta)),
-                                                          height));
-
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)),
-                                                          radius*float(qSin(theta)),
-                                                          0.0f));
-
+        for (int i=0; i < segments; ++i) {
+            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), height));
+            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), 0.0f));
             theta += thetaIncrement;
         }
 
@@ -595,8 +563,7 @@ namespace ORNL
         //Create four triangles per slice.
         QVector3D vertex1, vertex2, vertex3; //vertices of a face
         QVector3D normal; //normal of a face shared by each of its vertices
-        for (int i=0; i<segments; ++i)
-        {
+        for (int i=0; i<segments; ++i) {
             //Triangle on top circle
             vertex1 = temp_vertices.at(center_top);
             vertex2 = temp_vertices.at(first_top);
@@ -608,8 +575,7 @@ namespace ORNL
             //All vertices in a triangle share the same normal
             //All vertices have the same color, convenient to put in for loop here
             normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for(int i=0; i<3; ++i)
-            {
+            for (int i=0; i<3; ++i) {
                 normals.push_back(normal.x());
                 normals.push_back(normal.y());
                 normals.push_back(normal.z());
@@ -628,8 +594,7 @@ namespace ORNL
             vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
 
             normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for(int i=0; i<3; ++i)
-            {
+            for (int i=0; i<3; ++i) {
                 normals.push_back(normal.x());
                 normals.push_back(normal.y());
                 normals.push_back(normal.z());
@@ -647,8 +612,7 @@ namespace ORNL
             vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
 
             normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for(int i=0; i<3; ++i)
-            {
+            for (int i=0; i<3; ++i) {
                 normals.push_back(normal.x());
                 normals.push_back(normal.y());
                 normals.push_back(normal.z());
@@ -667,8 +631,7 @@ namespace ORNL
             vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
 
             normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for(int i=0; i<3; ++i)
-            {
+            for (int i=0; i<3; ++i) {
                 normals.push_back(normal.x());
                 normals.push_back(normal.y());
                 normals.push_back(normal.z());
@@ -678,7 +641,6 @@ namespace ORNL
                 colors.push_back(color.alphaF());
             }
 
-
             first_top = second_top;
             first_bottom = second_bottom;
             second_top = first_top + 2;
@@ -686,20 +648,16 @@ namespace ORNL
 
             //Last segment connects with first two vertices (vertices 1&2),
             //so this is just doing some modulo
-            if (second_top > (2*segments))
-            {
+            if (second_top > (2*segments)) {
                 second_top -= 2*segments;
             }
-            if (second_bottom > (2*segments))
-            {
+            if (second_bottom > (2*segments)) {
                 second_bottom -= 2*segments;
             }
         }
     }
 
-    void ShapeFactory::createSphere(float radius, int sectorCount, int stackCount, const QMatrix4x4& transform, const QColor& color,
-                                    std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createSphere(float radius, int sectorCount, int stackCount, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         std::vector<QVector3D> tmpVertices;
 
         float sectorStep = 2 * M_PI / sectorCount;
@@ -707,16 +665,14 @@ namespace ORNL
         float sectorAngle, stackAngle;
 
         // compute all vertices first, each vertex contains (x,y,z,s,t) except normal
-        for(int i = 0; i <= stackCount; ++i)
-        {
+        for (int i = 0; i <= stackCount; ++i) {
             stackAngle = M_PI / 2 - i * stackStep;        // starting from pi/2 to -pi/2
             float xy = radius * cosf(stackAngle);       // r * cos(u)
             float z = radius * sinf(stackAngle);        // r * sin(u)
 
             // add (sectorCount+1) vertices per stack
             // the first and last vertices have same position and normal, but different tex coords
-            for(int j = 0; j <= sectorCount; ++j)
-            {
+            for (int j = 0; j <= sectorCount; ++j) {
                 sectorAngle = j * sectorStep;           // starting from 0 to 2pi
 
                 QVector3D vertex;
@@ -736,13 +692,11 @@ namespace ORNL
 
         int i, j, k, vi1, vi2;
         int index = 0;                                  // index for vertex
-        for(i = 0; i < stackCount; ++i)
-        {
+        for (i = 0; i < stackCount; ++i) {
             vi1 = i * (sectorCount + 1);                // index of tmpVertices
             vi2 = (i + 1) * (sectorCount + 1);
 
-            for(j = 0; j < sectorCount; ++j, ++vi1, ++vi2)
-            {
+            for (j = 0; j < sectorCount; ++j, ++vi1, ++vi2) {
                 // get 4 vertices per sector
                 //  v1--v3
                 //  |    |
@@ -754,23 +708,20 @@ namespace ORNL
 
                 // if 1st stack and last stack, store only 1 triangle per sector
                 // otherwise, store 2 triangles (quad) per sector
-                if(i == 0) // a triangle for first stack ==========================
-                {
+                if (i == 0) { // a triangle for first stack ==========================
                     vertices.push_back(v1.x()); vertices.push_back(v1.y()); vertices.push_back(v1.z());
                     vertices.push_back(v2.x()); vertices.push_back(v2.y()); vertices.push_back(v2.z());
                     vertices.push_back(v4.x()); vertices.push_back(v4.y()); vertices.push_back(v4.z());
 
                     n = QVector3D::crossProduct(v4 - v2, v1 - v2).normalized();
                     // put normal
-                    for(k = 0; k < 3; ++k)  // same normals for 3 vertices
-                    {
+                    for (k = 0; k < 3; ++k) { // same normals for 3 vertices
                         normals.push_back(n.x()); normals.push_back(n.y()); normals.push_back(n.z());
                         colors.push_back(color.redF()); colors.push_back(color.greenF()); colors.push_back(color.blueF()); colors.push_back(color.alphaF());
                     }
                     index += 3;     // for next
                 }
-                else if(i == (stackCount - 1)) // a triangle for last stack =========
-                {
+                else if (i == (stackCount - 1)) { // a triangle for last stack =========
                     vertices.push_back(v1.x()); vertices.push_back(v1.y()); vertices.push_back(v1.z());
                     vertices.push_back(v2.x()); vertices.push_back(v2.y()); vertices.push_back(v2.z());
                     vertices.push_back(v3.x()); vertices.push_back(v3.y()); vertices.push_back(v3.z());
@@ -778,15 +729,13 @@ namespace ORNL
                     n = QVector3D::crossProduct(v3 - v2, v1 - v2).normalized();
 
                     // put normal
-                    for(k = 0; k < 3; ++k)  // same normals for 3 vertices
-                    {
+                    for (k = 0; k < 3; ++k) {  // same normals for 3 vertices
                         normals.push_back(n.x()); normals.push_back(n.y()); normals.push_back(n.z());
                         colors.push_back(color.redF()); colors.push_back(color.greenF()); colors.push_back(color.blueF()); colors.push_back(color.alphaF());
                     }
                     index += 3;     // for next
                 }
-                else // 2 triangles for others ====================================
-                {
+                else { // 2 triangles for others ====================================
                     // put quad vertices: v1-v2-v3-v4
                     vertices.push_back(v1.x()); vertices.push_back(v1.y()); vertices.push_back(v1.z());
                     vertices.push_back(v2.x()); vertices.push_back(v2.y()); vertices.push_back(v2.z());
@@ -801,8 +750,7 @@ namespace ORNL
                     n = QVector3D::crossProduct(v3 - v2, v1 - v2).normalized();
 
                     // put normal
-                    for(k = 0; k < 6; ++k)  // same normals for 6 vertices
-                    {
+                    for (k = 0; k < 6; ++k) { // same normals for 6 vertices
                         normals.push_back(n.x()); normals.push_back(n.y()); normals.push_back(n.z());
                         colors.push_back(color.redF()); colors.push_back(color.greenF()); colors.push_back(color.blueF()); colors.push_back(color.alphaF());
                     }
@@ -813,8 +761,7 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createGcodeCylinder(float width, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createGcodeCylinder(float width, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         float half_width = 0.5f*width; //half width of rectangle
         float half_length = 0.6f*width; //half length of rectangle
         float radius = qSqrt(half_width*half_width + half_length*half_length); //radius of circle must be the same as diagonal to meet up with corners of rectangle
@@ -840,8 +787,7 @@ namespace ORNL
         temp_vertices.push_back(transform * QVector3D(0.0f, 0.0f, height));
 
         //Loop to create slices on right side
-        for (int i=0; i < slices+1; ++i)
-        {
+        for (int i=0; i < slices+1; ++i) {
             temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)),
                                                           radius*float(qSin(theta)),
                                                           height));
@@ -855,8 +801,7 @@ namespace ORNL
 
         theta = 3*M_PI_4;
         //Loop to create slices on left side
-        for (int i=0; i < slices+1; ++i)
-        {
+        for (int i=0; i < slices+1; ++i) {
             temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)),
                                                           radius*float(qSin(theta)),
                                                           height));
@@ -892,8 +837,7 @@ namespace ORNL
         //Make 4 triangles at a time like in the cylinder code
         QVector3D vertex1, vertex2, vertex3;
         QVector3D normal;
-        for (int i=0; i < 2*slices + 2; ++i)
-        {
+        for (int i=0; i < 2*slices + 2; ++i) {
             //Triangle on top face
             vertex1 = temp_vertices.at(center_top);
             vertex2 = temp_vertices.at(start_top);
@@ -905,8 +849,7 @@ namespace ORNL
             //Each vertex in a face has same normal
             //Each vertex has same color, so just push back in these loops
             normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for(int i = 0; i < 3; ++i)
-            {
+            for (int i = 0; i < 3; ++i) {
                 normals.push_back(normal.x());
                 normals.push_back(normal.y());
                 normals.push_back(normal.z());
@@ -925,8 +868,7 @@ namespace ORNL
             vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
 
             normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for(int i = 0; i < 3; ++i)
-            {
+            for (int i = 0; i < 3; ++i) {
                 normals.push_back(normal.x());
                 normals.push_back(normal.y());
                 normals.push_back(normal.z());
@@ -944,8 +886,7 @@ namespace ORNL
             vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
 
             normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for(int i = 0; i < 3; ++i)
-            {
+            for (int i = 0; i < 3; ++i) {
                 normals.push_back(normal.x());
                 normals.push_back(normal.y());
                 normals.push_back(normal.z());
@@ -964,8 +905,7 @@ namespace ORNL
             vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
 
             normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for(int i = 0; i < 3; ++i)
-            {
+            for (int i = 0; i < 3; ++i) {
                 normals.push_back(normal.x());
                 normals.push_back(normal.y());
                 normals.push_back(normal.z());
@@ -981,8 +921,7 @@ namespace ORNL
             next_bottom += 2;
 
             //The last triangles join up with the rectangle
-            if (next_bottom >= center_bottom)
-            {
+            if (next_bottom >= center_bottom) {
                 next_top = center_top+1;
                 next_bottom = next_top+1;
             }
@@ -990,8 +929,7 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createCone(float radius, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createCone(float radius, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         unsigned int slices = 50; //Number of segments used to approximate a cone
         float theta = 0; //Theta of each segment, starts at 0
         float theta_increment = 2*float(M_PI) / float(slices);
@@ -1008,12 +946,8 @@ namespace ORNL
         temp_vertices.push_back(transform * QVector3D(0.0f, 0.0f, height));
 
         //Perimeter of base
-        for (int i=0; i<slices; ++i)
-        {
-            temp_vertices.push_back(transform * QVector3D(radius*qSin(theta),
-                                                          radius*qCos(theta),
-                                                          0.0f));
-
+        for (int i=0; i<slices; ++i) {
+            temp_vertices.push_back(transform * QVector3D(radius*qSin(theta), radius*qCos(theta), 0.0f));
             theta += theta_increment;
         }
 
@@ -1025,8 +959,7 @@ namespace ORNL
         next_vertex = 2;
         QVector3D vertex1, vertex2, vertex3;
         QVector3D normal;
-        for (int i=0; i<slices; ++i)
-        {
+        for (int i=0; i<slices; ++i) {
             //Triangle from tip to two points on circle
             vertex1 = temp_vertices.at(0);
             vertex2 = temp_vertices.at(next_vertex);
@@ -1038,8 +971,7 @@ namespace ORNL
             //Each vertex in a face has the same normals
             //Each vertex has same color, convenient to push back color data in these loops
             normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for(int i=0; i<3; ++i)
-            {
+            for (int i=0; i<3; ++i) {
                 normals.push_back(normal.x());
                 normals.push_back(normal.y());
                 normals.push_back(normal.z());
@@ -1058,8 +990,7 @@ namespace ORNL
             vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
 
             normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for(int i=0; i<3; ++i)
-            {
+            for (int i=0; i<3; ++i) {
                 normals.push_back(normal.x());
                 normals.push_back(normal.y());
                 normals.push_back(normal.z());
@@ -1073,15 +1004,13 @@ namespace ORNL
             ++next_vertex;
 
             //Handle last slice where you come back to the first vertex to be added after the cone tip
-            if (next_vertex > slices)
-            {
+            if (next_vertex > slices) {
                 next_vertex -= slices;
             }
         }
     }
 
-    void ShapeFactory::createFullGimbal(float inner_radius, float outer_radius, const QVector3D& center, std::vector<float> &vertices, std::vector<float> &colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createFullGimbal(float inner_radius, float outer_radius, const QVector3D& center, std::vector<float> &vertices, std::vector<float> &colors, std::vector<float>& normals) {
         QMatrix4x4 transform;
         QColor color;
 
@@ -1137,8 +1066,7 @@ namespace ORNL
         transform.rotate(-90.0f, 1.0f, 0.0f, 0.0f);
     }
 
-    void ShapeFactory::createXYGimbal(float inner_radius, float outer_radius, const QVector3D& center, std::vector<float> &vertices, std::vector<float> &colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createXYGimbal(float inner_radius, float outer_radius, const QVector3D& center, std::vector<float> &vertices, std::vector<float> &colors, std::vector<float>& normals) {
         QMatrix4x4 transform;
         QColor color;
 
@@ -1177,8 +1105,7 @@ namespace ORNL
         transform.rotate(-90.0f, 1.0f, 0.0f, 0.0f);
     }
 
-    void ShapeFactory::createXZGimbal(float inner_radius, float outer_radius, const QVector3D& center, std::vector<float> &vertices, std::vector<float> &colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createXZGimbal(float inner_radius, float outer_radius, const QVector3D& center, std::vector<float> &vertices, std::vector<float> &colors, std::vector<float>& normals) {
         QMatrix4x4 transform;
         QColor color;
 
@@ -1213,22 +1140,20 @@ namespace ORNL
         transform.rotate(-90.0f, 1.0f, 0.0f, 0.0f);
     }
 
-    void ShapeFactory::createGridPlane(float length, float width, float x_grid_dist, float y_grid_dist, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors)
-    {
+    void ShapeFactory::createGridPlane(float length, float width, float x_grid_dist, float y_grid_dist, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors) {
         float y_min = -width / 2;
         float y_max = width / 2;
         float x_min = -length / 2;
         float x_max = length / 2;
         float z = 0;
 
-        if(x_grid_dist > 0)
-        {
+        if (x_grid_dist > 0) {
             float totalDist = x_max - x_min;
-            if(x_grid_dist < totalDist)
-            {
+
+            if (x_grid_dist < totalDist) {
                 float currentX = x_min;
-                while(currentX < (x_max + (x_grid_dist / 2)))
-                {
+
+                while (currentX < (x_max + (x_grid_dist / 2))) {
                     vertices.push_back(currentX); vertices.push_back(y_min); vertices.push_back(z);
                     vertices.push_back(currentX); vertices.push_back(y_max); vertices.push_back(z);
                     currentX += x_grid_dist;
@@ -1236,14 +1161,13 @@ namespace ORNL
             }
         }
 
-        if(y_grid_dist > 0)
-        {
+        if (y_grid_dist > 0) {
             float totalDist = y_max - y_min;
-            if(y_grid_dist < totalDist)
-            {
+
+            if (y_grid_dist < totalDist) {
                 float currentY = y_min;
-                while(currentY < (y_max + (y_grid_dist / 2)))
-                {
+
+                while (currentY < (y_max + (y_grid_dist / 2))) {
                     vertices.push_back(x_min); vertices.push_back(currentY); vertices.push_back(z);
                     vertices.push_back(x_max); vertices.push_back(currentY); vertices.push_back(z);
                     currentY += y_grid_dist;
@@ -1253,8 +1177,7 @@ namespace ORNL
 
         int colorSize = vertices.size() / 3 * 4;
         colors.reserve(colorSize);
-        for(int i = 0; i < colorSize; i += 4)
-        {
+        for (int i = 0; i < colorSize; i += 4) {
             colors.push_back(color.redF());
             colors.push_back(color.greenF());
             colors.push_back(color.blueF());
@@ -1263,9 +1186,7 @@ namespace ORNL
     }
 
 
-    void ShapeFactory::createBuildVolumeRectangle(QVector3D min, QVector3D max, float x_grid_dist, float y_grid_dist,
-                                                  const QColor& color, std::vector<float>& vertices, std::vector<float>& colors)
-    {
+    void ShapeFactory::createBuildVolumeRectangle(QVector3D min, QVector3D max, float x_grid_dist, float y_grid_dist, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors) {
         float printer_x_min = min.x();
         float printer_x_max = max.x();
         float printer_y_min = min.y();
@@ -1273,8 +1194,7 @@ namespace ORNL
         float printer_z_min = min.z();
         float printer_z_max = max.z();
 
-        vertices =
-        {
+        vertices = {
             //Line from back top left to...
             //back top right
             printer_x_min, printer_y_min, printer_z_max,
@@ -1328,14 +1248,13 @@ namespace ORNL
             printer_x_max, printer_y_max, printer_z_min,
         };
 
-        if(x_grid_dist > 0)
-        {
+        if (x_grid_dist > 0) {
             float totalDist = printer_x_max - printer_x_min;
-            if(x_grid_dist < totalDist)
-            {
+
+            if (x_grid_dist < totalDist) {
                 float currentX = printer_x_min + x_grid_dist;
-                while(currentX < printer_x_max)
-                {
+
+                while (currentX < printer_x_max) {
                     vertices.push_back(currentX); vertices.push_back(printer_y_min); vertices.push_back(printer_z_min);
                     vertices.push_back(currentX); vertices.push_back(printer_y_max); vertices.push_back(printer_z_min);
                     currentX += x_grid_dist;
@@ -1349,7 +1268,7 @@ namespace ORNL
             if (y_grid_dist < totalDist) {
                 float currentY = printer_y_min + y_grid_dist;
 
-                while(currentY < printer_y_max) {
+                while (currentY < printer_y_max) {
                     vertices.push_back(printer_x_min); vertices.push_back(currentY); vertices.push_back(printer_z_min);
                     vertices.push_back(printer_x_max); vertices.push_back(currentY); vertices.push_back(printer_z_min);
                     currentY += y_grid_dist;
@@ -1367,9 +1286,7 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createBuildVolumeCylinder(float radius, float height, float x_grid_dist, float y_grid_dist,
-                                                 const QColor& color, std::vector<float>& vertices, std::vector<float>& colors)
-    {
+    void ShapeFactory::createBuildVolumeCylinder(float radius, float height, float x_grid_dist, float y_grid_dist, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors) {
         unsigned int segments = 100; //Number of arc segments used to approximate a cylinder
         float theta = 0.0f;  //Measure of angle at which each segment starts; first theta is just 0
         float thetaIncrement = 2.0f * M_PI / float(segments);
@@ -1474,9 +1391,7 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createBuildVolumeToroidal(float outerRadius, float innerRadius, float x_grid_dist, float y_grid_dist,
-                                                 float height, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors)
-    {
+    void ShapeFactory::createBuildVolumeToroidal(float outerRadius, float innerRadius, float x_grid_dist, float y_grid_dist, float height, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors) {
         unsigned int segments = 100; //Number of arc segments used to approximate a cylinder
         float theta = 0.0f;  //Measure of angle at which each segment starts; first theta is just 0
         float thetaIncrement = 2.0f * M_PI / float(segments);
@@ -1486,11 +1401,10 @@ namespace ORNL
         std::vector<float> heights {0.0f, height};
 
         //draw four circles
-        for(float m_h : heights)
-        {
+        for (float m_h : heights) {
             theta = 0.0f;
-            for(int i = 0; i < segments; ++i)
-            {
+
+            for (int i = 0; i < segments; ++i) {
                 float angleX = qCos(theta);
                 float angleY = qSin(theta);
 
@@ -1520,8 +1434,7 @@ namespace ORNL
         //draw vertical lines
         theta = 0.0;
         float verticalStep = 2.0f * M_PI / float(verticalIncrement);
-        for(int i = 0; i < verticalIncrement; ++i)
-        {
+        for (int i = 0; i < verticalIncrement; ++i) {
             float angleX = qCos(theta);
             float angleY = qSin(theta);
 
@@ -1547,11 +1460,11 @@ namespace ORNL
         float r_outer_squared = outerRadius * outerRadius;
         float r_inner_squared = innerRadius * innerRadius;
         float diameter = 2.0 * outerRadius;
-        if(x_grid_dist > 0)
-        {
+
+        if (x_grid_dist > 0) {
             float x = -outerRadius;
-            while(x < diameter)
-            {
+
+            while (x < diameter) {
                 float x_squared = x * x;
                 float y_outer = qSqrt(r_outer_squared - x_squared);
                 float y_inner = qSqrt(r_inner_squared - x_squared);
@@ -1565,8 +1478,7 @@ namespace ORNL
                 vertices.push_back(-y_outer);
                 vertices.push_back(0.0f);
 
-                if(!std::isnan(y_inner))
-                {
+                if (!std::isnan(y_inner)) {
                     vertices.push_back(x);
                     vertices.push_back(-y_inner);
                     vertices.push_back(0.0f);
@@ -1584,11 +1496,10 @@ namespace ORNL
             }
         }
 
-        if(y_grid_dist > 0)
-        {
+        if (y_grid_dist > 0) {
             float y = -outerRadius;
-            while(y < diameter)
-            {
+
+            while (y < diameter) {
                 float y_squared = y * y;
                 float x_outer = qSqrt(r_outer_squared - y_squared);
                 float x_inner = qSqrt(r_inner_squared - y_squared);
@@ -1602,8 +1513,7 @@ namespace ORNL
                 vertices.push_back(y);
                 vertices.push_back(0.0f);
 
-                if(!std::isnan(x_inner))
-                {
+                if (!std::isnan(x_inner)) {
                     vertices.push_back(-x_inner);
                     vertices.push_back(y);
                     vertices.push_back(0.0f);
@@ -1624,8 +1534,7 @@ namespace ORNL
         //set colors for all vertices
         int colorSize = vertices.size() / 3 * 4;
         colors.reserve(colorSize);
-        for(int i = 0; i < colorSize; i += 4)
-        {
+        for (int i = 0; i < colorSize; i += 4) {
             colors.push_back(color.redF());
             colors.push_back(color.greenF());
             colors.push_back(color.blueF());
@@ -1633,8 +1542,7 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createArrow(QVector3D begin, QVector3D end, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors)
-    {
+    void ShapeFactory::createArrow(QVector3D begin, QVector3D end, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors) {
         vertices = {
             // Begin to end
             begin.x(), begin.y(), begin.z(),
@@ -1655,7 +1563,7 @@ namespace ORNL
 
         int colorSize = vertices.size() / 3 * 4;
         colors.reserve(colorSize);
-        for(int i = 0; i < colorSize; i += 4) {
+        for (int i = 0; i < colorSize; i += 4) {
             colors.push_back(color.redF());
             colors.push_back(color.greenF());
             colors.push_back(color.blueF());
@@ -1677,8 +1585,7 @@ namespace ORNL
         createGcodeCylinder(width, height, transform, color, vertices, colors, normals);
     }
 
-    void ShapeFactory::createArcCylinder(const float cylinder_height, const Point& start, const Point& center, const Point& end, bool is_ccw, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals)
-    {
+    void ShapeFactory::createArcCylinder(const float cylinder_height, const Point& start, const Point& center, const Point& end, bool is_ccw, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         //Convert the start position and displacement to a transform matrix we can use in the standard method
         QMatrix4x4 transform;
         transform.setToIdentity();
@@ -1688,10 +1595,12 @@ namespace ORNL
         Point c(center.x() + (center.distance(a)), center.y(), center.z());
         transform.rotate(MathUtils::CreateQuaternion((c - center).toQVector3D(), (a - center).toQVector3D()));
 
-        if(is_ccw)
+        if (is_ccw) {
             createArcCylinderCCW(cylinder_height, start, center, end, transform, color, vertices, colors, normals);
-        else
+        }
+        else {
             createArcCylinder(cylinder_height, start, center, end, transform, color, vertices, colors, normals);
+        }
     }
 
     QVector3D ShapeFactory::getAxis(QVector3D a, QVector3D b) {
@@ -1710,9 +1619,7 @@ namespace ORNL
 
     float ShapeFactory::getAngle(QVector3D a, QVector3D b, QVector3D axis) {
         //If either vector passed in is zero, the angle is 0 vacuously
-        if(a.length() < std::numeric_limits<float>::epsilon()
-            || b.length() < std::numeric_limits<float>::epsilon())
-        {
+        if(a.length() < std::numeric_limits<float>::epsilon() || b.length() < std::numeric_limits<float>::epsilon()) {
             return 0.0f;
         }
 
