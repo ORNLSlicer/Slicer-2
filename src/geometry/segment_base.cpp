@@ -74,6 +74,10 @@ namespace ORNL {
         m_display_width = display_width;
     }
 
+    void SegmentBase::setDisplayHeight(float display_height) {
+        m_display_height = display_height;
+    }
+
     void SegmentBase::createGraphic(std::vector<float>& vertices, std::vector<float>& normals, std::vector<float>& colors) {
         // NOP
     }

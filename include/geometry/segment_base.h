@@ -68,6 +68,10 @@ namespace ORNL {
             //! \param display_width the display width
             void setDisplayWidth(float display_width);
 
+            //! \brief Sets the display height of the gcode segment
+            //! \param display_height the display height
+            void setDisplayHeight(float display_height);
+
             //! \brief Creates the vertex info for this segment. Requires info set in setGCodeInfo(). Virtual function by default does nothing.
             //! \todo This function expects segments generated using OpenGL scales. A less brittle version of this would entail scaling as needed
             //!       so that we could eventually use segments internally rather than re-generating them from GCode.
