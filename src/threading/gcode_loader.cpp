@@ -763,7 +763,7 @@ namespace ORNL {
                     type = SegmentDisplayType::kLine;
                 }
 
-                float display_height = 0;
+                float display_length = 0;
 
                 QVector3D extruder_offset = extruder_offsets[i].toQVector3D() * Constants::OpenGL::kObjectToView;
 
@@ -823,14 +823,19 @@ namespace ORNL {
                     }
                 }
                 else { // G0, G1, or anything else is drawn as a line
-                    display_height = m_start_pos.distanceToPoint(end_pos);
+                    display_length = m_start_pos.distanceToPoint(end_pos);
                     segment = QSharedPointer<LineSegment>::create(m_start_pos + extruder_offset, end_pos - m_start_pos);
                 }
 
-                if(m_modifier_colors.contains(color))
-                    segment->setGCodeInfo(m_segment_width * 1.1, display_height, type, color, line_num, layer_num);
-                else
-                    segment->setGCodeInfo(m_segment_width, display_height, type, color, line_num, layer_num);
+                // Set display height to layer height
+                float display_height = GSM->getGlobal()->setting< float >(Constants::ProfileSettings::Layer::kLayerHeight) * Constants::OpenGL::kObjectToView;
+
+                if (m_modifier_colors.contains(color)) {
+                    segment->setGCodeInfo(m_segment_width * 1.1, display_length, display_height, type, color, line_num, layer_num);
+                }
+                else {
+                    segment->setGCodeInfo(m_segment_width, display_length, display_height, type, color, line_num, layer_num);
+                }
 
                 segment->m_segment_info_meta.type = comment;
                 segment->m_segment_info_meta.start = m_info_start_pos;

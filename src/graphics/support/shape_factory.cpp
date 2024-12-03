@@ -761,10 +761,10 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createGcodeCylinder(float width, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
-        float half_width = 0.5f * width; //half width of rectangle
-        float half_length = 0.6f * width; //half length of rectangle
-        float radius = qSqrt(half_width * half_width + half_length * half_length); //radius of circle must be the same as diagonal to meet up with corners of rectangle
+    void ShapeFactory::createGcodeCylinder(float width, float length, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
+        float half_width = width / 2; // half width of rectangle
+        float half_height = height / 2; //half height of rectangle
+        float radius = qSqrt(half_width * half_width + half_height * half_height); //radius of circle must be the same as diagonal to meet up with corners of rectangle
         unsigned int slices = 6; //Number of arc segments used on each side to approximate a curve
         float theta = -float(M_PI_4);  //Start of arc
         float thetaIncrement = float(M_PI_2) / float(slices);
@@ -784,11 +784,11 @@ namespace ORNL
          */
 
         //Start with the top rectangle and its center
-        temp_vertices.push_back(transform * QVector3D(0.0f, 0.0f, height));
+        temp_vertices.push_back(transform * QVector3D(0.0f, 0.0f, length));
 
         //Loop to create slices on right side
         for (int i = 0; i < slices + 1; ++i) {
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), height));
+            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), length));
             temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), 0.0f));
             theta += thetaIncrement;
         }
@@ -796,7 +796,7 @@ namespace ORNL
         theta = 3 * M_PI_4;
         //Loop to create slices on left side
         for (int i = 0; i < slices + 1; ++i) {
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), height));
+            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), length));
             temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), 0.0f));
             theta += thetaIncrement;
         }
@@ -1559,7 +1559,7 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createGcodeCylinder(float width, float height, const QVector3D& start, const QVector3D& displacement, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
+    void ShapeFactory::createGcodeCylinder(float width, float length,  float height, const QVector3D& start, const QVector3D& displacement, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         // Convert the start position and displacement to a transform matrix we can use in the standard method
         QMatrix4x4 transform;
         transform.translate(start);
@@ -1593,7 +1593,7 @@ namespace ORNL
         transform *= rotation;
 
         // Call the standard method
-        createGcodeCylinder(width, height, transform, color, vertices, colors, normals);
+        createGcodeCylinder(width, length, height, transform, color, vertices, colors, normals);
     }
 
     void ShapeFactory::createArcCylinder(const float cylinder_height, const Point& start, const Point& center, const Point& end, bool is_ccw, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {

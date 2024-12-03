@@ -50,13 +50,14 @@ namespace ORNL {
 
             //! \brief Sets the info for this segment corresponding to a loaded GCode file.
             //! \note This function is temporary pending a rework of the parser/writer architecture.
-            //! \param display_width: Width of display segment to generate.
-            //! \param display_length: Length of display segment to generate.
+            //! \param display_width: Width of segment in display units.
+            //! \param display_length: Length of segment in display units.
+            //! \param display_height: Height of segment in display units.
             //! \param type: Type of display segment to generate.
             //! \param color: Color of the display segment to generate.
             //! \param line_num: GCode line number that this segment corresponds to.
             //! \param layer_num: Layer that this GCode line segment belongs to.
-            void setGCodeInfo(float display_width, float display_length, SegmentDisplayType type, QColor color, uint line_num, uint layer_num);
+            void setGCodeInfo(float display_width, float display_length, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num);
 
             //! \brief gets the width of this segment
             //! \return the width of the drawn gcode segment
@@ -198,6 +199,9 @@ namespace ORNL {
 
             //! \brief The length of the segment in display units.
             float m_display_length;
+
+            //! \brief The height of the segment in display units.
+            float m_display_height;
 
     };
 }  // namespace ORNL

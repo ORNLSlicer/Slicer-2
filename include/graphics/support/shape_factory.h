@@ -73,8 +73,9 @@ namespace ORNL
          *  has been squished flat on two sides.
          *  This is the public interface to the gcode graphics which translates the start and displacement into a transform matrix usable by the private
          *  function of the same name.
-         *  @param width Radius of gcode cylinder
-         *  @param height Height of gcode cylinder
+         *  @param width Width of gcode cylinder
+         *  @param length Length of gcode cylinder
+         *  @param height Height of the rectangular cross section of the gcode cylinder
          *  @param start Vector indicating where the center of the base of this cylinder should be
          *  @param displacement Vector indicating the direction and length of this cylinder
          *  @param color Color of gcode cylinder
@@ -82,7 +83,7 @@ namespace ORNL
          *  @param colors Vector of colors to append the new colors to
          *  @param normals Vector of normals to append the new normals to
          */
-        static void createGcodeCylinder(float width, float height, const QVector3D& start, const QVector3D& displacement, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
+        static void createGcodeCylinder(float width, float length, float height, const QVector3D& start, const QVector3D& displacement, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
 
         /*!
          * \brief appends the data for a arc cylinder to input vectors
@@ -226,15 +227,16 @@ namespace ORNL
          *
          *  A gcode cylinder is a cylinder with the arcs from PI/4 to 3PI/4 and 5PI/4 to 7PI/4 replaced with flat lines. It looks like a cylinder that
          *  has been squished flat on two sides.
-         *  @param width Width of rectangular cross section
-         *  @param height Height of rectangular cross section
+         *  @param width Width of gcode cylinder
+         *  @param length Length of gcode cylinder
+         *  @param height Height of the rectangular cross section of the gcode cylinder
          *  @param transform Matrix to apply to each vertex
          *  @param color Color of gcode cylinder
          *  @param vertices Vector of vertices to append the new vertices to
          *  @param colors Vector of colors to append the new colors to
          *  @param normals Vector of normals to append the new normals to
          */
-        static void createGcodeCylinder(float width, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
+        static void createGcodeCylinder(float width, float length, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
 
         /*!
          * \brief appends the data for a clockwise (G2) arc cylinder to input vectors

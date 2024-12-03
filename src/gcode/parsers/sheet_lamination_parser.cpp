@@ -18,6 +18,8 @@ namespace ORNL
 
     QVector<QVector<QSharedPointer<SegmentBase>>> SheetLaminationParser::parse(QStringList& lines)
     {
+        QSharedPointer<SettingsBase> global_sb = QSharedPointer<SettingsBase>::create(*GSM->getGlobal());
+
         GcodeMeta meta = GcodeMetaList::SheetLaminationMeta;
         QVector<QVector<QSharedPointer<SegmentBase>>> rv;
         QVector<QSharedPointer<SegmentBase>> newLayer;
@@ -50,12 +52,13 @@ namespace ORNL
                 Point point_two = Point(x_two, y_two, z_two);
                 float segment_length = point_one.distance(point_two)();
                 QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(LineSegment(point_one, point_two - point_one));
+                float segment_height = global_sb->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight)();
                 if (lines[curr_line+2] == "POLYGON")
                 {
-                    segment->setGCodeInfo(0.1, segment_length, SegmentDisplayType::kLine, QColor(118,0,255,255), (uint) curr_line, (uint) curr_layer);
+                    segment->setGCodeInfo(0.1, segment_length, segment_height, SegmentDisplayType::kLine, QColor(118,0,255,255), (uint) curr_line, (uint) curr_layer);
                 } else
                 {
-                    segment->setGCodeInfo(0.1, segment_length, SegmentDisplayType::kTravel, QColor(127,127,127,255), (uint) curr_line, (uint) curr_layer);
+                    segment->setGCodeInfo(0.1, segment_length, segment_height, SegmentDisplayType::kTravel, QColor(127,127,127,255), (uint) curr_line, (uint) curr_layer);
                 }
                 rv.last().push_back(segment);
                 //i += however many dxf lines it takes to represent a segment
