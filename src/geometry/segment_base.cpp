@@ -49,7 +49,7 @@ namespace ORNL {
     }
 
     float SegmentBase::displayHeight() {
-        return m_display_length;
+        return m_display_height;
     }
 
     SegmentDisplayType SegmentBase::displayType() {
