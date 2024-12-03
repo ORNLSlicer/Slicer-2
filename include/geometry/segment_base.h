@@ -54,8 +54,7 @@ namespace ORNL {
             //! \brief Gets the display color.
             QColor color();
 
-            //! \brief Sets the info for this segment corresponding to a loaded GCode file.
-            //! \note This function is temporary pending a rework of the parser/writer architecture.
+            //! \brief Sets the display info for this segment corresponding to a loaded GCode file.
             //! \param display_width: Width of segment in display units.
             //! \param display_length: Length of segment in display units.
             //! \param display_height: Height of segment in display units.
@@ -63,7 +62,7 @@ namespace ORNL {
             //! \param color: Color of the display segment to generate.
             //! \param line_num: GCode line number that this segment corresponds to.
             //! \param layer_num: Layer that this GCode line segment belongs to.
-            void setGCodeInfo(float display_width, float display_length, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num);
+            void setDisplayInfo(float display_width, float display_length, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num);
 
             //! \brief Sets the display width of the gocde segment
             //! \param display_width the display width

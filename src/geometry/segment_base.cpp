@@ -60,7 +60,7 @@ namespace ORNL {
         return m_color;
     }
 
-    void SegmentBase::setGCodeInfo(float display_width, float display_length, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num) {
+    void SegmentBase::setDisplayInfo(float display_width, float display_length, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num) {
         m_display_width = display_width;
         m_display_length = display_length;
         m_display_height = display_height;
