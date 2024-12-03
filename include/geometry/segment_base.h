@@ -37,14 +37,19 @@ namespace ORNL {
 
             //! \brief Gets the layer number for this segment.
             uint layerNumber();
+
             //! \brief Gets the line number for this segment.
             uint lineNumber();
+
             //! \brief Gets the display width.
             float displayWidth();
+
             //! \brief Gets the display height.
             float displayHeight();
+
             //! \brief Gets the display type.
             SegmentDisplayType displayType();
+
             //! \brief Gets the display color.
             QColor color();
 
@@ -122,45 +127,49 @@ namespace ORNL {
             struct SegmentInfoMeta {
                 // Start point for segment info display.
                 Point start;
+
                 //! \brief End point for segment info display.
                 Point end;
 
                 //! \brief Print speed for segment info display.
                 QString speed;
+
                 //! \brief Extruder speed for segment info display.
                 QString extruderSpeed;
+
                 //! \brief Length for segment info display.
                 QString length;
+
                 //! \brief Region type for segment info display.
                 QString type;
 
                 //! \brief Default counstructor
-                SegmentInfoMeta(){}
+                SegmentInfoMeta() {}
 
                 //! \brief Check if motion is in XY plane
-                bool isXYmove(){
+                bool isXYmove() {
                     return start.x() != end.x() || start.y() != end.y();
                 }
 
                 //! \brief Compute Z motion change
-                float getZChange(){
+                float getZChange() {
                     return end.z() - start.z();
                 }
 
                 //! \brief Compute the 2d angle along X axis (couter clock wise)
-                float getCCWXAngle()
-                {
+                float getCCWXAngle() {
                     const float y = end.y() - start.y();
                     const float x = end.x() - start.x();
 
                     float angle = 360;
-                    if (x != 0 || y != 0)
-                    {
+                    if (x != 0 || y != 0) {
                         float delta = 0;
-                        if ((y >= 0 && x < 0) || (y < 0 && x < 0))
+                        if ((y >= 0 && x < 0) || (y < 0 && x < 0)) {
                             delta = 180;
-                        else if (y < 0 && x >= 0)
+                        }
+                        else if (y < 0 && x >= 0) {
                             delta = 360;
+                        }
 
                         angle = delta + atan(y / x) * 180 / 3.14159265358979323846;
                     }
