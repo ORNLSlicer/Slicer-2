@@ -70,8 +70,7 @@ namespace ORNL {
         m_layer_num = layer_num;
     }
 
-    void SegmentBase::setGCodeWidth(float display_width)
-    {
+    void SegmentBase::setDisplayWidth(float display_width) {
         m_display_width = display_width;
     }
 

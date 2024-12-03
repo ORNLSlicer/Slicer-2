@@ -65,9 +65,9 @@ namespace ORNL {
             //! \param layer_num: Layer that this GCode line segment belongs to.
             void setGCodeInfo(float display_width, float display_length, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num);
 
-            //! \brief sets the width ofthe gocde segment
+            //! \brief Sets the display width of the gocde segment
             //! \param display_width the display width
-            void setGCodeWidth(float display_width);
+            void setDisplayWidth(float display_width);
 
             //! \brief Creates the vertex info for this segment. Requires info set in setGCodeInfo(). Virtual function by default does nothing.
             //! \todo This function expects segments generated using OpenGL scales. A less brittle version of this would entail scaling as needed
