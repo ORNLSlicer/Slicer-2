@@ -831,10 +831,10 @@ namespace ORNL {
                 float display_height = GSM->getGlobal()->setting< float >(Constants::ProfileSettings::Layer::kLayerHeight) * Constants::OpenGL::kObjectToView;
 
                 if (m_modifier_colors.contains(color)) {
-                    segment->setGCodeInfo(m_segment_width * 1.1, display_length, display_height, type, color, line_num, layer_num);
+                    segment->setDisplayInfo(m_segment_width * 1.1, display_length, display_height, type, color, line_num, layer_num);
                 }
                 else {
-                    segment->setGCodeInfo(m_segment_width, display_length, display_height, type, color, line_num, layer_num);
+                    segment->setDisplayInfo(m_segment_width, display_length, display_height, type, color, line_num, layer_num);
                 }
 
                 segment->m_segment_info_meta.type = comment;
