@@ -42,6 +42,7 @@ namespace ORNL {
             uint lineNumber();
 
             //! \brief Gets the display width.
+            //! \return the display width
             float displayWidth();
 
             //! \brief Gets the display height.
@@ -63,10 +64,6 @@ namespace ORNL {
             //! \param line_num: GCode line number that this segment corresponds to.
             //! \param layer_num: Layer that this GCode line segment belongs to.
             void setGCodeInfo(float display_width, float display_length, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num);
-
-            //! \brief gets the width of this segment
-            //! \return the width of the drawn gcode segment
-            float getGCodeWidth();
 
             //! \brief sets the width ofthe gocde segment
             //! \param display_width the display width

@@ -39,7 +39,7 @@ namespace ORNL {
             {
                 for(auto& segment : layer)
                 {
-                    segment->setGCodeWidth(segment->getGCodeWidth() * 0.20);
+                    segment->setGCodeWidth(segment->displayWidth() * 0.20);
                 }
             }
         }
@@ -119,7 +119,7 @@ namespace ORNL {
                 {
                     for(auto& segment : layer)
                     {
-                        segment->setGCodeWidth(segment->getGCodeWidth() * 5.0);
+                        segment->setGCodeWidth(segment->displayWidth() * 5.0);
                     }
                 }
             }
