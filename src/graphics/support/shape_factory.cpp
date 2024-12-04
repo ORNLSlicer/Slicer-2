@@ -416,7 +416,6 @@ namespace ORNL
         }
     }
 
-
     void ShapeFactory::createSplineCylinder(const float diameter, const Point& start, const Point& control_a, const Point& control_b, const Point& end, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
         const unsigned int cross_sectional_resolution = 20; // number of points that make up a cross-sectional circle
         const unsigned int spline_segments = 75; // number of cylindrical segments that comprise an spline
@@ -1172,7 +1171,6 @@ namespace ORNL
             colors.push_back(color.alphaF());
         }
     }
-
 
     void ShapeFactory::createBuildVolumeRectangle(QVector3D min, QVector3D max, float x_grid_dist, float y_grid_dist, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors) {
         float printer_x_min = min.x();
