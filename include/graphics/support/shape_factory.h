@@ -267,14 +267,14 @@ namespace ORNL
         static void createArcCylinderCCW(float cylinder_height, const Point& start, const Point& center, const Point& end, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
 
         //! adds three vectors to array and computes normal/ colors
-        //! \param a the first vector
-        //! \param b the second vector
-        //! \param c the third vector
+        //! \param v0 the first vertex
+        //! \param v1 the second vertex
+        //! \param v2 the third vertex
         //! \param color the color to draw as
         //! \param vertices Vector of vertices to append the new vertices to
         //! \param colors Vector of colors to append the new colors to
         //! \param normals Vector of normals to append the new normals to
-        static void appendTriangle(QVector3D a, QVector3D b, QVector3D c, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
+        static void appendTriangle(const QVector3D& v0, const QVector3D& v1, const QVector3D& v2, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
     };
 } //Namespace ORNL
 #endif // SHAPE_FACTORY_H

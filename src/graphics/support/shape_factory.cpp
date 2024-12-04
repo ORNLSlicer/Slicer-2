@@ -483,29 +483,27 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::appendTriangle(QVector3D a, QVector3D b, QVector3D c, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
-        vertices.push_back(a.x());
-        vertices.push_back(a.y());
-        vertices.push_back(a.z());
+    void ShapeFactory::appendTriangle(const QVector3D& v0, const QVector3D& v1, const QVector3D& v2, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
+        // Convert color to RGBA format
+        std::array<float, 4> rgba = {
+            static_cast<float>(color.redF()),
+            static_cast<float>(color.greenF()),
+            static_cast<float>(color.blueF()),
+            static_cast<float>(color.alphaF())
+        };
 
-        vertices.push_back(b.x());
-        vertices.push_back(b.y());
-        vertices.push_back(b.z());
+        // Add the vertices
+        vertices.insert(vertices.end(), { v0.x(), v0.y(), v0.z(),
+                                          v1.x(), v1.y(), v1.z(),
+                                          v2.x(), v2.y(), v2.z() });
 
-        vertices.push_back(c.x());
-        vertices.push_back(c.y());
-        vertices.push_back(c.z());
+        // Compute the normal
+        QVector3D normal = QVector3D::crossProduct(v1 - v0, v2 - v0).normalized();
 
-        // Normals + Colors
-        auto normal = QVector3D::crossProduct(c - b, a - b).normalized();
-        for (int j = 0; j < 3; ++j) {
-            normals.push_back(normal.x());
-            normals.push_back(normal.y());
-            normals.push_back(normal.z());
-            colors.push_back(color.redF());
-            colors.push_back(color.greenF());
-            colors.push_back(color.blueF());
-            colors.push_back(color.alphaF());
+        // Add the normal and color for each vertex
+        for (int i = 0; i < 3; ++i) {
+            normals.insert(normals.end(), { normal.x(), normal.y(), normal.z() });
+            colors.insert(colors.end(), rgba.begin(), rgba.end());
         }
     }
 
