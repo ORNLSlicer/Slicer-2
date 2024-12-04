@@ -758,159 +758,56 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createGcodeCylinder(float width, float length, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
-        float half_width = width / 2; // half width of rectangle
-        float half_height = height / 2; //half height of rectangle
-        float radius = qSqrt(half_width * half_width + half_height * half_height); //radius of circle must be the same as diagonal to meet up with corners of rectangle
-        unsigned int slices = 6; //Number of arc segments used on each side to approximate a curve
-        float theta = -float(M_PI_4);  //Start of arc
-        float thetaIncrement = float(M_PI_2) / float(slices);
-        unsigned int center_top, center_bottom, start_top, next_top, start_bottom, next_bottom;
-        std::vector<QVector3D> temp_vertices;
+    void ShapeFactory::createGcodeCylinder(const float& width, const float& length, const float& height, const QVector3D& start, const QVector3D& end, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
+        // Compute the transformation matrix for the clipped cylinder
+        QMatrix4x4 transform = computeGcodeCylinderTransform(start, end);
 
-        /*
-         * The gcode cylinder is drawn segment by segment like the regular cylinder. Each segment is represented
-         * by four triangles and six points: one triangle from the center of the top circle to two points on
-         * the top circle, then two triangles to make the vertical wall, then one triangle from the center of
-         * the bottom circle to two points on the bottom circle. Segments are only drawn from 7PI/4 to PI/4 and
-         * from 3PI/4 to 5PI/4.
-         *
-         * The way I thought about this shape was a cross section of a rectangle with two arcs on the side of it.
-         *
-         * The bottom center is at (0,0,0) and the top center is at (0,0,height)
-         */
+        // Define the number of quads per side and vertices per arc and side
+        unsigned int quads_per_side = 6;
+        unsigned int vertices_per_arc = quads_per_side + 1;
+        unsigned int vertices_per_side = 2 * vertices_per_arc;
 
-        //Start with the top rectangle and its center
-        temp_vertices.push_back(transform * QVector3D(0.0f, 0.0f, length));
+        // Calculate the radius of the clipped cylinder
+        float radius = width / 2.0f;
 
-        //Loop to create slices on right side
-        for (int i = 0; i < slices + 1; ++i) {
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), length));
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), 0.0f));
-            theta += thetaIncrement;
+        // Calculate the angular range based on the height and radius
+        float theta_start = -std::asin((height / 2.0f) / radius);
+        float theta_end = -theta_start;
+        float theta_increment = (theta_end - theta_start) / quads_per_side;
+
+
+        // Vectors to hold the vertices of the top and bottom of the clipped cylinder
+        std::vector<QVector3D> top_vertices(2 * vertices_per_arc);
+        std::vector<QVector3D> bottom_vertices(2 * vertices_per_arc);
+
+        // Generate vertices vertices for the top and bottom of the clipped cylinder
+        for (int i = 0; i < vertices_per_arc; ++i) {
+            float theta = theta_start + i * theta_increment;
+
+            float x = radius * std::cos(theta);
+            float y = radius * std::sin(theta);
+
+            // Right side vertices
+            top_vertices[i] = transform * QVector3D(x, y, length);
+            bottom_vertices[i] = transform * QVector3D(x, y, 0.0f);
+
+            // Left side vertices
+            top_vertices[i + vertices_per_arc] = transform * QVector3D(-x, -y, length);
+            bottom_vertices[i + vertices_per_arc] = transform * QVector3D(-x, -y, 0.0f);
         }
 
-        theta = 3 * M_PI_4;
-        //Loop to create slices on left side
-        for (int i = 0; i < slices + 1; ++i) {
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), length));
-            temp_vertices.push_back(transform * QVector3D(radius*float(qCos(theta)), radius*float(qSin(theta)), 0.0f));
-            theta += thetaIncrement;
-        }
 
-        //End with the center of bottom rectangle
-        temp_vertices.push_back(transform * QVector3D(0.0f ,0.0f ,0.0f));
+        // Compute the top and bottom center points
+        QVector3D top_center = transform * QVector3D(0.0f, 0.0f, length);
+        QVector3D bottom_center = transform * QVector3D(0.0f, 0.0f, 0.0f);
 
-        /*Vertices are arranged like so:
-         *0:                                    top center
-         *1 to 2*(slices+1):                    right side slices
-         *1+2*(slices+1) to 4*(slices+1):       left side slices
-         *                                      odds on top, evens on bottom
-         *                                      pairs of vertices like 1&2, 3&4, 5&6, etc. have same theta
-         *1+4*(slices+1):                       bottom center
-         */
-
-        center_top = 0;
-
-        center_bottom = 1 + 4 * (slices + 1);
-
-        //Create slices
-        start_top = center_top + 1;
-        start_bottom = start_top + 1;
-        next_top = start_top + 2;
-        next_bottom = start_bottom + 2;
-
-        //Make 4 triangles at a time like in the cylinder code
-        QVector3D vertex1, vertex2, vertex3;
-        QVector3D normal;
-        for (int i = 0; i < 2 * slices + 2; ++i) {
-            //Triangle on top face
-            vertex1 = temp_vertices.at(center_top);
-            vertex2 = temp_vertices.at(start_top);
-            vertex3 = temp_vertices.at(next_top);
-            vertices.push_back(vertex1.x()); vertices.push_back(vertex1.y()); vertices.push_back(vertex1.z());
-            vertices.push_back(vertex2.x()); vertices.push_back(vertex2.y()); vertices.push_back(vertex2.z());
-            vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
-
-            //Each vertex in a face has same normal
-            //Each vertex has same color, so just push back in these loops
-            normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for (int i = 0; i < 3; ++i) {
-                normals.push_back(normal.x());
-                normals.push_back(normal.y());
-                normals.push_back(normal.z());
-                colors.push_back(color.redF());
-                colors.push_back(color.greenF());
-                colors.push_back(color.blueF());
-                colors.push_back(color.alphaF());
-            }
-
-            //Triangles along cylinder side
-            vertex1 = temp_vertices.at(next_top);
-            vertex2 = temp_vertices.at(start_top);
-            vertex3 = temp_vertices.at(start_bottom);
-            vertices.push_back(vertex1.x()); vertices.push_back(vertex1.y()); vertices.push_back(vertex1.z());
-            vertices.push_back(vertex2.x()); vertices.push_back(vertex2.y()); vertices.push_back(vertex2.z());
-            vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
-
-            normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for (int i = 0; i < 3; ++i) {
-                normals.push_back(normal.x());
-                normals.push_back(normal.y());
-                normals.push_back(normal.z());
-                colors.push_back(color.redF());
-                colors.push_back(color.greenF());
-                colors.push_back(color.blueF());
-                colors.push_back(color.alphaF());
-            }
-
-            vertex1 = temp_vertices.at(next_top);
-            vertex2 = temp_vertices.at(start_bottom);
-            vertex3 = temp_vertices.at(next_bottom);
-            vertices.push_back(vertex1.x()); vertices.push_back(vertex1.y()); vertices.push_back(vertex1.z());
-            vertices.push_back(vertex2.x()); vertices.push_back(vertex2.y()); vertices.push_back(vertex2.z());
-            vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
-
-            normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for (int i = 0; i < 3; ++i) {
-                normals.push_back(normal.x());
-                normals.push_back(normal.y());
-                normals.push_back(normal.z());
-                colors.push_back(color.redF());
-                colors.push_back(color.greenF());
-                colors.push_back(color.blueF());
-                colors.push_back(color.alphaF());
-            }
-
-            //Triangle on bottom circle
-            vertex1 = temp_vertices.at(next_bottom);
-            vertex2 = temp_vertices.at(start_bottom);
-            vertex3 = temp_vertices.at(center_bottom);
-            vertices.push_back(vertex1.x()); vertices.push_back(vertex1.y()); vertices.push_back(vertex1.z());
-            vertices.push_back(vertex2.x()); vertices.push_back(vertex2.y()); vertices.push_back(vertex2.z());
-            vertices.push_back(vertex3.x()); vertices.push_back(vertex3.y()); vertices.push_back(vertex3.z());
-
-            normal = QVector3D::crossProduct(vertex3-vertex2, vertex1-vertex2).normalized();
-            for (int i = 0; i < 3; ++i) {
-                normals.push_back(normal.x());
-                normals.push_back(normal.y());
-                normals.push_back(normal.z());
-                colors.push_back(color.redF());
-                colors.push_back(color.greenF());
-                colors.push_back(color.blueF());
-                colors.push_back(color.alphaF());
-            }
-
-            start_top = next_top;
-            start_bottom = next_bottom;
-            next_top += 2;
-            next_bottom += 2;
-
-            //The last triangles join up with the rectangle
-            if (next_bottom >= center_bottom) {
-                next_top = center_top + 1;
-                next_bottom = next_top + 1;
-            }
+        // Generate triangle faces for each slice (quads split into two triangles)
+        for (unsigned int i = 0; i < vertices_per_side; ++i) {
+            unsigned int j = (i + 1) % vertices_per_side;
+            appendTriangle(top_center, top_vertices[i], top_vertices[j], color, vertices, colors, normals);             // Top triangle
+            appendTriangle(top_vertices[i], bottom_vertices[i], bottom_vertices[j], color, vertices, colors, normals);  // Quad triangle 1
+            appendTriangle(top_vertices[i], bottom_vertices[j], top_vertices[j], color, vertices, colors, normals);     // Quad triangle 2
+            appendTriangle(bottom_center, bottom_vertices[j], bottom_vertices[i], color, vertices, colors, normals);    // Bottom triangle
         }
     }
 
@@ -1555,13 +1452,13 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createGcodeCylinder(float width, float length,  float height, const QVector3D& start, const QVector3D& displacement, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
+    QMatrix4x4 ShapeFactory::computeGcodeCylinderTransform(const QVector3D& start, const QVector3D& end) {
         // Convert the start position and displacement to a transform matrix we can use in the standard method
         QMatrix4x4 transform;
         transform.translate(start);
 
         // Compute the forward vector (normalized displacement)
-        QVector3D forward = displacement.normalized();
+        QVector3D forward = end.normalized();
 
         // Define the global up vector (Z-axis)
         QVector3D up(0, 0, 1);
@@ -1588,8 +1485,7 @@ namespace ORNL
         // Apply the rotation to the transform
         transform *= rotation;
 
-        // Call the standard method
-        createGcodeCylinder(width, length, height, transform, color, vertices, colors, normals);
+        return transform;
     }
 
     void ShapeFactory::createArcCylinder(const float cylinder_height, const Point& start, const Point& center, const Point& end, bool is_ccw, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals) {
