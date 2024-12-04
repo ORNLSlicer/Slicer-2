@@ -35,7 +35,8 @@ namespace ORNL {
         if (!m_use_true_segment_widths) {
             for (auto& layer : gcode) {
                 for (auto& segment : layer) {
-                    segment->setDisplayWidth(segment->displayWidth() * 0.20);
+                    segment->setDisplayWidth(segment->displayWidth() * 0.2f);
+                    segment->setDisplayHeight(segment->displayHeight() * 0.2f);
                 }
             }
         }
@@ -107,7 +108,8 @@ namespace ORNL {
             if (m_use_true_segment_widths) {
                 for (auto& layer : m_gcode) {
                     for (auto& segment : layer) {
-                        segment->setDisplayWidth(segment->displayWidth() * 5.0);
+                        segment->setDisplayWidth(segment->displayWidth() * 5.0f);
+                        segment->setDisplayHeight(segment->displayHeight() * 5.0f);
                     }
                 }
             }
