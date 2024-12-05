@@ -762,15 +762,25 @@ namespace ORNL
         // Compute the transformation matrix for the clipped cylinder
         QMatrix4x4 transform = computeGcodeCylinderTransform(start, end);
 
-        // Define the number of quads per side and vertices per arc and side
-        unsigned int quads_per_side = 6;
+        // Radius of the clipped cylinder and number of quads per side
+        float radius;
+        unsigned int quads_per_side;
+
+        // If the height is greater than the width, the clipped cylinder is a rectangular prism
+        if (height > width) {
+            radius = std::sqrt((width / 2.0f) * (width / 2.0f) + (height / 2.0f) * (height / 2.0f));
+            quads_per_side = 1;
+        }
+        else { // Otherwise, the clipped cylinder is approximated by 6 quads per side
+            radius = width / 2.0f;
+            quads_per_side = 6;
+        }
+
+        // Compute number of vertices per arc and side of the clipped cylinder
         unsigned int vertices_per_arc = quads_per_side + 1;
         unsigned int vertices_per_side = 2 * vertices_per_arc;
 
-        // Calculate the radius of the clipped cylinder
-        float radius = width / 2.0f;
-
-        // Calculate the angular range based on the height and radius
+        // Compute the angular range based on the height and radius
         float theta_start = -std::asin((height / 2.0f) / radius);
         float theta_end = -theta_start;
         float theta_increment = (theta_end - theta_start) / quads_per_side;
