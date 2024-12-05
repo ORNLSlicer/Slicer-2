@@ -156,6 +156,12 @@ namespace ORNL
             //! \brief Display width for segment.
             float m_segment_display_width;
 
+            //! \brief Display length for segment.
+            float m_segment_display_length;
+
+            //! \brief Display height for segment.
+            float m_segment_display_height;
+
             //! \brief Current Gcode start position
             QVector3D m_start_pos;
 

@@ -758,7 +758,7 @@ namespace ORNL {
                     type = SegmentDisplayType::kLine;
                 }
 
-                float display_length = 0;
+                m_segment_display_length = 0;
 
                 QVector3D extruder_offset = extruder_offsets[i].toQVector3D() * Constants::OpenGL::kObjectToView;
 
@@ -826,11 +826,12 @@ namespace ORNL {
                 float display_height = GSM->getGlobal()->setting< float >(Constants::ProfileSettings::Layer::kLayerHeight) * Constants::OpenGL::kObjectToView;
 
                 if (m_modifier_colors.contains(color)) {
-                    segment->setDisplayInfo(m_segment_display_width * 1.1, display_length, display_height, type, color, line_num, layer_num);
+                    segment->setDisplayInfo(m_segment_display_width * 1.1, m_segment_display_length, m_segment_display_height * 1.1, type, color, line_num, layer_num);
                 }
                 else {
-                    segment->setDisplayInfo(m_segment_display_width, display_length, display_height, type, color, line_num, layer_num);
+                    segment->setDisplayInfo(m_segment_display_width, m_segment_display_length, m_segment_display_height, type, color, line_num, layer_num);
                 }
+
 
                 segment->m_segment_info_meta.type = comment;
                 segment->m_segment_info_meta.start = m_info_start_pos;
