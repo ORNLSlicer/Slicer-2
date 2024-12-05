@@ -301,7 +301,7 @@ namespace ORNL {
 
                 //reduce size to fit screen appropriately, found through testing
                 //ratio reduction based on a combination of scale, matrix transformation impacts, and aesthetics (ie. personal opinion)
-                m_segment_width = visualizationSettings[Constants::ProfileSettings::Layer::kBeadWidth] * Constants::OpenGL::kObjectToView;// * .25f;
+                m_segment_display_width = visualizationSettings[Constants::ProfileSettings::Layer::kBeadWidth] * Constants::OpenGL::kObjectToView;// * .25f;
 
                 Distance x_dist, y_dist = 0.0;
                 m_start_pos = QVector3D((x_dist() + visualizationSettings[Constants::PrinterSettings::Dimensions::kXOffset]) * Constants::OpenGL::kObjectToView,
@@ -826,10 +826,10 @@ namespace ORNL {
                 float display_height = GSM->getGlobal()->setting< float >(Constants::ProfileSettings::Layer::kLayerHeight) * Constants::OpenGL::kObjectToView;
 
                 if (m_modifier_colors.contains(color)) {
-                    segment->setDisplayInfo(m_segment_width * 1.1, display_length, display_height, type, color, line_num, layer_num);
+                    segment->setDisplayInfo(m_segment_display_width * 1.1, display_length, display_height, type, color, line_num, layer_num);
                 }
                 else {
-                    segment->setDisplayInfo(m_segment_width, display_length, display_height, type, color, line_num, layer_num);
+                    segment->setDisplayInfo(m_segment_display_width, display_length, display_height, type, color, line_num, layer_num);
                 }
 
                 segment->m_segment_info_meta.type = comment;

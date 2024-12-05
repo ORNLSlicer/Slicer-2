@@ -138,6 +138,7 @@ namespace ORNL
 
             //! \brief matchers for modifier identification for coloring
             QStringMatcher m_prestart, m_initial_startup, m_slowdown, m_forward_tipwipe, m_reverse_tipwipe, m_angled_tipwipe, m_coasting, m_spirallift, m_rampingup, m_rampingdown, m_leadin;
+
             //! \brief matchers for type identification for coloring
             QStringMatcher m_perimeter, m_perimeter_embossing, m_inset, m_inset_embossing, m_infill, m_ironing, m_skin, m_skeleton, m_support, m_support_roof, m_travel, m_raft, m_brim,
                            m_skirt, m_laserscan, m_thermalscan;
@@ -151,28 +152,40 @@ namespace ORNL
             //! \brief Settings for visualization
             //! \brief conversion from internal units to OpenGL units
             float m_micron_to_view_conversion;
-            //! \brief Gcode segment width
-            float m_segment_width;
-            //! \briefCurrent Gcode start position
+
+            //! \brief Display width for segment.
+            float m_segment_display_width;
+
+            //! \brief Current Gcode start position
             QVector3D m_start_pos;
+
             //! \brief Origin adjusted for offsets in settings, needed to undo adjustment in gcode
             QVector3D m_origin;
+
             //! \brief Offset for x, y, z
             float m_x_offset, m_y_offset, m_z_offset;
+
             //! \brief Offset for table - w
             float m_table_offset;
+
             //! \brief Previous offset for table - w, used to account for Z, W, or both axes
             float m_prev_table_offset;
+
             //! \brief conversion between color space of Qt to OpenGL
             float m_color_space_conversion;
+
             //! \brief flag to indicate if process should cancel
             bool m_should_cancel;
+
             //! \brief A regular expression to find the layer number in a comment
             QRegularExpression m_layer_pattern;
+
             //! \brief Current Gcode start position for info display
             QVector3D m_info_start_pos;
+
             //! \brief Current Gcode speed for info display
             QString m_info_speed;
+
             //! \brief Current Gcode extruder speed for info display
             QString m_info_extruder_speed;
     };  // class GCodeLoader
