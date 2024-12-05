@@ -818,13 +818,47 @@ namespace ORNL {
                     }
                 }
                 else { // G0, G1, or anything else is drawn as a line
-                    display_length = m_start_pos.distanceToPoint(end_pos);
                     segment = QSharedPointer<LineSegment>::create(m_start_pos + extruder_offset, end_pos - m_start_pos);
+
+                    // Set the display width of the segment based on its region type
+                    if (comment.contains("PERIMETER")) {
+                        m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Perimeter::kBeadWidth) * Constants::OpenGL::kObjectToView;
+                    }
+                    else if (comment.contains("INSET")) {
+                        m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Inset::kBeadWidth) * Constants::OpenGL::kObjectToView;
+                    }
+                    else if (comment.contains("SKELETON")) {
+                        // If the skeleton is adaptive, extract the bead width from the comment, otherwise use the static bead width
+                        if (GSM->getGlobal()->setting<bool>(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) {
+                            // Extract the bead width from the comment
+                            int start = comment.indexOf("-") + 1;
+                            int end = comment.indexOf(" ", start);
+                            double bead_width = comment.mid(start, end - start).toDouble();
+
+                            m_segment_display_width = bead_width * Constants::OpenGL::kObjectToView;
+                        }
+                        else { // Static skeleton bead width
+                            m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Skeleton::kBeadWidth) * Constants::OpenGL::kObjectToView;
+                        }
+                    }
+                    else if (comment.contains("SKIN")) {
+                        m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Skin::kBeadWidth) * Constants::OpenGL::kObjectToView;
+                    }
+                    else if (comment.contains("INFILL")) {
+                        m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Infill::kBeadWidth) * Constants::OpenGL::kObjectToView;
+                    }
+                    else { // Default to layer bead width
+                        m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Layer::kBeadWidth) * Constants::OpenGL::kObjectToView;
+                    }
+
+                    // Set the display length and height of the segment
+                    m_segment_display_length = m_start_pos.distanceToPoint(end_pos);
+                    m_segment_display_height = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Layer::kLayerHeight) * Constants::OpenGL::kObjectToView;
                 }
 
-                // Set display height to layer height
-                float display_height = GSM->getGlobal()->setting< float >(Constants::ProfileSettings::Layer::kLayerHeight) * Constants::OpenGL::kObjectToView;
 
+                // Set the segment's display info
+                // If the segment is a modifier, increase its width and height by 10% to make it more visible
                 if (m_modifier_colors.contains(color)) {
                     segment->setDisplayInfo(m_segment_display_width * 1.1, m_segment_display_length, m_segment_display_height * 1.1, type, color, line_num, layer_num);
                 }
