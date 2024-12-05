@@ -814,10 +814,10 @@ namespace ORNL
         // Generate triangle faces for each slice (quads split into two triangles)
         for (unsigned int i = 0; i < vertices_per_side; ++i) {
             unsigned int j = (i + 1) % vertices_per_side;
-            appendTriangle(top_center, top_vertices[i], top_vertices[j], color, vertices, colors, normals);             // Top triangle
-            appendTriangle(top_vertices[i], bottom_vertices[i], bottom_vertices[j], color, vertices, colors, normals);  // Quad triangle 1
-            appendTriangle(top_vertices[i], bottom_vertices[j], top_vertices[j], color, vertices, colors, normals);     // Quad triangle 2
-            appendTriangle(bottom_center, bottom_vertices[j], bottom_vertices[i], color, vertices, colors, normals);    // Bottom triangle
+            appendTriangle(top_center, top_vertices[j], top_vertices[i], color, vertices, colors, normals);             // Top triangle
+            appendTriangle(top_vertices[i], bottom_vertices[j], bottom_vertices[i], color, vertices, colors, normals);  // Quad triangle 1
+            appendTriangle(top_vertices[i], top_vertices[j], bottom_vertices[j], color, vertices, colors, normals);     // Quad triangle 2
+            appendTriangle(bottom_center, bottom_vertices[i], bottom_vertices[j], color, vertices, colors, normals);    // Bottom triangle
         }
     }
 
