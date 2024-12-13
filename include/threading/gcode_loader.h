@@ -97,6 +97,19 @@ namespace ORNL
             //! \return color based on comment keywords
             QColor determineFontColor(const QString& comment);
 
+
+            //! \brief Set the segment meta information. This is the information that is displayed when the user selects
+            //! a segment in the UI.
+            //! \param segment: Segment to set meta info for.
+            //! \param comment: Comment to parse for the segment type.
+            //! \param info_end_pos: The end position of the segment.
+            //! \param extruders_on: Indicates if the extruders are on or off.
+            //! \param info_speed_set: Indicates if the speed is set.
+            //! \param extruders_speed: The speed of the extruders.
+            void setSegmentMetaInfo(QSharedPointer<SegmentBase>& segment, const QString& comment,
+                                    QVector3D& info_end_pos, const bool& extruders_on, const bool& info_speed_set,
+                                    const double& extruders_speed);
+
             //! \brief generate additional export comments
             //! \return string
             QString additionalExportComments();

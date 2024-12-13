@@ -779,6 +779,39 @@ namespace ORNL {
 
     // }
 
+    void GCodeLoader::setSegmentMetaInfo(QSharedPointer<SegmentBase>& segment, const QString& comment,
+                                         QVector3D& info_end_pos, const bool& extruders_on, const bool& info_speed_set,
+                                         const double& extruders_speed) {
+        // Set the type info of the segment
+        segment->m_segment_info_meta.type = comment;
+
+        // Set the start and end position info of the segment
+        segment->m_segment_info_meta.start = m_info_start_pos;
+        segment->m_segment_info_meta.end = info_end_pos;
+
+        // If the extruder is on, set the speed info
+        if (!extruders_on && !info_speed_set) {
+            segment->m_segment_info_meta.speed = "";
+        } else {
+            segment->m_segment_info_meta.speed = m_info_speed;
+        }
+
+        // If the extruder is on, set the extruder speed info
+        if (extruders_on) {
+            if (m_info_extruder_speed.isEmpty()) {
+                segment->m_segment_info_meta.extruderSpeed = QString().asprintf("%0.4f", extruders_speed) % " rpm";
+            } else {
+                segment->m_segment_info_meta.extruderSpeed = m_info_extruder_speed;
+            }
+        } else {
+            segment->m_segment_info_meta.extruderSpeed = "";
+        }
+
+        // Set the length info of the segment
+        float length = m_info_start_pos.distanceToPoint(info_end_pos) / PM->getDistanceUnit()();
+        segment->m_segment_info_meta.length = QString().asprintf("%0.2f", length) % " " % PM->getDistanceUnitText();
+    }
+
     QVector<QSharedPointer<SegmentBase>> GCodeLoader::generateVisualSegment(int line_num, int layer_num,
                                                                             const QColor& color, int command_id,
                                                                             const QMap<char, double>& parameters,
@@ -952,23 +985,10 @@ namespace ORNL {
                                             m_segment_display_height, type, color, line_num, layer_num);
                 }
 
+                // Set the segment's meta info
+                setSegmentMetaInfo(segment, comment, info_end_pos, extruders_on[i], info_speed_set, extruders_speed);
 
-                segment->m_segment_info_meta.type = comment;
-                segment->m_segment_info_meta.start = m_info_start_pos;
-                segment->m_segment_info_meta.end = info_end_pos;
-                segment->m_segment_info_meta.speed = m_info_speed;
-                if (!extruders_on[i] && !info_speed_set) {
-                    segment->m_segment_info_meta.speed = "";
-                }
-                segment->m_segment_info_meta.extruderSpeed = extruders_on[i] ?
-                        (m_info_extruder_speed.isEmpty() ?
-                            QString().asprintf("%0.4f", extruders_speed) % " rpm" :
-                            m_info_extruder_speed) : "";
-                segment->m_segment_info_meta.length =
-                    QString().asprintf("%0.2f",
-                                       (Distance(m_info_start_pos.distanceToPoint(info_end_pos)) /
-                                                 PM->getDistanceUnit())()) % " " % PM->getDistanceUnitText();
-
+                // Add the segment to the list of generated segments
                 generated_segments.append(segment);
             }
         }
