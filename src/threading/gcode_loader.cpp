@@ -343,27 +343,27 @@ namespace ORNL {
 
                 QVector<QVector<QSharedPointer<SegmentBase>>> layers;
 
-                int currentLayer = 0, totalLayer = m_motion_commands.size();
-                for (QList<GcodeCommand> layerCommands : m_motion_commands) {
+                int current_layer = 0, total_layer = m_motion_commands.size();
+                for (const QList<GcodeCommand>& layer_commands : m_motion_commands) {
                     QVector<QSharedPointer<SegmentBase>> layer;
 
-                    for (GcodeCommand command : layerCommands) {
-                        QColor lineColor(PM->getVisualizationColor(VisualizationColors::kUnknown));
+                    for (const GcodeCommand& command : layer_commands) {
+                        QColor line_color(PM->getVisualizationColor(VisualizationColors::kUnknown));
+
                         if (fontColors.contains(command.getComment())) {
-                            lineColor = fontColors[command.getComment()].foreground().color();
-                        }
-                        else if (!command.getComment().isEmpty()) {
-                            lineColor = determineFontColor(command.getComment());
+                            line_color = fontColors[command.getComment()].foreground().color();
+                        } else if (!command.getComment().isEmpty()) {
+                            line_color = determineFontColor(command.getComment());
                             QTextCharFormat format;
-                            format.setForeground(lineColor);
+                            format.setForeground(line_color);
                             fontColors.insert(m_original_lines[command.getLineNumber()], format);
                         }
 
                         QVector<QSharedPointer<SegmentBase>> generated_segments;
 
                         if (m_selected_meta.hasTravels){
-                            generated_segments = generateVisualSegment(command.getLineNumber() + 1, currentLayer,
-                                                                       lineColor, command.getCommandID(),
+                            generated_segments = generateVisualSegment(command.getLineNumber() + 1, current_layer,
+                                                                       line_color, command.getCommandID(),
                                                                        command.getParameters(),
                                                                        command.getExtrudersOn(),
                                                                        command.getExtruderOffsets(),
@@ -371,8 +371,8 @@ namespace ORNL {
                                                                        command.getComment());
                         }
                         else {
-                            generated_segments = generateVisualSegment(command.getLineNumber() + 1, currentLayer,
-                                                                       lineColor, command.getCommandID(),
+                            generated_segments = generateVisualSegment(command.getLineNumber() + 1, current_layer,
+                                                                       line_color, command.getCommandID(),
                                                                        command.getParameters(),
                                                                        command.getExtrudersOn(),
                                                                        command.getExtruderOffsets(),
@@ -383,10 +383,10 @@ namespace ORNL {
                         layer.append(generated_segments);
                     }
                     layers.push_back(layer);
-                    ++currentLayer;
+                    ++current_layer;
 
                     emit updateDialog(StatusUpdateStepType::kVisualization,
-                                      (double)currentLayer / (double)totalLayer * 100);
+                                      (double)current_layer / (double)total_layer * 100);
 
                     if (m_should_cancel) {
                         return;
