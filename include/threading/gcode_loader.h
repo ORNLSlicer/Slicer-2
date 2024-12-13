@@ -210,6 +210,9 @@ namespace ORNL
 
             //! \brief Current Gcode extruder speed for info display
             QString m_info_extruder_speed;
+
+            //! \brief Current settings for gcode loader
+            QSharedPointer<SettingsBase> m_sb;
     };  // class GCodeLoader
 }  // namespace ORNL
 #endif  // GCODELOADER_H

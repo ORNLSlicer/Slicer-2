@@ -37,7 +37,10 @@
 #include "managers/preferences_manager.h"
 
 namespace ORNL {
-    GCodeLoader::GCodeLoader(QString filename, bool alterFile) : m_filename(filename), m_adjust_file(alterFile), m_should_cancel(false) {
+    GCodeLoader::GCodeLoader(QString filename, bool alterFile) : m_filename(filename), m_adjust_file(alterFile),
+                                                                 m_should_cancel(false) {
+        m_sb = GSM->getGlobal();
+
         m_prestart = QStringMatcher(Constants::PathModifierStrings::kPrestart.toUpper());
         m_initial_startup = QStringMatcher(Constants::PathModifierStrings::kInitialStartup.toUpper());
         m_slowdown = QStringMatcher(Constants::PathModifierStrings::kSlowDown.toUpper());
@@ -167,7 +170,8 @@ namespace ORNL {
         }
     }
 
-    void GCodeLoader::sendGcodeModelObjFile(QString host, int port, QString machineName, QString gcodeFilePath, QString objFilePath) {
+    void GCodeLoader::sendGcodeModelObjFile(QString host, int port, QString machineName, QString gcodeFilePath,
+                                            QString objFilePath) {
         TCPConnection client;
         client.setupNew(host, port);
         QThread::sleep(1);
@@ -187,11 +191,13 @@ namespace ORNL {
     }
 
     void GCodeLoader::run() {
-        bool disableVisualization = GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::GcodeVisualization::kDisableVisualization);
-        int layerSkip = GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::GcodeVisualization::kVisualizationSkip);
+        bool disableVisualization = m_sb->setting<bool>(
+            Constants::ExperimentalSettings::GcodeVisualization::kDisableVisualization);
+        int layerSkip = m_sb->setting<int>(Constants::ExperimentalSettings::GcodeVisualization::kVisualizationSkip);
 
         if (!m_filename.isEmpty() && (!disableVisualization || m_adjust_file)) {
-            //Try-catch is necessary to prevent a crash when the GCode refresh button is clicked after an erroneous modification
+            // Try-catch is necessary to prevent a crash when the GCode refresh button is clicked after an erroneous
+            // modification
             try {
             //read in entire file and separate into lines
             QString text;
@@ -208,17 +214,18 @@ namespace ORNL {
                 return;
             }
 
-            Time min_time(0), max_time(0), total_time(0), total_adjusted_time(0), adjusted_min_time(0), adjusted_max_time(0), temp_time(0);
+            Time min_time(0), max_time(0), total_time(0), total_adjusted_time(0), adjusted_min_time(0),
+                 adjusted_max_time(0), temp_time(0);
             QString weightInfo = "No statistics calculated";
             //parse header looking for syntax
             setParser(m_original_lines, m_lines);
             if (!disableVisualization) {
                 connect(m_parser.get(), &CommonParser::statusUpdate, this, &GCodeLoader::forwardDialogUpdate);
-                connect(m_parser.get(), &CommonParser::forwardInfoToMainWindow, this, &GCodeLoader::forwardInfoToMainWindow);
+                connect(m_parser.get(), &CommonParser::forwardInfoToMainWindow, this,
+                        &GCodeLoader::forwardInfoToMainWindow);
 
                 m_parser->parseHeader();
                 QHash<QString, double> visualizationSettings = m_parser->parseFooter();
-                //GSM->getGlobal()->setting<int>(Constants::PrinterSettings::Visualization::kLayerSkip);
                 QList<QList<GcodeCommand>> m_motion_commands = m_parser->parseLines(layerSkip);
 
                 if (m_parser->getWasModified()) {
@@ -255,20 +262,25 @@ namespace ORNL {
                     total_volume += layer_volumes[i];
                 }
 
-                PrintMaterial m_material = static_cast<PrintMaterial>((int)
-                                                visualizationSettings[Constants::MaterialSettings::Density::kMaterialType]);
+                PrintMaterial m_material =
+                    static_cast<PrintMaterial>(
+                    (int)visualizationSettings[Constants::MaterialSettings::Density::kMaterialType]);
 
                 Density materialDensity = ((m_material == PrintMaterial::kOther) ?
-                                               (visualizationSettings[Constants::MaterialSettings::Density::kDensity]) :
-                                                toDensityValue(m_material));
+                                           (visualizationSettings[Constants::MaterialSettings::Density::kDensity]) :
+                                           toDensityValue(m_material));
 
                 Mass total_mass = total_volume * materialDensity;
 
                 //forward to layer_times_window
-                emit forwardInfoToLayerTimeWindow(layer_times, layer_FR_modifiers, ForceMinimumLayerTime::kSlow_Feedrate ==
-                        static_cast<ForceMinimumLayerTime>(GSM->getGlobal()->setting<int>(Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod)));
+                emit forwardInfoToLayerTimeWindow(layer_times, layer_FR_modifiers,
+                                                  ForceMinimumLayerTime::kSlow_Feedrate ==
+                                                  static_cast<ForceMinimumLayerTime>(
+                                                  m_sb->setting<int>(
+                                                  Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod)));
 
-                weightInfo = QString::number((total_mass / m_selected_meta.m_mass_unit)()) % " " % m_selected_meta.m_mass_unit.toString();
+                weightInfo = QString::number((total_mass / m_selected_meta.m_mass_unit)()) % " " %
+                             m_selected_meta.m_mass_unit.toString();
 
                 //forward to build_log_export
                 emit forwardInfoToBuildExportWindow(m_filename, m_selected_meta);
@@ -277,8 +289,9 @@ namespace ORNL {
                         % "Total Time Estimate: " % MathUtils::formattedTimeSpan(total_time()) % "\n";
 
                 if (m_adjust_file && total_adjusted_time > 0 &&
-                        GSM->getGlobal()->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime)) {
-                        keyInfo = keyInfo % "Total Adjusted Time: " % MathUtils::formattedTimeSpan(total_adjusted_time()) % "\n";
+                    m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime)) {
+                        keyInfo = keyInfo % "Total Adjusted Time: " %
+                                  MathUtils::formattedTimeSpan(total_adjusted_time()) % "\n";
                 }
 
                 double volumeValue = total_volume() / pow<3>(PM->getDistanceUnit())();
@@ -286,29 +299,34 @@ namespace ORNL {
                 double printingDistanceValue = (m_parser->getPrintingDistance() / PM->getDistanceUnit())();
                 double travelDistanceValue = (m_parser->getTravelDistance() / PM->getDistanceUnit())();
                 double massValue = (total_mass / PM->getMassUnit())();
-                keyInfo = keyInfo % "Volume: " % QString::number(volumeValue) % " " % PM->getDistanceUnit().toString() % "³\n"
-                        % "Printing Distance: " % QString::number(printingDistanceValue) % " " % PM->getDistanceUnit().toString() % "\n"
-                        % "Travel Distance: " % QString::number(travelDistanceValue) % " " % PM->getDistanceUnit().toString() % "\n"
-                        % "Total Distance: " % QString::number(distanceValue) % " " % PM->getDistanceUnit().toString() % "\n"
-                        % "Approximate Weight (" % toString(m_material) % "): "
-                        % QString::number(massValue) % " " % PM->getMassUnit().toString() % "\n";
+                keyInfo = keyInfo % "Volume: " % QString::number(volumeValue) % " " %
+                          PM->getDistanceUnit().toString() % "³\n" % "Printing Distance: " %
+                          QString::number(printingDistanceValue) % " " % PM->getDistanceUnit().toString() % "\n" %
+                          "Travel Distance: " % QString::number(travelDistanceValue) % " " %
+                          PM->getDistanceUnit().toString() % "\n" % "Total Distance: " %
+                          QString::number(distanceValue) % " " % PM->getDistanceUnit().toString() % "\n" %
+                          "Approximate Weight (" % toString(m_material) % "): " % QString::number(massValue) %
+                          " " % PM->getMassUnit().toString() % "\n";
 
                 QTime qt(0, 0);
                 qt = qt.addMSecs(CSM->getSliceTimeElapsed());
-                keyInfo = keyInfo % "Total Slice Time (excluding gcode writing/parsing): " % qt.toString("hh:mm:ss.zzz");
+                keyInfo = keyInfo % "Total Slice Time (excluding gcode writing/parsing): " %
+                          qt.toString("hh:mm:ss.zzz");
 
                 emit forwardInfoToMainWindow(keyInfo);
 
-                //reduce size to fit screen appropriately, found through testing
-                //ratio reduction based on a combination of scale, matrix transformation impacts, and aesthetics (ie. personal opinion)
-                m_segment_display_width = visualizationSettings[Constants::ProfileSettings::Layer::kBeadWidth] * Constants::OpenGL::kObjectToView;// * .25f;
 
                 Distance x_dist, y_dist = 0.0;
-                m_start_pos = QVector3D((x_dist() + visualizationSettings[Constants::PrinterSettings::Dimensions::kXOffset]) * Constants::OpenGL::kObjectToView,
-                                        (y_dist() + visualizationSettings[Constants::PrinterSettings::Dimensions::kYOffset]) * Constants::OpenGL::kObjectToView, .0f);
+                m_start_pos = QVector3D((x_dist() +
+                                         visualizationSettings[Constants::PrinterSettings::Dimensions::kXOffset]) *
+                                         Constants::OpenGL::kObjectToView,
+                                        (y_dist() +
+                                         visualizationSettings[Constants::PrinterSettings::Dimensions::kYOffset]) *
+                                         Constants::OpenGL::kObjectToView, .0f);
 
                 m_origin = QVector3D(x_dist() + visualizationSettings[Constants::PrinterSettings::Dimensions::kXOffset],
-                                     y_dist() + visualizationSettings[Constants::PrinterSettings::Dimensions::kYOffset], .0f);
+                                     y_dist() + visualizationSettings[Constants::PrinterSettings::Dimensions::kYOffset],
+                                     .0f);
 
                 auto min_z = GSM->getGlobal()->setting<Distance>(Constants::PrinterSettings::Dimensions::kZMin);
                 auto z_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kZOffset];
@@ -344,17 +362,31 @@ namespace ORNL {
                         QVector<QSharedPointer<SegmentBase>> generated_segments;
 
                         if (m_selected_meta.hasTravels){
-                            generated_segments = generateVisualSegment(command.getLineNumber() + 1, currentLayer, lineColor, command.getCommandID(), command.getParameters(), command.getExtrudersOn(), command.getExtruderOffsets(), command.getExtrudersSpeed(), true, command.getComment());
+                            generated_segments = generateVisualSegment(command.getLineNumber() + 1, currentLayer,
+                                                                       lineColor, command.getCommandID(),
+                                                                       command.getParameters(),
+                                                                       command.getExtrudersOn(),
+                                                                       command.getExtruderOffsets(),
+                                                                       command.getExtrudersSpeed(), true,
+                                                                       command.getComment());
                         }
                         else {
-                            generated_segments = generateVisualSegment(command.getLineNumber() + 1, currentLayer, lineColor, command.getCommandID(), command.getParameters(), command.getExtrudersOn(), command.getExtruderOffsets(), command.getExtrudersSpeed(), false, command.getComment(), command.getOptionalParameters());
+                            generated_segments = generateVisualSegment(command.getLineNumber() + 1, currentLayer,
+                                                                       lineColor, command.getCommandID(),
+                                                                       command.getParameters(),
+                                                                       command.getExtrudersOn(),
+                                                                       command.getExtruderOffsets(),
+                                                                       command.getExtrudersSpeed(), false,
+                                                                       command.getComment(),
+                                                                       command.getOptionalParameters());
                         }
                         layer.append(generated_segments);
                     }
                     layers.push_back(layer);
                     ++currentLayer;
 
-                    emit updateDialog(StatusUpdateStepType::kVisualization, (double)currentLayer / (double)totalLayer * 100);
+                    emit updateDialog(StatusUpdateStepType::kVisualization,
+                                      (double)currentLayer / (double)totalLayer * 100);
 
                     if (m_should_cancel) {
                         return;
@@ -382,18 +414,25 @@ namespace ORNL {
             openingDelim % "Sliced on: " % QDateTime::currentDateTime().toString("MM/dd/yyyy") % closingDelim % "\n" %
                                             openingDelim % "Expected Weight: " % weightInfo % closingDelim % "\n";
             if (m_adjust_file && total_adjusted_time > 0 &&
-                GSM->getGlobal()->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime)) {
-                additionalHeaderBlock += openingDelim % "Expected Build Time: " % MathUtils::formattedTimeSpan(total_adjusted_time()) % closingDelim % "\n" %
-                                         openingDelim % "Minimum Layer Time: " % MathUtils::formattedTimeSpan(adjusted_min_time()) % closingDelim % "\n" %
-                                         openingDelim % "Maximum Layer Time: " % MathUtils::formattedTimeSpan(adjusted_max_time()) % closingDelim % "\n";
+                m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime)) {
+                additionalHeaderBlock += openingDelim % "Expected Build Time: " %
+                                         MathUtils::formattedTimeSpan(total_adjusted_time()) % closingDelim % "\n" %
+                                         openingDelim % "Minimum Layer Time: " %
+                                         MathUtils::formattedTimeSpan(adjusted_min_time()) % closingDelim % "\n" %
+                                         openingDelim % "Maximum Layer Time: " %
+                                         MathUtils::formattedTimeSpan(adjusted_max_time()) % closingDelim % "\n";
             }
             else {
-                additionalHeaderBlock += openingDelim % "Expected Build Time: " % MathUtils::formattedTimeSpan(total_time()) % closingDelim % "\n" %
-                                         openingDelim % "Minimum Layer Time: " % MathUtils::formattedTimeSpan(min_time()) % closingDelim % "\n" %
-                                         openingDelim % "Maximum Layer Time: " % MathUtils::formattedTimeSpan(max_time()) % closingDelim % "\n";
+                additionalHeaderBlock += openingDelim % "Expected Build Time: " %
+                                         MathUtils::formattedTimeSpan(total_time()) % closingDelim % "\n" %
+                                         openingDelim % "Minimum Layer Time: " %
+                                         MathUtils::formattedTimeSpan(min_time()) % closingDelim % "\n" %
+                                         openingDelim % "Maximum Layer Time: " %
+                                         MathUtils::formattedTimeSpan(max_time()) % closingDelim % "\n";
             }
             additionalHeaderBlock += openingDelim % "XYZ Translation Data: " % QString::number(m_origin.x()) % ", " %
-                    QString::number(m_origin.y()) % ", " % QString::number(m_z_offset) % closingDelim % "\n" % additionalExportComments();
+                                     QString::number(m_origin.y()) % ", " % QString::number(m_z_offset) % closingDelim %
+                                     "\n" % additionalExportComments();
 
             //if we are allowed to adjust file, add header block and write out file
             //also takes care of situation in which layer times were adjusted
@@ -421,7 +460,6 @@ namespace ORNL {
                 QString message = "Error parsing GCode: " + QString(exception.what());
                 emit error(message);
             }
-
         }
     }
 
@@ -443,7 +481,8 @@ namespace ORNL {
         QStringMatcher syntaxIdentifier1("G-CODE SYNTAX");
         QStringMatcher syntaxIdentifier2("GCODE SYNTAX");
         while (m_current_line < m_lines.size()) {
-            if(syntaxIdentifier1.indexIn(m_lines[m_current_line]) != -1 || syntaxIdentifier2.indexIn(m_lines[m_current_line]) != -1) {
+            if(syntaxIdentifier1.indexIn(m_lines[m_current_line]) != -1 ||
+               syntaxIdentifier2.indexIn(m_lines[m_current_line]) != -1) {
                 if (m_lines[m_current_line].contains(toString(GcodeSyntax::k5AxisMarlin).toUpper())) {
                     m_parser.reset(new MarlinParser(GcodeMetaList::MarlinMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::MarlinMeta;
@@ -457,11 +496,13 @@ namespace ORNL {
                     m_selected_meta = GcodeMetaList::BeamMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kCincinnati).toUpper())) {
-                    m_parser.reset(new CincinnatiParser(GcodeMetaList::CincinnatiMeta, m_adjust_file, originalLines, lines));
+                    m_parser.reset(
+                        new CincinnatiParser(GcodeMetaList::CincinnatiMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::CincinnatiMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kDmgDmu).toUpper())) {
-                     m_parser.reset(new CommonParser(GcodeMetaList::DmgDmuAndBeamMeta, m_adjust_file, originalLines, lines));
+                     m_parser.reset(
+                        new CommonParser(GcodeMetaList::DmgDmuAndBeamMeta, m_adjust_file, originalLines, lines));
                      m_selected_meta = GcodeMetaList::DmgDmuAndBeamMeta;
                  }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kGKN).toUpper())) {
@@ -477,7 +518,8 @@ namespace ORNL {
                     m_selected_meta = GcodeMetaList::HaasInchMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kHaasMetric).toUpper())) {
-                    m_parser.reset(new CommonParser(GcodeMetaList::HaasMetricMeta, m_adjust_file, originalLines, lines));
+                    m_parser.reset(
+                        new CommonParser(GcodeMetaList::HaasMetricMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::HaasMetricMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kHurco).toUpper())) {
@@ -485,11 +527,13 @@ namespace ORNL {
                      m_selected_meta = GcodeMetaList::HurcoMeta;
                  }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kIngersoll).toUpper())) {
-                     m_parser.reset(new IngersollParser(GcodeMetaList::IngersollMeta, m_adjust_file, originalLines, lines));
+                     m_parser.reset(
+                         new IngersollParser(GcodeMetaList::IngersollMeta, m_adjust_file, originalLines, lines));
                      m_selected_meta = GcodeMetaList::IngersollMeta;
                  }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kKraussMaffei).toUpper())) {
-                     m_parser.reset(new MarlinParser(GcodeMetaList::KraussMaffeiMeta, m_adjust_file, originalLines, lines));
+                     m_parser.reset(
+                         new MarlinParser(GcodeMetaList::KraussMaffeiMeta, m_adjust_file, originalLines, lines));
                      m_selected_meta = GcodeMetaList::KraussMaffeiMeta;
                  }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kMarlinPellet).toUpper())) {
@@ -525,7 +569,8 @@ namespace ORNL {
                     m_selected_meta = GcodeMetaList::MVPMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kOkuma).toUpper())) {
-                    m_parser.reset(new CommonParser(GcodeMetaList::HaasMetricMeta, m_adjust_file, originalLines, lines));
+                    m_parser.reset(
+                        new CommonParser(GcodeMetaList::HaasMetricMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::ORNLMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kORNL).toUpper())) {
@@ -533,7 +578,8 @@ namespace ORNL {
                     m_selected_meta = GcodeMetaList::ORNLMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kRomiFanuc).toUpper())) {
-                     m_parser.reset(new CommonParser(GcodeMetaList::RomiFanucMeta, m_adjust_file, originalLines, lines));
+                     m_parser.reset(
+                        new CommonParser(GcodeMetaList::RomiFanucMeta, m_adjust_file, originalLines, lines));
                      m_selected_meta = GcodeMetaList::RomiFanucMeta;
                  }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kRPBF).toUpper())) {
@@ -549,23 +595,28 @@ namespace ORNL {
                     m_selected_meta = GcodeMetaList::SiemensMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kSkyBaam).toUpper())) {
-                     m_parser.reset(new CincinnatiParser(GcodeMetaList::SkyBaamMeta, m_adjust_file, originalLines, lines));
+                     m_parser.reset(
+                        new CincinnatiParser(GcodeMetaList::SkyBaamMeta, m_adjust_file, originalLines, lines));
                      m_selected_meta = GcodeMetaList::SkyBaamMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kThermwood).toUpper())) {
-                    m_parser.reset(new CincinnatiParser(GcodeMetaList::CincinnatiMeta, m_adjust_file, originalLines, lines));
+                    m_parser.reset(
+                        new CincinnatiParser(GcodeMetaList::CincinnatiMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::CincinnatiMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kTormach).toUpper())) {
-                    m_parser.reset(new CincinnatiParser(GcodeMetaList::TormachMeta, m_adjust_file, originalLines, lines));
+                    m_parser.reset(
+                        new CincinnatiParser(GcodeMetaList::TormachMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::TormachMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kAeroBasic).toUpper())) {
-                    m_parser.reset(new AeroBasicParser(GcodeMetaList::AeroBasicMeta, m_adjust_file, originalLines, lines));
+                    m_parser.reset(
+                        new AeroBasicParser(GcodeMetaList::AeroBasicMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::AeroBasicMeta;
                 }
                 else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kAdamantine).toUpper())) {
-                    m_parser.reset(new AdamantineParser(GcodeMetaList::AdamantineMeta, m_adjust_file, originalLines, lines));
+                    m_parser.reset(
+                        new AdamantineParser(GcodeMetaList::AdamantineMeta, m_adjust_file, originalLines, lines));
                     m_selected_meta = GcodeMetaList::AdamantineMeta;
                 }
                 else {
@@ -670,9 +721,73 @@ namespace ORNL {
         return PM->getVisualizationColor(VisualizationColors::kUnknown);
     }
 
-    QVector<QSharedPointer<SegmentBase> > GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& color, int command_id,
-                                            const QMap<char, double>& parameters, QVector<bool> extruders_on, QVector<Point> extruder_offsets,
-                                            double extruders_speed, bool is_travel, QString comment, const QMap<char, double>& optional_parameters) {
+    // void GCodeLoader::setSegmentDisplayInfo(QSharedPointer<SegmentBase>& segment, const SegmentDisplayType& type, const QColor& color, const QString& comment, const int& line_num, const int& layer_num) {
+    //     // Retrieve settings ranges for the first part
+    //     const auto& part = CSM->parts().first();
+    //     const QList<QSharedPointer<SettingsRange>>& settings_ranges = part->ranges().values();
+
+    //     // Default to global settings base
+    //     QSharedPointer<SettingsBase> sb = GSM->getGlobal();
+
+    //     // Retrieve layer specific settings base if available
+    //     for (const QSharedPointer<SettingsRange>& settings_range : settings_ranges) {
+    //         if (settings_range->includesIndex(layer_num - 1)) {
+    //             sb = QSharedPointer<SettingsBase>::create();
+    //             sb->populate(GSM->getGlobal());
+    //             sb->populate(settings_range->getSb());
+    //             break;
+    //         }
+    //     }
+
+    //     // Set the display width of the segment based on its region type
+    //     if (comment.contains("PERIMETER")) {
+    //         m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Perimeter::kBeadWidth) * Constants::OpenGL::kObjectToView;
+    //     }
+    //     else if (comment.contains("INSET")) {
+    //         m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Inset::kBeadWidth) * Constants::OpenGL::kObjectToView;
+    //     }
+    //     else if (comment.contains("SKELETON")) {
+    //         // If the skeleton is adaptive, extract the bead width from the comment, otherwise use the static bead width
+    //         if (sb->setting<bool>(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) {
+    //             // Extract the bead width from the comment
+    //             unsigned int start = comment.indexOf("-") + 1;
+    //             unsigned int end = comment.indexOf(" ", start);
+    //             float bead_width = comment.mid(start, end - start).toFloat();
+
+    //             m_segment_display_width = bead_width * Constants::OpenGL::kObjectToView;
+    //         }
+    //         else { // Static skeleton bead width
+    //             m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Skeleton::kBeadWidth) * Constants::OpenGL::kObjectToView;
+    //         }
+    //     }
+    //     else if (comment.contains("SKIN")) {
+    //         m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Skin::kBeadWidth) * Constants::OpenGL::kObjectToView;
+    //     }
+    //     else if (comment.contains("INFILL")) {
+    //         m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Infill::kBeadWidth) * Constants::OpenGL::kObjectToView;
+    //     }
+    //     else { // Default to layer bead width
+    //         m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Layer::kBeadWidth) * Constants::OpenGL::kObjectToView;
+    //     }
+
+    //     // Set the display length and height of the segment
+    //     m_segment_display_length = m_start_pos.distanceToPoint(end_pos);
+    //     m_segment_display_height = sb->setting<float>(Constants::ProfileSettings::Layer::kLayerHeight) * Constants::OpenGL::kObjectToView;
+
+
+    //     qDebug() << "Layer:" << layer_num << ", " << comment<< "W:" << m_segment_display_width << "L:" << m_segment_display_length << "H:" << m_segment_display_height;
+
+    // }
+
+    QVector<QSharedPointer<SegmentBase>> GCodeLoader::generateVisualSegment(int line_num, int layer_num,
+                                                                            const QColor& color, int command_id,
+                                                                            const QMap<char, double>& parameters,
+                                                                            QVector<bool> extruders_on,
+                                                                            QVector<Point> extruder_offsets,
+                                                                            double extruders_speed, bool is_travel,
+                                                                            QString comment,
+                                                                            const QMap<char, double>&
+                                                                            optional_parameters) {
         // Parameters for drawing and placing each segment in the world correctly
         QVector3D end_pos = m_start_pos;
         QVector3D info_end_pos = m_info_start_pos;
@@ -680,10 +795,13 @@ namespace ORNL {
 
         if (parameters.contains('F')) {
             info_speed_set = true;
-            m_info_speed = QString().asprintf("%0.4f", (Velocity(parameters['F']) / PM->getVelocityUnit())()) % " " % PM->getVelocityUnitText();
+            m_info_speed = QString().asprintf("%0.4f", (Velocity(parameters['F']) / PM->getVelocityUnit())()) % " " %
+                           PM->getVelocityUnitText();
         }
         if (parameters.contains('S')) {
-            m_info_extruder_speed = QString().asprintf("%0.4f", (AngularVelocity(parameters['S']) / m_selected_meta.m_angular_velocity_unit)()) % " rpm";
+            m_info_extruder_speed = QString().asprintf("%0.4f",
+                                                       (AngularVelocity(parameters['S']) /
+                                                        m_selected_meta.m_angular_velocity_unit)()) % " rpm";
         }
 
         if (parameters.contains('W')) {
@@ -732,7 +850,8 @@ namespace ORNL {
         }
         // Z wasn't specified, but it might need updated because of a table shift in a previous command
         // (if the table shift was in this command, we would've accounted for it already)
-        else if (!qFuzzyCompare(m_prev_table_offset, m_table_offset) && (parameters.contains('X') || parameters.contains('Y'))) {
+        else if (!qFuzzyCompare(m_prev_table_offset, m_table_offset) && (parameters.contains('X') ||
+                                                                         parameters.contains('Y'))) {
             info_end_pos.setZ(m_info_start_pos.z() + m_prev_table_offset - m_table_offset);
             end_pos.setZ(m_start_pos.z() + m_prev_table_offset - m_table_offset);
 
@@ -787,7 +906,9 @@ namespace ORNL {
                             center -= perp;
                         }
 
-                        segment = QSharedPointer<ArcSegment>::create(m_start_pos + extruder_offset, end_pos + extruder_offset, center + extruder_offset, (command_id == 3));
+                        segment = QSharedPointer<ArcSegment>::create(m_start_pos + extruder_offset,
+                                                                     end_pos + extruder_offset,
+                                                                     center + extruder_offset, (command_id == 3));
                     }
                     else if (parameters.contains('I') && parameters.contains('J')) {
                         // Determine center from I, J
@@ -801,69 +922,44 @@ namespace ORNL {
                             center.z(m_start_pos.z());
                         }
 
-                        segment = QSharedPointer<ArcSegment>::create(m_start_pos + extruder_offset, end_pos + extruder_offset, center + extruder_offset, (command_id == 3));
+                        segment = QSharedPointer<ArcSegment>::create(m_start_pos + extruder_offset,
+                                                                     end_pos + extruder_offset,
+                                                                     center + extruder_offset, (command_id == 3));
                     }
                 }
                 else if (command_id == 5) { // G5 splines
                     Point control_a;
                     Point control_b;
 
-                    if (parameters.contains('I') && parameters.contains('J') && parameters.contains('P') && parameters.contains('Q')) {
+                    if (parameters.contains('I') && parameters.contains('J') && parameters.contains('P') &&
+                        parameters.contains('Q')) {
                         control_a.x(m_start_pos.x() + ((parameters['I']) *  Constants::OpenGL::kObjectToView));
                         control_a.y(m_start_pos.y() + ((parameters['J']) * Constants::OpenGL::kObjectToView));
                         control_b.x(end_pos.x() + ((parameters['P']) * Constants::OpenGL::kObjectToView));
                         control_b.y(end_pos.y() + ((parameters['Q']) * Constants::OpenGL::kObjectToView));
 
-                        segment = QSharedPointer<BezierSegment>::create(m_start_pos + extruder_offset, control_a + extruder_offset, control_b + extruder_offset, end_pos + extruder_offset);
+                        segment = QSharedPointer<BezierSegment>::create(m_start_pos + extruder_offset,
+                                                                        control_a + extruder_offset,
+                                                                        control_b + extruder_offset,
+                                                                        end_pos + extruder_offset);
                     }
                 }
                 else { // G0, G1, or anything else is drawn as a line
+                    // Create line segment
                     segment = QSharedPointer<LineSegment>::create(m_start_pos + extruder_offset, end_pos - m_start_pos);
 
-                    // Set the display width of the segment based on its region type
-                    if (comment.contains("PERIMETER")) {
-                        m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Perimeter::kBeadWidth) * Constants::OpenGL::kObjectToView;
-                    }
-                    else if (comment.contains("INSET")) {
-                        m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Inset::kBeadWidth) * Constants::OpenGL::kObjectToView;
-                    }
-                    else if (comment.contains("SKELETON")) {
-                        // If the skeleton is adaptive, extract the bead width from the comment, otherwise use the static bead width
-                        if (GSM->getGlobal()->setting<bool>(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) {
-                            // Extract the bead width from the comment
-                            int start = comment.indexOf("-") + 1;
-                            int end = comment.indexOf(" ", start);
-                            double bead_width = comment.mid(start, end - start).toDouble();
 
-                            m_segment_display_width = bead_width * Constants::OpenGL::kObjectToView;
-                        }
-                        else { // Static skeleton bead width
-                            m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Skeleton::kBeadWidth) * Constants::OpenGL::kObjectToView;
-                        }
-                    }
-                    else if (comment.contains("SKIN")) {
-                        m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Skin::kBeadWidth) * Constants::OpenGL::kObjectToView;
-                    }
-                    else if (comment.contains("INFILL")) {
-                        m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Infill::kBeadWidth) * Constants::OpenGL::kObjectToView;
-                    }
-                    else { // Default to layer bead width
-                        m_segment_display_width = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Layer::kBeadWidth) * Constants::OpenGL::kObjectToView;
-                    }
-
-                    // Set the display length and height of the segment
-                    m_segment_display_length = m_start_pos.distanceToPoint(end_pos);
-                    m_segment_display_height = GSM->getGlobal()->setting<float>(Constants::ProfileSettings::Layer::kLayerHeight) * Constants::OpenGL::kObjectToView;
                 }
-
 
                 // Set the segment's display info
                 // If the segment is a modifier, increase its width and height by 10% to make it more visible
                 if (m_modifier_colors.contains(color)) {
-                    segment->setDisplayInfo(m_segment_display_width * 1.1, m_segment_display_length, m_segment_display_height * 1.1, type, color, line_num, layer_num);
+                    segment->setDisplayInfo(m_segment_display_width * 1.1, m_segment_display_length,
+                                            m_segment_display_height * 1.1, type, color, line_num, layer_num);
                 }
                 else {
-                    segment->setDisplayInfo(m_segment_display_width, m_segment_display_length, m_segment_display_height, type, color, line_num, layer_num);
+                    segment->setDisplayInfo(m_segment_display_width, m_segment_display_length,
+                                            m_segment_display_height, type, color, line_num, layer_num);
                 }
 
 
@@ -879,7 +975,9 @@ namespace ORNL {
                             QString().asprintf("%0.4f", extruders_speed) % " rpm" :
                             m_info_extruder_speed) : "";
                 segment->m_segment_info_meta.length =
-                        QString().asprintf("%0.2f", (Distance(m_info_start_pos.distanceToPoint(info_end_pos)) / PM->getDistanceUnit())()) % " " % PM->getDistanceUnitText();
+                    QString().asprintf("%0.2f",
+                                       (Distance(m_info_start_pos.distanceToPoint(info_end_pos)) /
+                                                 PM->getDistanceUnit())()) % " " % PM->getDistanceUnitText();
 
                 generated_segments.append(segment);
             }
