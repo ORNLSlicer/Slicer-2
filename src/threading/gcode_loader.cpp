@@ -721,63 +721,77 @@ namespace ORNL {
         return PM->getVisualizationColor(VisualizationColors::kUnknown);
     }
 
-    // void GCodeLoader::setSegmentDisplayInfo(QSharedPointer<SegmentBase>& segment, const SegmentDisplayType& type, const QColor& color, const QString& comment, const int& line_num, const int& layer_num) {
-    //     // Retrieve settings ranges for the first part
-    //     const auto& part = CSM->parts().first();
-    //     const QList<QSharedPointer<SettingsRange>>& settings_ranges = part->ranges().values();
+    void GCodeLoader::setSegmentDisplayInfo(QSharedPointer<SegmentBase>& segment, const QColor& color,
+                                            const QString& comment, const QVector3D& start_pos,
+                                            const QVector3D& end_pos, const int& line_num, const int& layer_num) {
+        // Retrieve settings ranges for the first part
+        const auto& part = CSM->parts().first();
+        const QList<QSharedPointer<SettingsRange>>& settings_ranges = part->ranges().values();
 
-    //     // Default to global settings base
-    //     QSharedPointer<SettingsBase> sb = GSM->getGlobal();
+        // Default to global settings base
+        QSharedPointer<SettingsBase> sb = GSM->getGlobal();
 
-    //     // Retrieve layer specific settings base if available
-    //     for (const QSharedPointer<SettingsRange>& settings_range : settings_ranges) {
-    //         if (settings_range->includesIndex(layer_num - 1)) {
-    //             sb = QSharedPointer<SettingsBase>::create();
-    //             sb->populate(GSM->getGlobal());
-    //             sb->populate(settings_range->getSb());
-    //             break;
-    //         }
-    //     }
+        // Retrieve layer specific settings base if available
+        for (const QSharedPointer<SettingsRange>& settings_range : settings_ranges) {
+            if (settings_range->includesIndex(layer_num - 1)) {
+                sb = QSharedPointer<SettingsBase>::create();
+                sb->populate(GSM->getGlobal());
+                sb->populate(settings_range->getSb());
+                break;
+            }
+        }
 
-    //     // Set the display width of the segment based on its region type
-    //     if (comment.contains("PERIMETER")) {
-    //         m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Perimeter::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    //     }
-    //     else if (comment.contains("INSET")) {
-    //         m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Inset::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    //     }
-    //     else if (comment.contains("SKELETON")) {
-    //         // If the skeleton is adaptive, extract the bead width from the comment, otherwise use the static bead width
-    //         if (sb->setting<bool>(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) {
-    //             // Extract the bead width from the comment
-    //             unsigned int start = comment.indexOf("-") + 1;
-    //             unsigned int end = comment.indexOf(" ", start);
-    //             float bead_width = comment.mid(start, end - start).toFloat();
+        // Determine the display type of the segment
+        SegmentDisplayType type;
+        if (color == PM->getVisualizationColor(VisualizationColors::kTravel)) {
+            type = SegmentDisplayType::kTravel;
+        } else if (color == PM->getVisualizationColor(VisualizationColors::kSupport)) {
+            type = SegmentDisplayType::kSupport;
+        } else {
+            type = SegmentDisplayType::kLine;
+        }
 
-    //             m_segment_display_width = bead_width * Constants::OpenGL::kObjectToView;
-    //         }
-    //         else { // Static skeleton bead width
-    //             m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Skeleton::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    //         }
-    //     }
-    //     else if (comment.contains("SKIN")) {
-    //         m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Skin::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    //     }
-    //     else if (comment.contains("INFILL")) {
-    //         m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Infill::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    //     }
-    //     else { // Default to layer bead width
-    //         m_segment_display_width = sb->setting<float>(Constants::ProfileSettings::Layer::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    //     }
+        // Set the display info of the segment
+        float display_width;
+        float display_height = sb->setting<float>(Constants::ProfileSettings::Layer::kLayerHeight) *
+                               Constants::OpenGL::kObjectToView;
+        float display_length = start_pos.distanceToPoint(end_pos);
+        float scale = m_modifier_colors.contains(color) ? 1.1f : 1.0f; // Scale modifier segments by 1.1 for better visibility
 
-    //     // Set the display length and height of the segment
-    //     m_segment_display_length = m_start_pos.distanceToPoint(end_pos);
-    //     m_segment_display_height = sb->setting<float>(Constants::ProfileSettings::Layer::kLayerHeight) * Constants::OpenGL::kObjectToView;
+        // Set the display width of the segment based on its region type
+        if (comment.contains("PERIMETER")) {
+            display_width = sb->setting<float>(Constants::ProfileSettings::Perimeter::kBeadWidth) *
+                            Constants::OpenGL::kObjectToView;
+        } else if (comment.contains("INSET")) {
+            display_width = sb->setting<float>(Constants::ProfileSettings::Inset::kBeadWidth) *
+                            Constants::OpenGL::kObjectToView;
+        } else if (comment.contains("SKELETON")) {
+            // If the skeleton is adaptive, extract the bead width from the comment, otherwise use the static bead width
+            if (sb->setting<bool>(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) {
+                // Extract the bead width from the comment
+                unsigned int start = comment.indexOf("-") + 1;
+                unsigned int end = comment.indexOf(" ", start);
+                float bead_width = comment.mid(start, end - start).toFloat();
+                display_width = bead_width * Constants::OpenGL::kObjectToView;
+            } else { // Static skeleton bead width
+                display_width = sb->setting<float>(Constants::ProfileSettings::Skeleton::kBeadWidth) *
+                                Constants::OpenGL::kObjectToView;
+            }
+        } else if (comment.contains("SKIN")) {
+            display_width = sb->setting<float>(Constants::ProfileSettings::Skin::kBeadWidth) *
+                            Constants::OpenGL::kObjectToView;
+        } else if (comment.contains("INFILL")) {
+            display_width = sb->setting<float>(Constants::ProfileSettings::Infill::kBeadWidth) *
+                            Constants::OpenGL::kObjectToView;
+        } else { // Default to layer bead width
+            display_width = sb->setting<float>(Constants::ProfileSettings::Layer::kBeadWidth) *
+                            Constants::OpenGL::kObjectToView;
+        }
 
-
-    //     qDebug() << "Layer:" << layer_num << ", " << comment<< "W:" << m_segment_display_width << "L:" << m_segment_display_length << "H:" << m_segment_display_height;
-
-    // }
+        // Set the display info of the segment
+        segment->setDisplayInfo(display_width * scale, display_length, display_height * scale, type, color, line_num,
+                                layer_num);
+    }
 
     void GCodeLoader::setSegmentMetaInfo(QSharedPointer<SegmentBase>& segment, const QString& comment,
                                          QVector3D& info_end_pos, const bool& extruders_on, const bool& info_speed_set,
@@ -896,18 +910,6 @@ namespace ORNL {
             if (extruders_on[i] || is_travel) {
                 QSharedPointer<SegmentBase> segment;
 
-                SegmentDisplayType type;
-
-                if (color == PM->getVisualizationColor(VisualizationColors::kTravel)) {
-                    type = SegmentDisplayType::kTravel;
-                } else if (color == PM->getVisualizationColor(VisualizationColors::kSupport)) {
-                    type = SegmentDisplayType::kSupport;
-                } else {
-                    type = SegmentDisplayType::kLine;
-                }
-
-                m_segment_display_length = 0;
-
                 QVector3D extruder_offset = extruder_offsets[i].toQVector3D() * Constants::OpenGL::kObjectToView;
 
                 // Builds and draws segments according to their type (Line, Arc, Spline)
@@ -971,19 +973,10 @@ namespace ORNL {
                 } else { // G0, G1, or anything else is drawn as a line
                     // Create line segment
                     segment = QSharedPointer<LineSegment>::create(m_start_pos + extruder_offset, end_pos - m_start_pos);
-
-
                 }
 
                 // Set the segment's display info
-                // If the segment is a modifier, increase its width and height by 10% to make it more visible
-                if (m_modifier_colors.contains(color)) {
-                    segment->setDisplayInfo(m_segment_display_width * 1.1, m_segment_display_length,
-                                            m_segment_display_height * 1.1, type, color, line_num, layer_num);
-                } else {
-                    segment->setDisplayInfo(m_segment_display_width, m_segment_display_length,
-                                            m_segment_display_height, type, color, line_num, layer_num);
-                }
+                setSegmentDisplayInfo(segment, color, comment, m_start_pos, end_pos, line_num, layer_num);
 
                 // Set the segment's meta info
                 setSegmentMetaInfo(segment, comment, info_end_pos, extruders_on[i], info_speed_set, extruders_speed);

@@ -97,6 +97,17 @@ namespace ORNL
             //! \return color based on comment keywords
             QColor determineFontColor(const QString& comment);
 
+            //! \brief Set the segment display information based on the region type defined in the comment.
+            //! \param segment: Segment to set display info for.
+            //! \param color: Color to set for the segment.
+            //! \param comment: Comment to parse for the segment type.
+            //! \param start_pos: The start position of the segment.
+            //! \param end_pos: The end position of the segment.
+            //! \param line_num: The line number of the segment.
+            //! \param layer_num: The layer number of the segment.
+            void setSegmentDisplayInfo(QSharedPointer<SegmentBase>& segment, const QColor& color,
+                                       const QString& comment, const QVector3D& start_pos, const QVector3D& end_pos,
+                                       const int& line_num, const int& layer_num);
 
             //! \brief Set the segment meta information. This is the information that is displayed when the user selects
             //! a segment in the UI.
@@ -181,15 +192,6 @@ namespace ORNL
             //! \brief Settings for visualization
             //! \brief conversion from internal units to OpenGL units
             float m_micron_to_view_conversion;
-
-            //! \brief Display width for segment.
-            float m_segment_display_width;
-
-            //! \brief Display length for segment.
-            float m_segment_display_length;
-
-            //! \brief Display height for segment.
-            float m_segment_display_height;
 
             //! \brief Current Gcode start position
             QVector3D m_start_pos;
