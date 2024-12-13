@@ -803,7 +803,6 @@ namespace ORNL {
                                                        (AngularVelocity(parameters['S']) /
                                                         m_selected_meta.m_angular_velocity_unit)()) % " rpm";
         }
-
         if (parameters.contains('W')) {
             m_prev_table_offset = m_table_offset;
             m_table_offset = parameters['W'] * Constants::OpenGL::kObjectToView;
@@ -816,7 +815,6 @@ namespace ORNL {
         }
 
         //! \note optional_parameters hold start locations for gcommand.  Syntaxes that use this do not have travels.
-
         // Always draw segments if X and Y are specified (which should be all segments except table-shifts between layers)
         if (parameters.contains('X')) {
             info_end_pos.setX(parameters['X'] + m_x_offset);
@@ -869,11 +867,9 @@ namespace ORNL {
 
                 if (color == PM->getVisualizationColor(VisualizationColors::kTravel)) {
                     type = SegmentDisplayType::kTravel;
-                }
-                else if (color == PM->getVisualizationColor(VisualizationColors::kSupport)) {
+                } else if (color == PM->getVisualizationColor(VisualizationColors::kSupport)) {
                     type = SegmentDisplayType::kSupport;
-                }
-                else {
+                } else {
                     type = SegmentDisplayType::kLine;
                 }
 
@@ -901,24 +897,21 @@ namespace ORNL {
 
                         if (command_id == 2) {
                             center += perp;
-                        }
-                        else {
+                        } else {
                             center -= perp;
                         }
 
                         segment = QSharedPointer<ArcSegment>::create(m_start_pos + extruder_offset,
                                                                      end_pos + extruder_offset,
                                                                      center + extruder_offset, (command_id == 3));
-                    }
-                    else if (parameters.contains('I') && parameters.contains('J')) {
+                    } else if (parameters.contains('I') && parameters.contains('J')) {
                         // Determine center from I, J
                         center.x(m_start_pos.x() + ((parameters['I']) * Constants::OpenGL::kObjectToView));
                         center.y(m_start_pos.y() + ((parameters['J']) * Constants::OpenGL::kObjectToView));
 
                         if (parameters.contains('K')) {
                             center.z(m_start_pos.z() + ((parameters['K']) * Constants::OpenGL::kObjectToView));
-                        }
-                        else {
+                        } else {
                             center.z(m_start_pos.z());
                         }
 
@@ -926,8 +919,7 @@ namespace ORNL {
                                                                      end_pos + extruder_offset,
                                                                      center + extruder_offset, (command_id == 3));
                     }
-                }
-                else if (command_id == 5) { // G5 splines
+                } else if (command_id == 5) { // G5 splines
                     Point control_a;
                     Point control_b;
 
@@ -943,8 +935,7 @@ namespace ORNL {
                                                                         control_b + extruder_offset,
                                                                         end_pos + extruder_offset);
                     }
-                }
-                else { // G0, G1, or anything else is drawn as a line
+                } else { // G0, G1, or anything else is drawn as a line
                     // Create line segment
                     segment = QSharedPointer<LineSegment>::create(m_start_pos + extruder_offset, end_pos - m_start_pos);
 
@@ -956,8 +947,7 @@ namespace ORNL {
                 if (m_modifier_colors.contains(color)) {
                     segment->setDisplayInfo(m_segment_display_width * 1.1, m_segment_display_length,
                                             m_segment_display_height * 1.1, type, color, line_num, layer_num);
-                }
-                else {
+                } else {
                     segment->setDisplayInfo(m_segment_display_width, m_segment_display_length,
                                             m_segment_display_height, type, color, line_num, layer_num);
                 }
