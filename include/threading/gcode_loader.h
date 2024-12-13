@@ -42,12 +42,14 @@ namespace ORNL
 
             //! \brief signal to UI with info for text and text font color
             //! \param text: text from file to display
-            //! \param fontColors: Hash with formats to define colors for all lines of text. Allows lookup for each line into the hash for appropriate format.
-            //! \param layerFirstLineNumbers: line numbers for BEGINNING LAYER for each layer to jump the cursor to appropriate line when spinbox moves up and down.
-            //! \param layerSkipLineNumbers: line numbers to skip applying formatting to hash based on visualization settings
-            void gcodeLoadedText(
-                QString text, QHash<QString, QTextCharFormat> fontColors, QList<int> layerFirstLineNumbers,
-                QSet<int> layerSkipLineNumbers);
+            //! \param fontColors: Hash with formats to define colors for all lines of text. Allows lookup for each line
+            //! into the hash for appropriate format.
+            //! \param layerFirstLineNumbers: line numbers for BEGINNING LAYER for each layer to jump the cursor to
+            //! appropriate line when spinbox moves up and down.
+            //! \param layerSkipLineNumbers: line numbers to skip applying formatting to hash based on visualization
+            //! settings
+            void gcodeLoadedText(QString text, QHash<QString, QTextCharFormat> fontColors,
+                                 QList<int> layerFirstLineNumbers, QSet<int> layerSkipLineNumbers);
 
             //! \brief Emits error signal
             //! \param msg: Qstring error message
@@ -55,8 +57,8 @@ namespace ORNL
 
             //! \brief signal to layer time window with info
             //! \param layertimes: List of layer times for display
-            void forwardInfoToLayerTimeWindow(
-                QList<QList<Time>> layer_times, QList<double> layer_FR_modifiers, bool adjusted_layer_time);
+            void forwardInfoToLayerTimeWindow(QList<QList<Time>> layer_times, QList<double> layer_FR_modifiers,
+                                              bool adjusted_layer_time);
 
             //! \brief signal to export window with info
             //! \param filename: temp gcode filename to copy
@@ -125,10 +127,15 @@ namespace ORNL
             //! \param is_travel: if this line is a travel, ignores extruder status
             //! \param optional_parameters: Parameters of gcodecommand for start (x, y, z, w)
             //! \return List of generated visual segments.
-            QVector<QSharedPointer<SegmentBase>> generateVisualSegment(
-                int line_num, int layer_num, const QColor& color, int command_id, const QMap<char, double>& parameters,
-                QVector<bool> extruders_on, QVector<Point> extruder_offsets, double extruders_speed, bool is_travel,
-                const QString comment, const QMap<char, double>& optional_parameters = QMap<char, double>());
+            QVector<QSharedPointer<SegmentBase>> generateVisualSegment(int line_num, int layer_num, const QColor& color,
+                                                                       int command_id,
+                                                                       const QMap<char, double>& parameters,
+                                                                       QVector<bool> extruders_on,
+                                                                       QVector<Point> extruder_offsets,
+                                                                       double extruders_speed, bool is_travel,
+                                                                       const QString comment,
+                                                                       const QMap<char, double>&
+                                                                       optional_parameters = QMap<char, double>());
 
             //! \brief Filename.
             QString m_filename;
@@ -145,11 +152,12 @@ namespace ORNL
 
             //! \brief matchers for modifier identification for coloring
             QStringMatcher m_prestart, m_initial_startup, m_slowdown, m_forward_tipwipe, m_reverse_tipwipe,
-                m_angled_tipwipe, m_coasting, m_spirallift, m_rampingup, m_rampingdown, m_leadin;
+                           m_angled_tipwipe, m_coasting, m_spirallift, m_rampingup, m_rampingdown, m_leadin;
 
             //! \brief matchers for type identification for coloring
             QStringMatcher m_perimeter, m_perimeter_embossing, m_inset, m_inset_embossing, m_infill, m_ironing, m_skin,
-                m_skeleton, m_support, m_support_roof, m_travel, m_raft, m_brim, m_skirt, m_laserscan, m_thermalscan;
+                           m_skeleton, m_support, m_support_roof, m_travel, m_raft, m_brim, m_skirt, m_laserscan,
+                           m_thermalscan;
 
             //! \brief colors for modifiers to adjust display size
             QVector<QColor> m_modifier_colors;
