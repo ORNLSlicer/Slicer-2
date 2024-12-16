@@ -345,6 +345,13 @@ namespace ORNL
         kPoints
     };
 
+    //! \enum SkeletonFilter
+    //! \brief Types of filters for adaptive skeleton bead widths
+    enum class SkeletonFilter : int {
+        kClamp,
+        kPrune
+    };
+
     //! \brief Function for going from json to SkinInfillPatterns
     void to_json(json& j, const SkeletonInput& i);
 
