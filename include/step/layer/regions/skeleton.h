@@ -49,10 +49,10 @@ namespace ORNL {
 
             //! \brief Writes the gcode for the skeleton
             //! \param writer is the instance of the Writer Base to be used for writing skeleton region GCode
-            QString writeGCode(QSharedPointer<WriterBase> writer);
+            QString writeGCode(QSharedPointer<WriterBase> writer) override;
 
             //! \brief Computes the skeleton region
-            void compute(uint layer_num, QSharedPointer<SyncManager>& sync);
+            void compute(uint layer_num, QSharedPointer<SyncManager>& sync) override;
 
             //! \brief Computes a Voronoi Diagram from a set of segments
             void computeSegmentVoronoi();
@@ -158,7 +158,7 @@ namespace ORNL {
             //! \brief Creates paths for the skeleton region.
             //! \param line: polyline representing path
             //! \return Polyline converted to path
-            Path createPath(Polyline line);
+            Path createPath(Polyline line) override;
 
             //! \brief Sets pathing for anchor lines
             //! \param anchor_lines: polylines for wire feed
