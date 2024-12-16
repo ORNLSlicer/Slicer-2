@@ -263,10 +263,8 @@ namespace ORNL {
                         break;
                     }
                 }
-
                 if (!valid) break;
             }
-
             if (!valid) break;
         }
 
@@ -584,7 +582,7 @@ namespace ORNL {
     }
 
     void Skeleton::getSkeleton() {
-        Distance min_path_length = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kMinPathLength);
+        const Distance& min_path_length = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kMinPathLength);
 
         //! Locate pivot vertices with degree != 2
         QVector<SkeletonVertex> pivots;
@@ -675,8 +673,8 @@ namespace ORNL {
 
     QVector<QSharedPointer<LineSegment>> Skeleton::adaptBeadWidth(const Point &start, const Point &end) {
         // Retrieve profile settings
-        const Distance& reference_width = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
-        const Velocity& reference_speed = m_sb->setting<Velocity>(Constants::ProfileSettings::Skeleton::kSpeed);
+        const Distance& reference_width     = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
+        const Velocity& reference_speed     = m_sb->setting<Velocity>(Constants::ProfileSettings::Skeleton::kSpeed);
         const Distance& discretization_step = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptStepSize);
 
         // Compute factor for speed calculation based on inverse proportionality
@@ -750,7 +748,7 @@ namespace ORNL {
 
             // Adjust bead width and speed
             Distance adjusted_width = std::min(start_width, end_width);
-            adjusted_width = adjusted_width == 0 ? reference_width : adjusted_width;
+            adjusted_width = (adjusted_width == 0) ? reference_width : adjusted_width;
             Velocity adjusted_speed = std::max(speed_factor / adjusted_width(), reference_speed() / 100.0); // Clamp adjusted speed to 1% of reference speed
 
             // Create and store the last subsegment
@@ -764,25 +762,28 @@ namespace ORNL {
     }
 
     Path Skeleton::createPath(Polyline line) {
-        Distance width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kBeadWidth);
-        Distance height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
-        Velocity speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Skeleton::kSpeed);
-        Acceleration acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kSkeleton);
-        AngularVelocity extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Skeleton::kExtruderSpeed);
-        int material_number             = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kPerimterNum);
+        const Distance& width                  = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kBeadWidth);
+        const Distance& height                 = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
+        const Velocity& speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Skeleton::kSpeed);
+        const Acceleration& acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kSkeleton);
+        const AngularVelocity& extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Skeleton::kExtruderSpeed);
+        const int& material_number             = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kPerimterNum);
+        const bool& adapt_bead_width           = m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt);
+        const Distance& adapt_step_size        = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonAdaptStepSize);
 
-        Path newPath;
+        Path path;
 
         for (uint i = 0, end = line.size() - 1; i < end; ++i) {
             QVector<QSharedPointer<LineSegment>> segments;
 
-            if(m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt) //! Adaptive bead width
-                    && m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptStepSize) > 0) {
+            // If adaptive bead width is enabled, adapt the bead width for each segment.
+            // Otherwise, use the static bead width.
+            if (adapt_bead_width && adapt_step_size > 0) {
                 segments = adaptBeadWidth(line[i], line[i + 1]);
-            } else { //! Static bead width
+            } else {
                 QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line[i], line[i + 1]);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
-                segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
+                segment->getSb()->setSetting(Constants::SegmentSettings::kWidth, width);
+                segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed, speed);
                 segments += segment;
             }
 
@@ -793,15 +794,15 @@ namespace ORNL {
                 segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
                 segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kSkeleton);
 
-                if(m_computed_anchor_lines.size() != 0) {
+                if (m_computed_anchor_lines.size() != 0) {
                     segment->getSb()->setSetting(Constants::SegmentSettings::kWireFeed, true);
                 }
 
-                newPath.append(segment);
+                path.append(segment);
             }
         }
 
-        return newPath;
+        return path;
     }
 
     void Skeleton::setAnchorWireFeed(QVector<Polyline> anchor_lines) {
@@ -875,13 +876,14 @@ namespace ORNL {
 
     QVector<Path> Skeleton::breakPath(Path path) {
         QVector<Path> paths;
+
         // Filter adapted path by removing and clamping segments whose widths are not within the tolerated range
         if (m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) {
             // Retrieve profile settings
-            Distance reference_width = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
-            Velocity reference_speed = m_sb->setting<Velocity>(Constants::ProfileSettings::Skeleton::kSpeed);
-            Distance min_width = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMinWidth);
-            Distance max_width = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMaxWidth);
+            const Distance& reference_width = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
+            const Velocity& reference_speed = m_sb->setting<Velocity>(Constants::ProfileSettings::Skeleton::kSpeed);
+            const Distance& min_width       = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMinWidth);
+            const Distance& max_width       = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMaxWidth);
 
             // Compute factor for speed calculation based on inverse proportionality
             double speed_factor = reference_speed() * reference_width();
