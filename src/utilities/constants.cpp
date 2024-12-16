@@ -631,12 +631,14 @@ namespace ORNL
     const QString Constants::ProfileSettings::Skeleton::kSkeletonOutputCleaningDistance = "skeleton_output_cleaning_distance";
     const QString Constants::ProfileSettings::Skeleton::kBeadWidth                      = "skeleton_width";
     const QString Constants::ProfileSettings::Skeleton::kSpeed                          = "skeleton_speed";
+    const QString Constants::ProfileSettings::Skeleton::kExtruderSpeed                  = "skeleton_extruder_speed";
+    const QString Constants::ProfileSettings::Skeleton::kExtrusionMultiplier            = "skeleton_extrusion_multiplier";
     const QString Constants::ProfileSettings::Skeleton::kSkeletonAdapt                  = "skeleton_adapt";
     const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptStepSize          = "skeleton_adapt_step_size";
     const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptMinWidth          = "skeleton_adapt_min_width";
+    const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptMinWidthFilter    = "skeleton_adapt_min_width_filter";
     const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptMaxWidth          = "skeleton_adapt_max_width";
-    const QString Constants::ProfileSettings::Skeleton::kExtruderSpeed                  = "skeleton_extruder_speed";
-    const QString Constants::ProfileSettings::Skeleton::kExtrusionMultiplier            = "skeleton_extrusion_multiplier";
+    const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptMaxWidthFilter    = "skeleton_adapt_max_width_filter";
     const QString Constants::ProfileSettings::Skeleton::kMinPathLength                  = "skeleton_minimum_path_length";
     const QString Constants::ProfileSettings::Skeleton::kUseSkinMcode                   = "skeleton_skin_mcode";
 
