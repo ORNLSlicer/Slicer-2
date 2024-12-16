@@ -316,24 +316,19 @@ namespace ORNL {
                 emit forwardInfoToMainWindow(keyInfo);
 
 
-                Distance x_dist, y_dist = 0.0;
-                m_start_pos = QVector3D((x_dist() +
-                                         visualizationSettings[Constants::PrinterSettings::Dimensions::kXOffset]) *
-                                         Constants::OpenGL::kObjectToView,
-                                        (y_dist() +
-                                         visualizationSettings[Constants::PrinterSettings::Dimensions::kYOffset]) *
-                                         Constants::OpenGL::kObjectToView, .0f);
+                Distance x_dist = 0.0, y_dist = 0.0, z_dist = 0.0;
+                const Distance& z_min = GSM->getGlobal()->setting<Distance>(Constants::PrinterSettings::Dimensions::kZMin);
+                const Distance& x_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kXOffset];
+                const Distance& y_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kYOffset];
+                const Distance& z_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kZOffset];
 
-                m_origin = QVector3D(x_dist() + visualizationSettings[Constants::PrinterSettings::Dimensions::kXOffset],
-                                     y_dist() + visualizationSettings[Constants::PrinterSettings::Dimensions::kYOffset],
-                                     .0f);
-
-                auto min_z = GSM->getGlobal()->setting<Distance>(Constants::PrinterSettings::Dimensions::kZMin);
-                auto z_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kZOffset];
-
-                m_x_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kXOffset];
-                m_y_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kYOffset];
-                m_z_offset = (min_z - z_offset)() * Constants::OpenGL::kObjectToView;
+                m_start_pos = QVector3D((x_dist() + x_offset()) * Constants::OpenGL::kObjectToView,
+                                        (y_dist() + y_offset()) * Constants::OpenGL::kObjectToView,
+                                        z_dist());
+                m_origin = QVector3D(x_dist() + x_offset(), y_dist() + y_offset(), z_dist());
+                m_x_offset = x_offset();
+                m_y_offset = y_offset();
+                m_z_offset = (z_min - z_offset)() * Constants::OpenGL::kObjectToView;
                 m_table_offset = 0.0f;
                 m_prev_table_offset = 0.0f;
 
