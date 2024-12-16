@@ -75,7 +75,7 @@ namespace ORNL {
         if (!m_geometry.isEmpty()) {
             simplifyInputGeometry(layer_num);
 
-            SkeletonInput input = static_cast<SkeletonInput>(m_sb->setting<int>(Constants::ProfileSettings::Skeleton::kSkeletonInput));
+            const SkeletonInput& input = static_cast<SkeletonInput>(m_sb->setting<int>(Constants::ProfileSettings::Skeleton::kSkeletonInput));
             switch(input) {
                 case SkeletonInput::kSegments:
                     computeSegmentVoronoi();
@@ -94,22 +94,20 @@ namespace ORNL {
                 //! Uncomment to inspect Skeleton structure. See instructions in header file.
                 //inspectSkeleton(layer_num);
 
-                if(m_computed_anchor_lines.size() != 0) {
+                if (m_computed_anchor_lines.size() != 0) {
                     m_computed_geometry.push_front(m_computed_anchor_lines.first());
                     m_computed_geometry.push_back(m_computed_anchor_lines.last());
                 }
-            }
-            else {
+            } else {
                 qDebug() << "\t\tNo permitted skeletons generated from geometry on layer " << layer_num;
             }
-        }
-        else {
+        } else {
             qDebug() << "\t\tNo geometry for skeletons to compute";
         }
     }
 
     void Skeleton::computeSegmentVoronoi() {
-        Distance bead_width = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
+        const Distance& bead_width = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
 
         // Filter for Voronoi edges whose minimum distance to the boundary is less than the assigned bead width
         auto filter = [bead_width] (const Polyline& source1, const Polyline& source2, const Point& edge_start, const Point& edge_end) {
@@ -133,7 +131,6 @@ namespace ORNL {
             for (uint i = 0, max = poly.size() - 1; i < max; ++i) {
                 segments += Polyline({poly[i], poly[i + 1]});
             }
-
             segments += Polyline({poly.last(), poly.first()});
         }
 
@@ -153,8 +150,8 @@ namespace ORNL {
                         if (edge->is_finite()) {
                             //! Ensures skeleton segments are only generated once since voronoi diagram implements twin edges
                             if (edge->cell()->source_index() < edge->twin()->cell()->source_index()) {
-                                Polyline source1 = segments[edge->cell()->source_index()];
-                                Polyline source2 = segments[edge->twin()->cell()->source_index()];
+                                const Polyline& source1 = segments[edge->cell()->source_index()];
+                                const Polyline& source2 = segments[edge->twin()->cell()->source_index()];
 
                                 //! Ensures skeleton segments run parallel to the border geometry
                                 if (source1.first() != source2.first() &&
@@ -169,8 +166,7 @@ namespace ORNL {
                                     // Otherwise, filter skeleton segments whose minimum distance to the border geometry is less than half the bead width.
                                     if (m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) { // Adaptive bead width
                                         m_skeleton_geometry += m_geometry & Polyline({start, end});
-                                    }
-                                    else if (!filter(source1, source2, start, end)) { // Static bead width
+                                    } else if (!filter(source1, source2, start, end)) { // Static bead width
                                         m_skeleton_geometry += m_geometry & Polyline({start, end});
                                     }
                                 }
@@ -188,8 +184,7 @@ namespace ORNL {
         while (segment_iter != segment_iter_end) {
             if (segments.contains(*segment_iter) || segments.contains(segment_iter->reverse())) {
                 segment_iter = m_skeleton_geometry.erase(segment_iter);
-            }
-            else {
+            } else {
                 ++segment_iter;
             }
         }
@@ -222,8 +217,7 @@ namespace ORNL {
                             //! Ensure skeleton segments fit within the border geometry
                             m_skeleton_geometry += m_geometry & Polyline({start, end});
                         }
-                    }
-                    else { //! Infinite edge case
+                    } else { //! Infinite edge case
                         const vertex_type* v0 = edge->vertex0();
 
                         //! Ensures skeleton segments are only generated once since voronoi diagram implements twin edges
@@ -231,8 +225,8 @@ namespace ORNL {
                             Point start(v0->x(), v0->y());
 
                             //! Determine segment end point from segment seeds
-                            Point seed1 = points[edge->cell()->source_index()];
-                            Point seed2 = points[edge->twin()->cell()->source_index()];
+                            const Point& seed1 = points[edge->cell()->source_index()];
+                            const Point& seed2 = points[edge->twin()->cell()->source_index()];
                             Point end((seed1.x() + seed2.x()) / 2, (seed1.y() + seed2.y()) / 2);
 
                             //! Generate skeleton segments that fit within the geometry
@@ -256,7 +250,7 @@ namespace ORNL {
     }
 
     void Skeleton::simplifyInputGeometry(const uint& layer_num) {
-        Distance cleaning_dist = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonInputCleaningDistance);
+        const Distance& cleaning_dist = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonInputCleaningDistance);
 
         //! Too large of a cleaning distance may decimate inner/outer polygons such that they
         //! contain no points or intersect each other. Check that cleaning distance is appropriate.
@@ -273,14 +267,12 @@ namespace ORNL {
                 if (!valid) break;
             }
 
-            if (!valid)
-                break;
+            if (!valid) break;
         }
 
         if (valid) {
             m_geometry = m_geometry.cleanPolygons(cleaning_dist);
-        }
-        else {
+        } else {
             qDebug() << "Layer " << layer_num << " Skeleton input geometry cleaning distance too large.";
         }
 
@@ -299,13 +291,11 @@ namespace ORNL {
                     poly = MathUtils::chamferCorner(A, B, C, 10);
                     poly.prepend(A);
                     poly.append(C);
-                }
-                else if (BCA < ABC && BCA < CAB) {
+                } else if (BCA < ABC && BCA < CAB) {
                     poly = MathUtils::chamferCorner(B, C, A, 10);
                     poly.prepend(B);
                     poly.append(A);
-                }
-                else {
+                } else {
                     poly = MathUtils::chamferCorner(C, A, B, 10);
                     poly.prepend(C);
                     poly.append(B);
@@ -314,7 +304,7 @@ namespace ORNL {
         }
 
         //! Chamfer sharp corners
-        Angle threshold = m_sb->setting<Angle>(Constants::ProfileSettings::Skeleton::kSkeletonInputChamferingAngle);
+        const Angle& threshold = m_sb->setting<Angle>(Constants::ProfileSettings::Skeleton::kSkeletonInputChamferingAngle);
         for (Polygon &geometry : m_geometry) {
             Polyline poly = geometry.toPolyline();
             Polygon new_geometry;
@@ -322,16 +312,14 @@ namespace ORNL {
             for (uint i = 1, max = poly.size() - 1; i < max; ++i) {
                 if (MathUtils::internalAngle(poly[i - 1], poly[i], poly[i + 1]) < threshold) {
                     new_geometry.append(MathUtils::chamferCorner(poly[i - 1], poly[i], poly[i + 1], 10));
-                }
-                else {
+                } else {
                     new_geometry.append(poly[i]);
                 }
             }
 
             if (MathUtils::internalAngle(geometry.last(), geometry[0], geometry[1]) < threshold) {
                 new_geometry.append(MathUtils::chamferCorner(geometry.last(), geometry[0], geometry[1], 10));
-            }
-            else {
+            } else {
                 new_geometry.append(geometry.first());
             }
 
@@ -340,7 +328,7 @@ namespace ORNL {
     }
 
     void Skeleton::simplifyOutputGeometry() {
-        Distance cleaning_distance = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonOutputCleaningDistance);
+        const Distance& cleaning_distance = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonOutputCleaningDistance);
 
         for (Polyline& poly_line : m_computed_geometry) {
             poly_line = poly_line.simplify(cleaning_distance);
@@ -355,8 +343,7 @@ namespace ORNL {
             SkeletonVertex v0;
             if (vertices.contains(edge.first())) {
                 v0 = vertices[edge.first()];
-            }
-            else {
+            } else {
                 v0 = add_vertex(edge.first(), m_skeleton_graph);
                 vertices.insert(edge.first(), v0);
             }
@@ -364,8 +351,7 @@ namespace ORNL {
             SkeletonVertex v1;
             if (vertices.contains(edge.last())) {
                 v1 = vertices[edge.last()];
-            }
-            else {
+            } else {
                 v1 = add_vertex(edge.last(), m_skeleton_graph);
                 vertices.insert(edge.last(), v1);
             }
@@ -417,8 +403,7 @@ namespace ORNL {
                     vertex_mod_map[v0] = true;
                     vertex_mod_map[v1] = true;
                     boost::tie(vi, vi_end) = vertices(m_skeleton_graph);
-                }
-                else {
+                } else {
                     vertex_mod_map[*v_root] = true;
                 }
             }
@@ -512,8 +497,7 @@ namespace ORNL {
 
             if (!longest_cycle.isEmpty()) {
                 extractPath(longest_cycle);
-            }
-            else break; //! All cycles have been removed
+            } else break; //! All cycles have been removed
 
             //check if cycle removal empties graph
             if(boost::num_edges(m_skeleton_graph) == 0 || boost::num_vertices(m_skeleton_graph) == 0) break;
@@ -691,9 +675,9 @@ namespace ORNL {
 
     QVector<QSharedPointer<LineSegment>> Skeleton::adaptBeadWidth(const Point &start, const Point &end) {
         // Retrieve profile settings
-        Distance reference_width = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
-        Velocity reference_speed = m_sb->setting<Velocity>(Constants::ProfileSettings::Skeleton::kSpeed);
-        Distance discretization_step = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptStepSize);
+        const Distance& reference_width = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
+        const Velocity& reference_speed = m_sb->setting<Velocity>(Constants::ProfileSettings::Skeleton::kSpeed);
+        const Distance& discretization_step = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptStepSize);
 
         // Compute factor for speed calculation based on inverse proportionality
         double speed_factor = reference_speed() * reference_width();
@@ -795,8 +779,7 @@ namespace ORNL {
             if(m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt) //! Adaptive bead width
                     && m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptStepSize) > 0) {
                 segments = adaptBeadWidth(line[i], line[i + 1]);
-            }
-            else { //! Static bead width
+            } else { //! Static bead width
                 QSharedPointer<LineSegment> segment = QSharedPointer<LineSegment>::create(line[i], line[i + 1]);
                 segment->getSb()->setSetting(Constants::SegmentSettings::kWidth,            width);
                 segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed,            speed);
@@ -872,13 +855,13 @@ namespace ORNL {
 
         poo.setGeometryToEvaluate(m_computed_geometry, RegionType::kSkeleton, static_cast<PathOrderOptimization>(m_sb->setting<int>(Constants::ProfileSettings::Optimizations::kPathOrder)));
 
-        while(poo.getCurrentPolylineCount() > 0) {
+        while (poo.getCurrentPolylineCount() > 0) {
             Polyline result = poo.linkNextPolyline();
-            if(result.size() > 0) {
+            if (result.size() > 0) {
                 Path newPath = createPath(result);
                 QVector<Path> paths = breakPath(newPath);
-                if(paths.size() > 0) {
-                    for(Path path : paths) {
+                if (paths.size() > 0) {
+                    for (Path path : paths) {
                         QVector<Path> temp_path;
                         calculateModifiers(path, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), temp_path);
                         PathModifierGenerator::GenerateTravel(path, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
@@ -910,8 +893,7 @@ namespace ORNL {
 
                 if (width >= min_width && width <= max_width) { // Within tolerated range
                     filtered_path.append(segment);
-                }
-                else if (width > max_width) { // Clamp width to max_width
+                } else if (width > max_width) { // Clamp width to max_width
                     segment->getSb()->setSetting(Constants::SegmentSettings::kWidth, max_width);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed, speed_factor / max_width());
                     filtered_path.append(segment);
@@ -945,11 +927,11 @@ namespace ORNL {
     }
 
     void Skeleton::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour) {
-        if(m_sb->setting<bool>(Constants::ExperimentalSettings::Ramping::kTrajectoryAngleEnabled)) {
+        if (m_sb->setting<bool>(Constants::ExperimentalSettings::Ramping::kTrajectoryAngleEnabled)) {
             PathModifierGenerator::GenerateTrajectorySlowdown(path, m_sb);
         }
 
-        if(m_sb->setting<bool>(Constants::MaterialSettings::Slowdown::kSkeletonEnable)) {
+        if (m_sb->setting<bool>(Constants::MaterialSettings::Slowdown::kSkeletonEnable)) {
             PathModifierGenerator::GenerateSlowdown(path, m_sb->setting<Distance>(Constants::MaterialSettings::Slowdown::kSkeletonDistance),
                                                     m_sb->setting<Distance>(Constants::MaterialSettings::Slowdown::kSkeletonLiftDistance),
                                                     m_sb->setting<Distance>(Constants::MaterialSettings::Slowdown::kSkeletonCutoffDistance),
@@ -959,15 +941,15 @@ namespace ORNL {
                                                     m_sb->setting<double>(Constants::MaterialSettings::Slowdown::kSlowDownAreaModifier));
         }
 
-        if(m_sb->setting<bool>(Constants::MaterialSettings::TipWipe::kSkeletonEnable)) {
-            if(static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkeletonDirection)) == TipWipeDirection::kForward ||
+        if (m_sb->setting<bool>(Constants::MaterialSettings::TipWipe::kSkeletonEnable)) {
+            if (static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkeletonDirection)) == TipWipeDirection::kForward ||
                     static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkeletonDirection)) == TipWipeDirection::kOptimal)
                 PathModifierGenerator::GenerateForwardTipWipeOpenLoop(path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonDistance),
                                                                       m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkeletonSpeed),
                                                                       m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkeletonExtruderSpeed),
                                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonLiftHeight),
                                                                       m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonCutoffDistance));
-            else if(static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkeletonDirection)) == TipWipeDirection::kAngled) {
+            else if (static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkeletonDirection)) == TipWipeDirection::kAngled) {
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kAngledTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkeletonDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkeletonSpeed),
                                                        m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkeletonAngle),
@@ -985,8 +967,8 @@ namespace ORNL {
             }
         }
 
-        if(m_sb->setting<bool>(Constants::MaterialSettings::Startup::kSkeletonEnable)) {
-            if(m_sb->setting<bool>(Constants::MaterialSettings::Startup::kSkeletonRampUpEnable)) {
+        if (m_sb->setting<bool>(Constants::MaterialSettings::Startup::kSkeletonEnable)) {
+            if (m_sb->setting<bool>(Constants::MaterialSettings::Startup::kSkeletonRampUpEnable)) {
                 PathModifierGenerator::GenerateInitialStartupWithRampUp(path, m_sb->setting<Distance>(Constants::MaterialSettings::Startup::kSkeletonDistance),
                                                               m_sb->setting<Velocity>(Constants::MaterialSettings::Startup::kSkeletonSpeed),
                                                               m_sb->setting<Velocity>(Constants::ProfileSettings::Skeleton::kSpeed),
