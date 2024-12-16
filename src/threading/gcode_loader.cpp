@@ -316,19 +316,15 @@ namespace ORNL {
                 emit forwardInfoToMainWindow(keyInfo);
 
 
-                Distance x_dist = 0.0, y_dist = 0.0, z_dist = 0.0;
-                const Distance& z_min = GSM->getGlobal()->setting<Distance>(Constants::PrinterSettings::Dimensions::kZMin);
-                const Distance& x_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kXOffset];
-                const Distance& y_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kYOffset];
+                m_x_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kXOffset];
+                m_y_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kYOffset];
                 const Distance& z_offset = visualizationSettings[Constants::PrinterSettings::Dimensions::kZOffset];
-
-                m_start_pos = QVector3D((x_dist() + x_offset()) * Constants::OpenGL::kObjectToView,
-                                        (y_dist() + y_offset()) * Constants::OpenGL::kObjectToView,
-                                        z_dist());
-                m_origin = QVector3D(x_dist() + x_offset(), y_dist() + y_offset(), z_dist());
-                m_x_offset = x_offset();
-                m_y_offset = y_offset();
+                const Distance& z_min = GSM->getGlobal()->setting<Distance>(Constants::PrinterSettings::Dimensions::kZMin);
                 m_z_offset = (z_min - z_offset)() * Constants::OpenGL::kObjectToView;
+                m_start_pos = QVector3D(m_x_offset * Constants::OpenGL::kObjectToView,
+                                        m_y_offset * Constants::OpenGL::kObjectToView,
+                                        0.0f);
+                m_origin = QVector3D(m_x_offset, m_y_offset, 0.0f);
                 m_table_offset = 0.0f;
                 m_prev_table_offset = 0.0f;
 
@@ -336,10 +332,40 @@ namespace ORNL {
                 QHash<QString, QTextCharFormat> fontColors;
                 fontColors.reserve(m_lines.size());
 
+
+                // Retrieve the total number of layers
+                const int& total_layer = m_motion_commands.size();
+
+                // Prepopulate the layer settings with the global settings
+                QVector<QSharedPointer<SettingsBase>> layer_settings(total_layer, GSM->getGlobal());
+
+                // Set layer specific settings. Currently only supports a single part.
+                if (CSM->parts().size() == 1) {
+                    // Retrieve the settings ranges for the first part
+                    const QSharedPointer<Part>& part = CSM->parts().first();
+                    const QList<QSharedPointer<SettingsRange>>& ranges = part->ranges().values();
+
+                    // Populate the layer settings for each range
+                    for (const QSharedPointer<SettingsRange>& range : ranges) {
+                        QSharedPointer<SettingsBase> sb = QSharedPointer<SettingsBase>::create();
+                        sb->populate(GSM->getGlobal());
+                        sb->populate(range->getSb());
+
+                        for (uint layer = range->low(); layer <= range->high(); layer++) {
+                            layer_settings[layer + 1] = sb;
+                        }
+                    }
+                }
+
+                // Create the layers
                 QVector<QVector<QSharedPointer<SegmentBase>>> layers;
 
-                int current_layer = 0, total_layer = m_motion_commands.size();
+                // Generate the segments for each layer
+                int current_layer = 0;
                 for (const QList<GcodeCommand>& layer_commands : m_motion_commands) {
+                    // Set the current layer settings
+                    m_sb = layer_settings[current_layer];
+
                     QVector<QSharedPointer<SegmentBase>> layer;
 
                     for (const GcodeCommand& command : layer_commands) {
@@ -719,23 +745,6 @@ namespace ORNL {
     void GCodeLoader::setSegmentDisplayInfo(QSharedPointer<SegmentBase>& segment, const QColor& color,
                                             const QString& comment, const QVector3D& start_pos,
                                             const QVector3D& end_pos, const int& line_num, const int& layer_num) {
-        // Retrieve settings ranges for the first part
-        const auto& part = CSM->parts().first();
-        const QList<QSharedPointer<SettingsRange>>& settings_ranges = part->ranges().values();
-
-        // Default to global settings base
-        QSharedPointer<SettingsBase> sb = GSM->getGlobal();
-
-        // Retrieve layer specific settings base if available
-        for (const QSharedPointer<SettingsRange>& settings_range : settings_ranges) {
-            if (settings_range->includesIndex(layer_num - 1)) {
-                sb = QSharedPointer<SettingsBase>::create();
-                sb->populate(GSM->getGlobal());
-                sb->populate(settings_range->getSb());
-                break;
-            }
-        }
-
         // Determine the display type of the segment
         SegmentDisplayType type;
         if (color == PM->getVisualizationColor(VisualizationColors::kTravel)) {
@@ -748,38 +757,38 @@ namespace ORNL {
 
         // Set the display info of the segment
         float display_width;
-        float display_height = sb->setting<float>(Constants::ProfileSettings::Layer::kLayerHeight) *
+        float display_height = m_sb->setting<float>(Constants::ProfileSettings::Layer::kLayerHeight) *
                                Constants::OpenGL::kObjectToView;
         float display_length = start_pos.distanceToPoint(end_pos);
         float scale = m_modifier_colors.contains(color) ? 1.1f : 1.0f; // Scale modifier segments by 1.1 for better visibility
 
         // Set the display width of the segment based on its region type
         if (comment.contains("PERIMETER")) {
-            display_width = sb->setting<float>(Constants::ProfileSettings::Perimeter::kBeadWidth) *
+            display_width = m_sb->setting<float>(Constants::ProfileSettings::Perimeter::kBeadWidth) *
                             Constants::OpenGL::kObjectToView;
         } else if (comment.contains("INSET")) {
-            display_width = sb->setting<float>(Constants::ProfileSettings::Inset::kBeadWidth) *
+            display_width = m_sb->setting<float>(Constants::ProfileSettings::Inset::kBeadWidth) *
                             Constants::OpenGL::kObjectToView;
         } else if (comment.contains("SKELETON")) {
             // If the skeleton is adaptive, extract the bead width from the comment, otherwise use the static bead width
-            if (sb->setting<bool>(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) {
+            if (m_sb->setting<bool>(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) {
                 // Extract the bead width from the comment
                 unsigned int start = comment.indexOf("-") + 1;
                 unsigned int end = comment.indexOf(" ", start);
                 float bead_width = comment.mid(start, end - start).toFloat();
                 display_width = bead_width * Constants::OpenGL::kObjectToView;
             } else { // Static skeleton bead width
-                display_width = sb->setting<float>(Constants::ProfileSettings::Skeleton::kBeadWidth) *
+                display_width = m_sb->setting<float>(Constants::ProfileSettings::Skeleton::kBeadWidth) *
                                 Constants::OpenGL::kObjectToView;
             }
         } else if (comment.contains("SKIN")) {
-            display_width = sb->setting<float>(Constants::ProfileSettings::Skin::kBeadWidth) *
+            display_width = m_sb->setting<float>(Constants::ProfileSettings::Skin::kBeadWidth) *
                             Constants::OpenGL::kObjectToView;
         } else if (comment.contains("INFILL")) {
-            display_width = sb->setting<float>(Constants::ProfileSettings::Infill::kBeadWidth) *
+            display_width = m_sb->setting<float>(Constants::ProfileSettings::Infill::kBeadWidth) *
                             Constants::OpenGL::kObjectToView;
         } else { // Default to layer bead width
-            display_width = sb->setting<float>(Constants::ProfileSettings::Layer::kBeadWidth) *
+            display_width = m_sb->setting<float>(Constants::ProfileSettings::Layer::kBeadWidth) *
                             Constants::OpenGL::kObjectToView;
         }
 
