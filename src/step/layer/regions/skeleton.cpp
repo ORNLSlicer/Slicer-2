@@ -805,6 +805,88 @@ namespace ORNL {
         return path;
     }
 
+    QVector<Path> Skeleton::filterPath(Path& path) {
+        // Retrieve adaptive settings
+        const bool& adaptive = m_sb->setting<bool>(Constants::ProfileSettings::Skeleton::kSkeletonAdapt);
+
+
+        // Initialize filtered path and paths
+        Path filtered_path;
+        QVector<Path> filtered_paths;
+
+        // Lambda function for adding segments to filtered path
+        auto addSegment = [&filtered_path] (const QSharedPointer<SegmentBase>& segment, const Distance& width, const Velocity& speed) {
+            segment->getSb()->setSetting(Constants::SegmentSettings::kWidth, width);
+            segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed, speed);
+            filtered_path.append(segment);
+        };
+
+        // Lambda function for adding filtered path to filtered paths
+        // Ensures that only non-empty paths are added and that closed paths have their orientation set
+        auto addPath = [&filtered_paths] (Path& filtered_path) {
+            if (filtered_path.size() > 0) {
+                if (filtered_path.isClosed()) {
+                    filtered_path.setCCW(Polygon(filtered_path).orientation());
+                }
+                filtered_paths.append(filtered_path);
+                filtered_path.clear();
+            }
+        };
+
+
+        // Filter path based on adaptive settings.
+        if (!adaptive) {
+            addPath(path); // No filtering required for static bead width
+        }
+        else {
+            // Retrieve relevant settings
+            const Distance& reference_width         = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
+            const Velocity& reference_speed         = m_sb->setting<Velocity>(Constants::ProfileSettings::Skeleton::kSpeed);
+            const Distance& min_width               = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMinWidth);
+            const Distance& max_width               = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMaxWidth);
+            const SkeletonFilter& min_width_filter  = m_sb->setting<SkeletonFilter>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMinWidthFilter);
+            const SkeletonFilter& max_width_filter  = m_sb->setting<SkeletonFilter>(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMaxWidthFilter);
+
+            // Compute adapted speed limits based on reference speed and width
+            Velocity min_speed = (reference_speed() * reference_width()) / min_width();
+            Velocity max_speed = (reference_speed() * reference_width()) / max_width();
+
+            for (QSharedPointer<SegmentBase>& segment : path) {
+                // Retrieve segment width
+                const Distance& width = segment->getSb()->setting<Distance>(Constants::SegmentSettings::kWidth);
+                const Velocity& speed = segment->getSb()->setting<Velocity>(Constants::SegmentSettings::kSpeed);
+
+                // If width is within bounds, add segment to filtered path
+                if (width >= min_width && width <= max_width) {
+                    addSegment(segment, width, speed);
+                }
+                // If width is below minimum, clamp or prune segment
+                else if (width < min_width) {
+                    if (min_width_filter == SkeletonFilter::kClamp) {
+                        addSegment(segment, min_width, min_speed);
+                    }
+                    else { // Prune
+                        addPath(filtered_path);
+                    }
+                }
+                // If width is above maximum, clamp or prune segment
+                else {
+                    if (max_width_filter == SkeletonFilter::kClamp) {
+                        addSegment(segment, max_width, max_speed);
+                    }
+                    else { // Prune
+                        addPath(filtered_path);
+                    }
+                }
+            }
+
+            // Add the last filtered path to the list of filtered paths
+            addPath(filtered_path);
+        }
+
+        return filtered_paths;
+    }
+
     void Skeleton::setAnchorWireFeed(QVector<Polyline> anchor_lines) {
         m_computed_anchor_lines = anchor_lines;
     }
@@ -860,7 +942,7 @@ namespace ORNL {
             Polyline result = poo.linkNextPolyline();
             if (result.size() > 0) {
                 Path newPath = createPath(result);
-                QVector<Path> paths = breakPath(newPath);
+                QVector<Path> paths = filterPath(newPath);
                 if (paths.size() > 0) {
                     for (Path path : paths) {
                         QVector<Path> temp_path;
@@ -872,60 +954,6 @@ namespace ORNL {
                 }
             }
         }
-    }
-
-    QVector<Path> Skeleton::breakPath(Path path) {
-        QVector<Path> paths;
-
-        // Filter adapted path by removing and clamping segments whose widths are not within the tolerated range
-        if (m_sb->setting< bool >(Constants::ProfileSettings::Skeleton::kSkeletonAdapt)) {
-            // Retrieve profile settings
-            const Distance& reference_width = m_sb->setting<Distance>(Constants::ProfileSettings::Skeleton::kBeadWidth);
-            const Velocity& reference_speed = m_sb->setting<Velocity>(Constants::ProfileSettings::Skeleton::kSpeed);
-            const Distance& min_width       = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMinWidth);
-            const Distance& max_width       = m_sb->setting< Distance >(Constants::ProfileSettings::Skeleton::kSkeletonAdaptMaxWidth);
-
-            // Compute factor for speed calculation based on inverse proportionality
-            double speed_factor = reference_speed() * reference_width();
-
-            Path filtered_path;
-
-            for (QSharedPointer<SegmentBase>& segment : path) {
-                Distance width = segment->getSb()->setting<Distance>(Constants::SegmentSettings::kWidth);
-
-                if (width >= min_width && width <= max_width) { // Within tolerated range
-                    filtered_path.append(segment);
-                } else if (width > max_width) { // Clamp width to max_width
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kWidth, max_width);
-                    segment->getSb()->setSetting(Constants::SegmentSettings::kSpeed, speed_factor / max_width());
-                    filtered_path.append(segment);
-                }
-                else { // Remove segment
-                    if (filtered_path.size() > 0) {
-                        if (filtered_path.isClosed()) {
-                            filtered_path.setCCW(Polygon(filtered_path).orientation());
-                        }
-                        paths.append(filtered_path);
-                        filtered_path.clear();
-                    }
-                }
-            }
-
-            if (filtered_path.size() > 0) {
-                if (filtered_path.isClosed()) {
-                    filtered_path.setCCW(Polygon(filtered_path).orientation());
-                }
-                paths.append(filtered_path);
-            }
-        }
-        else { // Static bead width
-            if (path.isClosed()) {
-                path.setCCW(Polygon(path).orientation());
-            }
-            paths.append(path);
-        }
-
-        return paths;
     }
 
     void Skeleton::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour) {
