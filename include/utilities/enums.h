@@ -340,8 +340,7 @@ namespace ORNL
         kAnchor
     };
 
-    enum class SkeletonInput : int
-    {
+    enum class SkeletonInput : int {
         kSegments,
         kPoints
     };
