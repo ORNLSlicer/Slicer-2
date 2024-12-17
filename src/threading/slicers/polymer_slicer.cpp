@@ -27,41 +27,39 @@ namespace ORNL {
 
     PolymerSlicer::PolymerSlicer(QString gcodeLocation) : TraditionalAST(gcodeLocation) {}
 
-    void PolymerSlicer::preProcess(nlohmann::json opt_data)
-    {
+    void PolymerSlicer::preProcess(nlohmann::json opt_data) {
         Preprocessor pp;
 
-        pp.addInitialProcessing([this](const Preprocessor::Parts& parts,  const QSharedPointer<SettingsBase>& global_settings){
+        pp.addInitialProcessing([this](const Preprocessor::Parts& parts,  const QSharedPointer<SettingsBase>& global_settings) {
             // Alter settings
             global_settings->makeGlobalAdjustments();
 
             // Check for overlaps of settings parts and prevent them
-            if(SlicingUtilities::doPartsOverlap(parts.settings_parts, Plane(Point(1,1,1), QVector3D(0, 0, 1))))
+            if (SlicingUtilities::doPartsOverlap(parts.settings_parts, Plane(Point(1,1,1), QVector3D(0, 0, 1)))) {
                 return true; // Cancel Slicing
+            }
 
-            if(global_settings->setting<bool>(Constants::ExperimentalSettings::SlicingAngle::kEnableMultiBranch))
+            if (global_settings->setting<bool>(Constants::ExperimentalSettings::SlicingAngle::kEnableMultiBranch)) {
                 SlicingUtilities::SegmentRoot(global_settings, CSM->parts());
+            }
 
             return false; // No error, so continune slicing
         });
 
-        pp.addPartProcessing([this](QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb){
-           m_saved_layer_settings.clear();
+        pp.addPartProcessing([this](QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb) {
+            m_saved_layer_settings.clear();
 
-           // If rafts are being used, clear the part and start from scratch
-           //if(part_sb->setting<bool>(Constants::MaterialSettings::PlatformAdhesion::kRaftEnable))
-           //        part->clearSteps();
+            if (m_half_layer_height != 0) {
+                m_half_layer_height = 0;
+            }
 
-           if(m_half_layer_height != 0)
-               m_half_layer_height = 0;
+            // Caching does not work correctly - just always clear.
+            part->clearSteps();
 
-           // Caching does not work correctly - just always clear.
-           part->clearSteps();
-
-           return false;
+            return false;
         });
 
-        pp.addMeshProcessing([this](QSharedPointer<MeshBase> mesh, QSharedPointer<SettingsBase> part_sb){
+        pp.addMeshProcessing([this](QSharedPointer<MeshBase> mesh, QSharedPointer<SettingsBase> part_sb) {
             // Clip meshes
             auto clipping_meshes = SlicingUtilities::GetMeshesByType(CSM->parts(), MeshType::kClipping);
             SlicingUtilities::ClipMesh(mesh, clipping_meshes);
@@ -69,9 +67,9 @@ namespace ORNL {
             return false; // No error, so continune slicing
         });
 
-        pp.addStepBuilder([this](QSharedPointer<BufferedSlicer::SliceMeta> next_layer_meta, Preprocessor::ActivePartMeta& meta){
+        pp.addStepBuilder([this](QSharedPointer<BufferedSlicer::SliceMeta> next_layer_meta, Preprocessor::ActivePartMeta& meta) {
 
-            auto addNewLayer = [this](QSharedPointer<BufferedSlicer::SliceMeta> next_layer_meta, Preprocessor::ActivePartMeta& meta, QSharedPointer<Layer>& new_layer, int layerNum){
+            auto addNewLayer = [this](QSharedPointer<BufferedSlicer::SliceMeta> next_layer_meta, Preprocessor::ActivePartMeta& meta, QSharedPointer<Layer>& new_layer, int layerNum) {
                 // Save settings
                 m_saved_layer_settings.push_back(next_layer_meta->settings);
 
@@ -82,9 +80,10 @@ namespace ORNL {
                 // add data from cross-sectioning to a layer
                 new_layer->setGeometry(next_layer_meta->geometry, next_layer_meta->average_normal);
 
-                if(layerNum == 2){
+                if (layerNum == 2) {
                     next_layer_meta->shift_amount.z(next_layer_meta->shift_amount.z() + m_half_layer_height);
                 }
+
                 new_layer->setOrientation(next_layer_meta->plane, next_layer_meta->shift_amount + next_layer_meta->additional_shift);
                 meta.part->appendStep(new_layer);
 
@@ -92,16 +91,13 @@ namespace ORNL {
                 QVector<PolygonList> split_geometry = next_layer_meta->geometry.splitIntoParts();
 
                 //If user wanted polygons manipulated by settings regions, use those instead of original
-                if(!(next_layer_meta->modified_geometry.isEmpty() || next_layer_meta->setting_bounded_geometry.isEmpty()))
-                {
+                if (!(next_layer_meta->modified_geometry.isEmpty() || next_layer_meta->setting_bounded_geometry.isEmpty())) {
                     split_geometry = next_layer_meta->modified_geometry.splitIntoParts();
                     split_geometry += next_layer_meta->setting_bounded_geometry.splitIntoParts();
                 }
 
                 //If wire feeding is turned on, have to create special island combinations
-                if(next_layer_meta->settings->setting<bool>(Constants::ExperimentalSettings::WireFeed::kWireFeedEnable))
-                {
-                //    LayerAdditions::createWireFeedIslands(layer, next_layer_meta, true);
+                if (next_layer_meta->settings->setting<bool>(Constants::ExperimentalSettings::WireFeed::kWireFeedEnable)) {
                     for (const PolygonList& island_geometry : split_geometry) {
                         // Polymer builds use polymer islands.
                         QSharedPointer<WireFeedIsland> poly_isl = QSharedPointer<WireFeedIsland>::create(island_geometry, next_layer_meta->settings,
@@ -110,8 +106,7 @@ namespace ORNL {
                     }
                 }
                 //Else, normal polymer islands
-                else
-                {
+                else {
                     for (const PolygonList& island_geometry : split_geometry) {
                         // Polymer builds use polymer islands.
                         QSharedPointer<PolymerIsland> poly_isl = QSharedPointer<PolymerIsland>::create(island_geometry, next_layer_meta->settings,
@@ -122,8 +117,7 @@ namespace ORNL {
             };
 
             // must add new
-            if(next_layer_meta->number >= meta.steps_processed)
-            {
+            if (next_layer_meta->number >= meta.steps_processed) {
                 QSharedPointer<Layer> layer;
                 QSharedPointer<Layer> layerWithSameZ;
                 QSharedPointer<Layer> layer2;
@@ -133,30 +127,25 @@ namespace ORNL {
                 bool infill_enabled = next_layer_meta->settings->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
                 bool alternating_lines_enabled = next_layer_meta->settings->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines);
 
-                if((perimeter_enabled && shifted_beads_enabled) || (infill_enabled && alternating_lines_enabled))
-                {
+                if ((perimeter_enabled && shifted_beads_enabled) || (infill_enabled && alternating_lines_enabled)) {
                     // get height of the half sized layer on first layer creation
-                    if(m_half_layer_height == 0)
-                    {
+                    if (m_half_layer_height == 0) {
                         next_layer_meta->number = (next_layer_meta->number * 2 + 1);
                         m_half_layer_height = next_layer_meta->shift_amount.z();
                     }
                     // if not creating the first layer
-                    else{                     
+                    else {
                         next_layer_meta->number = (next_layer_meta->number * 2 + 2);
                     }
-                }
-                else
-                {
+                } else {
                     next_layer_meta->number++;
                 }
 
                 addNewLayer(next_layer_meta, meta, layer, 1);
 
-                if((perimeter_enabled && shifted_beads_enabled) || (infill_enabled && alternating_lines_enabled))
-                {
+                if ((perimeter_enabled && shifted_beads_enabled) || (infill_enabled && alternating_lines_enabled)) {
                     // creation of layer on the same z as the layer number 1
-                    if(next_layer_meta->number == 1){
+                    if (next_layer_meta->number == 1) {
                         next_layer_meta->number = next_layer_meta->number + 1;
                         addNewLayer(next_layer_meta, meta, layerWithSameZ, 3);
                     }
@@ -165,9 +154,7 @@ namespace ORNL {
                     next_layer_meta->number = next_layer_meta->number + 1;
                     addNewLayer(next_layer_meta, meta, layer2, 2);
                 }
-            }
-            else
-            {
+            } else {
                 // Save settings
                 m_saved_layer_settings.push_back(next_layer_meta->settings);
 
@@ -179,8 +166,7 @@ namespace ORNL {
                 //otherwise, check if settings have changed
                 //if either is true, need new layer
                 //TODO: make dirty recalc less restrictive
-                if(layer->isDirty())
-                {
+                if (layer->isDirty()) {
                     QSharedPointer<Layer> newLayer = QSharedPointer<Layer>::create(next_layer_meta->number + 1, next_layer_meta->settings);
                     //add data from cross-sectioning to a layer
                     newLayer->setGeometry(next_layer_meta->geometry, next_layer_meta->average_normal);
@@ -192,17 +178,15 @@ namespace ORNL {
                     QVector<PolygonList> split_geometry = next_layer_meta->geometry.splitIntoParts();
 
                     //If user wanted polygons manipulated by settings regions, use those instead of original
-                    if(!(next_layer_meta->modified_geometry.isEmpty() || next_layer_meta->setting_bounded_geometry.isEmpty()))
-                    {
+                    if (!(next_layer_meta->modified_geometry.isEmpty() || next_layer_meta->setting_bounded_geometry.isEmpty())) {
                         split_geometry = next_layer_meta->modified_geometry.splitIntoParts();
                         split_geometry += next_layer_meta->setting_bounded_geometry.splitIntoParts();
                     }
 
                     //If wire feeding is turned on, have to create special island combinations
-                    if(next_layer_meta->settings->setting<bool>(Constants::ExperimentalSettings::WireFeed::kWireFeedEnable))
-                    {
-                        //LayerAdditions::createWireFeedIslands(newLayer, next_layer_meta, false);
+                    if (next_layer_meta->settings->setting<bool>(Constants::ExperimentalSettings::WireFeed::kWireFeedEnable)) {
                         QVector<QSharedPointer<IslandBase>> newIslands;
+
                         for (const PolygonList& island_geometry : split_geometry) {
                             // Polymer builds use polymer islands.
                             QSharedPointer<WireFeedIsland> poly_isl = QSharedPointer<WireFeedIsland>::create(island_geometry, next_layer_meta->settings,
@@ -210,9 +194,7 @@ namespace ORNL {
                             newIslands.append(poly_isl);
                         }
                         newLayer->updateIslands(IslandType::kWireFeed, newIslands);
-                    }
-                    else
-                    {
+                    } else {
                         QVector<QSharedPointer<IslandBase>> newIslands;
                         for (const PolygonList& island_geometry : split_geometry) {
                             // Polymer builds use polymer islands.
@@ -225,36 +207,40 @@ namespace ORNL {
                 }
             }
 
-
             return false; // No error, so continune slicing
         });
 
-        pp.addCrossSectionProcessing([this](Preprocessor::ActivePartMeta& meta){
+        pp.addCrossSectionProcessing([this](Preprocessor::ActivePartMeta& meta) {
             // If fewer layers than last slice, remove all steps from that layer onwards
             meta.part->clearStepsFromIndex(meta.last_step_count + meta.part_start);
 
             //! If perimeters are enabled, give each perimeter the total number of layers
-            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable))
+            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable)) {
                 processPerimeter(meta.part, meta.part_start, meta.last_step_count);
+            }
 
             //! If infill alternating lines are enabled, give the infill the total number of layers
-            if(meta.part_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines))
+            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnableAlternatingLines)) {
                 processInfill(meta.part, meta.part_start, meta.last_step_count);
+            }
 
             //! If skins are enabled, give each skin its upper and lower geometry
-            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Skin::kEnable))
+            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Skin::kEnable)) {
                 processSkin(meta.part, meta.part_start, meta.last_step_count);
+            }
 
             //! If ironing for top layers is enabled
             if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable) &&
-                    meta.part_sb->setting<bool>(Constants::ExperimentalSettings::Ironing::kEnable) &&
-                    meta.part_sb->setting<bool>(Constants::ExperimentalSettings::Ironing::kTop))
+                meta.part_sb->setting<bool>(Constants::ExperimentalSettings::Ironing::kEnable) &&
+                meta.part_sb->setting<bool>(Constants::ExperimentalSettings::Ironing::kTop))
+            {
                 processGeometryAboveIroning(meta.part, meta.part_start, meta.last_step_count);
+            }
 
             //! If supports are enabled, find overhangs and add support_islands to layer below overhangs
-            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Support::kEnable))
-                if(meta.last_step_count > 0)
+            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Support::kEnable) && meta.last_step_count > 0) {
                     processSupport(meta.part, meta.last_step_count, meta.part_start);
+            }
 
             // Layer Additions
             processRaft(meta.part, meta.part_start, meta.part_sb);
@@ -265,17 +251,18 @@ namespace ORNL {
             processAnchors(meta.part, meta.part_sb);
 
             // Update max steps
-            if(meta.part->countStepPairs() > this->getMaxSteps())
+            if (meta.part->countStepPairs() > this->getMaxSteps()) {
                 this->setMaxSteps(meta.part->countStepPairs());
+            }
 
             return false; // No error, so continune slicing
         });
 
-        pp.addStatusUpdate([this](double percentage){
+        pp.addStatusUpdate([this](double percentage) {
             emit statusUpdate(StatusUpdateStepType::kPreProcess, percentage);
         });
 
-        pp.addFinalProcessing([this](const Preprocessor::Parts& parts,  const QSharedPointer<SettingsBase>& global_settings){
+        pp.addFinalProcessing([this](const Preprocessor::Parts& parts,  const QSharedPointer<SettingsBase>& global_settings) {
             // Compute and populate global layers
             processGlobalLayers(parts.build_parts, global_settings);
 
