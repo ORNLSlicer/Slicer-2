@@ -399,9 +399,9 @@ namespace ORNL {
             //don't add half the height if spiralize is enabled because spiralize should start printing
             //with the nozzle sitting on the build surface, z=0
             Point half_shift = m_shift_amount;
-            Distance layer_height = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
+            Distance layer_height = m_sb->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
 
-            if (m_sb->setting< bool >(Constants::ProfileSettings::SpecialModes::kEnableSpiralize)) {
+            if (m_sb->setting<bool>(Constants::ProfileSettings::SpecialModes::kEnableSpiralize)) {
                 half_shift.z(m_shift_amount.z() - (0.5 * layer_height));
             } else {
                 half_shift.z(m_shift_amount.z() + (0.5 * layer_height));
@@ -418,45 +418,46 @@ namespace ORNL {
             }
 
             //unapply current origin shift
-            Point m_origin_shift = Point(.0, .0, .0) - m_shift_amount;
-            m_origin_shift.z(.0);
+            Point origin_shift = Point(.0, .0, .0) - m_shift_amount;
+            origin_shift.z(.0);
 
             for (QSharedPointer<IslandBase> island : getIslands()) {
-                island->transform(QQuaternion(), m_origin_shift * -1);
+                island->transform(QQuaternion(), origin_shift * -1);
             }
         }
     }
 
     void Layer::reorient() {
-        //unapply current origin shift
-        Point m_origin_shift = Point(.0, .0, .0) - m_shift_amount;
-        m_origin_shift.z(.0);
+        // Unapply current origin shift
+        Point origin_shift = Point(.0, .0, .0) - m_shift_amount;
+        origin_shift.z(.0);
 
         for (QSharedPointer<IslandBase> island : getIslands()) {
-            island->transform(QQuaternion(), m_origin_shift);
+            island->transform(QQuaternion(), origin_shift);
         }
 
-        //raise the layer by half the layer height, because cross-sections are taken at the center of a layer
-        //but the path for the extruder should be at a full layer height
-        //don't add half the height if spiralize is enabled because spiralize should start printing
-        //with the nozzle sitting on the build surface, z=0
-        Point m_half_shift = m_shift_amount;
-        Distance layer_height = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
+        // Raise the layer by half the layer height, because cross-sections are taken at the center of a layer but the
+        // path for the extruder should be at a full layer height.
+        // Don't add half the height if spiralize is enabled because spiralize should start printing with the nozzle
+        // sitting on the build surface, z = 0.
+        Point half_shift = m_shift_amount;
+        const Distance& layer_height = m_sb->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
+        const Distance& half_layer_height = layer_height / 2.0;
 
-        if (m_sb->setting< bool >(Constants::ProfileSettings::SpecialModes::kEnableSpiralize)) {
-            m_half_shift.z(m_shift_amount.z() - (0.5 * layer_height));
+        if (m_sb->setting<bool>(Constants::ProfileSettings::SpecialModes::kEnableSpiralize)) {
+            half_shift.z(m_shift_amount.z() - half_layer_height);
         } else {
-            m_half_shift.z(m_shift_amount.z() + (0.5 * layer_height));
+            half_shift.z(m_shift_amount.z() + half_layer_height);
         }
 
-        m_half_shift.x(m_half_shift.x() - m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kXOffset));
-        m_half_shift.y(m_half_shift.y() - m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kYOffset));
+        half_shift.x(half_shift.x() - m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kXOffset));
+        half_shift.y(half_shift.y() - m_sb->setting<double>(Constants::PrinterSettings::Dimensions::kYOffset));
 
-        //rotate and then shift every island in the layer
+        // Rotate and then shift every island in the layer
         QQuaternion rotation = MathUtils::CreateQuaternion(QVector3D(0, 0, 1), m_slicing_plane.normal());
 
         for (QSharedPointer<IslandBase> island : getIslands()) {
-            island->transform(rotation, m_half_shift);
+            island->transform(rotation, half_shift);
         }
     }
 
