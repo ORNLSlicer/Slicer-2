@@ -756,7 +756,7 @@ namespace ORNL {
         }
 
         // Set the display info of the segment
-        float display_width;
+        float display_width = 0.0f;
         float display_height = m_sb->setting<float>(Constants::ProfileSettings::Layer::kLayerHeight) *
                                Constants::OpenGL::kObjectToView;
         float display_length = start_pos.distanceToPoint(end_pos);
