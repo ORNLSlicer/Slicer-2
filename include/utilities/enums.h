@@ -95,8 +95,7 @@ namespace ORNL
         kRPBFSlice              = 4,
         kRealTimePolymer        = 5,
         kRealTimeRPBF           = 6,
-        kSheetLamination        = 7,
-        kImageSlice             = 8
+        kImageSlice             = 7
     };
 
     //! \brief Function for going from json to SlicerType
@@ -160,8 +159,7 @@ namespace ORNL
      * \enum GcodeSyntax
      * \brief The GcodeSyntax enum
      */
-    enum class GcodeSyntax : uint8_t
-    {
+    enum class GcodeSyntax : uint8_t {
         kBeam,
         kCincinnati,
         kCommon,
@@ -186,7 +184,6 @@ namespace ORNL
         kRepRap,
         kMach4,
         kAeroBasic,
-        kSheetLamination,
         kMeld,
         kORNL,
         kOkuma,
@@ -265,8 +262,6 @@ namespace ORNL
             return Constants::PrinterSettings::SyntaxString::kMach4;
         case GcodeSyntax::kAeroBasic:
             return Constants::PrinterSettings::SyntaxString::kAeroBasic;
-        case GcodeSyntax::kSheetLamination:
-            return Constants::PrinterSettings::SyntaxString::kSheetLamination;
         case GcodeSyntax::kAdamantine:
             return Constants::PrinterSettings::SyntaxString::kAdamantine;
         default:

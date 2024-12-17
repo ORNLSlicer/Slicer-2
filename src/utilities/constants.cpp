@@ -221,7 +221,6 @@ namespace ORNL
     QString Constants::PrinterSettings::SyntaxString::kRepRap = "RepRap";
     QString Constants::PrinterSettings::SyntaxString::kMach4 = "Mach4";
     QString Constants::PrinterSettings::SyntaxString::kAeroBasic = "AeroBasic";
-    QString Constants::PrinterSettings::SyntaxString::kSheetLamination = "SheetLamination";
     QString Constants::PrinterSettings::SyntaxString::kAdamantine = "Adamantine";
 
     //================================================================================
@@ -837,15 +836,6 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::RPBFSlicing::kSectorStaggerEnable = "sector_stagger_enable";
     const QString Constants::ExperimentalSettings::RPBFSlicing::kSectorStaggerAngle = "sector_stagger_angle";
     const QString Constants::ExperimentalSettings::RPBFSlicing::kClockingAngle = "clocking_angle";
-
-    // Sheet Lamination Slicing
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kGravityPointX = "gravity_point_x";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kGravityPointY = "gravity_point_y";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kGap = "gap";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kArmPrecision = "arm_precision";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kDestinationOffsetX = "destination_offset_x";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kDestinationOffsetY = "destination_offset_y";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kDestinationOffsetZ = "destination_offset_z";
 
     // Multi-Nozzle
     const QString Constants::ExperimentalSettings::MultiNozzle::kEnableMultiNozzleMultiMaterial = "enable_multi_nozzle";

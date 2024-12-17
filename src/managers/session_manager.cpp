@@ -10,7 +10,6 @@
 #include "zip.h"
 
 // Local
-#include "threading/slicers/sheet_lamination_slicer.h"
 #include "threading/slicers/polymer_slicer.h"
 #include "threading/slicers/real_time_polymer_slicer.h"
 #include "threading/slicers/conformal_slicer.h"
@@ -752,9 +751,6 @@ namespace ORNL
                 break;
             case SlicerType::kRealTimeRPBF:
                 m_ast.reset(new RealTimeRPBFSlicer(tempGcodeFile));
-                break;
-            case SlicerType::kSheetLamination:
-                m_ast.reset(new SheetLaminationSlicer(tempGcodeFile));
                 break;
             case SlicerType::kImageSlice:
                 m_ast.reset(new ImageSlicer(tempGcodeFile));

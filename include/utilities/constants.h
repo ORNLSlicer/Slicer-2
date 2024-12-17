@@ -338,7 +338,6 @@ namespace ORNL
                 static QString kRepRap;
                 static QString kMach4;
                 static QString kAeroBasic;
-                static QString kSheetLamination;
                 static QString kAdamantine;
             };
         };
@@ -963,18 +962,6 @@ namespace ORNL
                 static const QString kSectorStaggerEnable;
                 static const QString kSectorStaggerAngle;
                 static const QString kClockingAngle;
-            };
-
-            class SheetLaminationSlicing
-            {
-            public:
-                static const QString kGravityPointX;
-                static const QString kGravityPointY;
-                static const QString kGap;
-                static const QString kArmPrecision;
-                static const QString kDestinationOffsetX;
-                static const QString kDestinationOffsetY;
-                static const QString kDestinationOffsetZ;
             };
 
             class MultiNozzle
