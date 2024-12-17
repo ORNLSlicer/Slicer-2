@@ -869,10 +869,8 @@ namespace ORNL {
                 poo.linkSpiralPaths3D(m_spiral_paths);
             }
         }
-        else
-        {
-            // Mark layerbar as done
-            emit statusUpdate(StatusUpdateStepType::kPostProcess, 100);
+        else {
+            emit statusUpdate(StatusUpdateStepType::kPostProcess, 100); // Mark layerbar as done
         }
     }
 

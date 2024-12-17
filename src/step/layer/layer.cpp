@@ -421,22 +421,18 @@ namespace ORNL {
         }
     }
 
-    void Layer::unorient()
-    {
-        if(!this->isDirty())
-        {
+    void Layer::unorient() {
+        if (!this->isDirty()) {
             //raise the layer by half the layer height, because cross-sections are taken at the center of a layer
             //but the path for the extruder should be at a full layer height
             //don't add half the height if spiralize is enabled because spiralize should start printing
             //with the nozzle sitting on the build surface, z=0
             Point half_shift = m_shift_amount;
             Distance layer_height = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
-            if(m_sb->setting< bool >(Constants::ProfileSettings::SpecialModes::kEnableSpiralize))
-            {
+
+            if (m_sb->setting< bool >(Constants::ProfileSettings::SpecialModes::kEnableSpiralize)) {
                 half_shift.z(m_shift_amount.z() - (0.5 * layer_height));
-            }
-            else
-            {
+            } else {
                 half_shift.z(m_shift_amount.z() + (0.5 * layer_height));
             }
 
@@ -446,28 +442,26 @@ namespace ORNL {
             //rotate and then shift every island in the layer
             QQuaternion rotation = MathUtils::CreateQuaternion(QVector3D(0, 0, 1), m_slicing_plane.normal());
 
-            for (QSharedPointer<IslandBase> island : getIslands())
-            {
+            for (QSharedPointer<IslandBase> island : getIslands()) {
                 island->transform(rotation.inverted(), half_shift * -1);
             }
 
             //unapply current origin shift
             Point m_origin_shift = Point(.0, .0, .0) - m_shift_amount;
             m_origin_shift.z(.0);
-            for (QSharedPointer<IslandBase> island : getIslands())
-            {
+
+            for (QSharedPointer<IslandBase> island : getIslands()) {
                 island->transform(QQuaternion(), m_origin_shift * -1);
             }
         }
     }
 
-    void Layer::reorient()
-    {
+    void Layer::reorient() {
         //unapply current origin shift
         Point m_origin_shift = Point(.0, .0, .0) - m_shift_amount;
         m_origin_shift.z(.0);
-        for (QSharedPointer<IslandBase> island : getIslands())
-        {
+
+        for (QSharedPointer<IslandBase> island : getIslands()) {
             island->transform(QQuaternion(), m_origin_shift);
         }
 
@@ -477,12 +471,10 @@ namespace ORNL {
         //with the nozzle sitting on the build surface, z=0
         Point m_half_shift = m_shift_amount;
         Distance layer_height = m_sb->setting< Distance >(Constants::ProfileSettings::Layer::kLayerHeight);
-        if(m_sb->setting< bool >(Constants::ProfileSettings::SpecialModes::kEnableSpiralize))
-        {
+
+        if (m_sb->setting< bool >(Constants::ProfileSettings::SpecialModes::kEnableSpiralize)) {
             m_half_shift.z(m_shift_amount.z() - (0.5 * layer_height));
-        }
-        else
-        {
+        } else {
             m_half_shift.z(m_shift_amount.z() + (0.5 * layer_height));
         }
 
@@ -492,8 +484,7 @@ namespace ORNL {
         //rotate and then shift every island in the layer
         QQuaternion rotation = MathUtils::CreateQuaternion(QVector3D(0, 0, 1), m_slicing_plane.normal());
 
-        for (QSharedPointer<IslandBase> island : getIslands())
-        {
+        for (QSharedPointer<IslandBase> island : getIslands()) {
             island->transform(rotation, m_half_shift);
         }
     }
