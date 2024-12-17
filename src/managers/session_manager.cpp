@@ -3,8 +3,6 @@
 #include <QCoreApplication>
 #include <QUuid>
 
-#include <threading/slicers/skeleton_slicer.h>
-
 // Header
 #include "managers/session_manager.h"
 
@@ -758,9 +756,6 @@ namespace ORNL
             case SlicerType::kSheetLamination:
                 m_ast.reset(new SheetLaminationSlicer(tempGcodeFile));
                 break;
-//            case SlicerType::kSkeleton:
-//                m_ast.reset(new SkeletonSlicer(tempGcodeFile));
-//                break;
             case SlicerType::kImageSlice:
                 m_ast.reset(new ImageSlicer(tempGcodeFile));
                 break;
