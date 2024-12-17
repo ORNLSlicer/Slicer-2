@@ -88,16 +88,15 @@ namespace ORNL
      * \brief Selects the type of slice to perform. Pass this to Session Manager to decide.
      */
     enum class SlicerType : uint8_t {
-        kPolymerSlice = 0,
-        kConformalSlice = 1,
-        kMetalEmbossingSlice = 2,
-        kMetalSlice = 3,
-        kRPBFSlice = 4,
-        kHybridSlice = 5,
-        kRealTimePolymer = 6,
-        kRealTimeRPBF = 7,
-        kSheetLamination = 8,
-        kImageSlice = 9
+        kPolymerSlice           = 0,
+        kConformalSlice         = 1,
+        kMetalEmbossingSlice    = 2,
+        kMetalSlice             = 3,
+        kRPBFSlice              = 4,
+        kRealTimePolymer        = 5,
+        kRealTimeRPBF           = 6,
+        kSheetLamination        = 7,
+        kImageSlice             = 8
     };
 
     //! \brief Function for going from json to SlicerType
