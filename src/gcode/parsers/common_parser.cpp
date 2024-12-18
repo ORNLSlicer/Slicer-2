@@ -69,10 +69,13 @@ namespace ORNL
 
     Distance CommonParser::getCurrentGXDistance()
     {
+        QSharedPointer<SettingsBase> sb = GSM->getGlobal();
+        bool usesB = sb->setting< bool >(Constants::MaterialSettings::Filament::kFilamentBAxis);
+
         return MotionEstimation::calculateTimeAndVolume(
                     m_current_layer, m_with_F_value, m_current_gcode_command.getCommandID() == 0, m_extruders_on,
                     m_layer_G1F_times[m_current_layer], m_layer_times[m_current_layer][m_current_nozzle],
-                    m_layer_volumes[m_current_layer]);
+            m_layer_volumes[m_current_layer], usesB);
     }
 
     //currently nothing of interest in header, so skip as long as line starts with
