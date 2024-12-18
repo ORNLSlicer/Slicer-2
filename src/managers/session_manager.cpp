@@ -3,8 +3,6 @@
 #include <QCoreApplication>
 #include <QUuid>
 
-#include <threading/slicers/skeleton_slicer.h>
-
 // Header
 #include "managers/session_manager.h"
 
@@ -12,12 +10,10 @@
 #include "zip.h"
 
 // Local
-#include "threading/slicers/sheet_lamination_slicer.h"
 #include "threading/slicers/polymer_slicer.h"
 #include "threading/slicers/real_time_polymer_slicer.h"
 #include "threading/slicers/conformal_slicer.h"
 #include "threading/slicers/rpbf_slicer.h"
-#include "threading/slicers/hybrid_slicer.h"
 #include "threading/slicers/real_time_rpbf_slicer.h"
 #include "threading/slicers/image_slicer.h"
 #include "threading/session_loader.h"
@@ -720,23 +716,21 @@ namespace ORNL
         return m_ast->getTimeElapsed();
     }
 
-    bool SessionManager::changeSlicer(SlicerType type)
-    {
+    bool SessionManager::changeSlicer(SlicerType type) {
         // Disconnect the signals from the AST.
         QObject::disconnect(this, &SessionManager::startSlice, nullptr, nullptr);
 
-        if(GSM->getConsoleSettings() != nullptr)
-        {
+        if (GSM->getConsoleSettings() != nullptr) {
             bool use_real_time = GSM->getConsoleSettings()->setting<bool>(Constants::ConsoleOptionStrings::kRealTimeMode);
-            if(use_real_time && type == SlicerType::kPolymerSlice)
+            if (use_real_time && type == SlicerType::kPolymerSlice) {
                 type = SlicerType::kRealTimePolymer;
-            else if(use_real_time && type == SlicerType::kRPBFSlice)
+            } else if (use_real_time && type == SlicerType::kRPBFSlice) {
                 type = SlicerType::kRealTimeRPBF;
+            }
         }
 
         // Reset the AST with a new slicer.
-        switch (type)
-        {
+        switch (type) {
             case SlicerType::kPolymerSlice:
                 m_ast.reset(new PolymerSlicer(tempGcodeFile));
                 break;
@@ -752,21 +746,12 @@ namespace ORNL
             case SlicerType::kRPBFSlice:
                 m_ast.reset(new RPBFSlicer(tempGcodeFile));
                 break;
-            case SlicerType::kHybridSlice:
-                m_ast.reset(new HybridSlicer(tempGcodeFile));
-                break;
             case SlicerType::kRealTimePolymer:
                 m_ast.reset(new RealTimePolymerSlicer(tempGcodeFile));
                 break;
             case SlicerType::kRealTimeRPBF:
                 m_ast.reset(new RealTimeRPBFSlicer(tempGcodeFile));
                 break;
-            case SlicerType::kSheetLamination:
-                m_ast.reset(new SheetLaminationSlicer(tempGcodeFile));
-                break;
-//            case SlicerType::kSkeleton:
-//                m_ast.reset(new SkeletonSlicer(tempGcodeFile));
-//                break;
             case SlicerType::kImageSlice:
                 m_ast.reset(new ImageSlicer(tempGcodeFile));
                 break;
@@ -776,8 +761,7 @@ namespace ORNL
         m_slicer_type = type;
 
         // Reset part steps
-        for(QSharedPointer<Part> part : m_parts)
-        {
+        for (QSharedPointer<Part> part : m_parts) {
             part->clearSteps();
         }
 

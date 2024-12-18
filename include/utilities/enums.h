@@ -88,16 +88,14 @@ namespace ORNL
      * \brief Selects the type of slice to perform. Pass this to Session Manager to decide.
      */
     enum class SlicerType : uint8_t {
-        kPolymerSlice = 0,
-        kConformalSlice = 1,
-        kMetalEmbossingSlice = 2,
-        kMetalSlice = 3,
-        kRPBFSlice = 4,
-        kHybridSlice = 5,
-        kRealTimePolymer = 6,
-        kRealTimeRPBF = 7,
-        kSheetLamination = 8,
-        kImageSlice = 9
+        kPolymerSlice           = 0,
+        kConformalSlice         = 1,
+        kMetalEmbossingSlice    = 2,
+        kMetalSlice             = 3,
+        kRPBFSlice              = 4,
+        kRealTimePolymer        = 5,
+        kRealTimeRPBF           = 6,
+        kImageSlice             = 7
     };
 
     //! \brief Function for going from json to SlicerType
@@ -161,8 +159,7 @@ namespace ORNL
      * \enum GcodeSyntax
      * \brief The GcodeSyntax enum
      */
-    enum class GcodeSyntax : uint8_t
-    {
+    enum class GcodeSyntax : uint8_t {
         kBeam,
         kCincinnati,
         kCommon,
@@ -187,7 +184,6 @@ namespace ORNL
         kRepRap,
         kMach4,
         kAeroBasic,
-        kSheetLamination,
         kMeld,
         kORNL,
         kOkuma,
@@ -266,8 +262,6 @@ namespace ORNL
             return Constants::PrinterSettings::SyntaxString::kMach4;
         case GcodeSyntax::kAeroBasic:
             return Constants::PrinterSettings::SyntaxString::kAeroBasic;
-        case GcodeSyntax::kSheetLamination:
-            return Constants::PrinterSettings::SyntaxString::kSheetLamination;
         case GcodeSyntax::kAdamantine:
             return Constants::PrinterSettings::SyntaxString::kAdamantine;
         default:
@@ -340,10 +334,16 @@ namespace ORNL
         kAnchor
     };
 
-    enum class SkeletonInput : int
-    {
+    enum class SkeletonInput : int {
         kSegments,
         kPoints
+    };
+
+    //! \enum SkeletonFilter
+    //! \brief Types of filters for adaptive skeleton bead widths
+    enum class SkeletonFilter : int {
+        kClamp,
+        kPrune
     };
 
     //! \brief Function for going from json to SkinInfillPatterns

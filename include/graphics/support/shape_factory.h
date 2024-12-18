@@ -67,22 +67,18 @@ namespace ORNL
         static void createSphere(float radius, int sectorCount, int stackCount, const QMatrix4x4& transform, const QColor& color,
                                         std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
 
-        /*! \brief Append the data for a gcode cylinder to input vectors
-         *
-         *  A gcode cylinder is a cylinder with the arcs from PI/4 to 3PI/4 and 5PI/4 to 7PI/4 replaced with flat lines. It looks like a cylinder that
-         *  has been squished flat on two sides.
-         *  This is the public interface to the gcode graphics which translates the start and displacement into a transform matrix usable by the private
-         *  function of the same name.
-         *  @param width Radius of gcode cylinder
-         *  @param height Height of gcode cylinder
-         *  @param start Vector indicating where the center of the base of this cylinder should be
-         *  @param displacement Vector indicating the direction and length of this cylinder
-         *  @param color Color of gcode cylinder
-         *  @param vertices Vector of vertices to append the new vertices to
-         *  @param colors Vector of colors to append the new colors to
-         *  @param normals Vector of normals to append the new normals to
+        /*! \brief Append the data for a clipped cylinder to the input vector
+         *  @param width: Width of the clipped cylinder
+         *  @param length: Length of the clipped cylinder
+         *  @param height: Height of the clipped cylinder
+         *  @param start: Start point of the gcode segment
+         *  @param end: End point of the gcode segment
+         *  @param color: Color of the clipped cylinder
+         *  @param vertices Vertices of the clipped cylinder
+         *  @param colors Vertex colors of the clipped cylinder
+         *  @param normals Normal vectors of the clipped cylinder
          */
-        static void createGcodeCylinder(float width, float height, const QVector3D& start, const QVector3D& displacement, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
+        static void createGcodeCylinder(const float& width, const float& length, const float& height, const QVector3D& start, const QVector3D& end, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
 
         /*!
          * \brief appends the data for a arc cylinder to input vectors
@@ -224,19 +220,12 @@ namespace ORNL
 
     private:
 
-        /*! \brief Helper function to append the data for a gcode cylinder to input vector
-         *
-         *  A gcode cylinder is a cylinder with the arcs from PI/4 to 3PI/4 and 5PI/4 to 7PI/4 replaced with flat lines. It looks like a cylinder that
-         *  has been squished flat on two sides.
-         *  @param width Width of rectangular cross section
-         *  @param height Height of rectangular cross section
-         *  @param transform Matrix to apply to each vertex
-         *  @param color Color of gcode cylinder
-         *  @param vertices Vector of vertices to append the new vertices to
-         *  @param colors Vector of colors to append the new colors to
-         *  @param normals Vector of normals to append the new normals to
+        /*! \brief Helper function to compute the transformation matrix for a gcode cylinder
+         *  @param start Start point of the gcode segment
+         *  @param end End point of the gcode segment
+         *  @return Transformation matrix to place the cylinder at the correct point and orientation
          */
-        static void createGcodeCylinder(float width, float height, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
+        static QMatrix4x4 computeGcodeCylinderTransform(const QVector3D& start, const QVector3D& end);
 
         /*!
          * \brief appends the data for a clockwise (G2) arc cylinder to input vectors
@@ -266,21 +255,15 @@ namespace ORNL
          */
         static void createArcCylinderCCW(float cylinder_height, const Point& start, const Point& center, const Point& end, const QMatrix4x4& transform, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
 
-        //! \brief Get axis of rotation if we want to rotate vector a to vector b
-        static QVector3D getAxis(QVector3D a, QVector3D b);
-
-        //! \brief Find angle to rotate a around axis to align a with b
-        static float getAngle(QVector3D a, QVector3D b, QVector3D axis);
-
         //! adds three vectors to array and computes normal/ colors
-        //! \param a the first vector
-        //! \param b the second vector
-        //! \param c the third vector
+        //! \param v0 the first vertex
+        //! \param v1 the second vertex
+        //! \param v2 the third vertex
         //! \param color the color to draw as
         //! \param vertices Vector of vertices to append the new vertices to
         //! \param colors Vector of colors to append the new colors to
         //! \param normals Vector of normals to append the new normals to
-        static void appendTriangle(QVector3D a, QVector3D b, QVector3D c, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
+        static void appendTriangle(const QVector3D& v0, const QVector3D& v1, const QVector3D& v2, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors, std::vector<float>& normals);
     };
 } //Namespace ORNL
 #endif // SHAPE_FACTORY_H

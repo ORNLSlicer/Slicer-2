@@ -109,12 +109,7 @@ namespace ORNL {
             //! \brief alterFile: Whether or not the file can be altered by min layer time settings
             void importGCodeHelper(QString filepath, bool alterFile);
 
-            //! \brief Helper to operate the DXFLoader
-            //! \brief filepath: Path to gcode file
-            //! \brief alterFile: Whether or not the file can be altered by min layer time settings
-            void importDXFHelper(QString filepath, bool alterFile);
-
-            //! \brief Function to differentiate between GCode and DXF
+            //! \brief Helper to differentiate between gcode load from menu vs from slice
             //! \brief filepath: Path to gcode file
             //! \brief alterFile: Whether or not the file can be altered by min layer time settings
             void importFile(QString filepath, bool alterFile);

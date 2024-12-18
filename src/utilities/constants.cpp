@@ -221,7 +221,6 @@ namespace ORNL
     QString Constants::PrinterSettings::SyntaxString::kRepRap = "RepRap";
     QString Constants::PrinterSettings::SyntaxString::kMach4 = "Mach4";
     QString Constants::PrinterSettings::SyntaxString::kAeroBasic = "AeroBasic";
-    QString Constants::PrinterSettings::SyntaxString::kSheetLamination = "SheetLamination";
     QString Constants::PrinterSettings::SyntaxString::kAdamantine = "Adamantine";
 
     //================================================================================
@@ -633,12 +632,14 @@ namespace ORNL
     const QString Constants::ProfileSettings::Skeleton::kSkeletonOutputCleaningDistance = "skeleton_output_cleaning_distance";
     const QString Constants::ProfileSettings::Skeleton::kBeadWidth                      = "skeleton_width";
     const QString Constants::ProfileSettings::Skeleton::kSpeed                          = "skeleton_speed";
+    const QString Constants::ProfileSettings::Skeleton::kExtruderSpeed                  = "skeleton_extruder_speed";
+    const QString Constants::ProfileSettings::Skeleton::kExtrusionMultiplier            = "skeleton_extrusion_multiplier";
     const QString Constants::ProfileSettings::Skeleton::kSkeletonAdapt                  = "skeleton_adapt";
     const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptStepSize          = "skeleton_adapt_step_size";
     const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptMinWidth          = "skeleton_adapt_min_width";
+    const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptMinWidthFilter    = "skeleton_adapt_min_width_filter";
     const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptMaxWidth          = "skeleton_adapt_max_width";
-    const QString Constants::ProfileSettings::Skeleton::kExtruderSpeed                  = "skeleton_extruder_speed";
-    const QString Constants::ProfileSettings::Skeleton::kExtrusionMultiplier            = "skeleton_extrusion_multiplier";
+    const QString Constants::ProfileSettings::Skeleton::kSkeletonAdaptMaxWidthFilter    = "skeleton_adapt_max_width_filter";
     const QString Constants::ProfileSettings::Skeleton::kMinPathLength                  = "skeleton_minimum_path_length";
     const QString Constants::ProfileSettings::Skeleton::kUseSkinMcode                   = "skeleton_skin_mcode";
 
@@ -837,15 +838,6 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::RPBFSlicing::kSectorStaggerEnable = "sector_stagger_enable";
     const QString Constants::ExperimentalSettings::RPBFSlicing::kSectorStaggerAngle = "sector_stagger_angle";
     const QString Constants::ExperimentalSettings::RPBFSlicing::kClockingAngle = "clocking_angle";
-
-    // Sheet Lamination Slicing
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kGravityPointX = "gravity_point_x";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kGravityPointY = "gravity_point_y";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kGap = "gap";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kArmPrecision = "arm_precision";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kDestinationOffsetX = "destination_offset_x";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kDestinationOffsetY = "destination_offset_y";
-    const QString Constants::ExperimentalSettings::SheetLaminationSlicing::kDestinationOffsetZ = "destination_offset_z";
 
     // Multi-Nozzle
     const QString Constants::ExperimentalSettings::MultiNozzle::kEnableMultiNozzleMultiMaterial = "enable_multi_nozzle";

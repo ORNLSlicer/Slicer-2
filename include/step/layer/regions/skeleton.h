@@ -49,10 +49,10 @@ namespace ORNL {
 
             //! \brief Writes the gcode for the skeleton
             //! \param writer is the instance of the Writer Base to be used for writing skeleton region GCode
-            QString writeGCode(QSharedPointer<WriterBase> writer);
+            QString writeGCode(QSharedPointer<WriterBase> writer) override;
 
             //! \brief Computes the skeleton region
-            void compute(uint layer_num, QSharedPointer<SyncManager>& sync);
+            void compute(uint layer_num, QSharedPointer<SyncManager>& sync) override;
 
             //! \brief Computes a Voronoi Diagram from a set of segments
             void computeSegmentVoronoi();
@@ -158,7 +158,13 @@ namespace ORNL {
             //! \brief Creates paths for the skeleton region.
             //! \param line: polyline representing path
             //! \return Polyline converted to path
-            Path createPath(Polyline line);
+            Path createPath(Polyline line) override;
+
+            //! \brief Filters adapted paths by clamping or removing segments whose bead widths are not within the
+            //! allowable range.
+            //! \param path: the path to be filtered.
+            //! \return Returns a vector of paths with bead widths that are within the allowable range.
+            QVector<Path> filterPath(Path& path);
 
             //! \brief Sets pathing for anchor lines
             //! \param anchor_lines: polylines for wire feed
@@ -170,11 +176,6 @@ namespace ORNL {
             //! \param supportsG3 Whether or not G2/G3 is supported for spiral lift
             //! \param innerMostClosedContour used for Prestarts (currently only skins/infill)
             void calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerMostClosedContour) override;
-
-            //! \brief Break path according to settings when adaptive controls are turned on
-            //! \param path: Path to break
-            //! \return Set of paths if breaking occurs
-            QVector<Path> breakPath(Path path);
 
             //! \brief Holds raw skeleton geometry produced by the Voronoi Generator
             QVector<Polyline> m_skeleton_geometry;

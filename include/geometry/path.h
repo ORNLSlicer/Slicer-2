@@ -75,8 +75,10 @@ namespace ORNL
 
             //! \brief Size of the segments.
             int size() const;
+
             //! \brief Moves elements within the path.
             void move(int from, int to);
+
             //! \brief Clears the path.
             void clear();
 

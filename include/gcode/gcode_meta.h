@@ -312,19 +312,6 @@ static GcodeMeta AeroBasicMeta = {
     ".gcode"
 };
 
-static GcodeMeta SheetLaminationMeta = {
-    GcodeSyntax::kSheetLamination,
-    QString(), //starting_delim
-    QString(), //ending_delim
-    in, //distance
-    s, //time
-    degree, //angle
-    g, //mass
-    in / s, //velocity
-    in / s / s, //acceleration
-    rev / s,  //angular velocity
-    ".dxf"
-};
 static GcodeMeta ORNLMeta = {
     GcodeSyntax::kCincinnati,
     QString("("), //starting_delim
@@ -449,7 +436,6 @@ static QHash<int, GcodeMeta> createMapping()
     result.insert((int)GcodeSyntax::kRepRap, RepRapMeta);
     result.insert((int)GcodeSyntax::kMach4, MarlinMeta);
     result.insert((int)GcodeSyntax::kAeroBasic, AeroBasicMeta);
-    result.insert((int)GcodeSyntax::kSheetLamination, SheetLaminationMeta);
     result.insert((int)GcodeSyntax::kORNL, ORNLMeta);
     result.insert((int)GcodeSyntax::kTormach, TormachMeta);
     result.insert((int)GcodeSyntax::kAdamantine, AdamantineMeta);
