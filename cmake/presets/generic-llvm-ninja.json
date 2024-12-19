@@ -1,0 +1,25 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name":        "generic-llvm-ninja",
+            "displayName": "Generic (llvm-ninja)",
+            "description": "Basic configuration with the LLVM toolchain using Ninja generator - all dependencies must be in standard locations.",
+            "generator":   "Ninja Multi-Config",
+            "binaryDir":   "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER":   "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "all-generic-llvm-ninja",
+            "displayName": "All (generic-llvm-ninja)",
+            "description": "Build all targets using generic LLVM.",
+            "configurePreset": "generic-llvm-ninja",
+            "inheritConfigureEnvironment": true
+        }
+    ]
+}

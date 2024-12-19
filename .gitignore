@@ -68,6 +68,7 @@ cmake-build-debug/
 cmake-build-release/
 cmake-build-relwithdebinfo/
 .idea/
+.direnv/
 
 # Binary files we don't want to accidentally track
 *.3ds

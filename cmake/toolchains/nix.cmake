@@ -23,7 +23,9 @@ if(NOT "$ENV{NIX_PROFILE_LOADED}")
         string(JSON VAR_VALUE ERROR_VARIABLE JSON_ERROR GET "${NIX_DEVELOP_OUTPUT}" "variables" "PATH" "value")
         if("${JSON_ERROR}" STREQUAL "NOTFOUND")
             message(STATUS "Appending PATH")
-            string(APPEND ENV{PATH} ":${VAR_VALUE}")
+            set(TMP "$ENV{PATH}")
+            string(APPEND TMP ":${VAR_VALUE}")
+            set(ENV{PATH} ${TMP})
         endif()
     endfunction()
 
@@ -33,36 +35,6 @@ if(NOT "$ENV{NIX_PROFILE_LOADED}")
             message(STATUS "Setting ${LOAD_VAR}")
             set(ENV{${LOAD_VAR}} ${VAR_VALUE})
         endif()
-    endfunction()
-
-    function(LoadAllEnvVars)
-        list(
-            APPEND EXCLUDE_VARS
-            "buildPhase"
-            "DETERMINISTIC_BUILD"
-            "TEMPDIR"
-            "TMPDIR"
-            "PWD"
-            "OLDPWD"
-            "PATH"
-        )
-
-        string(JSON VAR_COUNT ERROR_VARIABLE JSON_ERROR LENGTH "${NIX_DEVELOP_OUTPUT}" "variables")
-        foreach(VAR_INDEX RANGE 0 ${VAR_COUNT})
-            string(JSON VAR_NAME ERROR_VARIABLE JSON_ERROR MEMBER "${NIX_DEVELOP_OUTPUT}" "variables" ${VAR_INDEX})
-
-            if ("${VAR_NAME}" IN_LIST EXCLUDE_VARS)
-                continue()
-            endif()
-
-            string(JSON VAR_TYPE ERROR_VARIABLE JSON_ERROR GET "${NIX_DEVELOP_OUTPUT}" "variables" "${VAR_NAME}" "type")
-
-            if(NOT "${VAR_TYPE}" STREQUAL "exported")
-                continue()
-            endif()
-
-            LoadNixEnvVar("${VAR_NAME}")
-        endforeach()
     endfunction()
 
     function(LoadNixProgToCMakeCache LOAD_VAR CACHE_VAR)
@@ -75,19 +47,27 @@ if(NOT "$ENV{NIX_PROFILE_LOADED}")
         endif()
     endfunction()
 
-    LoadNixPathVar()
+    function(RenameEnvVar OLD_NAME NEW_NAME)
+        if(DEFINED ENV{${OLD_NAME}})
+            set(ENV{${NEW_NAME}} $ENV{${OLD_NAME}})
+            unset(ENV{${OLD_NAME}})
+        endif()
+    endfunction()
 
-    #LoadAllEnvVars()
+    LoadNixPathVar()
 
     LoadNixEnvVar("PKG_CONFIG_PATH")
     LoadNixEnvVar("PYTHONPATH")
     LoadNixEnvVar("CMAKE_INCLUDE_PATH")
     LoadNixEnvVar("CMAKE_LIBRARY_PATH")
-    LoadNixEnvVar("CMAKE_PREFIX_PATH")
+    LoadNixEnvVar("NIXPKGS_CMAKE_PREFIX_PATH")
     LoadNixEnvVar("QMAKE")
     LoadNixEnvVar("QMAKEPATH")
     LoadNixEnvVar("QTTOOLSPATH")
     LoadNixEnvVar("QT_ADDITIONAL_PACKAGES_PREFIX_PATH")
+
+    # Newer versions of nixpkgs stick their prefix paths into NIXPKGS_CMAKE_PREFIX_PATH, so we need to rename so CMake can find it.
+    RenameEnvVar("NIXPKGS_CMAKE_PREFIX_PATH" "CMAKE_PREFIX_PATH")
 
     # TODO: Make this work better - there's some weirdness when specifying the compiler from the toolchain.
     # Really QtCreator shouldn't be specifying an empty compiler.
