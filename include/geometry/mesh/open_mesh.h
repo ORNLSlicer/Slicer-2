@@ -3,35 +3,7 @@
 
 #include "geometry/mesh/mesh_base.h"
 #include "geometry/mesh/advanced/mesh_types.h"
-#include <CGAL/Polyhedron_incremental_builder_3.h>
-#include <CGAL/Surface_mesh_shortest_path.h>
-#include <boost/foreach.hpp>
-#include <Eigen/Dense>
 
-// Define CGAL kernel and types
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef K::Point_3 Point_3;
-typedef CGAL::Surface_mesh<Point_3> Mesh;
-typedef K::Vector_3 Vector_3;
-typedef Mesh::Property_map<Mesh::Vertex_index, double> Vertex_distance_map;
-
-//from CGAL Example - clean later
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Surface_mesh.h>
-#include <CGAL/Surface_mesh_shortest_path.h>
-#include <CGAL/Random.h>
-#include <boost/lexical_cast.hpp>
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
-
-typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-typedef CGAL::Surface_mesh<Kernel::Point_3> Triangle_mesh;
-typedef CGAL::Surface_mesh_shortest_path_traits<Kernel, Triangle_mesh> Traits;
-typedef CGAL::Surface_mesh_shortest_path<Traits> Surface_mesh_shortest_path;
-typedef boost::graph_traits<Triangle_mesh> Graph_traits;
-typedef Graph_traits::vertex_iterator vertex_iterator;
-typedef Graph_traits::face_iterator face_iterator;
 
 namespace ORNL
 {
@@ -114,9 +86,6 @@ namespace ORNL
         //! \param file_path the file to build the cloud from
         //! \return a pointer to the new mesh if it could be loaded
         static QSharedPointer<OpenMesh> BuildMeshFromPointCloud(const QString& file_path);
-
-        void Sandbox();
-        std::vector<Traits::Point_3> shortestPath();
 
     private:
         //! \brief converts vertices and faces into polyhedron, used to keep the two in sync
