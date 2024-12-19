@@ -9,24 +9,6 @@
 #include "geometry/plane.h"
 #include "geometry/mesh/open_mesh.h"
 
-//from CGAL Example - clean later
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/Polyhedron_items_with_id_3.h>
-#include <CGAL/Surface_mesh_shortest_path.h>
-#include <CGAL/Random.h>
-#include <boost/lexical_cast.hpp>
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
-#include <iterator>
-typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-typedef CGAL::Polyhedron_3<Kernel, CGAL::Polyhedron_items_with_id_3> Triangle_mesh3;
-typedef CGAL::Surface_mesh_shortest_path_traits<Kernel, Triangle_mesh3> Traits3;
-typedef CGAL::Surface_mesh_shortest_path<Traits3> Surface_mesh_shortest_path3;
-typedef boost::graph_traits<Triangle_mesh3> Graph_traits3;
-typedef Graph_traits3::vertex_iterator vertex_iterator3;
-typedef Graph_traits3::face_iterator face_iterator3;
 
 namespace ORNL
 {
@@ -166,9 +148,6 @@ namespace ORNL
         static void CleanPolyhedron(MeshTypes::Polyhedron& polyhedron);
 
         MeshTypes::SurfaceMesh extractUpwardFaces() override;
-
-        std::vector<Traits3::Point_3> shortestPath();
-        void Sandbox();
 
     private:
         //! \brief converts vertices and faces into polyhedron, used to keep the two in sync
