@@ -6,7 +6,6 @@
 #include "geometry/path_modifier.h"
 #include "geometry/pattern_generator.h"
 #include "utilities/mathutils.h"
-#include "geometry/curve_fitting.h"
 
 namespace ORNL {
     Infill::Infill(const QSharedPointer<SettingsBase>& sb, const int index, const QVector<SettingsPolygon>& settings_polygons, const SingleExternalGridInfo& gridInfo)
@@ -190,15 +189,6 @@ namespace ORNL {
                     Path newPath = createPath(result);
                     if(newPath.size() > 0)
                     {
-                        // Only fit arcs if the infill was concentric
-                        if(static_cast<InfillPatterns>(m_sb->setting<int>(Constants::ProfileSettings::Infill::kPattern)) == InfillPatterns::kConcentric)
-                        {
-                            if(m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting) ||
-                               m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting))
-                                    CurveFitting::Fit(newPath, m_sb);
-                        }
-
-
                         calculateModifiers(newPath, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), innerMostClosedContour);
                         PathModifierGenerator::GenerateTravel(newPath, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
                         current_location = newPath.back()->end();

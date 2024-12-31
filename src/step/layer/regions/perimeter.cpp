@@ -5,7 +5,6 @@
 #include "geometry/path_modifier.h"
 #include "utilities/mathutils.h"
 #include "algorithms/knn.h"
-#include "geometry/curve_fitting.h"
 
 #ifdef HAVE_SINGLE_PATH
 #include "single_path/single_path.h"
@@ -266,10 +265,6 @@ namespace ORNL {
 
                         PathModifierGenerator::GenerateRotationAndTilt(newPath, rotation_origin, shouldRotate, shouldNextPathBeCCW, shouldTilt);
                     }
-
-                    if(m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting) ||
-                       m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting))
-                          CurveFitting::Fit(newPath, m_sb);
 
                     QVector<Path> temp_path;
                     calculateModifiers(newPath, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), temp_path);
