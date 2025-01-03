@@ -313,16 +313,6 @@ QString MeltioWriter::writeArc(const Point &start_point,
     return rv;
 }
 
-QString MeltioWriter::writeSpline(const Point &start_point,
-                                const Point &a_control_point,
-                                const Point &b_control_point,
-                                const Point &end_point,
-                                const QSharedPointer<SettingsBase> params)
-{
-    QString rv;
-    return rv;
-}
-
 QString MeltioWriter::writeAfterPath(RegionType type)
 {
     QString rv;

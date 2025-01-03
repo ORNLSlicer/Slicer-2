@@ -6,7 +6,6 @@
 #include "geometry/path_modifier.h"
 #include "geometry/pattern_generator.h"
 #include "utilities/mathutils.h"
-#include "geometry/curve_fitting.h"
 
 namespace ORNL {
     Ironing::Ironing(const QSharedPointer<SettingsBase>& sb, const int index, const QVector<SettingsPolygon>& settings_polygons, const SingleExternalGridInfo& gridInfo)

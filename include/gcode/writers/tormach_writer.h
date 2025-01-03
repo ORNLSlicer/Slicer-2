@@ -61,19 +61,6 @@ public:
                      const bool &ccw,
                      const QSharedPointer<SettingsBase> params) override;
 
-    //! \brief writes a spline using the G5 command
-    //! \param start_point the starting location
-    //! \param a_control_point first control point
-    //! \param b_control_point second control point
-    //! \param end_point the ending location
-    //! \param params the settings base
-    //! \return a string with the gcode command
-    QString writeSpline(const Point& start_point,
-                        const Point& a_control_point,
-                        const Point& b_control_point,
-                        const Point& end_point,
-                        const QSharedPointer<SettingsBase> params) override;
-
     //! \brief Writes G-Code for scan
     QString writeScan(Point target_point, Velocity speed, bool on_off) override;
 

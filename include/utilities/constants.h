@@ -911,19 +911,6 @@ namespace ORNL
                 static const QString kLayerGroupingTolerance;
             };
 
-            class CurveFitting
-            {
-            public:
-                static const QString kEnableArcFitting;
-                static const QString kEnableSplineFitting;
-                static const QString kUsePerfectArcs;
-                static const QString kMinCurveAngle;
-                static const QString kMaxCurveSegmentDistance;
-                static const QString kArcErrorThreshold;
-                static const QString kArcDifferentiationTolerance;
-                static const QString kSplineDifferentiationTolerance;
-            };
-
             class SinglePath
             {
             public:
