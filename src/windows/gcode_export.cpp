@@ -167,11 +167,11 @@ namespace ORNL
                 inputFile.close();
             }
 
-            if (m_location.mid(m_location.lastIndexOf(".") + 1) != "dxf")
-            {
-                text.prepend(m_most_recent_meta.m_comment_starting_delimiter % "Sliced by: " % m_operator_input->text() % m_most_recent_meta.m_comment_ending_delimiter % "\n" %
-                             m_most_recent_meta.m_comment_starting_delimiter % "Slicing notes: " % m_description_input->toPlainText() % m_most_recent_meta.m_comment_ending_delimiter % "\n");
-            }
+            // Add header information to the gcode file
+            text.prepend(m_most_recent_meta.m_comment_starting_delimiter % "Sliced by: " % m_operator_input->text() %
+                         m_most_recent_meta.m_comment_ending_delimiter % "\n" %
+                         m_most_recent_meta.m_comment_starting_delimiter % "Slicing notes: " %
+                         m_description_input->toPlainText() % m_most_recent_meta.m_comment_ending_delimiter % "\n");
 
 
             if (m_auxiliary_file_checkbox->isChecked())

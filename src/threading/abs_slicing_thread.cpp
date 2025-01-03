@@ -28,7 +28,6 @@
 #include <gcode/writers/reprap_writer.h>
 #include <gcode/writers/mach4_writer.h>
 #include <gcode/writers/aerobasic_writer.h>
-#include <gcode/writers/sheet_lamination_writer.h>
 #include <gcode/writers/meld_writer.h>
 #include <gcode/writers/ornl_writer.h>
 #include <gcode/writers/okuma_writer.h>
@@ -168,9 +167,6 @@ namespace ORNL {
             break;
         case GcodeSyntax::kAeroBasic:
             m_base = QSharedPointer<AeroBasicWriter>(new AeroBasicWriter(GcodeMetaList::AeroBasicMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kSheetLamination:
-            m_base = QSharedPointer<SheetLaminationWriter>(new SheetLaminationWriter(GcodeMetaList::SheetLaminationMeta, GSM->getGlobal()));
             break;
         case GcodeSyntax::kAdamantine:
             m_base = QSharedPointer<AdamantineWriter>(new AdamantineWriter(GcodeMetaList::AdamantineMeta, GSM->getGlobal()));

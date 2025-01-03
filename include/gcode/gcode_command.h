@@ -112,7 +112,7 @@ namespace ORNL
 
         //! \brief gets a list of the extruder status for this command
         //! \return a list of booleans for the status
-        QVector<bool> getExtrudersOn();
+        const QVector<bool>& getExtrudersOn() const;
 
         //! \brief sets the extruder offsets for each nozzle
         //! \param extruder_offsets the distance from the first extruder
@@ -120,7 +120,7 @@ namespace ORNL
 
         //! \brief gets the distances from the first extruder to the others
         //! \return a list of offsets
-        QVector<Point>& getExtruderOffsets();
+        const QVector<Point>& getExtruderOffsets() const;
 
         //! \brief sets extruder speed for this command
         //! \param extruders_speed
@@ -128,7 +128,7 @@ namespace ORNL
 
         //! \brief gets extruder speed for this command
         //! \return double value
-        double getExtrudersSpeed();
+        const double& getExtrudersSpeed() const;
 
 
         //! \brief Equality operator to check if two gcode commands are equal.

@@ -199,8 +199,7 @@ namespace ORNL
         m_extruders_on = extruders_on;
     }
 
-    QVector<bool> GcodeCommand::getExtrudersOn()
-    {
+    const QVector<bool>& GcodeCommand::getExtrudersOn() const {
         return m_extruders_on;
     }
 
@@ -209,16 +208,15 @@ namespace ORNL
         m_extruder_offsets = extruder_offsets;
     }
 
-    QVector<Point>& GcodeCommand::getExtruderOffsets()
-    {
+    const QVector<Point>& GcodeCommand::getExtruderOffsets() const {
         return m_extruder_offsets;
     }
 
-    void GcodeCommand::setExtrudersSpeed(double extruders_speed){
+    void GcodeCommand::setExtrudersSpeed(double extruders_speed) {
         m_extruders_speed = extruders_speed;
     }
 
-    double GcodeCommand::getExtrudersSpeed(){
+    const double& GcodeCommand::getExtrudersSpeed() const {
         return m_extruders_speed;
     }
 

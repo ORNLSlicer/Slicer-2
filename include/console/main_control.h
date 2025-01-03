@@ -10,8 +10,6 @@
 #include "threading/gcode_loader.h"
 #include "gcode/gcode_meta.h"
 
-// DXF
-#include "threading/dxf_loader.h"
 
 namespace ORNL {
 

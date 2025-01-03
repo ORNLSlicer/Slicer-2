@@ -37,34 +37,40 @@ namespace ORNL {
 
             //! \brief Gets the layer number for this segment.
             uint layerNumber();
+
             //! \brief Gets the line number for this segment.
             uint lineNumber();
+
             //! \brief Gets the display width.
+            //! \return the display width
             float displayWidth();
+
             //! \brief Gets the display height.
             float displayHeight();
+
             //! \brief Gets the display type.
             SegmentDisplayType displayType();
+
             //! \brief Gets the display color.
             QColor color();
 
-            //! \brief Sets the info for this segment corresponding to a loaded GCode file.
-            //! \note This function is temporary pending a rework of the parser/writer architecture.
-            //! \param display_width: Height of display segment to generate.
-            //! \param display_height: Width of display segment to generate.
+            //! \brief Sets the display info for this segment corresponding to a loaded GCode file.
+            //! \param display_width: Width of segment in display units.
+            //! \param display_length: Length of segment in display units.
+            //! \param display_height: Height of segment in display units.
             //! \param type: Type of display segment to generate.
             //! \param color: Color of the display segment to generate.
             //! \param line_num: GCode line number that this segment corresponds to.
             //! \param layer_num: Layer that this GCode line segment belongs to.
-            void setGCodeInfo(float display_width, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num);
+            void setDisplayInfo(float display_width, float display_length, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num);
 
-            //! \brief gets the width of this segment
-            //! \return the width of the drawn gcode segment
-            float getGCodeWidth();
-
-            //! \brief sets the width ofthe gocde segment
+            //! \brief Sets the display width of the gocde segment
             //! \param display_width the display width
-            void setGCodeWidth(float display_width);
+            void setDisplayWidth(float display_width);
+
+            //! \brief Sets the display height of the gcode segment
+            //! \param display_height the display height
+            void setDisplayHeight(float display_height);
 
             //! \brief Creates the vertex info for this segment. Requires info set in setGCodeInfo(). Virtual function by default does nothing.
             //! \todo This function expects segments generated using OpenGL scales. A less brittle version of this would entail scaling as needed
@@ -121,45 +127,49 @@ namespace ORNL {
             struct SegmentInfoMeta {
                 // Start point for segment info display.
                 Point start;
+
                 //! \brief End point for segment info display.
                 Point end;
 
                 //! \brief Print speed for segment info display.
                 QString speed;
+
                 //! \brief Extruder speed for segment info display.
                 QString extruderSpeed;
+
                 //! \brief Length for segment info display.
                 QString length;
+
                 //! \brief Region type for segment info display.
                 QString type;
 
                 //! \brief Default counstructor
-                SegmentInfoMeta(){}
+                SegmentInfoMeta() {}
 
                 //! \brief Check if motion is in XY plane
-                bool isXYmove(){
+                bool isXYmove() {
                     return start.x() != end.x() || start.y() != end.y();
                 }
 
                 //! \brief Compute Z motion change
-                float getZChange(){
+                float getZChange() {
                     return end.z() - start.z();
                 }
 
                 //! \brief Compute the 2d angle along X axis (couter clock wise)
-                float getCCWXAngle()
-                {
+                float getCCWXAngle() {
                     const float y = end.y() - start.y();
                     const float x = end.x() - start.x();
 
                     float angle = 360;
-                    if (x != 0 || y != 0)
-                    {
+                    if (x != 0 || y != 0) {
                         float delta = 0;
-                        if ((y >= 0 && x < 0) || (y < 0 && x < 0))
+                        if ((y >= 0 && x < 0) || (y < 0 && x < 0)) {
                             delta = 180;
-                        else if (y < 0 && x >= 0)
+                        }
+                        else if (y < 0 && x >= 0) {
                             delta = 360;
+                        }
 
                         angle = delta + atan(y / x) * 180 / 3.14159265358979323846;
                     }
@@ -169,8 +179,9 @@ namespace ORNL {
             } m_segment_info_meta;
 
         protected:
-            // Start point for segment.
+            //! \brief  Start point for segment.
             Point m_start;
+
             //! \brief End point for segment.
             Point m_end;
 
@@ -180,12 +191,25 @@ namespace ORNL {
             //! \brief Non build mods.
             PathModifiers m_non_build_modifiers;
 
-            //! \brief DIsplay information.
+            //! \brief Display information.
             QColor m_color;
+
+            //! \brief The display type for this segment.
             SegmentDisplayType m_display_type;
+
+            //! \brief The line number for this segment.
             uint m_line_num;
+
+            //! \brief The layer number for this segment.
             uint m_layer_num;
+
+            //! \brief The width of the segment in display units.
             float m_display_width;
+
+            //! \brief The length of the segment in display units.
+            float m_display_length;
+
+            //! \brief The height of the segment in display units.
             float m_display_height;
 
     };

@@ -338,7 +338,6 @@ namespace ORNL
                 static QString kRepRap;
                 static QString kMach4;
                 static QString kAeroBasic;
-                static QString kSheetLamination;
                 static QString kAdamantine;
             };
         };
@@ -703,12 +702,14 @@ namespace ORNL
                     static const QString kSkeletonOutputCleaningDistance;
                     static const QString kBeadWidth;
                     static const QString kSpeed;
-                    static const QString kSkeletonAdapt;
-                    static const QString kSkeletonAdaptDiscretizationDistance;
-                    static const QString kSkeletonMinWidth;
-                    static const QString kSkeletonMaxWidth;
                     static const QString kExtruderSpeed;
                     static const QString kExtrusionMultiplier;
+                    static const QString kSkeletonAdapt;
+                    static const QString kSkeletonAdaptStepSize;
+                    static const QString kSkeletonAdaptMinWidth;
+                    static const QString kSkeletonAdaptMinWidthFilter;
+                    static const QString kSkeletonAdaptMaxWidth;
+                    static const QString kSkeletonAdaptMaxWidthFilter;
                     static const QString kMinPathLength;
                     static const QString kUseSkinMcode;
             };
@@ -961,18 +962,6 @@ namespace ORNL
                 static const QString kSectorStaggerEnable;
                 static const QString kSectorStaggerAngle;
                 static const QString kClockingAngle;
-            };
-
-            class SheetLaminationSlicing
-            {
-            public:
-                static const QString kGravityPointX;
-                static const QString kGravityPointY;
-                static const QString kGap;
-                static const QString kArmPrecision;
-                static const QString kDestinationOffsetX;
-                static const QString kDestinationOffsetY;
-                static const QString kDestinationOffsetZ;
             };
 
             class MultiNozzle

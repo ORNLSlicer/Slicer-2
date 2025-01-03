@@ -19,19 +19,13 @@
 #include "managers/preferences_manager.h"
 #include <utilities/authenticity_checker.h>
 #include "utilities/debugutils.h"
-
 #include "threading/slicers/polymer_slicer.h"
-
 #include "threading/gcode_loader.h"
-#include "threading/dxf_loader.h"
 #include "utilities/msg_handler.h"
 #include "geometry/mesh/mesh_factory.h"
-
 #include "geometry/mesh/open_mesh.h"
-
 #include "geometry/mesh/advanced/auto_orientation.h"
 #include "threading/mesh_loader.h"
-
 #include "windows/dialogs/geometry_view_dialog.h"
 
 namespace ORNL {
@@ -1217,45 +1211,8 @@ namespace ORNL {
         enableExportMenu();
     }
 
-    void MainWindow::importDXFHelper(QString filepath, bool alterFile)
-    {
-        m_gcode_widget->clear();
-        disconnect(m_slice_dialog.get(), &SliceDialog::cancelSlice, CSM.get(), &SessionManager::cancelSlice);
-
-        DXFLoader* loader = new DXFLoader(filepath, alterFile);
-        connect(loader, &DXFLoader::finished, loader, &DXFLoader::deleteLater);
-        connect(loader, &DXFLoader::dxfLoadedVisualization, m_gcode_widget, &GCodeWidget::addGCode);
-        connect(loader, &DXFLoader::dxfLoadedText, m_gcodebar, &GcodeBar::updateGcodeText);
-
-        if(!m_slice_dialog.isNull())
-        {
-            connect(loader, &DXFLoader::finished, this, [this] () { m_slice_dialog->close(); });
-            connect(loader, &DXFLoader::updateDialog, m_slice_dialog.get(), &SliceDialog::updateStatus);
-            connect(m_slice_dialog.get(), &SliceDialog::cancelSlice, loader, &DXFLoader::cancelSlice);
-        }
-
-        connect(loader, &DXFLoader::forwardInfoToMainWindow, this, &MainWindow::showGCodeKeyInfo);
-
-        connect(loader, &DXFLoader::forwardInfoToBuildExportWindow, m_export_window, &GcodeExport::updateOutputInformation);
-
-        connect(loader, &DXFLoader::dxfLoadedVisualization, this,
-                [this](QVector<QVector<QSharedPointer<SegmentBase>>> segments) {
-                    m_gcodebar->setMaxLayer(qMax(segments.size() - 1, 0));
-                }
-        );
-
-        loader->start();
-    }
-
-    void MainWindow::importFile(QString filepath, bool alterFile)
-    {
-        if (filepath.mid(filepath.lastIndexOf(".") + 1) == "dxf")
-        {
-            importDXFHelper(filepath, alterFile);
-        } else
-        {
-            importGCodeHelper(filepath, alterFile);
-        }
+    void MainWindow::importFile(QString filepath, bool alterFile) {
+        importGCodeHelper(filepath, alterFile);
     }
 
     void MainWindow::updateStatus(QString status)

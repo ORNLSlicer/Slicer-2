@@ -108,33 +108,23 @@ namespace ORNL {
             CSM->doSlice();
     }
 
-    void MainControl::sliceComplete(QString filepath, bool alterFile)
-    {
-         if(static_cast<SlicerType>(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::PrinterConfig::kSlicerType)) != SlicerType::kImageSlice)
-         {
-             if(m_options->setting<bool>(Constants::ConsoleOptionStrings::kRealTimeMode))
-             {
-                 auto meta = GcodeMetaList::createMapping()[GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::PrinterConfig::kSlicerType)];
-                 updateOutputInformation(filepath, meta);
-                 gcodeParseComplete();
-             }else
-             {
-                 if (filepath.mid(filepath.lastIndexOf(".") + 1) == "dxf")
-                 { // Check if this is dxf file or not
-                     DXFLoader* loader_two = new DXFLoader(filepath, alterFile);
-                 } else
-                 {
-                     GCodeLoader* loader = new GCodeLoader(filepath, alterFile);
-                     connect(loader, &GCodeLoader::finished, loader, &GCodeLoader::deleteLater);
-                     connect(loader, &GCodeLoader::forwardInfoToBuildExportWindow, this, &MainControl::updateOutputInformation);
-                     connect(loader, &GCodeLoader::finished, this, &MainControl::gcodeParseComplete);
-                     connect(loader, &GCodeLoader::updateDialog, this, &MainControl::displayProgress);
-                     loader->start();
-                 }
-             }
-         }
-         else
-             emit finished();
+    void MainControl::sliceComplete(QString filepath, bool alterFile) {
+        if(static_cast<SlicerType>(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::PrinterConfig::kSlicerType)) != SlicerType::kImageSlice) {
+            if (m_options->setting<bool>(Constants::ConsoleOptionStrings::kRealTimeMode)) {
+                auto meta = GcodeMetaList::createMapping()[GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::PrinterConfig::kSlicerType)];
+                updateOutputInformation(filepath, meta);
+                gcodeParseComplete();
+            } else {
+                GCodeLoader* loader = new GCodeLoader(filepath, alterFile);
+                connect(loader, &GCodeLoader::finished, loader, &GCodeLoader::deleteLater);
+                connect(loader, &GCodeLoader::forwardInfoToBuildExportWindow, this, &MainControl::updateOutputInformation);
+                connect(loader, &GCodeLoader::finished, this, &MainControl::gcodeParseComplete);
+                connect(loader, &GCodeLoader::updateDialog, this, &MainControl::displayProgress);
+                loader->start();
+            }
+        } else {
+            emit finished();
+        }
     }
 
     void MainControl::updateOutputInformation(QString tempLocation, GcodeMeta meta)

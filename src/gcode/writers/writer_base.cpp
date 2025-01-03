@@ -119,7 +119,7 @@ namespace ORNL
         //
 
         if (syntax != GcodeSyntax::kCincinnati && syntax != GcodeSyntax::kHaasInch && syntax != GcodeSyntax::kMeld &&
-            syntax != GcodeSyntax::kORNL && syntax != GcodeSyntax::kSheetLamination && syntax != GcodeSyntax::kSiemens &&
+            syntax != GcodeSyntax::kORNL && syntax != GcodeSyntax::kSiemens &&
             syntax != GcodeSyntax::kSkyBaam)
         {
             text += commentLine(
@@ -139,7 +139,7 @@ namespace ORNL
                 .arg(m_sb->setting< Distance >(Constants::MaterialSettings::Filament::kDiameter).to(mm)));
         }
         if (syntax != GcodeSyntax::kCincinnati && syntax != GcodeSyntax::kHaasInch && syntax != GcodeSyntax::kMeld &&
-            syntax != GcodeSyntax::kORNL && syntax != GcodeSyntax::kSheetLamination && syntax != GcodeSyntax::kSiemens &&
+            syntax != GcodeSyntax::kORNL && syntax != GcodeSyntax::kSiemens &&
             syntax != GcodeSyntax::kSkyBaam)
         {
             text += commentLine(
@@ -159,7 +159,7 @@ namespace ORNL
                     .arg(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kWMin).to(in)));
         }
         if (syntax != GcodeSyntax::kCincinnati && syntax != GcodeSyntax::kHaasInch && syntax != GcodeSyntax::kMeld &&
-            syntax != GcodeSyntax::kORNL && syntax != GcodeSyntax::kSheetLamination && syntax != GcodeSyntax::kSiemens &&
+            syntax != GcodeSyntax::kORNL && syntax != GcodeSyntax::kSiemens &&
             syntax != GcodeSyntax::kSkyBaam)
         {
             text += commentLine(
