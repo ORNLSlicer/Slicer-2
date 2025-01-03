@@ -935,13 +935,6 @@ namespace ORNL
                 static const QString kStackingDirectionRoll;
             };
 
-            class ConformalSlicing
-            {
-            public:
-                static const QString kMaxSegmentLength;
-                static const QString kConformalLayers;
-            };
-
             class RPBFSlicing
             {
             public:

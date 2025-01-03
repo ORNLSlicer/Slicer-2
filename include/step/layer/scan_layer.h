@@ -25,9 +25,6 @@ namespace ORNL
             //! \brief Computes the layer.
             void compute();
 
-            //! \brief applies the conformal mapping
-            void applyMapping();
-
             //! \brief Connect next path via travels to build islands in Layer class
             //! \param start Point to defines current location
             //! \param index Int that serves to lookup key

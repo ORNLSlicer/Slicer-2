@@ -817,10 +817,6 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw   = "stacking_direction_yaw";
     const QString Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll  = "stacking_direction_roll";
 
-    // Conformal Slicing
-    const QString Constants::ExperimentalSettings::ConformalSlicing::kMaxSegmentLength = "max_segment_length";
-    const QString Constants::ExperimentalSettings::ConformalSlicing::kConformalLayers = "conformal_layers";
-
     // RPBF Slicing
     const QString Constants::ExperimentalSettings::RPBFSlicing::kSectorSize = "sector_size";
     const QString Constants::ExperimentalSettings::RPBFSlicing::kSectorOffsettingEnable = "sector_offsetting_enable";

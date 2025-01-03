@@ -89,13 +89,12 @@ namespace ORNL
      */
     enum class SlicerType : uint8_t {
         kPolymerSlice           = 0,
-        kConformalSlice         = 1,
-        kMetalEmbossingSlice    = 2,
-        kMetalSlice             = 3,
-        kRPBFSlice              = 4,
-        kRealTimePolymer        = 5,
-        kRealTimeRPBF           = 6,
-        kImageSlice             = 7
+        kMetalEmbossingSlice    = 1,
+        kMetalSlice             = 2,
+        kRPBFSlice              = 3,
+        kRealTimePolymer        = 4,
+        kRealTimeRPBF           = 5,
+        kImageSlice             = 6
     };
 
     //! \brief Function for going from json to SlicerType

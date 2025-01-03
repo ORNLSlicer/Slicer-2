@@ -41,9 +41,6 @@ namespace ORNL {
             //! \brief Function that does the computation for the step.
             virtual void compute() = 0;
 
-            //! \brief applies the conformal mapping
-            virtual void applyMapping() = 0;
-
             //! \brief calculates modifiers as part of the post-processing step
             //! \param currentLocation: current location passed to each modifier to be updated
             //! at each step once a path has been connected via travels

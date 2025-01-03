@@ -12,7 +12,6 @@
 // Local
 #include "threading/slicers/polymer_slicer.h"
 #include "threading/slicers/real_time_polymer_slicer.h"
-#include "threading/slicers/conformal_slicer.h"
 #include "threading/slicers/rpbf_slicer.h"
 #include "threading/slicers/real_time_rpbf_slicer.h"
 #include "threading/slicers/image_slicer.h"
@@ -739,9 +738,6 @@ namespace ORNL
                 break;
             case SlicerType::kMetalSlice:
 //                m_ast.reset(new ...);
-                break;
-            case SlicerType::kConformalSlice:
-                m_ast.reset(new ConformalSlicer(tempGcodeFile));
                 break;
             case SlicerType::kRPBFSlice:
                 m_ast.reset(new RPBFSlicer(tempGcodeFile));

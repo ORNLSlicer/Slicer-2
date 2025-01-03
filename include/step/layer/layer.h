@@ -7,7 +7,6 @@
 // Local
 #include "step/step.h"
 #include "geometry/polygon_list.h"
-#include "geometry/mesh/advanced/parameterization.h"
 #include "geometry/settings_polygon.h"
 #include "step/layer/regions/region_base.h"
 
@@ -53,9 +52,6 @@ namespace ORNL {
             //! \return the last location of (0, 0, 0) if there are no paths
             Point getEndLocation() override;
 
-            //! \brief applies the conformal mapping
-            void applyMapping() override;
-
             //! \brief remove rotation and shift compensation during cross sectioning using
             //!        m_plane_normal and m_shift amount; should only be called once
             //!        when dealing with clean objects
@@ -73,20 +69,6 @@ namespace ORNL {
 
             //! \brief Returns the final location of the layer
             Point getFinalLayerLocation();
-
-            //! \brief Returns the conformal parameterization
-            QSharedPointer<Parameterization> getParameterization();
-
-            //! \brief Sets the conformal parameterization
-            void setParameterization(QSharedPointer<Parameterization> parameterization);
-
-            //! \brief the amount to shift this layer along a normal during conformal mapping
-            //! \return a vector the shift be
-            QVector3D getNormalOffset();
-
-            //! \brief the amount to shift this layer along a normal during conformal mapping
-            //! \param the normal to shift by
-            void setNormalOffset(QVector3D normal);
 
             //! \brief sets the list of polygons that contain settings
             //! \param settings_polygons: a list of polygon overrides for settings
@@ -109,12 +91,6 @@ namespace ORNL {
 
             //! \brief removes duplicate islands according to remove-duplicate-path settings
             void removeDuplicateIslands();
-
-            //! \brief The conformal parameterization
-            QSharedPointer<Parameterization> m_parameterization;
-
-            //! \brief the amount to shift this layer along a normal during conformal mapping
-            QVector3D m_normal_offset;
 
             //! \brief a collection of polygons on this layer that contain setting overrides
             QVector<SettingsPolygon> m_settings_polygons;

@@ -339,14 +339,6 @@ namespace ORNL {
         }
     }
 
-    void IslandBase::applyMapping(QSharedPointer<Parameterization> parameterization, QVector3D normal_offset)
-    {
-        for(QSharedPointer<RegionBase> region : m_regions)
-        {
-            region->applyMapping(parameterization, normal_offset);
-        }
-    }
-
     float IslandBase::getMinZ()
     {
         //find the min of the regions in this island
