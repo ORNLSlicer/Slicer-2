@@ -2,6 +2,7 @@
 #include "geometry/segments/line.h"
 #include "optimizers/polyline_order_optimizer.h"
 #include "geometry/path_modifier.h"
+#include "geometry/curve_fitting.h"
 
 namespace ORNL {
     Brim::Brim(const QSharedPointer<SettingsBase>& sb, const QVector<SettingsPolygon>& settings_polygons) : RegionBase(sb, settings_polygons) {
@@ -96,6 +97,10 @@ namespace ORNL {
 
             if(newPath.size() > 0)
             {
+                if(m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting) ||
+                        m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting))
+                    CurveFitting::Fit(newPath, m_sb);
+
                 QVector<Path> temp_path;
                 calculateModifiers(newPath, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), temp_path);
                 PathModifierGenerator::GenerateTravel(newPath, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));

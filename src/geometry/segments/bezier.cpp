@@ -62,8 +62,7 @@ namespace ORNL
 
     QString BezierSegment::writeGCode(QSharedPointer<WriterBase> writer)
     {
-        //return writer->writeSpline(m_start, m_control_a, m_control_b, m_end, this->getSb());
-        return {};
+        return writer->writeSpline(m_start, m_control_a, m_control_b, m_end, this->getSb());
     }
 
     QSharedPointer<SegmentBase> BezierSegment::clone() const

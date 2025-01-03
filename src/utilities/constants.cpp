@@ -799,6 +799,16 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::PrinterConfig::kLayerOrdering = "layer_ordering";
     const QString Constants::ExperimentalSettings::PrinterConfig::kLayerGroupingTolerance = "layer_grouping_tolerance";
 
+    // Curve Fitting
+    const QString Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting = "enable_arc_fitting";
+    const QString Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting = "enable_spline_fitting";
+    const QString Constants::ExperimentalSettings::CurveFitting::kUsePerfectArcs = "use_perfect_arcs";
+    const QString Constants::ExperimentalSettings::CurveFitting::kMinCurveAngle = "min_curve_fitting_angle";
+    const QString Constants::ExperimentalSettings::CurveFitting::kMaxCurveSegmentDistance = "max_curve_segment_distance";
+    const QString Constants::ExperimentalSettings::CurveFitting::kArcErrorThreshold = "arc_error_threshold";
+    const QString Constants::ExperimentalSettings::CurveFitting::kArcDifferentiationTolerance = "arc_differentiation_tolerance";
+    const QString Constants::ExperimentalSettings::CurveFitting::kSplineDifferentiationTolerance = "spline_differentiation_tolerance";
+
     // Single Path
     const QString Constants::ExperimentalSettings::SinglePath::kEnableSinglePath = "enable_single_path";
     const QString Constants::ExperimentalSettings::SinglePath::kEnableBridgeExclusion = "enable_bridge_exclusion";
