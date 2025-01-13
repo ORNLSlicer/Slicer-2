@@ -179,7 +179,7 @@ namespace ORNL
                            m_angled_tipwipe, m_coasting, m_spirallift, m_rampingup, m_rampingdown, m_leadin;
 
             //! \brief matchers for type identification for coloring
-            QStringMatcher m_perimeter, m_perimeter_embossing, m_inset, m_inset_embossing, m_infill, m_ironing, m_skin,
+            QStringMatcher m_perimeter, m_perimeter_embossing, m_inset, m_inset_embossing, m_infill, m_skin,
                            m_skeleton, m_support, m_support_roof, m_travel, m_raft, m_brim, m_skirt, m_laserscan,
                            m_thermalscan;
 

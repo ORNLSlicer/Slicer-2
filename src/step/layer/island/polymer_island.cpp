@@ -6,7 +6,6 @@
 #include "step/layer/regions/inset.h"
 #include "step/layer/regions/skin.h"
 #include "step/layer/regions/infill.h"
-#include "step/layer/regions/ironing.h"
 #include "step/layer/regions/skeleton.h"
 #include "managers/settings/settings_manager.h"
 
@@ -19,7 +18,6 @@ namespace ORNL {
         bool enable_inset     = this->getSb()->setting<bool>(Constants::ProfileSettings::Inset::kEnable);
         bool enable_skin      = this->getSb()->setting<bool>(Constants::ProfileSettings::Skin::kEnable);
         bool enable_infill    = this->getSb()->setting<bool>(Constants::ProfileSettings::Infill::kEnable);
-        bool enable_ironing   = this->getSb()->setting<bool>(Constants::ExperimentalSettings::Ironing::kEnable);
         bool enable_skeleton  = this->getSb()->setting<bool>(Constants::ProfileSettings::Skeleton::kEnable);
 
         QList<QString> order = this->getSb()->setting<QList<QString>>(Constants::ProfileSettings::Ordering::kRegionOrder);
@@ -42,12 +40,6 @@ namespace ORNL {
         if (enable_skin)      this->addRegion(QSharedPointer<Skin     >::create(sb, regionOrder.indexOf(RegionType::kSkin), settings_polygons, gridInfo));
         if (enable_infill)    this->addRegion(QSharedPointer<Infill   >::create(sb, regionOrder.indexOf(RegionType::kInfill), settings_polygons, gridInfo));
         if (enable_skeleton)  this->addRegion(QSharedPointer<Skeleton >::create(sb, regionOrder.indexOf(RegionType::kSkeleton), settings_polygons, gridInfo));
-
-        if (enable_infill && enable_ironing){
-            InfillPatterns infill_pattern = static_cast<InfillPatterns>(sb->setting<int>(Constants::ProfileSettings::Infill::kPattern));
-            if(infill_pattern == InfillPatterns::kLines || infill_pattern == InfillPatterns::kGrid)
-                this->addRegion(QSharedPointer<Ironing>::create(sb, regionOrder.size(), settings_polygons, gridInfo));
-        }
 
         m_island_type = IslandType::kPolymer;
     }

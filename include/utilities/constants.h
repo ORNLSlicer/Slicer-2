@@ -109,7 +109,6 @@ namespace ORNL
             static const QString kInset;
             static const QString kInsetEmbossing;
             static const QString kInfill;
-            static const QString kIroning;
             static const QString kTopSkin;
             static const QString kBottomSkin;
             static const QString kSkin;
@@ -979,18 +978,6 @@ namespace ORNL
                 static const QString kTrajectoryAngleExtruderSpeedSlowDown;
                 static const QString kTrajectoryAngleSpeedUp;
                 static const QString kTrajectoryAngleExtruderSpeedUp;
-            };
-
-            class Ironing
-            {
-            public:
-                static const QString kEnable;
-                static const QString kTop;
-                static const QString kLineSpacing;
-                static const QString kSpeed;
-                static const QString kExtruderSpeed;
-                static const QString kAngle;
-                static const QString kInsetWidth;
             };
 
             class WireFeed

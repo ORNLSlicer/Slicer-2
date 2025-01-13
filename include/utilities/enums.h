@@ -329,7 +329,6 @@ namespace ORNL
         kLaserScan,
         kThermalScan,
         kSkeleton,
-        kIroning,
         kAnchor
     };
 
@@ -423,10 +422,6 @@ namespace ORNL
         {
             return RegionType::kInfill;
         }
-        else if (type == Constants::RegionTypeStrings::kIroning)
-        {
-            return RegionType::kIroning;
-        }
         else if (type == Constants::RegionTypeStrings::kSupport)
         {
             return RegionType::kSupport;
@@ -481,8 +476,6 @@ namespace ORNL
                 return Constants::RegionTypeStrings::kSkin;
             case RegionType::kInfill:
                 return Constants::RegionTypeStrings::kInfill;
-            case RegionType::kIroning:
-                return Constants::RegionTypeStrings::kIroning;
             case RegionType::kSupport:
                 return Constants::RegionTypeStrings::kSupport;
             case RegionType::kSupportRoof:
@@ -794,7 +787,6 @@ namespace ORNL
         kInfill,
         kInitialStartup,
         kInset,
-        kIroning,
         kLaserScan,
         kLeadIn,
         kFlyingStart,
@@ -828,7 +820,6 @@ namespace ORNL
             case VisualizationColors::kInfill: return "Infill";
             case VisualizationColors::kInitialStartup: return "InitialStartup";
             case VisualizationColors::kInset: return "Inset";
-            case VisualizationColors::kIroning: return "Ironing";
             case VisualizationColors::kLaserScan: return "LaserScan";
             case VisualizationColors::kLeadIn: return "LeadIn";
             case VisualizationColors::kFlyingStart: return "FlyingStart";
@@ -872,7 +863,6 @@ namespace ORNL
             case VisualizationColors::kInfill: return QColor(0,255,0, 255);
             case VisualizationColors::kInitialStartup: return QColor(135,222,205, 255);
             case VisualizationColors::kInset: return QColor(0,204,255, 255);
-            case VisualizationColors::kIroning: return QColor(255,0,100, 255);
             case VisualizationColors::kLaserScan: return QColor(90,255,90, 255);
             case VisualizationColors::kLeadIn: return QColor(255,153,51, 255);
             case VisualizationColors::kFlyingStart: return QColor(120, 150, 250);

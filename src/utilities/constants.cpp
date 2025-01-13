@@ -142,7 +142,6 @@ namespace ORNL
     const QString Constants::RegionTypeStrings::kInset              = "INSET";
     const QString Constants::RegionTypeStrings::kInsetEmbossing     = "INSET EMBOSSING";
     const QString Constants::RegionTypeStrings::kInfill             = "INFILL";
-    const QString Constants::RegionTypeStrings::kIroning            = "IRONING";
     const QString Constants::RegionTypeStrings::kTopSkin            = "TOP_SKIN";
     const QString Constants::RegionTypeStrings::kBottomSkin         = "BOTTOM_SKIN";
     const QString Constants::RegionTypeStrings::kSkin               = "SKIN";
@@ -850,16 +849,6 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::Ramping::kTrajectoryAngleExtruderSpeedSlowDown = "trajectory_angle_extruder_speed_slow_down";
     const QString Constants::ExperimentalSettings::Ramping::kTrajectoryAngleSpeedUp = "trajectory_angle_speed_up";
     const QString Constants::ExperimentalSettings::Ramping::kTrajectoryAngleExtruderSpeedUp = "trajectory_angle_extruder_speed_up";
-
-    //Ironing
-    const QString Constants::ExperimentalSettings::Ironing::kEnable = "ironing";
-    const QString Constants::ExperimentalSettings::Ironing::kTop = "ironing_top";
-    const QString Constants::ExperimentalSettings::Ironing::kLineSpacing = "ironing_line_spacing";
-    const QString Constants::ExperimentalSettings::Ironing::kSpeed = "ironing_speed";
-    const QString Constants::ExperimentalSettings::Ironing::kExtruderSpeed = "ironing_extruder_speed";
-    const QString Constants::ExperimentalSettings::Ironing::kAngle = "ironing_angle";
-    const QString Constants::ExperimentalSettings::Ironing::kInsetWidth = "ironing_inset_width";
-
 
     //Wire Feed
     const QString Constants::ExperimentalSettings::WireFeed::kWireFeedEnable = "wire_feed_enable";

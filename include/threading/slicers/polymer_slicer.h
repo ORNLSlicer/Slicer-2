@@ -42,12 +42,6 @@ namespace ORNL {
             void writeGCode() override;
 
         private:
-            //! \brief process geometry on above layer on a part for ironing
-            //! \param part the part to process
-            //! \param part_start the layer number to start on
-            //! \param last_layer_count the last layer number
-            void processGeometryAboveIroning(QSharedPointer<Part> part, int part_start, int last_layer_count);
-
             //! \brief Processes perimeters on a part. Gives each perimeter the total layer count.
             //! \param part: The part whose perimeters need processing
             //! \param part_start: The first layer number of the part

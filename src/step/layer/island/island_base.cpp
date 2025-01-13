@@ -6,7 +6,6 @@
 #include "step/layer/regions/inset.h"
 #include "step/layer/regions/skin.h"
 #include "step/layer/regions/infill.h"
-#include "step/layer/regions/ironing.h"
 #include "step/layer/regions/skeleton.h"
 #include "step/layer/regions/skirt.h"
 #include "step/layer/regions/brim.h"
@@ -110,16 +109,6 @@ namespace ORNL {
 
                 break;
 
-            case RegionType::kIroning:
-                for (QSharedPointer<RegionBase> r : m_regions) {
-                    QSharedPointer<Ironing> ironing = r.dynamicCast<Ironing>();
-                    if (ironing.isNull()) continue;
-
-                    return std::move(ironing);
-                }
-
-                break;
-
             case RegionType::kBrim:
                 for (QSharedPointer<RegionBase> r : m_regions) {
                     QSharedPointer<Brim> brim = r.dynamicCast<Brim>();
@@ -193,9 +182,6 @@ namespace ORNL {
         PolygonList pl = m_geometry;
 
         for (QSharedPointer<RegionBase> r : m_regions) {
-            if(!(r.dynamicCast<Ironing>()).isNull())
-                pl = m_geometry;
-
             r->setGeometry(pl);
             r->compute(layer_num, sync);
             pl = r->getGeometry();

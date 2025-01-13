@@ -14,7 +14,6 @@
 #include "step/layer/island/polymer_island.h"
 #include "step/layer/island/support_island.h"
 #include "step/layer/island/wire_feed_island.h"
-#include "step/layer/regions/ironing.h"
 #include "step/layer/regions/skin.h"
 #include "step/layer/regions/perimeter.h"
 #include "utilities/mathutils.h"
@@ -229,14 +228,6 @@ namespace ORNL {
                 processSkin(meta.part, meta.part_start, meta.last_step_count);
             }
 
-            //! If ironing for top layers is enabled
-            if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Infill::kEnable) &&
-                meta.part_sb->setting<bool>(Constants::ExperimentalSettings::Ironing::kEnable) &&
-                meta.part_sb->setting<bool>(Constants::ExperimentalSettings::Ironing::kTop))
-            {
-                processGeometryAboveIroning(meta.part, meta.part_start, meta.last_step_count);
-            }
-
             //! If supports are enabled, find overhangs and add support_islands to layer below overhangs
             if (meta.part_sb->setting<bool>(Constants::ProfileSettings::Support::kEnable) && meta.last_step_count > 0) {
                     processSupport(meta.part, meta.last_step_count, meta.part_start);
@@ -276,23 +267,6 @@ namespace ORNL {
         });
 
         pp.processAll();
-    }
-
-    void PolymerSlicer::processGeometryAboveIroning(QSharedPointer<Part> part, int part_start, int last_layer_count)
-    {
-        for (int layer_nr = part_start; layer_nr < last_layer_count - 1; layer_nr++)
-        {
-            QSharedPointer<Layer> layer = part->step(layer_nr, StepType::kLayer).dynamicCast<Layer>();
-            QSharedPointer<Layer> next_layer = part->step(layer_nr + 1, StepType::kLayer).dynamicCast<Layer>();
-
-            if(layer->isDirty() || next_layer->isDirty()){
-                for (QSharedPointer<IslandBase> isl : layer->getIslands()){
-                    QSharedPointer<Ironing> ironing = isl->getRegion(RegionType::kIroning).dynamicCast<Ironing>();
-                    if(ironing.isNull()) continue;
-                    ironing->addUpperGeometry(next_layer->getGeometry());
-                }
-            }
-        }
     }
 
     void PolymerSlicer::processPerimeter(QSharedPointer<Part> part, int part_start, int last_layer_count)

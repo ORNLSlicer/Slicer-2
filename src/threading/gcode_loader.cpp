@@ -70,7 +70,6 @@ namespace ORNL {
         m_inset = QStringMatcher(Constants::RegionTypeStrings::kInset.toUpper());
         m_inset_embossing = QStringMatcher(Constants::RegionTypeStrings::kInsetEmbossing.toUpper());
         m_infill = QStringMatcher(Constants::RegionTypeStrings::kInfill.toUpper());
-        m_ironing = QStringMatcher(Constants::RegionTypeStrings::kIroning.toUpper());
         m_skin = QStringMatcher(Constants::RegionTypeStrings::kSkin.toUpper());
         m_skeleton = QStringMatcher(Constants::RegionTypeStrings::kSkeleton.toUpper());
         m_support = QStringMatcher(Constants::RegionTypeStrings::kSupport.toUpper());
@@ -707,9 +706,6 @@ namespace ORNL {
         }
         if (m_infill.indexIn(comment) != -1) {
             return PM->getVisualizationColor(VisualizationColors::kInfill);
-        }
-        if (m_ironing.indexIn(comment) != -1) {
-            return PM->getVisualizationColor(VisualizationColors::kIroning);
         }
         if (m_skin.indexIn(comment) != -1) {
             return PM->getVisualizationColor(VisualizationColors::kSkin);
