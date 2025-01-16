@@ -34,9 +34,9 @@ namespace ORNL
             //! \note Layer ordering by height assumes that all parts were sliced with same plane angle, and that the plane does not rotate
             // fetch the slicing plane normal from global settings
             QVector3D slicing_plane =  QVector3D(0, 0, 1);
-            Angle slicing_plane_pitch = global_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch);
-            Angle slicing_plane_yaw   = global_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw);
-            Angle slicing_plane_roll  = global_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll);
+            Angle slicing_plane_pitch = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
+            Angle slicing_plane_yaw   = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
+            Angle slicing_plane_roll  = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
             QQuaternion quaternion = MathUtils::CreateQuaternion(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
             slicing_plane = quaternion.rotatedVector(slicing_plane);
 

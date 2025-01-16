@@ -158,9 +158,9 @@ namespace ORNL {
         };
 
         static const auto material_settings = QSet<QString> {
-            Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch,
-            Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw,
-            Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll
+            Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch,
+            Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw,
+            Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll
         };
 
         static const auto optimization_settings = QSet<QString> {

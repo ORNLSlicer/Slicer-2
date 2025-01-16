@@ -1425,10 +1425,10 @@ namespace ORNL
         Plane slicing_plane(part_min, QVector3D(0, 0, 1)); //default plane
 
         //get slicing settings and adjust plane
-        Axis slicing_axis = static_cast<Axis>(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::SlicingAngle::kSlicingAxis));
-        Angle slicing_plane_pitch = GSM->getGlobal()->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle slicing_plane_yaw   = GSM->getGlobal()->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle slicing_plane_roll  = GSM->getGlobal()->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll);
+        Axis slicing_axis = static_cast<Axis>(GSM->getGlobal()->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis));
+        Angle slicing_plane_pitch = GSM->getGlobal()->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
+        Angle slicing_plane_yaw   = GSM->getGlobal()->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
+        Angle slicing_plane_roll  = GSM->getGlobal()->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
         QQuaternion quaternion = MathUtils::CreateQuaternion(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
         slicing_plane.rotate(quaternion);
 
@@ -1652,10 +1652,10 @@ namespace ORNL
     void LayerBar::handleModifiedSetting(QString key)
     {
         if(key == Constants::ProfileSettings::Layer::kLayerHeight
-                || key == Constants::ExperimentalSettings::SlicingAngle::kSlicingAxis
-                || key == Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch
-                || key == Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw
-                || key == Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll)
+                || key == Constants::ProfileSettings::SlicingAngle::kSlicingAxis
+                || key == Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch
+                || key == Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw
+                || key == Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll)
         {
             updateLayers();
         }

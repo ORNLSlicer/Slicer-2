@@ -139,7 +139,7 @@ namespace ORNL {
          *  the difference in the minimum z values is (nearly) a layer height
         */
         if (m_sb->setting< int >(Constants::PrinterSettings::Dimensions::kLayerChangeAxis) == static_cast<int>(LayerChange::kBoth_Z_and_W)
-                && static_cast<Axis>(m_sb->setting<int>(Constants::ExperimentalSettings::SlicingAngle::kSlicingAxis)) == Axis::kZ &&
+                && static_cast<Axis>(m_sb->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis)) == Axis::kZ &&
                 !m_spiral_layer) {
             if (new_min_z == std::numeric_limits<float>::max()) { //means that a layer doesn't have geometry on it, didn't find a lower point
                 new_min_z = m_min_z;                            //don't want this to affect table height

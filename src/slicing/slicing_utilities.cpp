@@ -74,10 +74,10 @@ namespace ORNL
         Plane slicing_plane = Plane(mesh->min(), QVector3D(0, 0, 1)); // default plane at min of bounding box and horizontal
 
         // Get slicing settings, adjust slicing plane accordingly
-        Axis  slicing_axis = static_cast<Axis>(sb->setting<int>(Constants::ExperimentalSettings::SlicingAngle::kSlicingAxis));
-        Angle slicing_plane_pitch = sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle slicing_plane_yaw   = sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle slicing_plane_roll  = sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll);
+        Axis  slicing_axis = static_cast<Axis>(sb->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis));
+        Angle slicing_plane_pitch = sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
+        Angle slicing_plane_yaw   = sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
+        Angle slicing_plane_roll  = sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
         QQuaternion quaternion = MathUtils::CreateQuaternion(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
         slicing_plane.rotate(quaternion);
 
@@ -112,9 +112,9 @@ namespace ORNL
         Distance layer_height = sb->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
 
         // move the plane by translating its point along the appropriate axis
-        if(sb->setting<bool>(Constants::ExperimentalSettings::SlicingAngle::kEnableCustomAxis))
+        if(sb->setting<bool>(Constants::ProfileSettings::SlicingAngle::kEnableCustomAxis))
         {
-            Axis slicing_axis = static_cast<Axis>(sb->setting<int>(Constants::ExperimentalSettings::SlicingAngle::kSlicingAxis));
+            Axis slicing_axis = static_cast<Axis>(sb->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis));
             if (slicing_axis == Axis::kX)
                 slicing_plane.shiftX((layer_height() / 2) + (last_height() / 2));
             else if (slicing_axis == Axis::kY)

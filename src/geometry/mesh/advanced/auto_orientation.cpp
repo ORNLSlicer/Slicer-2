@@ -59,9 +59,9 @@ namespace ORNL
         }
 
         QSharedPointer<SettingsBase> global_sb = GSM->getGlobal();
-        Angle stacking_pitch = global_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle stacking_yaw   = global_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle stacking_roll  = global_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll);
+        Angle stacking_pitch = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
+        Angle stacking_yaw   = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
+        Angle stacking_roll  = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
 
         // Build a normal vector using the quaternion
         QVector3D settings_build_vector(0, 0, 1);
@@ -249,9 +249,9 @@ namespace ORNL
     {
         // Fetch default axis from settings
         QSharedPointer<SettingsBase> global_sb = GSM->getGlobal();
-        Angle stacking_pitch = global_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle stacking_yaw   = global_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle stacking_roll  = global_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll);
+        Angle stacking_pitch = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
+        Angle stacking_yaw   = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
+        Angle stacking_roll  = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
 
         // Build a normal vector using the quaternion
         QVector3D settings_build_vector(0, 0, 1);

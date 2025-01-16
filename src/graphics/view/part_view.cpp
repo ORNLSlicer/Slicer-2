@@ -313,9 +313,9 @@ namespace ORNL
     {
         m_sb = sb;
 
-        Angle slicing_plane_pitch = m_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle slicing_plane_yaw   = m_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle slicing_plane_roll  = m_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll);
+        Angle slicing_plane_pitch = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
+        Angle slicing_plane_yaw   = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
+        Angle slicing_plane_roll  = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
 
         for (auto& gop : m_part_objects) {
             gop->plane()->setLockedRotationAngle(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);

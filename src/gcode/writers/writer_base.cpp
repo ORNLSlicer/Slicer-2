@@ -67,9 +67,9 @@ namespace ORNL
         */
 
         //get slicing angle info for direction
-        Angle slicing_plane_pitch = m_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle slicing_plane_yaw   = m_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle slicing_plane_roll  = m_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll);
+        Angle slicing_plane_pitch = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
+        Angle slicing_plane_yaw   = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
+        Angle slicing_plane_roll  = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
         QQuaternion quaternion = MathUtils::CreateQuaternion(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
         QVector3D normal_vector = quaternion.rotatedVector(QVector3D(0, 0, 1));
 
@@ -271,9 +271,9 @@ namespace ORNL
                         .arg(m_sb->setting<Time>(Constants::MaterialSettings::Cooling::kMaxLayerTime)()));
             if (SettingsManager::getInstance()->getGlobal()->setting< bool >("useSmoothing"))
                 text += commentLine("Smoothing is turned ON");
-            if(m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw) != 0 ||
-                m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch) != 0 ||
-                m_sb->setting< Angle >(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll) != 0)
+            if(m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw) != 0 ||
+                m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch) != 0 ||
+                m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll) != 0)
             {
                 text += commentLine("ANGLED SLICING ENABLED");
             }

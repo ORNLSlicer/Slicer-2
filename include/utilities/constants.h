@@ -895,6 +895,15 @@ namespace ORNL
                 static const QString kPyrometerMove;
             };
 
+            class SlicingAngle
+            {
+            public:
+                static const QString kEnableCustomAxis;
+                static const QString kSlicingAxis;
+                static const QString kStackingDirectionPitch;
+                static const QString kStackingDirectionYaw;
+                static const QString kStackingDirectionRoll;
+            };
 
         };
 
@@ -920,17 +929,7 @@ namespace ORNL
                 static const QString kCornerExclusionDistance;
                 static const QString kMaxBridgeLength;
                 static const QString kMinBridgeSeparation;
-            };
-
-            class SlicingAngle
-            {
-            public:
-                static const QString kEnableCustomAxis;
-                static const QString kSlicingAxis;
-                static const QString kStackingDirectionPitch;
-                static const QString kStackingDirectionYaw;
-                static const QString kStackingDirectionRoll;
-            };
+            };            
 
             class RPBFSlicing
             {

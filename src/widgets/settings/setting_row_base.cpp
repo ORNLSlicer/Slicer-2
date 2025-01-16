@@ -205,7 +205,7 @@ namespace ORNL {
         if (dependency_group == "slicing_plane")
         {
             //create a vector corresponding to the slicing axis
-            Axis  slicing_axis = static_cast<Axis>(m_sb->setting<int>(Constants::ExperimentalSettings::SlicingAngle::kSlicingAxis));
+            Axis  slicing_axis = static_cast<Axis>(m_sb->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis));
             QVector3D slicing_axis_vector;
             if (slicing_axis == Axis::kX)
                 slicing_axis_vector = QVector3D(1, 0, 0);
@@ -216,9 +216,9 @@ namespace ORNL {
 
             //get the normal vector for the slicing plane
             QVector3D slicing_plane_normal(0, 0, 1);
-            Angle slicing_plane_pitch = m_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch);
-            Angle slicing_plane_yaw   = m_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw);
-            Angle slicing_plane_roll  = m_sb->setting<Angle>(Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll);
+            Angle slicing_plane_pitch = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
+            Angle slicing_plane_yaw   = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
+            Angle slicing_plane_roll  = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
             QQuaternion quaternion = MathUtils::CreateQuaternion(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
             slicing_plane_normal = quaternion.rotatedVector(slicing_plane_normal);
 
@@ -227,7 +227,7 @@ namespace ORNL {
             if (product == 0)
             {
                 //warn user if there is an issue
-                if (m_key == Constants::ExperimentalSettings::SlicingAngle::kSlicingAxis)
+                if (m_key == Constants::ProfileSettings::SlicingAngle::kSlicingAxis)
                     setNotification("ERROR: Slicing Axis can not be parallel to Slicing Plane");
                 else
                     setNotification("ERROR: Slicing Axis can not be parallel to Slicing Plane");

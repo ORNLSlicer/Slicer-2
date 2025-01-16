@@ -789,6 +789,13 @@ namespace ORNL
     const QString Constants::ProfileSettings::ThermalScanner::kThermalScannerYOffset = "thermal_scanner_y_offset";
     const QString Constants::ProfileSettings::ThermalScanner::kPyrometerMove = "pyrometer_move";
 
+    // Slicing Angle
+    const QString Constants::ProfileSettings::SlicingAngle::kEnableCustomAxis = "define_custom_axis";
+    const QString Constants::ProfileSettings::SlicingAngle::kSlicingAxis = "slicing_axis";
+    const QString Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch = "stacking_direction_pitch";
+    const QString Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw   = "stacking_direction_yaw";
+    const QString Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll  = "stacking_direction_roll";
+
     //================================================================================
     // Experimental Settings
     //================================================================================
@@ -805,14 +812,7 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::SinglePath::kPrevLayerExclusionDistance = "previous_layer_exclusion_distance";
     const QString Constants::ExperimentalSettings::SinglePath::kCornerExclusionDistance = "corner_exclusion_distance";
     const QString Constants::ExperimentalSettings::SinglePath::kMaxBridgeLength = "max_bridge_length";
-    const QString Constants::ExperimentalSettings::SinglePath::kMinBridgeSeparation = "min_bridge_separation";
-
-    // Slicing Angle
-    const QString Constants::ExperimentalSettings::SlicingAngle::kEnableCustomAxis = "define_custom_axis";
-    const QString Constants::ExperimentalSettings::SlicingAngle::kSlicingAxis = "slicing_axis";
-    const QString Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch = "stacking_direction_pitch";
-    const QString Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionYaw   = "stacking_direction_yaw";
-    const QString Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionRoll  = "stacking_direction_roll";
+    const QString Constants::ExperimentalSettings::SinglePath::kMinBridgeSeparation = "min_bridge_separation";    
 
     // RPBF Slicing
     const QString Constants::ExperimentalSettings::RPBFSlicing::kSectorSize = "sector_size";
