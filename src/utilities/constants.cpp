@@ -808,8 +808,6 @@ namespace ORNL
     const QString Constants::ExperimentalSettings::SinglePath::kMinBridgeSeparation = "min_bridge_separation";
 
     // Slicing Angle
-    const QString Constants::ExperimentalSettings::SlicingAngle::kEnableAutoRotate = "enable_auto_rotate";
-    const QString Constants::ExperimentalSettings::SlicingAngle::kEnableMultiBranch = "enable_multibranch";
     const QString Constants::ExperimentalSettings::SlicingAngle::kEnableCustomAxis = "define_custom_axis";
     const QString Constants::ExperimentalSettings::SlicingAngle::kSlicingAxis = "slicing_axis";
     const QString Constants::ExperimentalSettings::SlicingAngle::kStackingDirectionPitch = "stacking_direction_pitch";

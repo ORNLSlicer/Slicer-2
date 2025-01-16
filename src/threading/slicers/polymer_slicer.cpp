@@ -38,10 +38,6 @@ namespace ORNL {
                 return true; // Cancel Slicing
             }
 
-            if (global_settings->setting<bool>(Constants::ExperimentalSettings::SlicingAngle::kEnableMultiBranch)) {
-                SlicingUtilities::SegmentRoot(global_settings, CSM->parts());
-            }
-
             return false; // No error, so continune slicing
         });
 

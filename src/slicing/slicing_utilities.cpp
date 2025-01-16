@@ -11,24 +11,6 @@
 namespace ORNL
 {
 
-    void SlicingUtilities::SegmentRoot(QSharedPointer<SettingsBase> sb, QMap<QString, QSharedPointer<Part>> parts)
-    {
-        bool enable_auto_rotate = sb->setting<bool>(Constants::ExperimentalSettings::SlicingAngle::kEnableAutoRotate);
-        if(enable_auto_rotate)
-        {
-            // Find the first non-clipping mesh part to segment
-            for(QSharedPointer<Part> part : parts)
-            {
-                if(part->rootMesh()->type() != MeshType::kBuild)
-                {
-                    part->clearSubMeshes(); // Reset sub-meshes to re-compute
-                    part->clearSteps();
-                    part->segmentRootMesh();
-                }
-            }
-        }
-    }
-
     QVector<QSharedPointer<MeshBase>> SlicingUtilities::GetMeshesByType(QMap<QString, QSharedPointer<Part> > parts, MeshType mt)
     {
         QVector<QSharedPointer<MeshBase>> meshes;
@@ -117,21 +99,7 @@ namespace ORNL
         Point mesh_min;
         Point mesh_max;
 
-        // Configure for auto slicing angle
-        bool enable_auto_rotate = sb->setting<bool>(Constants::ExperimentalSettings::SlicingAngle::kEnableAutoRotate);
-        if(enable_auto_rotate)
-        {
-            skeleton->compute();
-            skeleton->order();
-            skeleton->extend();
-
-            mesh_min = skeleton->getFirstPoint();
-            mesh_max = skeleton->getLastPoint();
-        }
-        else
-        {
-            std::tie(mesh_min, mesh_max) = mesh->getAxisExtrema(slicing_plane.normal());
-        }
+        std::tie(mesh_min, mesh_max) = mesh->getAxisExtrema(slicing_plane.normal());
 
         // Move slicing plane to start at min on the part
         slicing_plane.point(mesh_min);
@@ -143,25 +111,20 @@ namespace ORNL
     {
         Distance layer_height = sb->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
 
-        if(sb->setting<bool>(Constants::ExperimentalSettings::SlicingAngle::kEnableAutoRotate))
-            slicing_plane = skeleton->findNextPlane((layer_height() / 2) + (last_height() / 2));
+        // move the plane by translating its point along the appropriate axis
+        if(sb->setting<bool>(Constants::ExperimentalSettings::SlicingAngle::kEnableCustomAxis))
+        {
+            Axis slicing_axis = static_cast<Axis>(sb->setting<int>(Constants::ExperimentalSettings::SlicingAngle::kSlicingAxis));
+            if (slicing_axis == Axis::kX)
+                slicing_plane.shiftX((layer_height() / 2) + (last_height() / 2));
+            else if (slicing_axis == Axis::kY)
+                slicing_plane.shiftY((layer_height() / 2) + (last_height() / 2));
+            else //slicing_axis == Axis::kZ
+                slicing_plane.shiftZ((layer_height() / 2) + (last_height() / 2));
+        }
         else
         {
-            // move the plane by translating its point along the appropriate axis
-            if(sb->setting<bool>(Constants::ExperimentalSettings::SlicingAngle::kEnableCustomAxis))
-            {
-                Axis slicing_axis = static_cast<Axis>(sb->setting<int>(Constants::ExperimentalSettings::SlicingAngle::kSlicingAxis));
-                if (slicing_axis == Axis::kX)
-                    slicing_plane.shiftX((layer_height() / 2) + (last_height() / 2));
-                else if (slicing_axis == Axis::kY)
-                    slicing_plane.shiftY((layer_height() / 2) + (last_height() / 2));
-                else //slicing_axis == Axis::kZ
-                    slicing_plane.shiftZ((layer_height() / 2) + (last_height() / 2));
-            }
-            else
-            {
-                slicing_plane.shiftAlongNormal((layer_height() / 2) + (last_height() / 2));
-            }
+            slicing_plane.shiftAlongNormal((layer_height() / 2) + (last_height() / 2));
         }
     }
 

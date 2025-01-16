@@ -925,8 +925,6 @@ namespace ORNL
             class SlicingAngle
             {
             public:
-                static const QString kEnableAutoRotate;
-                static const QString kEnableMultiBranch;
                 static const QString kEnableCustomAxis;
                 static const QString kSlicingAxis;
                 static const QString kStackingDirectionPitch;
