@@ -1013,6 +1013,7 @@ namespace ORNL
                 static const QString kAML3DWeaveLength;
                 static const QString kAML3DWeaveWidth;
                 static const QString kSandiaOutput;
+                static const QString kSandiaMetalFile;
                 static const QString kMarlinOutput;
                 static const QString kMarlinTravels;
                 static const QString kSimulationOutput;

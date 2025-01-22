@@ -25,7 +25,7 @@ void GCodeSandiaSaver::run()
     QChar comma(','), newline('\n'), space(' '), x('X'), y('Y'), z('Z'), f('F'), s('S'), zero('0');
     qint16 layerNum = 0;
     QStringList lines = m_text.split(newline);
-    QString G0("G0"), G1("G1"), M3("M3"), M5("M5"), commaSpace(", ");
+    QString G0("G0"), G1("G1"), M3("M3 "), M5("M5"), commaSpace(", ");
     QString xval, yval, zval, velocity, feedrate;
     QString maxVelocity = QString::number(GSM->getGlobal()->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kMaxXYSpeed).to(m_selected_meta.m_velocity_unit), 'f', 4);
     zval = QString::number(GSM->getGlobal()->setting<Distance>(Constants::PrinterSettings::Dimensions::kZMax).to(m_selected_meta.m_distance_unit), 'f', 4);
@@ -49,9 +49,13 @@ void GCodeSandiaSaver::run()
     QTextStream out(&file);
 
     out << "&ACCESS RVP" % newline;
-    out << "dInit()" % newline;
-    out << "BAS(#BASE, 1)" % newline;
-    out << "BAS(#TOOL,2)" % newline;
+    if (!(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::FileOutput::kSandiaMetalFile)))
+    {
+        out << "dInit()" % newline;
+        out << "BAS(#BASE, 1)" % newline;
+        out << "BAS(#TOOL,2)" % newline;
+    }
+
 
     QString line;
 
@@ -86,7 +90,15 @@ void GCodeSandiaSaver::run()
         {
             if (i+1<lines.size() && lines[i+1].startsWith(M5))
             {
-                out << "dEarlyStop()" % newline;
+                if (!(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::FileOutput::kSandiaMetalFile)))
+                {
+                    out << "dEarlyStop()" % newline;
+                }
+                else
+                {
+                    out << "fEarlyOff()" % newline;
+                }
+
             }
             QString temp = line.mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
             QVector<QStringRef> params = temp.splitRef(space);
@@ -119,14 +131,32 @@ void GCodeSandiaSaver::run()
         }
         else if(line.startsWith(M3))
         {
-            out << "dStartPrinting()" % newline;
+            if (!(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::FileOutput::kSandiaMetalFile)))
+            {
+                out << "dStartPrinting()" % newline;
+            }
+            else
+            {
+                out << "fDelayStart()" % newline;
+            }
         }
         else if(line.startsWith(M5))
         {
-            out << "dWaitForStop()" % newline;
+            if (!(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::FileOutput::kSandiaMetalFile)))
+            {
+                out << "dWaitForStop()" % newline;
+            }
+            else
+            {
+                out << "fWaitForOff()" % newline;
+            }
         }
     }
-    out << newline % "dShutdown()";
+    if (!(GSM->getGlobal()->setting<int>(Constants::ExperimentalSettings::FileOutput::kSandiaMetalFile)))
+    {
+        out << newline % "dShutdown()";
+    }
+
     out << newline % "END";
     file.close();
 }
