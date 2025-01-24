@@ -13,7 +13,6 @@
 #include "step/layer/regions/perimeter.h"
 #include "windows/dialogs/template_save.h"
 #include "windows/dialogs/cs_dbg.h"
-#include "windows/dialogs/emboss_dialog.h"
 #include "threading/session_loader.h"
 #include "managers/session_manager.h"
 #include "managers/preferences_manager.h"
@@ -383,7 +382,6 @@ namespace ORNL {
         m_actions["sel_printer"]       = {"Select Printer",                ":/icons/3d_printer.png",           false,  QKeySequence(),                     nullptr};
         m_actions["load_model"]        = {"Load Model for Building",       ":/icons/file_black.png",           false,  QKeySequence(tr("Ctrl+o")),         nullptr};
         m_actions["load_point_cloud"]  = {"Load Point Cloud",              ":/icons/file_cloud_black.png",           false,  QKeySequence(),                     nullptr};
-        m_actions["load_emboss_model"] = {"Load Model For Embossing",      ":/icons/file_black.png",           false,  QKeySequence(),                     nullptr};
         m_actions["last_session"]      = {"Restore Last Session",          ":/icons/restore_session_black.png",false,  QKeySequence(),                     nullptr};
         m_actions["slice"]             = {"Slice",                         ":/icons/layers_black.png",         false,  QKeySequence(tr("Ctrl+g")),         nullptr};
         m_actions["screenshot"]        = {"Take Screenshot",               ":/icons/screenshot_black.png",     false,  QKeySequence(),                     nullptr};
@@ -472,8 +470,6 @@ namespace ORNL {
         m_menu_file->addAction(m_actions["sel_printer"].action);
         m_menu_file->addAction(m_actions["load_model"].action);
         m_menu_file->addAction(m_actions["load_point_cloud"].action);
-        m_menu_file->addAction(m_actions["load_emboss_model"].action);
-        m_actions["load_emboss_model"].action->setVisible(false);
         m_menu_file->addAction(m_actions["last_session"].action);
         m_menu_file->addSeparator();
         m_menu_file->addAction(m_actions["slice"].action);
@@ -652,7 +648,6 @@ namespace ORNL {
         m_actions["gcode_export"].action->setEnabled(false);
         m_actions["build_log"].action->setEnabled(false);
 
-        m_actions["load_emboss_model"].action->setEnabled(true);
         m_actions["sel_printer"].action->setEnabled(false);
         m_actions["python_int"].action->setEnabled(false);
         m_actions["debug"].action->setEnabled(true);
@@ -687,7 +682,6 @@ namespace ORNL {
 
         connect(m_actions["load_model"].action, &QAction::triggered, this, [this](){loadModel(MeshType::kBuild);});
         connect(m_actions["load_point_cloud"].action, &QAction::triggered, this, [this](){loadPointCloud();});
-        connect(m_actions["load_emboss_model"].action, &QAction::triggered, this, &MainWindow::loadEmbossModel);
         connect(m_actions["slice"].action, &QAction::triggered, m_part_widget, &PartWidget::preSliceUpdate);
         connect(m_actions["exit"].action, &QAction::triggered, qApp, &QApplication::quit);
 
@@ -901,18 +895,7 @@ namespace ORNL {
 
     void MainWindow::handleModifiedSetting(const QString key)
     {
-        static const auto emboss_settings = QSet<QString> {
-            Constants::PrinterSettings::Embossing::kEnableEmbossing
-        };
 
-        if (emboss_settings.contains(key)) {
-            if (GSM->getGlobal()->setting<bool>(Constants::PrinterSettings::Embossing::kEnableEmbossing)) {
-                m_actions["load_emboss_model"].action->setVisible(true);
-            }
-            else {
-                m_actions["load_emboss_model"].action->setVisible(false);
-            }
-        }
     }
 
     QList<QAction*> MainWindow::setupSettingActions(QMenu* submenu, QString panel)
@@ -1084,13 +1067,6 @@ namespace ORNL {
                                                               CSM->getMostRecentModelLocation(),
                                                               QObject::tr("Model File (*.stl *.3mf *.obj *.amf)"));
         }
-        else if(mt == MeshType::kEmbossSubmesh)
-        {
-            filepaths = QFileDialog::getOpenFileNames(nullptr,
-                                                              QObject::tr("Open STL embossing file"),
-                                                              CSM->getMostRecentModelLocation(),
-                                                              QObject::tr("Model File (*.stl *.3mf *.obj *.amf)"));
-        }
         else
         {
             filepaths = QFileDialog::getOpenFileNames(nullptr,
@@ -1130,25 +1106,6 @@ namespace ORNL {
             if(new_mesh != nullptr)
                 CSM->addPart(new_mesh);
         }
-    }
-
-    void MainWindow::loadEmbossModel() {
-        EmbossDialog* dia = new EmbossDialog(m_part_widget->parts(), this);
-        dia->exec();
-
-        int r = dia->result();
-
-        if (r) {
-            QSharedPointer<Part> p = dia->resultPart();
-            if (!p.isNull() && !p->children().empty()) {
-                CSM->addPart(p);
-                for (auto& cp : p->children()) {
-                    CSM->addPart(cp, false);
-                }
-            }
-        }
-
-        delete dia;
     }
 
     void MainWindow::importGCode()
@@ -1408,7 +1365,6 @@ namespace ORNL {
         m_actions["sel_printer"].action->setDisabled(lock);
         m_actions["load_model"].action->setDisabled(lock);
         m_actions["load_point_cloud"].action->setDisabled(lock);
-        m_actions["load_emboss_model"].action->setDisabled(lock);
         m_actions["last_session"].action->setDisabled(lock);
         m_actions["slice"].action->setDisabled(lock);
 

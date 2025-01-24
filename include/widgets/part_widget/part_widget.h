@@ -13,7 +13,6 @@
 #include <QWidget>
 
 // Local
-#include "graphics/view/emboss_view.h"
 #include "graphics/view/gcode_view.h"
 #include "graphics/view/part_view.h"
 #include "part/part.h"

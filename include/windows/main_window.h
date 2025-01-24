@@ -129,9 +129,6 @@ namespace ORNL {
             //! \brief Start the slicing.
             void doSlice();
 
-            //! \brief Load up parts to be embossed on a metal wall.
-            void loadEmbossModel();
-
             //! \brief Import GCode
             void importGCode();
 

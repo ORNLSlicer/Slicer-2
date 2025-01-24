@@ -370,10 +370,7 @@ namespace ORNL {
         Velocity default_speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Perimeter::kSpeed);
         Acceleration default_acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kPerimeter);
         AngularVelocity default_extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Perimeter::kExtruderSpeed);
-        float default_esp_value                 = m_sb->setting< float >(Constants::PrinterSettings::Embossing::kESPNominalValue);
         int material_number                     = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kPerimterNum);
-
-        bool embossing_enable = m_sb->setting<bool>(Constants::PrinterSettings::Embossing::kEnableEmbossing);
 
         int end_cond = line.size();
         bool isSpiralized = m_sb->setting<bool>(Constants::ProfileSettings::SpecialModes::kEnableSpiralize);
@@ -442,11 +439,6 @@ namespace ORNL {
                     segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kPerimeter);
 
-                    if (embossing_enable) {
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kESP, is_settings_region ? start.getSettings()->setting< float >(Constants::PrinterSettings::Embossing::kESPEmbossingValue) : default_esp_value);
-                        if (is_settings_region) segment->getSb()->setSetting(Constants::SegmentSettings::kPathModifiers, PathModifiers::kEmbossing);
-                    }
-
                     new_path.append(segment);
                     is_settings_region = !is_settings_region;
                     start = point;
@@ -462,11 +454,6 @@ namespace ORNL {
             segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    is_settings_region ? start.getSettings()->setting< AngularVelocity >(Constants::ProfileSettings::Perimeter::kExtruderSpeed) : default_extruder_speed);
             segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
             segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kPerimeter);
-
-            if (embossing_enable) {
-                segment->getSb()->setSetting(Constants::SegmentSettings::kESP, is_settings_region ? start.getSettings()->setting< float >(Constants::PrinterSettings::Embossing::kESPEmbossingValue) : default_esp_value);
-                if (is_settings_region) segment->getSb()->setSetting(Constants::SegmentSettings::kPathModifiers, PathModifiers::kEmbossing);
-            }
 
             new_path.append(segment);
         }

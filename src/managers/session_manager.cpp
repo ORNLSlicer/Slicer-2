@@ -733,9 +733,6 @@ namespace ORNL
             case SlicerType::kPolymerSlice:
                 m_ast.reset(new PolymerSlicer(tempGcodeFile));
                 break;
-            case SlicerType::kMetalEmbossingSlice:
-//                m_ast.reset(new ...);
-                break;
             case SlicerType::kMetalSlice:
 //                m_ast.reset(new ...);
                 break;

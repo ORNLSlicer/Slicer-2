@@ -30,10 +30,6 @@ namespace ORNL
                 this->setIcon(0, QIcon(":/icons/gear.png"));
                 this->setToolTip(0, "Settings Mesh");
                 break;
-            case(MeshType::kEmbossSubmesh):
-                this->setIcon(0, QIcon(":/icons/view_front.png"));
-                updateToolTip();
-                break;
         };
     }
 
@@ -74,9 +70,6 @@ namespace ORNL
                 break;
             case(MeshType::kSettings):
                 tooltip.append("Settings Mesh");
-                break;
-            case(MeshType::kEmbossSubmesh):
-                tooltip.append("Emboss Mesh");
                 break;
         };
 

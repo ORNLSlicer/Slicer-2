@@ -138,9 +138,7 @@ namespace ORNL
     //================================================================================
     const QString Constants::RegionTypeStrings::kUnknown            = "unknown";
     const QString Constants::RegionTypeStrings::kPerimeter          = "PERIMETER";
-    const QString Constants::RegionTypeStrings::kPerimeterEmbossing = "PERIMETER EMBOSSING";
     const QString Constants::RegionTypeStrings::kInset              = "INSET";
-    const QString Constants::RegionTypeStrings::kInsetEmbossing     = "INSET EMBOSSING";
     const QString Constants::RegionTypeStrings::kInfill             = "INFILL";
     const QString Constants::RegionTypeStrings::kTopSkin            = "TOP_SKIN";
     const QString Constants::RegionTypeStrings::kBottomSkin         = "BOTTOM_SKIN";
@@ -258,7 +256,6 @@ namespace ORNL
     const QString Constants::PathModifierStrings::kAngledTipWipe     = "ANGLED TIP WIPE";
     const QString Constants::PathModifierStrings::kCoasting   = "COASTING";
     const QString Constants::PathModifierStrings::kSpiralLift = "SPIRAL LIFT";
-    const QString Constants::PathModifierStrings::kEmbossing = "EMBOSSING";
     const QString Constants::PathModifierStrings::kRampingUp = "RAMPING UP";
     const QString Constants::PathModifierStrings::kRampingDown = "RAMPING DOWN";
     const QString Constants::PathModifierStrings::kLeadIn = "LEAD IN";
@@ -344,13 +341,6 @@ namespace ORNL
     const QString Constants::PrinterSettings::GCode::kStartCode = "start_code";
     const QString Constants::PrinterSettings::GCode::kLayerCodeChange = "layer_change_code";
     const QString Constants::PrinterSettings::GCode::kEndCode = "end_code";
-
-    //Embossing
-    const QString Constants::PrinterSettings::Embossing::kEnableEmbossing = "enable_emboss";
-    const QString Constants::PrinterSettings::Embossing::kESPNominalValue = "esp_nominal";
-    const QString Constants::PrinterSettings::Embossing::kESPEmbossingValue = "esp_embossing";
-    const QString Constants::PrinterSettings::Embossing::kEnableESPSpeed = "esp_speed_enable";
-    const QString Constants::PrinterSettings::Embossing::kESPSpeed = "esp_speed";
 
     //================================================================================
     // Material Settings

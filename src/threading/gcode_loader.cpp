@@ -66,9 +66,7 @@ namespace ORNL {
         m_modifier_colors.push_back(PM->getVisualizationColor(VisualizationColors::kLeadIn));
 
         m_perimeter = QStringMatcher(Constants::RegionTypeStrings::kPerimeter.toUpper());
-        m_perimeter_embossing = QStringMatcher(Constants::RegionTypeStrings::kPerimeterEmbossing.toUpper());
         m_inset = QStringMatcher(Constants::RegionTypeStrings::kInset.toUpper());
-        m_inset_embossing = QStringMatcher(Constants::RegionTypeStrings::kInsetEmbossing.toUpper());
         m_infill = QStringMatcher(Constants::RegionTypeStrings::kInfill.toUpper());
         m_skin = QStringMatcher(Constants::RegionTypeStrings::kSkin.toUpper());
         m_skeleton = QStringMatcher(Constants::RegionTypeStrings::kSkeleton.toUpper());
@@ -692,14 +690,8 @@ namespace ORNL {
         if (m_leadin.indexIn(comment) != -1) {
             return PM->getVisualizationColor(VisualizationColors::kLeadIn);
         }
-        if (m_perimeter_embossing.indexIn(comment) != -1) {
-            return PM->getVisualizationColor(VisualizationColors::kEmbossing);
-        }
         if (m_perimeter.indexIn(comment) != -1) {
             return PM->getVisualizationColor(VisualizationColors::kPerimeter);
-        }
-        if (m_inset_embossing.indexIn(comment) != -1) {
-            return PM->getVisualizationColor(VisualizationColors::kEmbossing);
         }
         if (m_inset.indexIn(comment) != -1) {
             return PM->getVisualizationColor(VisualizationColors::kInset);

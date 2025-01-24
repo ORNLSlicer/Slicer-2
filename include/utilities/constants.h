@@ -105,9 +105,7 @@ namespace ORNL
         public:
             static const QString kUnknown;
             static const QString kPerimeter;
-            static const QString kPerimeterEmbossing;
             static const QString kInset;
-            static const QString kInsetEmbossing;
             static const QString kInfill;
             static const QString kTopSkin;
             static const QString kBottomSkin;
@@ -174,7 +172,6 @@ namespace ORNL
             static const QString kAngledTipWipe;
             static const QString kCoasting;
             static const QString kSpiralLift;
-            static const QString kEmbossing;
             static const QString kRampingUp;
             static const QString kRampingDown;
             static const QString kLeadIn;
@@ -285,16 +282,6 @@ namespace ORNL
                 static const QString kLayerCodeChange;
                 static const QString kEndCode;
                 static const QString kRemoveComments;
-            };
-
-            class Embossing
-            {
-            public:
-                static const QString kEnableEmbossing;
-                static const QString kESPNominalValue;
-                static const QString kESPEmbossingValue;
-                static const QString kEnableESPSpeed;
-                static const QString kESPSpeed;
             };
 
 //            /*!

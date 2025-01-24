@@ -10,15 +10,13 @@ namespace ORNL
     BufferedSlicer::BufferedSlicer() {}
 
     BufferedSlicer::BufferedSlicer(const QSharedPointer<MeshBase> &mesh, const QSharedPointer<SettingsBase>& settings,
-                                   QVector<QSharedPointer<Part>> settings_parts,
-                                   QVector<QSharedPointer<Part>> emboss_parts,
+                                   QVector<QSharedPointer<Part>> settings_parts,                                   
                                    QMap<uint, QSharedPointer<SettingsRange>> ranges, int previous_buffer, int future_buffer,
                                    bool use_cgal_cross_section)
     {
         m_mesh = mesh;
         m_settings = settings;
         m_settings_parts = settings_parts;
-        m_emboss_parts = emboss_parts;
         m_settings_ranges = ranges;
         m_use_cgal_cross_section = use_cgal_cross_section;
 
@@ -193,11 +191,6 @@ namespace ORNL
             QVector<SettingsPolygon> settings_polygons;
             computeSettingsPolygons(settings_polygons);
 
-            // Embossing
-            bool enable_embossing = m_settings->setting<bool>(Constants::PrinterSettings::Embossing::kEnableEmbossing);
-            if(enable_embossing)
-                computeEmbossParts(settings_polygons);
-
             SingleExternalGridInfo single_grid;
 //            ExternalGridInfo info = this->getExternalGridInfo();
 //            //if external data is available, calculate index
@@ -259,39 +252,6 @@ namespace ORNL
 
             auto settings = settings_part->getSb();
             settings_polygons.push_back(SettingsPolygon(geometry, settings));
-        }
-    }
-
-    void BufferedSlicer::computeEmbossParts(QVector<SettingsPolygon> &emboss_polygons)
-    {
-        for (const auto& emboss_part : m_emboss_parts)
-        {
-            QSharedPointer<SettingsBase> region_settings = QSharedPointer<SettingsBase>::create(*m_settings);
-
-            region_settings->setSetting(Constants::PrinterSettings::Embossing::kEnableEmbossing,
-                                        m_settings->setting<float>(Constants::PrinterSettings::Embossing::kEnableEmbossing));
-            region_settings->setSetting(Constants::PrinterSettings::Embossing::kESPNominalValue,
-                                        m_settings->setting<float>(Constants::PrinterSettings::Embossing::kESPNominalValue));
-            region_settings->setSetting(Constants::PrinterSettings::Embossing::kESPEmbossingValue,
-                                        m_settings->setting<float>(Constants::PrinterSettings::Embossing::kESPEmbossingValue));
-
-            bool enable_embossing_speed = m_settings->setting<bool>(Constants::PrinterSettings::Embossing::kEnableESPSpeed);
-            if (enable_embossing_speed) {
-                region_settings->setSetting(Constants::ProfileSettings::Perimeter::kSpeed,
-                                            m_settings->setting<Velocity>(Constants::PrinterSettings::Embossing::kESPSpeed));
-                region_settings->setSetting(Constants::ProfileSettings::Inset::kSpeed,
-                                            m_settings->setting<Velocity>(Constants::PrinterSettings::Embossing::kESPSpeed));
-            }
-
-            // Add a settings polys for each island.
-            Point tmp_point;
-            QVector3D tmp_vec;
-
-            PolygonList geometry = CrossSection::doCrossSection(emboss_part->rootMesh(),
-                                                                m_slicing_plane, tmp_point, tmp_vec,
-                                                                m_settings);
-
-            emboss_polygons.push_back(SettingsPolygon(geometry, region_settings));
         }
     }
 }

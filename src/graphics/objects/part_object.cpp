@@ -54,12 +54,6 @@ namespace ORNL {
                 m_base_color = Constants::Colors::kBlue;
                 m_selected_color = Constants::Colors::kPurple;
                 break;
-            case(MeshType::kEmbossSubmesh):
-                m_base_color = Constants::Colors::kPurple;
-                m_selected_color = Constants::Colors::kBlue;
-
-                this->setLocked(true);
-                break;
         }
 
         m_color = m_base_color;
@@ -225,10 +219,6 @@ namespace ORNL {
             case(MeshType::kSettings):
                 m_base_color = Constants::Colors::kBlue;
                 m_selected_color = Constants::Colors::kPurple;
-                break;
-            case(MeshType::kEmbossSubmesh):
-                m_base_color = Constants::Colors::kPurple;
-                m_selected_color = Constants::Colors::kBlue;
                 break;
         }
 

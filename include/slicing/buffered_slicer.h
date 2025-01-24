@@ -47,14 +47,12 @@ namespace ORNL
             //! \param mesh the mesh to perform slicing on
             //! \param settings the settings to use for this mesh
             //! \param settings_parts the settings parts that also need sliced and applied
-            //! \param emboss_parts the emboss parts that also need sliced and apllied
             //! \param ranges the ranges the apply settings along
             //! \param previous_buffer the number of past slices to track
             //! \param future_buffer the numer of future slices to buffer
             //! \param use_cgal_cross_section use cgal cross-sectioning in place of ORNL slicer 2's
             BufferedSlicer(const QSharedPointer<MeshBase>& mesh, const QSharedPointer<SettingsBase>& settings,
                            QVector<QSharedPointer<Part>> settings_parts,
-                           QVector<QSharedPointer<Part>> emboss_parts,
                            QMap<uint, QSharedPointer<SettingsRange>> ranges = QMap<uint, QSharedPointer<SettingsRange>>(),
                            int previous_buffer = 0, int future_buffer = 0,
                            bool use_cgal_cross_section = false);
@@ -90,10 +88,6 @@ namespace ORNL
             //! \brief computes cross-sections for settings parts and extracts their geometry
             //! \param settings_polygons a vector to fill with settings polygons
             void computeSettingsPolygons(QVector<SettingsPolygon>& settings_polygons);
-
-            //! \brief computes cross-sections for emboss parts and extracts their geometry
-            //! \param settings_polygons a vector to fill with emboss settings polygons
-            void computeEmbossParts(QVector<SettingsPolygon>& settings_polygons);
 
             //! \brief the mesh this slicer is slicing
             QSharedPointer<MeshBase> m_mesh;
@@ -140,9 +134,6 @@ namespace ORNL
 
             //! \brief list of settings parts being tracked
             QVector<QSharedPointer<Part>> m_settings_parts;
-
-            //! \brief list of emboss parts being tracked
-            QVector<QSharedPointer<Part>> m_emboss_parts;
 
             #ifdef NVCC_FOUND
             //! \brief Only compiled with if NVCC is on the system

@@ -43,7 +43,6 @@ namespace ORNL
     {
         kBuild,
         kClipping,
-        kEmbossSubmesh,
         kSettings,
         kSupport
     };
@@ -89,12 +88,11 @@ namespace ORNL
      */
     enum class SlicerType : uint8_t {
         kPolymerSlice           = 0,
-        kMetalEmbossingSlice    = 1,
-        kMetalSlice             = 2,
-        kRPBFSlice              = 3,
-        kRealTimePolymer        = 4,
-        kRealTimeRPBF           = 5,
-        kImageSlice             = 6
+        kMetalSlice             = 1,
+        kRPBFSlice              = 2,
+        kRealTimePolymer        = 3,
+        kRealTimeRPBF           = 4,
+        kImageSlice             = 5
     };
 
     //! \brief Function for going from json to SlicerType
@@ -513,11 +511,10 @@ namespace ORNL
         kCoasting         = 1 << 6,
         kPrestart         = 1 << 7,
         kSpiralLift       = 1 << 8,
-        kEmbossing        = 1 << 9,
-        kRampingUp        = 1 << 10,
-        kRampingDown      = 1 << 11,
-        kLeadIn           = 1 << 12,
-        kFlyingStart      = 1 << 13
+        kRampingUp        = 1 << 9,
+        kRampingDown      = 1 << 10,
+        kLeadIn           = 1 << 11,
+        kFlyingStart      = 1 << 12
     };
 
 
@@ -577,8 +574,6 @@ namespace ORNL
             return Constants::PathModifierStrings::kPrestart;
         case PathModifiers::kSpiralLift:
             return Constants::PathModifierStrings::kSpiralLift;
-        case PathModifiers::kEmbossing:
-            return Constants::PathModifierStrings::kEmbossing;
         case PathModifiers::kRampingUp:
             return Constants::PathModifierStrings::kRampingUp;
         case PathModifiers::kRampingDown:
@@ -783,7 +778,6 @@ namespace ORNL
     {
         kBrim = 0,
         kCoasting,
-        kEmbossing,
         kInfill,
         kInitialStartup,
         kInset,
@@ -816,7 +810,6 @@ namespace ORNL
         switch (color){
             case VisualizationColors::kBrim: return "Brim";
             case VisualizationColors::kCoasting: return "Coasting";
-            case VisualizationColors::kEmbossing: return "Embossing";
             case VisualizationColors::kInfill: return "Infill";
             case VisualizationColors::kInitialStartup: return "InitialStartup";
             case VisualizationColors::kInset: return "Inset";
@@ -859,7 +852,6 @@ namespace ORNL
         switch (color){
         case VisualizationColors::kBrim: return QColor(200,113,55, 255);
             case VisualizationColors::kCoasting: return QColor(211,95,141, 255);
-            case VisualizationColors::kEmbossing: return QColor(255,0,0,255).lighter();
             case VisualizationColors::kInfill: return QColor(0,255,0, 255);
             case VisualizationColors::kInitialStartup: return QColor(135,222,205, 255);
             case VisualizationColors::kInset: return QColor(0,204,255, 255);
