@@ -42,7 +42,7 @@ namespace ORNL
         }
 
         QFileInfo fi(m_filename);
-        QString filePath = fi.absolutePath() + "\\" + fi.baseName() + "_output.apt";
+        QString filePath = fi.absolutePath() + QDir::separator() + fi.baseName() + "_output.apt";
 
         QFile file(filePath);
         file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text);

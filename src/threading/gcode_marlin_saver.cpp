@@ -45,7 +45,7 @@ void GCodeMarlinSaver::run()
     }
 
     QFileInfo fi(m_filename);
-    QString filePath = fi.absolutePath() + "\\" + fi.baseName() + "_command_data.txt";
+    QString filePath = fi.absolutePath() + QDir::separator() + fi.baseName() + "_command_data.txt";
 
     QFile file(filePath);
     file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text);

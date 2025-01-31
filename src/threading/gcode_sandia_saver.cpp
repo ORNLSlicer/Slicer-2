@@ -42,7 +42,7 @@ void GCodeSandiaSaver::run()
     }
 
     QFileInfo fi(m_filename);
-    QString filePath = fi.absolutePath() + "\\" + fi.baseName() + "_output.src";
+    QString filePath = fi.absolutePath() + QDir::separator() + fi.baseName() + "_output.src";
 
     QFile file(filePath);
     file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text);
