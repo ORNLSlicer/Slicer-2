@@ -7,6 +7,7 @@
 #include <QUrl>
 #include <QIcon>
 #include <QFile>
+#include <qdatetime.h>
 
 #include "managers/gpu_manager.h"
 #include "utilities/qt_json_conversion.h"
@@ -77,7 +78,8 @@ namespace ORNL
         connect(bugReport, &QLabel::linkActivated, [](const QString &link) { QDesktopServices::openUrl(QUrl(link));});
         layout->addWidget(bugReport, 6, 0, 1, 2, Qt::AlignCenter);
 
-        layout->addWidget(new QLabel("Copyright © 2025"), 7, 0, 1, 2, Qt::AlignCenter);
+        int curr_year = QDate::currentDate().year();
+        layout->addWidget(new QLabel("Copyright © " + QString::number(curr_year)), 7, 0, 1, 2, Qt::AlignCenter);
 
         this->setLayout(layout);
     }
