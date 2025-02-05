@@ -80,20 +80,24 @@ namespace ORNL
         // invert the slicing plane normal if necessary
         // normal must be a positive direction for comparisons to determine which side of the plane a point is on
         QVector3D axis_vector;
-        if (slicing_axis == Axis::kX)
-            axis_vector = QVector3D(1, 0, 0);
-        else if (slicing_axis == Axis::kY)
-            axis_vector = QVector3D(0, 1, 0);
-        else //slicing_axis == Axis::kZ
-            axis_vector = QVector3D(0, 0, 1);
+        switch (slicing_axis) {
+            case Axis::kX:
+                axis_vector = QVector3D(1, 0, 0);
+                break;
+            case Axis::kY:
+                axis_vector = QVector3D(0, 1, 0);
+                break;
+            case Axis::kZ:
+                axis_vector = QVector3D(0, 0, 1);
+                break;
+        }
 
-        float dot_product = QVector3D::dotProduct(slicing_plane.normal(), axis_vector);
-        if (dot_product < 0 )
+        if (QVector3D::dotProduct(slicing_plane.normal(), axis_vector) < 0 ) {
             slicing_plane.normal(slicing_plane.normal() * -1);
+        }
 
         // Find the min & max located on the mesh
-        Point mesh_min;
-        Point mesh_max;
+        Point mesh_min, mesh_max;
 
         std::tie(mesh_min, mesh_max) = mesh->getAxisExtrema(slicing_plane.normal());
 
