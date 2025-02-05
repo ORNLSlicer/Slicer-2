@@ -1077,8 +1077,8 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createBuildVolumeRectangle(QVector3D min, QVector3D max, float x_grid_dist, float x_grid_offset, float y_grid_dist,
-                                                  float y_grid_offset, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors)
+    void ShapeFactory::createBuildVolumeRectangle(const QVector3D& min, const QVector3D& max, const float& x_grid_dist, const float& x_grid_offset, const float& y_grid_dist,
+                                                  const float& y_grid_offset, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors)
     {
         float printer_x_min = min.x();
         float printer_x_max = max.x();

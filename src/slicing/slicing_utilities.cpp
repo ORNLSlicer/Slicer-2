@@ -61,10 +61,6 @@ namespace ORNL
         {
             while(part_start < current_steps && !part->stepGroupContains(part_start, StepType::kLayer))
                 ++part_start;
-//            QList<QSharedPointer<IslandBase>> first_layer_islands = part->step(0, StepType::kLayer).dynamicCast<Layer>()->getIslands();
-
-//            while(part_start < current_steps && part->step(part_start, StepType::kLayer).dynamicCast<Layer>()->getIslands(IslandType::kRaft).size() > 0)
-//                ++part_start;
         }
         return part_start;
     }
@@ -112,19 +108,22 @@ namespace ORNL
         Distance layer_height = sb->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
 
         // move the plane by translating its point along the appropriate axis
-        if(sb->setting<bool>(Constants::ProfileSettings::SlicingAngle::kEnableCustomAxis))
-        {
+        if (sb->setting<bool>(Constants::ProfileSettings::SlicingAngle::kEnableCustomAxis)) {
             Axis slicing_axis = static_cast<Axis>(sb->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis));
-            if (slicing_axis == Axis::kX)
-                slicing_plane.shiftX((layer_height() / 2) + (last_height() / 2));
-            else if (slicing_axis == Axis::kY)
-                slicing_plane.shiftY((layer_height() / 2) + (last_height() / 2));
-            else //slicing_axis == Axis::kZ
-                slicing_plane.shiftZ((layer_height() / 2) + (last_height() / 2));
+            switch (slicing_axis) {
+                case Axis::kX:
+                    slicing_plane.shiftX((layer_height() / 2.) + (last_height() / 2.));
+                    break;
+                case Axis::kY:
+                    slicing_plane.shiftY((layer_height() / 2.) + (last_height() / 2.));
+                    break;
+                case Axis::kZ:
+                    slicing_plane.shiftZ((layer_height() / 2.) + (last_height() / 2.));
+                    break;
+            }
         }
-        else
-        {
-            slicing_plane.shiftAlongNormal((layer_height() / 2) + (last_height() / 2));
+        else {
+            slicing_plane.shiftAlongNormal((layer_height() / 2.) + (last_height() / 2.));
         }
     }
 

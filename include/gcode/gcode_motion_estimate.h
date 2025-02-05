@@ -20,11 +20,11 @@ namespace ORNL
         //! \param G1F_time, G1 commands execution time estimates
         //! \param layer_time, accumulated time estimate for the entire layer
         //! \param layer_volume, accumulated volume estimate for the entire layer
-        //! \param useB, if using B filament axis, time calculation is based on extrusion not X/Y/Z distance
+        //! \param use_b, if using B filament axis, time calculation is based on extrusion not X/Y/Z distance
         static Distance calculateTimeAndVolume(
                 int layer, bool isFIncluded, bool isGOCommand, QVector<bool> extrudersOn,
                 Time &G1F_time, Time &layer_time,
-                Volume &layer_volume, bool useB);
+                Volume &layer_volume, bool use_b);
 
         static Acceleration m_v_acceleration;
         static Acceleration m_xy_acceleration;

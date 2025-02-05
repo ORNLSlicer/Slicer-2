@@ -288,9 +288,7 @@ namespace ORNL
             }
 
 
-            if(m_most_recent_meta == GcodeMetaList::RPBFMeta)
-            {
-                bool ok;
+            if (m_most_recent_meta == GcodeMetaList::RPBFMeta) {
                 Angle clockAngle = GSM->getGlobal()->setting<Angle>(Constants::ExperimentalSettings::RPBFSlicing::kClockingAngle);
 
                 bool use_sector_offsetting = GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::RPBFSlicing::kSectorOffsettingEnable);
@@ -301,72 +299,51 @@ namespace ORNL
                 connect(saver, &GCodeRPBFSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
-            else if((m_most_recent_meta == GcodeMetaList::MarlinMeta || m_most_recent_meta == GcodeMetaList::CincinnatiMeta)&& GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kSimulationOutput))
-            {
-                bool ok;
-
+            else if ((m_most_recent_meta == GcodeMetaList::MarlinMeta || m_most_recent_meta == GcodeMetaList::CincinnatiMeta)&& GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kSimulationOutput)) {
                 GCodeSimulationOutput* saver = new GCodeSimulationOutput(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
                 connect(saver, &GCodeSimulationOutput::finished, saver, &GCodeSimulationOutput::deleteLater);
                 connect(saver, &GCodeSimulationOutput::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
-            else if(m_most_recent_meta == GcodeMetaList::MeldMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kMeldCompanionOutput))
-            {
-                bool ok;
-
+            else if (m_most_recent_meta == GcodeMetaList::MeldMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kMeldCompanionOutput)) {
                 GCodeMeldSaver* saver = new GCodeMeldSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
                 connect(saver, &GCodeMeldSaver::finished, saver, &GCodeMeldSaver::deleteLater);
                 connect(saver, &GCodeMeldSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
-            else if(m_most_recent_meta == GcodeMetaList::TormachMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kTormachOutput))
-            {
-                bool ok;
-
+            else if (m_most_recent_meta == GcodeMetaList::TormachMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kTormachOutput)) {
                 GCodeTormachSaver* saver = new GCodeTormachSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
                 connect(saver, &GCodeTormachSaver::finished, saver, &GCodeTormachSaver::deleteLater);
                 connect(saver, &GCodeTormachSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
-            else if(m_most_recent_meta == GcodeMetaList::AML3DMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kAML3DOutput))
-            {
-                bool ok;
-
+            else if (m_most_recent_meta == GcodeMetaList::AML3DMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kAML3DOutput)) {
                 GCodeAML3DSaver* saver = new GCodeAML3DSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
                 connect(saver, &GCodeAML3DSaver::finished, saver, &GCodeAML3DSaver::deleteLater);
                 connect(saver, &GCodeAML3DSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
-            else if(m_most_recent_meta == GcodeMetaList::SandiaMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kSandiaOutput))
-            {
-                bool ok;
-
+            else if (m_most_recent_meta == GcodeMetaList::SandiaMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kSandiaOutput)) {
                 GCodeSandiaSaver* saver = new GCodeSandiaSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
                 connect(saver, &GCodeSandiaSaver::finished, saver, &GCodeSandiaSaver::deleteLater);
                 connect(saver, &GCodeSandiaSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
-            else if(m_most_recent_meta == GcodeMetaList::MarlinMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kMarlinOutput))
-            {
-                bool ok;
-
+            else if (m_most_recent_meta == GcodeMetaList::MarlinMeta && GSM->getGlobal()->setting<bool>(Constants::ExperimentalSettings::FileOutput::kMarlinOutput)) {
                 GCodeMarlinSaver* saver = new GCodeMarlinSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
                 connect(saver, &GCodeMarlinSaver::finished, saver, &GCodeMarlinSaver::deleteLater);
                 connect(saver, &GCodeMarlinSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
-            else if(m_most_recent_meta == GcodeMetaList::AdamantineMeta)
-            {
+            else if (m_most_recent_meta == GcodeMetaList::AdamantineMeta) {
                 GCodeAdamantineSaver* saver = new GCodeAdamantineSaver(m_location, filepath, gcodeFileName, text, m_most_recent_meta);
                 connect(saver, &GCodeAdamantineSaver::finished, saver, &GCodeAdamantineSaver::deleteLater);
                 connect(saver, &GCodeAdamantineSaver::finished, this, [this, filepath, partName] () { showComplete(filepath, partName); });
                 saver->start();
             }
-            else
-            {
+            else {
                 QFile tempFile(m_location % "temp");
-                if (tempFile.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
-                {
+                if (tempFile.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
                     QTextStream out(&tempFile);
                     out << text;
                     tempFile.close();
