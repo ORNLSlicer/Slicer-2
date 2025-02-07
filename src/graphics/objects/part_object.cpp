@@ -275,22 +275,6 @@ namespace ORNL {
     }
 
     void PartObject::overhangUpdate() {
-        // From old graphics part.
-        QMatrix4x4 objectTransform = this->transformation();
-
-        QMatrix4x4 rot;
-        rot.rotate(this->rotation());
-
-        const std::vector<float>& vertices = this->vertices();
-        const std::vector<float>& normals = this->normals();
-        const std::vector<float>& colors = this->colors();
-
-        std::vector<float> new_colors = colors;
-        new_colors.resize(colors.size());
-
-        QColor color_to_set;
-        int j = 0;
-
         QSharedPointer<SettingsBase> global_sb = GSM->getGlobal();
         Angle stacking_pitch = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
         Angle stacking_yaw   = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
