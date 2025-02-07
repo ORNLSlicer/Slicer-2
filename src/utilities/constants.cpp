@@ -782,9 +782,9 @@ namespace ORNL
     // Slicing Angle
     const QString Constants::ProfileSettings::SlicingAngle::kEnableCustomAxis = "define_custom_axis";
     const QString Constants::ProfileSettings::SlicingAngle::kSlicingAxis = "slicing_axis";
-    const QString Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch = "stacking_direction_pitch";
-    const QString Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw   = "stacking_direction_yaw";
-    const QString Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll  = "stacking_direction_roll";
+    const QString Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX = "slicing_plane_normal_x";
+    const QString Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY   = "slicing_plane_normal_y";
+    const QString Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ  = "slicing_plane_normal_z";
 
     //================================================================================
     // Experimental Settings

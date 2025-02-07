@@ -887,9 +887,9 @@ namespace ORNL
             public:
                 static const QString kEnableCustomAxis;
                 static const QString kSlicingAxis;
-                static const QString kStackingDirectionPitch;
-                static const QString kStackingDirectionYaw;
-                static const QString kStackingDirectionRoll;
+                static const QString kSlicingPlaneNormalX;
+                static const QString kSlicingPlaneNormalY;
+                static const QString kSlicingPlaneNormalZ;
             };
 
         };
