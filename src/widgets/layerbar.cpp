@@ -1420,30 +1420,26 @@ namespace ORNL
             return;
         }
 
-        Point part_min = m_part->rootMesh()->min();
-        Point part_max = m_part->rootMesh()->max();
-        Plane slicing_plane(part_min, QVector3D(0, 0, 1)); //default plane
+        // Retrieve the slicing axis vector
+        QVector3D slicing_vector = {0, 0, 0};
+        slicing_vector[GSM->getGlobal()->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis)] = 1;
 
-        //get slicing settings and adjust plane
-        Axis slicing_axis = static_cast<Axis>(GSM->getGlobal()->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis));
-        Angle slicing_plane_pitch = GSM->getGlobal()->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle slicing_plane_yaw   = GSM->getGlobal()->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle slicing_plane_roll  = GSM->getGlobal()->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
-        QQuaternion quaternion = MathUtils::CreateQuaternion(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
-        slicing_plane.rotate(quaternion);
+        // Retrieve the slicing plane normal
+        QVector3D slicing_plane_normal = {
+            GSM->getGlobal()->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX),
+            GSM->getGlobal()->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY),
+            GSM->getGlobal()->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ)
+        };
+        slicing_plane_normal.normalize();
 
-        //if the slicing axis is parallel to the slicing plane, the config is invalid
-        //invalid configs will create an infinite loop when trying to count layers
-        QVector3D slicing_axis_vector;
-        if (slicing_axis == Axis::kX)
-            slicing_axis_vector = QVector3D(1, 0, 0);
-        else if (slicing_axis == Axis::kY)
-            slicing_axis_vector = QVector3D(0, 1, 0);
-        else //slicing_axis == Axis::kZ
-            slicing_axis_vector = QVector3D(0, 0, 1);
+        // Retrieve the part min and max
+        auto [part_min, part_max] = m_part->rootMesh()->getAxisExtrema({0, 0, 1});
+
+        // Create the slicing plane
+        Plane slicing_plane(part_min, slicing_plane_normal);
 
         //dot product is zero when vectors are perpendicular
-        double product = QVector3D::dotProduct(slicing_plane.normal(), slicing_axis_vector);
+        double product = QVector3D::dotProduct(slicing_plane.normal(), slicing_vector);
         //invert the slicing plane normal if necessary
         if (product < 0)
             slicing_plane.normal(slicing_plane.normal() * -1);
@@ -1463,7 +1459,7 @@ namespace ORNL
 
             Distance part_height = slicing_plane.distanceToPoint(part_max);
 
-            Point g_direction = part_min + (slicing_axis_vector * global_layer_height());
+            Point g_direction = part_min + (slicing_vector * global_layer_height());
             global_layer_height = slicing_plane.distanceToPoint(g_direction); //height in direction normal to slicing plane
 
             //count the layers
@@ -1513,7 +1509,7 @@ namespace ORNL
                 if (is_in_range && ranges[range_id]->getSb()->contains(Constants::ProfileSettings::Layer::kLayerHeight))
                 {
                     Distance range_height = ranges[range_id]->getSb()->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
-                    Point p = slicing_plane.point() + (slicing_axis_vector * range_height());
+                    Point p = slicing_plane.point() + (slicing_vector * range_height());
                     range_height = slicing_plane.distanceToPoint(p); //height in direction normal to slicing plane
 
                     current_height += range_height;
@@ -1531,7 +1527,7 @@ namespace ORNL
             Distance last_layer_height;
             if(is_in_range && ranges[range_id]->getSb()->contains(Constants::ProfileSettings::Layer::kLayerHeight))
             {
-                Point p = slicing_plane.point() + (slicing_axis_vector * ranges[range_id]->getSb()->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight)());
+                Point p = slicing_plane.point() + (slicing_vector * ranges[range_id]->getSb()->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight)());
                 last_layer_height = slicing_plane.distanceToPoint(p);
             }
             else
@@ -1613,7 +1609,6 @@ namespace ORNL
             }
        }
 
-
     void LayerBar::clear()
     {
         m_selection.clear();
@@ -1651,11 +1646,11 @@ namespace ORNL
 
     void LayerBar::handleModifiedSetting(QString key)
     {
-        if(key == Constants::ProfileSettings::Layer::kLayerHeight
-                || key == Constants::ProfileSettings::SlicingAngle::kSlicingAxis
-                || key == Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch
-                || key == Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw
-                || key == Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll)
+        if (key == Constants::ProfileSettings::Layer::kLayerHeight ||
+            key == Constants::ProfileSettings::SlicingAngle::kSlicingAxis ||
+            key == Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX ||
+            key == Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY ||
+            key == Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ)
         {
             updateLayers();
         }

@@ -31,14 +31,13 @@ namespace ORNL
 
         if (order_method == LayerOrdering::kByHeight)
         {
-            //! \note Layer ordering by height assumes that all parts were sliced with same plane angle, and that the plane does not rotate
-            // fetch the slicing plane normal from global settings
-            QVector3D slicing_plane =  QVector3D(0, 0, 1);
-            Angle slicing_plane_pitch = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
-            Angle slicing_plane_yaw   = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
-            Angle slicing_plane_roll  = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
-            QQuaternion quaternion = MathUtils::CreateQuaternion(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
-            slicing_plane = quaternion.rotatedVector(slicing_plane);
+            // Retrieve the slicing plane normal
+            QVector3D slicing_plane_normal = {
+                global_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX),
+                global_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY),
+                global_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ)
+            };
+            slicing_plane_normal.normalize();
 
             bool steps_left = true;
             int num_global_steps = 0;
@@ -74,7 +73,7 @@ namespace ORNL
                     Distance layer_height = current_step->getSb()->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight);
                     layer_plane.shiftAlongNormal(layer_height() / 2.0);
 
-                    Distance layer_dist = MathUtils::linePlaneIntersection(Point(0,0,0), slicing_plane, layer_plane).distance();
+                    Distance layer_dist = MathUtils::linePlaneIntersection(Point(0,0,0), slicing_plane_normal, layer_plane).distance();
 
                     // If this is the first plane in this loop, or its lower than the current min, set this layer as the min
                     if (part_with_min_plane.isNull() || layer_dist < min_dist)
@@ -177,86 +176,6 @@ namespace ORNL
             Q_ASSERT(false); // invalid order method
         }
 
-        //! \note combining laser scans is currently unsupported. If it were supported, it should be called somewhere else,
-        //! after nozzle assignment. Maybe from slicing thread in final step of pre-processing or from the global layer
-//                bool combine_scans = global_sb->setting<bool>(Constants::ProfileSettings::LaserScanner::kLaserScanner)
-//                        && global_sb->setting<bool>(Constants::ProfileSettings::LaserScanner::kGlobalScan);
-//                if(combine_scans)
-//                {
-//                    for(int i = 0; i < m_tool_count; ++i)
-//                    {
-//                        adjustLaserScanLayers(num_global_steps, global_sb, m_global_layers[num_global_steps][i]);
-//                        for(int pId : m_global_layers[num_global_steps][0].keys())
-//                        {
-
-//                        }
-//                    }
-//                }
-
         return global_layers;
     }
-
-
-    //! \note this function is unused and not updated in refactor. Should probably be moved to exist on the global layer
-   /*
-//    void LayerOrderOptimizer::adjustLaserScanLayers(int layer_index, QSharedPointer<SettingsBase> sb, GlobalLayer& global_layer)
-//    {
-//        QSharedPointer<SettingsBase> newSb = QSharedPointer<SettingsBase>::create(*sb);
-//        if(layer_index == 0)
-//            newSb->setSetting(Constants::ProfileSettings::Layer::kLayerHeight, 0.0);
-
-//        QSharedPointer<Step> global_scan_layer = QSharedPointer<ScanLayer>::create(layer_index, newSb);
-//        PolygonList combinedGeometry, combinedScanIsland;
-
-//        float min_x = INT_MAX, min_y = INT_MAX, max_x = INT_MIN, max_y = INT_MIN;
-
-//        for(StepGroup& part_group : step_group)
-//        {
-//            if(part_group.contains(StepType::kScan))
-//            {
-//                QSharedPointer<Step> scan_step = part_group[StepType::kScan];
-
-//                for(QSharedPointer<IslandBase> island : scan_step->getIslands())
-//                {
-//                    PolygonList poly_list = island->getGeometry();
-//                    for(Polygon poly : poly_list)
-//                    {
-//                        for(Point pt : poly)
-//                        {
-//                            if(pt.x() < min_x)
-//                                min_x = pt.x();
-//                            if(pt.x() > max_x)
-//                                max_x = pt.x();
-//                            if(pt.y() < min_y)
-//                                min_y = pt.y();
-//                            if(pt.y() > max_y)
-//                                max_y = pt.y();
-//                        }
-//                    }
-//                }
-
-//                combinedGeometry += scan_step->getGeometry();
-//                part_group.remove(StepType::kScan);
-//            }
-//        }
-
-//        Polygon poly = Polygon({Point(max_x, max_y), Point(min_x, max_y), Point(min_x, min_y), Point(max_x, min_y)});
-//        combinedScanIsland += poly;
-
-//        scan_layer->setOrientation(build_layer->getSlicingPlane(), shift, runningTotal);
-//        scan_layer->updateIslands(IslandType::kLaserScan, newIslands);//        scan_layer->setGeometry(build_layer->getGeometry(), QVector3D());
-//        scan_layer->setCompanionFileLocation(output_file);
-
-//        // Create laser_scan_island and add it to the current layer
-//        QSharedPointer<IslandBase> laser_scan_island = QSharedPointer<LaserScanIsland>::create(combinedScanIsland, newSb, QVector<SettingsPolygon>());
-//        global_scan_layer->updateIslands(IslandType::kLaserScan, QVector<QSharedPointer<IslandBase>> { laser_scan_island });
-//        global_scan_layer->setGeometry(combinedGeometry, QVector3D());
-
-//        for(StepGroup& part_group : step_group)
-//        {
-//            part_group.insert(StepType::kScan, global_scan_layer);
-//        }
-//    }
-*/
-
 }

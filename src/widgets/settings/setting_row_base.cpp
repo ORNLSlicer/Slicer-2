@@ -199,43 +199,30 @@ namespace ORNL {
         }
     }
 
-    void SettingRowBase::checkDynamicDependencies()
-    {
-        fifojson dependency_group = m_json.at(Constants::Settings::Master::kDependencyGroup);
-        if (dependency_group == "slicing_plane")
-        {
-            //create a vector corresponding to the slicing axis
-            Axis  slicing_axis = static_cast<Axis>(m_sb->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis));
-            QVector3D slicing_axis_vector;
-            if (slicing_axis == Axis::kX)
-                slicing_axis_vector = QVector3D(1, 0, 0);
-            else if (slicing_axis == Axis::kY)
-                slicing_axis_vector = QVector3D(0, 1, 0);
-            else //slicing_axis == Axis::kZ
-                slicing_axis_vector = QVector3D(0, 0, 1);
+    void SettingRowBase::checkDynamicDependencies() {
+        // Check if the setting has a dynamic dependency
+        if (m_json.at(Constants::Settings::Master::kDependencyGroup) == "slicing_plane") {
+            // Check if the custom slicing axis is enabled
+            if (m_sb->setting<bool>(Constants::ProfileSettings::SlicingAngle::kEnableCustomAxis)) {
+                // Retrieve the slicing axis vector
+                QVector3D slicing_vector = {0, 0, 0};
+                slicing_vector[m_sb->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis)] = 1;
 
-            //get the normal vector for the slicing plane
-            QVector3D slicing_plane_normal(0, 0, 1);
-            Angle slicing_plane_pitch = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
-            Angle slicing_plane_yaw   = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
-            Angle slicing_plane_roll  = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
-            QQuaternion quaternion = MathUtils::CreateQuaternion(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
-            slicing_plane_normal = quaternion.rotatedVector(slicing_plane_normal);
+                // Retrieve the slicing plane normal
+                QVector3D slicing_plane_normal = {
+                    m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX),
+                    m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY),
+                    m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ)
+                };
+                slicing_plane_normal.normalize();
 
-            //dot product is zero when vectors are perpendicular
-            float product = QVector3D::dotProduct(slicing_plane_normal, slicing_axis_vector);
-            if (product == 0)
-            {
-                //warn user if there is an issue
-                if (m_key == Constants::ProfileSettings::SlicingAngle::kSlicingAxis)
-                    setNotification("ERROR: Slicing Axis can not be parallel to Slicing Plane");
-                else
-                    setNotification("ERROR: Slicing Axis can not be parallel to Slicing Plane");
-            }
-            else
-            {
-                //un-warn the user if it is not an issue
-                clearNotification();
+                // Check if the slicing plane normal is perpendicular to the slicing vector
+                if (QVector3D::dotProduct(slicing_vector, slicing_plane_normal) == 0) {
+                    setNotification("ERROR: Slicing plane and slicing axis cannot be parallel to one another.");
+                }
+                else {
+                    clearNotification();
+                }
             }
         }
     }

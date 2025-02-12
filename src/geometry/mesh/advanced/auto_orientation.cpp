@@ -247,29 +247,30 @@ namespace ORNL
 
     QQuaternion AutoOrientation::GetRotationForOrientation(CandidateOrientation orientation)
     {
-        // Fetch default axis from settings
-        QSharedPointer<SettingsBase> global_sb = GSM->getGlobal();
-        Angle stacking_pitch = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle stacking_yaw   = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle stacking_roll  = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
+        // // Fetch default axis from settings
+        // QSharedPointer<SettingsBase> global_sb = GSM->getGlobal();
+        // Angle stacking_pitch = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
+        // Angle stacking_yaw   = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
+        // Angle stacking_roll  = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
 
-        // Build a normal vector using the quaternion
-        QVector3D settings_build_vector(0, 0, 1);
-        QQuaternion quaternion = MathUtils::CreateQuaternion(stacking_pitch, stacking_yaw, stacking_roll);
-        settings_build_vector = quaternion.rotatedVector(settings_build_vector).normalized();
-        settings_build_vector.setZ(0.0);
+        // // Build a normal vector using the quaternion
+        // QVector3D settings_build_vector(0, 0, 1);
+        // QQuaternion quaternion = MathUtils::CreateQuaternion(stacking_pitch, stacking_yaw, stacking_roll);
+        // settings_build_vector = quaternion.rotatedVector(settings_build_vector).normalized();
+        // settings_build_vector.setZ(0.0);
 
-        auto rotation_vector = orientation.build_vector;
-        rotation_vector.setZ(0.0);
+        // auto rotation_vector = orientation.build_vector;
+        // rotation_vector.setZ(0.0);
 
-        auto angle = MathUtils::signedInternalAngle(Point(settings_build_vector), Point(0, 0, 0), Point(rotation_vector));
+        // auto angle = MathUtils::signedInternalAngle(Point(settings_build_vector), Point(0, 0, 0), Point(rotation_vector));
 
-        auto axis_angle = MathUtils::AxisAngleToQuat(-orientation.plane.normal(), angle());
+        // auto axis_angle = MathUtils::AxisAngleToQuat(-orientation.plane.normal(), angle());
 
-        // Determine required rotation for the face selected
-        auto picked_vector = orientation.plane.normal();
-        picked_vector *= -1;
-        return MathUtils::CreateQuaternion(picked_vector, QVector3D(0, 0, 1)) * axis_angle;
+        // // Determine required rotation for the face selected
+        // auto picked_vector = orientation.plane.normal();
+        // picked_vector *= -1;
+        // return MathUtils::CreateQuaternion(picked_vector, QVector3D(0, 0, 1)) * axis_angle;
+        return QQuaternion();
     }
 
     ClosedMesh AutoOrientation::computeConvexHull(ClosedMesh mesh)

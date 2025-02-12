@@ -265,9 +265,9 @@ namespace ORNL {
         if(m_sb->setting<bool>(Constants::MaterialSettings::TipWipe::kInfillEnable))
         {
             // If angled slicing, force tip wipe to be reverse
-            if(m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw) != 0 ||
-                m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch) != 0 ||
-                m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll) != 0)
+            if (m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX) != 0 ||
+                m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY) != 0 ||
+                m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ) != 1)
             {
                 PathModifierGenerator::GenerateTipWipe(path, PathModifiers::kReverseTipWipe, m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kInfillDistance),
                                                        m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kInfillSpeed),
@@ -326,9 +326,9 @@ namespace ORNL {
         if(m_sb->setting<bool>(Constants::MaterialSettings::SpiralLift::kInfillEnable))
         {
             // Prevent spiral lifts during angled slicing to avoid collisions
-            if(m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw) == 0 &&
-                m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch) == 0 &&
-                m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll) == 0)
+            if (m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX) == 0 &&
+                m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY) == 0 &&
+                m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ) == 1)
             {
                 PathModifierGenerator::GenerateSpiralLift(path, m_sb->setting<Distance>(Constants::MaterialSettings::SpiralLift::kLiftRadius),
                                                           m_sb->setting<Distance>(Constants::MaterialSettings::SpiralLift::kLiftHeight),

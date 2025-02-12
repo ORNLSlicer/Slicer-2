@@ -313,12 +313,18 @@ namespace ORNL
     {
         m_sb = sb;
 
-        Angle slicing_plane_pitch = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle slicing_plane_yaw   = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle slicing_plane_roll  = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
+        // Determine the slicing plane normal
+        QVector3D slicing_plane_normal = {
+            m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX),
+            m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY),
+            m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ)
+        };
+        slicing_plane_normal.normalize();
+
+        QQuaternion rotation = QQuaternion::fromDirection(slicing_plane_normal, QVector3D(0, 0, 1));
 
         for (auto& gop : m_part_objects) {
-            gop->plane()->setLockedRotationAngle(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
+            gop->plane()->setLockedRotationQuaternion(rotation);
         }
 
         // Changing the plane affects the overhang angle

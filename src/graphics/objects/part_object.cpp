@@ -275,15 +275,6 @@ namespace ORNL {
     }
 
     void PartObject::overhangUpdate() {
-        QSharedPointer<SettingsBase> global_sb = GSM->getGlobal();
-        Angle stacking_pitch = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle stacking_yaw   = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle stacking_roll  = global_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
-
-        // Build a normal vector using the quaternion
-        QVector3D stacking_axis(0, 0, 1);
-        QQuaternion quaternion = MathUtils::CreateQuaternion(stacking_pitch, stacking_yaw, stacking_roll);
-        stacking_axis = quaternion.rotatedVector(stacking_axis).normalized();
         this->view()->shaderProgram()->bind();
         float overhang_angle = m_overhang_angle();
         //Pass the information angle and stacking axis to the shader so that it can determine what faces

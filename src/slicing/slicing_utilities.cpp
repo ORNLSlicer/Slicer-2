@@ -67,44 +67,25 @@ namespace ORNL
 
     std::tuple<Plane, Point, Point> SlicingUtilities::GetDefaultSlicingAxis(QSharedPointer<SettingsBase> sb, QSharedPointer<MeshBase> mesh, QSharedPointer<MeshSkeleton> skeleton)
     {
-        Plane slicing_plane = Plane(mesh->min(), QVector3D(0, 0, 1)); // default plane at min of bounding box and horizontal
+        // Retrieve the slicing axis vector
+        QVector3D slicing_vector = {0, 0, 0};
+        slicing_vector[sb->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis)] = 1;
 
-        // Get slicing settings, adjust slicing plane accordingly
-        Axis  slicing_axis = static_cast<Axis>(sb->setting<int>(Constants::ProfileSettings::SlicingAngle::kSlicingAxis));
-        Angle slicing_plane_pitch = sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle slicing_plane_yaw   = sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle slicing_plane_roll  = sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
-        QQuaternion quaternion = MathUtils::CreateQuaternion(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
-        slicing_plane.rotate(quaternion);
+        // Retrieve the slicing plane normal
+        QVector3D slicing_plane_normal = {
+            sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX),
+            sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY),
+            sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ)
+        };
+        slicing_plane_normal.normalize();
 
-        // invert the slicing plane normal if necessary
-        // normal must be a positive direction for comparisons to determine which side of the plane a point is on
-        QVector3D axis_vector;
-        switch (slicing_axis) {
-            case Axis::kX:
-                axis_vector = QVector3D(1, 0, 0);
-                break;
-            case Axis::kY:
-                axis_vector = QVector3D(0, 1, 0);
-                break;
-            case Axis::kZ:
-                axis_vector = QVector3D(0, 0, 1);
-                break;
-        }
+        // Retrieve the mesh extrema along the slicing plane normal
+        auto [min, max] = mesh->getAxisExtrema(slicing_plane_normal);
 
-        if (QVector3D::dotProduct(slicing_plane.normal(), axis_vector) < 0 ) {
-            slicing_plane.normal(slicing_plane.normal() * -1);
-        }
+        // Create the slicing plane
+        Plane slicing_plane(min, slicing_plane_normal);
 
-        // Find the min & max located on the mesh
-        Point mesh_min, mesh_max;
-
-        std::tie(mesh_min, mesh_max) = mesh->getAxisExtrema(slicing_plane.normal());
-
-        // Move slicing plane to start at min on the part
-        slicing_plane.point(mesh_min);
-
-        return std::tuple<Plane, Point, Point>(slicing_plane, mesh_min, mesh_max);
+        return {slicing_plane, min, max};
     }
 
     void SlicingUtilities::ShiftSlicingPlane(QSharedPointer<SettingsBase> sb, Plane &slicing_plane, Distance last_height, QSharedPointer<MeshSkeleton> skeleton)

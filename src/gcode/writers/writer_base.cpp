@@ -61,24 +61,21 @@ namespace ORNL
 
     QVector3D WriterBase::getTravelLift()
     {
-        /*
-            If the slicing plane rotates (ie, is different for every layer), normal direction can't
-            be fetched from global settings
-        */
+        // Retrieve the slicing plane normal
+        QVector3D slicing_plane_normal = {
+            m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX),
+            m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY),
+            m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ)
+        };
+        slicing_plane_normal.normalize();
 
-        //get slicing angle info for direction
-        Angle slicing_plane_pitch = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch);
-        Angle slicing_plane_yaw   = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw);
-        Angle slicing_plane_roll  = m_sb->setting<Angle>(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll);
-        QQuaternion quaternion = MathUtils::CreateQuaternion(slicing_plane_pitch, slicing_plane_yaw, slicing_plane_roll);
-        QVector3D normal_vector = quaternion.rotatedVector(QVector3D(0, 0, 1));
+        // Retrieve the lift height
+        Distance lift_height = m_sb->setting<Distance>(Constants::ProfileSettings::Travel::kLiftHeight);
 
-        //normalize and multiply by lift height
-        normal_vector.normalize();
-        Distance lift_distance = m_sb->setting< Distance >(Constants::ProfileSettings::Travel::kLiftHeight).to(micron);
-        normal_vector *= lift_distance();
+        // Calculate the lift vector
+        QVector3D lift_vector = slicing_plane_normal * lift_height();
 
-        return normal_vector;
+        return lift_vector;
     }
 
     QString WriterBase::writeSlicerHeader(const QString& syntax)
@@ -271,9 +268,9 @@ namespace ORNL
                         .arg(m_sb->setting<Time>(Constants::MaterialSettings::Cooling::kMaxLayerTime)()));
             if (SettingsManager::getInstance()->getGlobal()->setting< bool >("useSmoothing"))
                 text += commentLine("Smoothing is turned ON");
-            if(m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionYaw) != 0 ||
-                m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionPitch) != 0 ||
-                m_sb->setting< Angle >(Constants::ProfileSettings::SlicingAngle::kStackingDirectionRoll) != 0)
+            if (m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX) != 0 ||
+                m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY) != 0 ||
+                m_sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ) != 1)
             {
                 text += commentLine("ANGLED SLICING ENABLED");
             }
