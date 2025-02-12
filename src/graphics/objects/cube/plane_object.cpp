@@ -10,8 +10,8 @@ namespace ORNL {
         m_color = color;
     }
 
-    void PlaneObject::setLockedRotationAngle(Angle pitch, Angle yaw, Angle roll) {
-        m_locked_rotation = QQuaternion::fromEulerAngles(pitch.to(deg), yaw.to(deg), roll.to(deg));
+    void PlaneObject::setLockedRotationQuaternion(const QQuaternion& rotation) {
+        m_locked_rotation = rotation;
         this->rotateAbsolute(m_locked_rotation);
     }
 
