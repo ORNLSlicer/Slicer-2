@@ -126,6 +126,8 @@
                     pkgsNative.ccache
                     pkgsNative.git
                     pkgsNative.python3
+		    pkgsNative.python3Packages.pandas
+		    pkgsNative.python3Packages.odfpy
                     pkgsNative.jq
                     pkgsNative.moreutils
 
