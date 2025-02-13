@@ -185,6 +185,8 @@
                     # Lastly, let the XDG_CONFIG_HOME be set to the flake root.
                     export XDG_CONFIG_HOME="$FLAKE_ROOT/.xdg_config"
                 '';
+
+                QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgsNative.qt5.qtbase.bin}/lib/qt-${pkgsNative.qt5.qtbase.version}/plugins";
             };
         };
     });

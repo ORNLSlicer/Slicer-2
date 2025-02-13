@@ -1,7 +1,6 @@
 {
     "version": 6,
     "include": [
-        "cmake/presets/generic-llvm-ninja.json",
-        "cmake/presets/nix-autoload-linux-amd64.json"
+        "cmake/presets/generic-llvm-ninja.json"
     ]
 }
