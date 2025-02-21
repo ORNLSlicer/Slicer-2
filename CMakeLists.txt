@@ -6,6 +6,7 @@ include(contrib/vcpkg.cmake)
 project(ornl_slicer_2 CXX C)
 
 option(CMAKE_VERBOSE_MAKEFILE "Verbose MAKE Files" ON)
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set compile time and pass it as a compiler flag
 string(TIMESTAMP APP_COMPILE_TIME "%m-%d-%Y")
