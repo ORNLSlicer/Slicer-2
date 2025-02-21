@@ -297,7 +297,6 @@
             "thermal_scanner_temperature_cutoff": 0,
             "thermal_scanner_x_offset": 1701800,
             "thermal_scanner_y_offset": 228600,
-            "slicing_axis": 2,
             "slicing_plane_pitch": 0,
             "slicing_plane_yaw": 0,
             "slicing_plane_roll": 0
