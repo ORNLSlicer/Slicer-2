@@ -832,11 +832,11 @@ class Constants {
             static const QString kPyrometerMove;
         };
 
-        class SlicingAngle {
+        class SlicingVector {
           public:
-            static const QString kSlicingPlaneNormalX;
-            static const QString kSlicingPlaneNormalY;
-            static const QString kSlicingPlaneNormalZ;
+            static const QString kSlicingVectorX;
+            static const QString kSlicingVectorY;
+            static const QString kSlicingVectorZ;
         };
     };
 

@@ -161,11 +161,10 @@ QString CincinnatiWriter::writeBeforeLayer(float new_min_z, QSharedPointer<Setti
     m_spiral_layer = sb->setting<bool>(Constants::ProfileSettings::SpecialModes::kEnableSpiralize);
 
     // Retrieve the slicing plane normal
-    QVector3D slicing_plane_normal = {
-        sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX),
-        sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY),
-        sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ)};
-    slicing_plane_normal.normalize();
+    QVector3D slicing_vector = {sb->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorX),
+                                sb->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorY),
+                                sb->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorZ)};
+    slicing_vector.normalize();
 
     /*
      *  If the printer has both Z and W axes(extruder and table move) and we're slicing along the z-axis, move the table
@@ -175,7 +174,7 @@ QString CincinnatiWriter::writeBeforeLayer(float new_min_z, QSharedPointer<Setti
      */
     if (m_sb->setting<int>(Constants::PrinterSettings::Dimensions::kLayerChangeAxis) ==
             static_cast<int>(LayerChange::kBoth_Z_and_W) &&
-        slicing_plane_normal == QVector3D(0, 0, 1) && !m_spiral_layer) {
+        slicing_vector == QVector3D(0, 0, 1) && !m_spiral_layer) {
         // Means that a layer doesn't have geometry on it, didn't find a lower point don't want this to affect table
         // height
         if (new_min_z == std::numeric_limits<float>::max()) {

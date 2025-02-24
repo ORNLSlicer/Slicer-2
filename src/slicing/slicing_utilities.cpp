@@ -2,11 +2,6 @@
 
 // Locals
 #include "cross_section/cross_section.h"
-#include "step/layer/island/island_base.h"
-#include "step/layer/layer.h"
-#include "step/layer/scan_layer.h"
-#include "step/step.h"
-#include "utilities/mathutils.h"
 
 namespace ORNL {
 
@@ -59,17 +54,16 @@ std::tuple<Plane, Point, Point> SlicingUtilities::GetDefaultSlicingAxis(QSharedP
                                                                         QSharedPointer<MeshBase> mesh,
                                                                         QSharedPointer<MeshSkeleton> skeleton) {
     // Retrieve the slicing plane normal
-    QVector3D slicing_plane_normal = {
-        sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX),
-        sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY),
-        sb->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ)};
-    slicing_plane_normal.normalize();
+    QVector3D slicing_vector = {sb->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorX),
+                                sb->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorY),
+                                sb->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorZ)};
+    slicing_vector.normalize();
 
     // Retrieve the mesh extrema along the slicing plane normal
-    auto [min, max] = mesh->getAxisExtrema(slicing_plane_normal);
+    auto [min, max] = mesh->getAxisExtrema(slicing_vector);
 
     // Create the slicing plane
-    Plane slicing_plane(min, slicing_plane_normal);
+    Plane slicing_plane(min, slicing_vector);
 
     return {slicing_plane, min, max};
 }
@@ -87,7 +81,6 @@ bool SlicingUtilities::doPartsOverlap(QVector<QSharedPointer<Part>> parts, Plane
     // Cross-section parts
     QVector<Polygon> polygons;
     for (auto part : parts) {
-        // GCC doesn't like taking the address of a temporary.
         Point tmp_point;
         QVector3D tmp_vec;
 

@@ -1306,9 +1306,9 @@ void LayerBar::updateLayers() {
 
     // Retrieve the slicing vector
     QVector3D slicing_vector = {
-        GSM->getGlobal()->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX),
-        GSM->getGlobal()->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY),
-        GSM->getGlobal()->setting<float>(Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ)};
+        GSM->getGlobal()->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorX),
+        GSM->getGlobal()->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorY),
+        GSM->getGlobal()->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorZ)};
     slicing_vector.normalize();
 
     // Retrieve the part min and max in the slicing plane normal direction
@@ -1515,9 +1515,9 @@ void LayerBar::splitRange(LayerBar::dot_range* range) {
 
 void LayerBar::handleModifiedSetting(QString key) {
     if (key == Constants::ProfileSettings::Layer::kLayerHeight ||
-        key == Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX ||
-        key == Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY ||
-        key == Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ) {
+        key == Constants::ProfileSettings::SlicingVector::kSlicingVectorX ||
+        key == Constants::ProfileSettings::SlicingVector::kSlicingVectorY ||
+        key == Constants::ProfileSettings::SlicingVector::kSlicingVectorZ) {
         updateLayers();
     }
 }

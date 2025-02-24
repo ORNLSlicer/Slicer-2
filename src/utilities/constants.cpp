@@ -749,9 +749,9 @@ const QString Constants::ProfileSettings::ThermalScanner::kThermalScannerYOffset
 const QString Constants::ProfileSettings::ThermalScanner::kPyrometerMove = "pyrometer_move";
 
 // Slicing Angle
-const QString Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalX = "slicing_plane_normal_x";
-const QString Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalY = "slicing_plane_normal_y";
-const QString Constants::ProfileSettings::SlicingAngle::kSlicingPlaneNormalZ = "slicing_plane_normal_z";
+const QString Constants::ProfileSettings::SlicingVector::kSlicingVectorX = "slicing_vector_x";
+const QString Constants::ProfileSettings::SlicingVector::kSlicingVectorY = "slicing_vector_y";
+const QString Constants::ProfileSettings::SlicingVector::kSlicingVectorZ = "slicing_vector_z";
 
 //================================================================================
 // Experimental Settings
