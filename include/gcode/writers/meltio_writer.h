@@ -3,28 +3,26 @@
 
 //! \file ornl_writer.h
 
+#include "gcode/gcode_meta.h"
 #include "gcode/writers/writer_base.h"
 #include "managers/settings/settings_manager.h"
-#include "gcode/gcode_meta.h"
 
-namespace ORNL
-{
+namespace ORNL {
 /*!
-     * \class MeltioWriter
-     * \brief The gcode writer for the Meltio syntax
-     */
-class MeltioWriter : public WriterBase
-{
-public:
-
+ * \class MeltioWriter
+ * \brief The gcode writer for the Meltio syntax
+ */
+class MeltioWriter : public WriterBase {
+  public:
     //! \brief Constructor
     MeltioWriter(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb);
 
     //! \brief Writes important settings info to the header for the operator to read
-    QString writeSettingsHeader(GcodeSyntax syntax);
+    QString writeSettingsHeader(GcodeSyntax syntax) override;
 
     //! \brief Writes initial setup instructions for the machine state
-    QString writeInitialSetup(Distance minimum_x, Distance minimum_y, Distance maximum_x, Distance maximum_y, int num_layers) override;
+    QString writeInitialSetup(Distance minimum_x, Distance minimum_y, Distance maximum_x, Distance maximum_y,
+                              int num_layers) override;
 
     //! \brief Writes G-Code to be executed at the start of the layer
     QString writeBeforeLayer(float min_z, QSharedPointer<SettingsBase> sb) override;
@@ -34,7 +32,6 @@ public:
 
     //! \brief Writes G-Code to be exectued before each island
     QString writeBeforeIsland() override;
-
 
     //! \brief Writes G-Code to be executed at the start of each region
     QString writeBeforeRegion(RegionType type, int pathSize) override;
@@ -47,17 +44,12 @@ public:
                         QSharedPointer<SettingsBase> params) override;
 
     //! \brief Writes G-Code for line
-    QString writeLine(const Point& start_point,
-                      const Point& target_point,
+    QString writeLine(const Point& start_point, const Point& target_point,
                       const QSharedPointer<SettingsBase> params) override;
 
     //! \brief Writes G-Code for arc
-    QString writeArc(const Point &start_point,
-                     const Point &end_point,
-                     const Point &center_point,
-                     const Angle &angle,
-                     const bool &ccw,
-                     const QSharedPointer<SettingsBase> params) override;
+    QString writeArc(const Point& start_point, const Point& end_point, const Point& center_point, const Angle& angle,
+                     const bool& ccw, const QSharedPointer<SettingsBase> params) override;
 
     //! \brief Writes G-Code to be executed after each path
     QString writeAfterPath(RegionType type) override;
@@ -83,8 +75,7 @@ public:
     //! \brief Writes G-Code for a pause, G4
     QString writeDwell(Time time) override;
 
-private:
-
+  private:
     //! \brief Writes G-Code to enable the extruder
     QString writeExtruderOn(RegionType type, int rpm, int extruder_number);
     //! \brief Writes G-Code to disable the extruder
@@ -100,6 +91,6 @@ private:
     //! \brief true is first print motion of the layer
     bool m_layer_start;
 
-};  // class MeltioWriter
-}  // namespace ORNL
-#endif  // MELTIO_WRITER_H
+}; // class MeltioWriter
+} // namespace ORNL
+#endif // MELTIO_WRITER_H

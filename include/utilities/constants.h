@@ -9,7 +9,6 @@
 #include <QHash>
 #include <QVector3D>
 #include <QVector>
-#include <limits>
 #include <string>
 
 namespace ORNL {
@@ -115,6 +114,7 @@ class Constants {
         static const QString kLaserScan;
         static const QString kThermalScan;
         static const QString kSkeleton;
+        static const QString kAnchor;
     };
 
     // Used?
@@ -168,6 +168,7 @@ class Constants {
         static const QString kRampingDown;
         static const QString kLeadIn;
         static const QString kFlyingStart;
+        static const QString kPerimeterTipWipe;
     };
 
     class PrinterSettings {
@@ -915,14 +916,6 @@ class Constants {
             static const QString kWireCutoffDistance;
             static const QString kWireStickoutDistance;
             static const QString kWirePrestartDistance;
-        };
-
-        class DirectedPerimeter {
-          public:
-            static const QString kEnableDirectedPerimeter;
-            static const QString kGenerationDirection;
-            static const QString kEnableDiscardBulgingPerimeter;
-            static const QString kEnableLayerSpiralization;
         };
 
         class FileOutput {

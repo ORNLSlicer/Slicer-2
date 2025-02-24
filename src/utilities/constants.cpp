@@ -1,6 +1,9 @@
 #include "utilities/constants.h"
 
 #include "units/unit.h"
+
+#include <limits>
+
 namespace ORNL {
 //================================================================================
 // Units
@@ -113,12 +116,13 @@ const QString Constants::RegionTypeStrings::kSkin = "SKIN";
 const QString Constants::RegionTypeStrings::kSupport = "SUPPORT";
 const QString Constants::RegionTypeStrings::kSupportRoof = "SUPPORT_ROOF";
 const QString Constants::RegionTypeStrings::kTravel = "TRAVEL";
-const QString Constants::RegionTypeStrings::kRaft = "RAFT";               // added by Nicholas Miller
-const QString Constants::RegionTypeStrings::kBrim = "BRIM";               // added by Nicholas Miller
-const QString Constants::RegionTypeStrings::kSkirt = "SKIRT";             // added by Nicholas Miller
-const QString Constants::RegionTypeStrings::kLaserScan = "LASER SCANNER"; // added by Nicholas Miller
-const QString Constants::RegionTypeStrings::kThermalScan = "IR CAMERA";   // added by Nicholas Miller
+const QString Constants::RegionTypeStrings::kRaft = "RAFT";
+const QString Constants::RegionTypeStrings::kBrim = "BRIM";
+const QString Constants::RegionTypeStrings::kSkirt = "SKIRT";
+const QString Constants::RegionTypeStrings::kLaserScan = "LASER SCANNER";
+const QString Constants::RegionTypeStrings::kThermalScan = "IR CAMERA";
 const QString Constants::RegionTypeStrings::kSkeleton = "SKELETON";
+const QString Constants::RegionTypeStrings::kAnchor = "ANCHOR";
 
 //================================================================================
 // Legacy Region Type Strings
@@ -221,6 +225,7 @@ const QString Constants::PathModifierStrings::kRampingUp = "RAMPING UP";
 const QString Constants::PathModifierStrings::kRampingDown = "RAMPING DOWN";
 const QString Constants::PathModifierStrings::kLeadIn = "LEAD IN";
 const QString Constants::PathModifierStrings::kFlyingStart = "FLYING START";
+const QString Constants::PathModifierStrings::kPerimeterTipWipe = "PERIMETER TIP WIPE";
 
 //================================================================================
 // Printer Settings
@@ -843,15 +848,6 @@ const QString Constants::ExperimentalSettings::FileOutput::kSimulationOutput = "
 // Rotation Origin
 const QString Constants::ExperimentalSettings::RotationOrigin::kXOffset = "rotation_origin_offset_x";
 const QString Constants::ExperimentalSettings::RotationOrigin::kYOffset = "rotation_origin_offset_y";
-
-// Directed Perimeter
-const QString Constants::ExperimentalSettings::DirectedPerimeter::kEnableDirectedPerimeter =
-    "enable_directed_perimeter";
-const QString Constants::ExperimentalSettings::DirectedPerimeter::kGenerationDirection = "generation_direction";
-const QString Constants::ExperimentalSettings::DirectedPerimeter::kEnableDiscardBulgingPerimeter =
-    "enable_discard_bulging_perimeter";
-const QString Constants::ExperimentalSettings::DirectedPerimeter::kEnableLayerSpiralization =
-    "enable_layer_spiralization";
 
 // Image Resolution
 const QString Constants::ExperimentalSettings::ImageResolution::kImageResolutionX = "image_resolution_x";
