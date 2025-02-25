@@ -60,8 +60,9 @@ class PolylineOrderOptimizer {
     //! \brief Link Polyline as part of spiral (works only for a single perimeter)
     //! \param Polyline: Polyline to link
     //! \param layerHeight: height of layer to interpolate points across
+    //! \param pointOrder: point order optimization to be used for first layer
     //! \return spiralized Polyline
-    Polyline linkSpiralPolyline2D(bool last_spiral, Distance layerHeight);
+    Polyline linkSpiralPolyline2D(bool last_spiral, Distance layerHeight, PointOrderOptimization pointOrder);
 
     //! \brief Set start override for seam selection (custom start point)
     //! \param pt: Seam point

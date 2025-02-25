@@ -133,7 +133,8 @@ void Perimeter::optimize(int layerNumber, Point& current_location, QVector<Path>
 
             Polyline result = poo.linkSpiralPolyline2D(
                 m_was_last_region_spiral,
-                m_sb->setting<Distance>(Constants::ProfileSettings::Layer::Layer::kLayerHeight));
+                m_sb->setting<Distance>(Constants::ProfileSettings::Layer::Layer::kLayerHeight),
+                pointOrderOptimization);
             Path newPath = createPath(result);
             if (!m_was_last_region_spiral)
                 PathModifierGenerator::GenerateTravel(
