@@ -1,9 +1,6 @@
 #include "widgets/settings/setting_row_base.h"
 
 #include "managers/preferences_manager.h"
-#include "utilities/mathutils.h"
-#include "widgets/settings/setting_check_box.h"
-#include "widgets/settings/setting_combo_box.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -17,7 +14,8 @@ SettingRowBase::SettingRowBase(QWidget* parent, QSharedPointer<SettingsBase> sb,
     m_theme_path = PreferencesManager::getInstance()->getTheme().getFolderPath();
     m_key_label.reset(new QLabel());
     m_key_label->setText(json.at(Constants::Settings::Master::kDisplay));
-    m_key_label->setToolTip(json.at(Constants::Settings::Master::kToolTip));
+    m_key_label->setToolTip("<html><body><p>" + QString::fromStdString(json.at(Constants::Settings::Master::kToolTip)) +
+                            "</p></body></html>");
     m_key_label->setCursor(Qt::WhatsThisCursor);
     m_key_label->setMinimumHeight(25);
     m_key_label->setIndent(25);
@@ -72,7 +70,9 @@ bool SettingRowBase::styleLabelFromFile(QString file) {
 void SettingRowBase::styleLabel(bool isConsistent) {
     if (isConsistent) {
         this->styleLabelFromFile(m_theme_path + "setting_rows_normal.qss");
-        m_key_label->setToolTip(m_json.at(Constants::Settings::Master::kToolTip));
+        m_key_label->setToolTip("<html><body><p>" +
+                                QString::fromStdString(m_json.at(Constants::Settings::Master::kToolTip)) +
+                                "</p></body></html>");
     }
     else {
         this->styleLabelFromFile(m_theme_path + "setting_rows_warning.qss");
