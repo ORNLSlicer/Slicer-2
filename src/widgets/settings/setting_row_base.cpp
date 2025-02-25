@@ -150,6 +150,9 @@ bool SettingRowBase::checkLogic(DependencyNode root) {
             }
         }
     }
+
+    // Default return in case none of the conditions match
+    return false;
 }
 
 void SettingRowBase::checkDynamicDependencies() {}

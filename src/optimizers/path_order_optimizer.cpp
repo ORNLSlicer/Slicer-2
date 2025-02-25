@@ -73,6 +73,7 @@ Path PathOrderOptimizer::linkNextPath(QVector<Path> paths) {
                 break;
         }
     }
+    return Path();
 }
 
 Path PathOrderOptimizer::linkNextInfillPath(QVector<Path>& paths) {

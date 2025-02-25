@@ -50,8 +50,6 @@ class InfillSector : public RegionBase {
     //! start/end of every other line, stripped will provide alternating start/ends while
     //! splitting the region into multiple sub-sectors.
     void uniform(QVector<Polyline>& sector);
-    void skipRaster(QVector<Polyline>& sector);
-    // void stripedRaster(Point center, QVector<Polyline>& sector);
 
     //! \brief Creates modifiers
     //! \param path: Current path to add modifiers to
