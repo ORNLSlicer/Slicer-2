@@ -154,11 +154,33 @@ void GcodeExport::exportGcode() {
             inputFile.close();
         }
 
+        // Insert comment start/end characters to the description
+        QString description = m_description_input->toPlainText();
+        int lineEnd = 0;
+        while(lineEnd > -1)
+        {
+            if (lineEnd + 1 < description.length()) // Check to make sure lineEnd + 1 exists before potentially trying to access it
+            {
+                lineEnd = description.indexOf("\n", lineEnd);
+                if(lineEnd > -1) // "\n" is found, -1 means not found
+                {
+                    description.insert(lineEnd, m_most_recent_meta.m_comment_ending_delimiter);
+                    lineEnd = description.indexOf("\n", lineEnd);
+                    description.insert(lineEnd + 1, m_most_recent_meta.m_comment_starting_delimiter);
+                    lineEnd ++; // Increment lineEnd so that the next search doesn't find the same result
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+
         // Add header information to the gcode file
         text.prepend(m_most_recent_meta.m_comment_starting_delimiter % "Sliced by: " % m_operator_input->text() %
                      m_most_recent_meta.m_comment_ending_delimiter % "\n" %
                      m_most_recent_meta.m_comment_starting_delimiter % "Slicing notes: " %
-                     m_description_input->toPlainText() % m_most_recent_meta.m_comment_ending_delimiter % "\n");
+                     description % m_most_recent_meta.m_comment_ending_delimiter % "\n");
 
         if (m_auxiliary_file_checkbox->isChecked()) {
             if (CSM->sensorFilesGenerated()) {
