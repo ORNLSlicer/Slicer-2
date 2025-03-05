@@ -317,8 +317,21 @@ void Skin::calculateModifiers(Path& path, bool supportsG3, QVector<Path>& innerM
             m_sb->setting<double>(Constants::MaterialSettings::Slowdown::kSlowDownAreaModifier));
     }
     if (m_sb->setting<bool>(Constants::MaterialSettings::TipWipe::kSkinEnable)) {
+        // If angled slicing, force tip wipe to be reverse
+        if (m_sb->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorX) != 0 ||
+            m_sb->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorY) != 0 ||
+            m_sb->setting<float>(Constants::ProfileSettings::SlicingVector::kSlicingVectorZ) != 1) {
+            PathModifierGenerator::GenerateTipWipe(
+                path, PathModifiers::kReverseTipWipe,
+                m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinDistance),
+                m_sb->setting<Velocity>(Constants::MaterialSettings::TipWipe::kSkinSpeed),
+                m_sb->setting<Angle>(Constants::MaterialSettings::TipWipe::kSkinAngle),
+                m_sb->setting<AngularVelocity>(Constants::MaterialSettings::TipWipe::kSkinExtruderSpeed),
+                m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinLiftHeight),
+                m_sb->setting<Distance>(Constants::MaterialSettings::TipWipe::kSkinCutoffDistance));
+        }
         // if Forward OR (if Optimal AND (Perimeter OR Inset)) OR (if Optimal AND (Concentric or Inside Out Concentric))
-        if (static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkinDirection)) ==
+        else if (static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkinDirection)) ==
                 TipWipeDirection::kForward ||
             (static_cast<TipWipeDirection>(m_sb->setting<int>(Constants::MaterialSettings::TipWipe::kSkinDirection)) ==
                  TipWipeDirection::kOptimal &&
