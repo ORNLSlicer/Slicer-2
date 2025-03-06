@@ -126,11 +126,6 @@ class BufferedSlicer {
     //! \brief list of settings parts being tracked
     QVector<QSharedPointer<Part>> m_settings_parts;
 
-#ifdef NVCC_FOUND
-    //! \brief Only compiled with if NVCC is on the system
-    CUDA::GPUCrossSectioner* m_cross_sectioner;
-#endif
-
     //! \brief Build mesh cut by settings region
     QSharedPointer<ClosedMesh> m_settings_bounded_mesh, m_settings_remaining_build_mesh;
 };

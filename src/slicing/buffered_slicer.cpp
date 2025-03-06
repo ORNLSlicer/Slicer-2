@@ -144,16 +144,8 @@ QSharedPointer<BufferedSlicer::SliceMeta> BufferedSlicer::processSingleSlice() {
             shift_amount = CrossSection::findSlicingPlaneMidPoint(m_mesh, m_slicing_plane);
         }
         else {
-#ifdef NVCC_FOUND
-            if (GPU->use())
-                geometry = m_cross_sectioner->doCrossSectionGPU(m_slicing_plane, shift_amount);
-            else
-                geometry = CrossSection::doCrossSection(m_mesh, m_slicing_plane, shift_amount, average_normal,
-                                                        layer_specific_settings);
-#else
             geometry = CrossSection::doCrossSection(m_mesh, m_slicing_plane, shift_amount, average_normal,
                                                     layer_specific_settings);
-#endif
         }
 
         if (layer_specific_settings->setting<bool>(Constants::ProfileSettings::SpecialModes::kEnableOversize) &&
@@ -167,19 +159,6 @@ QSharedPointer<BufferedSlicer::SliceMeta> BufferedSlicer::processSingleSlice() {
         computeSettingsPolygons(settings_polygons);
 
         SingleExternalGridInfo single_grid;
-        //            ExternalGridInfo info = this->getExternalGridInfo();
-        //            //if external data is available, calculate index
-        //            int index = qRound((m_slicing_plane.point().z() - info.m_z_min) / info.m_z_step);
-        //            if(index > info.m_grid_layers.size() - 1)
-        //                index = info.m_grid_layers.size() - 1;
-        //            else if(index < 0)
-        //                index = 0;
-        //            SingleExternalGridInfo singleGrid;
-        //            if(info.m_grid_layers.size() > 0)
-        //            {
-        //                   singleGrid = info.m_grid_layers[index];
-        //                   singleGrid.m_object_origin = geometry.min();
-        //            }
 
         PolygonList settings_modified_geometry;
         if (m_settings_remaining_build_mesh != nullptr)
