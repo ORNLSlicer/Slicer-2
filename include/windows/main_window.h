@@ -17,7 +17,6 @@
 #include "windows/ingersoll_post_processor.h"
 #include "windows/layer_times_window.h"
 #include "windows/preferences_window.h"
-#include "windows/remote_connectivity.h"
 #include "windows/xtrudecalc.h"
 
 #include <QApplication>
@@ -270,9 +269,7 @@ class MainWindow : public QMainWindow {
     GcodeExport* m_export_window;
     FlowrateCalcWindow* m_flowrate_calc_window;
     XtrudeCalcWindow* m_xtrude_calc_window;
-    // IngersollPostProcessor *m_ingersollPostProcessor;
     AboutWindow* m_about_window;
-    RemoteConnectivity* m_remote_connectivity_window;
 
     //! \brief QActions
     QMap<QString, menu_info> m_actions;

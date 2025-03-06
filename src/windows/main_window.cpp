@@ -13,8 +13,6 @@
 #include <QStatusBar>
 #include <QTimer>
 
-#include <utilities/authenticity_checker.h>
-
 namespace ORNL {
 MainWindow* MainWindow::m_singleton = nullptr;
 
@@ -24,21 +22,7 @@ MainWindow* MainWindow::getInstance() {
     return m_singleton;
 }
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), m_status(false) {
-    // qInstallMessageHandler(msgHandler);
-
-    AuthenticityChecker* authChecker = new AuthenticityChecker(this);
-    connect(authChecker, &AuthenticityChecker::done, this, [this](bool ok) {
-        if (ok)
-            continueStartup();
-        else
-            QApplication::quit();
-    });
-
-    // Comment out to disable check
-    // authChecker->startCheck();
-    continueStartup();
-}
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), m_status(false) { continueStartup(); }
 
 void MainWindow::continueStartup() {
     PM->importPreferences();
@@ -56,7 +40,6 @@ void MainWindow::continueStartup() {
     GSM->constructActiveGlobal(CSM->getMostRecentSettingHistory());
     GSM->loadLayerBarTemplate(qApp->applicationDirPath() + "/layerbartemplates");
     GSM->loadLayerBarTemplate(CSM->getMostRecentLayerBarSettingFolderLocation());
-    // GSM->constructLayerBarTemplate(CSM->getMostRecentLayerBarSettingHistory());
     this->setupClasses();
     this->setupUi();
     CSM->setupTCPServer();
@@ -163,7 +146,6 @@ void MainWindow::setupWindows() {
     m_layertimebar = new LayerTimesWindow(this);
     // m_ingersollPostProcessor = new IngersollPostProcessor(this);
     m_about_window = new AboutWindow(this);
-    m_remote_connectivity_window = new RemoteConnectivity(this);
     m_external_file_window = new ExternalFileWindow(this);
 }
 
@@ -711,12 +693,6 @@ void MainWindow::setupEvents() {
         m_xtrude_calc_window->raise();
         m_xtrude_calc_window->showNormal();
     });
-    // connect(m_actions["ingersoll_PP"].action, &QAction::triggered, m_ingersollPostProcessor, [this] {
-    // m_ingersollPostProcessor->raise(); m_ingersollPostProcessor->showNormal(); });
-    connect(m_actions["remote_connectivity"].action, &QAction::triggered, m_remote_connectivity_window, [this] {
-        m_remote_connectivity_window->raise();
-        m_remote_connectivity_window->showNormal();
-    });
     connect(m_actions["debug"].action, &QAction::triggered, this, &MainWindow::debug);
     connect(m_actions["cs_view"].action, &QAction::triggered, []() {
         CsDebugDialog dialog;
@@ -802,14 +778,6 @@ void MainWindow::setupEvents() {
     connect(m_settingbar, &SettingBar::settingModified, this, &MainWindow::handleModifiedSetting);
     connect(m_settingbar, &SettingBar::tabHidden, this, &MainWindow::addHiddenSetting);
     connect(GSM.get(), &SettingsManager::globalLoaded, this, &MainWindow::updateSettings);
-
-    // TCP Server
-    connect(m_remote_connectivity_window, &RemoteConnectivity::restartTcpServer, this, [this](int port) {
-        m_cmdbar->append("Restarted TCP Server on port: " + QString::number(port));
-        CSM->setServerInformation(port);
-    });
-    connect(m_remote_connectivity_window, &RemoteConnectivity::setStepConnectivity, CSM.get(),
-            &SessionManager::setServerStepConnectivity);
 
     connect(m_external_file_window, &ExternalFileWindow::forwardGridInfo, CSM.get(), &SessionManager::setExternalInfo);
 

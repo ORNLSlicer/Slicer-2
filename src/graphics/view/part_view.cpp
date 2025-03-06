@@ -25,7 +25,6 @@
 #include "managers/session_manager.h"
 #include "managers/settings/settings_manager.h"
 #include "part/part.h"
-#include "utilities/debugutils.h"
 #include "utilities/mathutils.h"
 #include "widgets/part_widget/model/part_meta_model.h"
 #include "widgets/part_widget/right_click_menu.h"
