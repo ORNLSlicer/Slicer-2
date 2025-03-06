@@ -3,7 +3,6 @@
 
 #include "dialogs/slice_dialog.h"
 #include "gcode/gcode_parser.h"
-#include "net_functions/http_server.h"
 #include "widgets/cmd_widget.h"
 #include "widgets/gcode_widget.h"
 #include "widgets/gcodebar.h"
