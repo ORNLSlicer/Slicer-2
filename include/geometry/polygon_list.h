@@ -219,9 +219,6 @@ class PolygonList : public QVector<Polygon> {
     //! \brief Rotates around a specified point
     PolygonList rotateAround(const Point& center, const Angle& angle, const QVector3D& axis = {0, 0, 1});
 
-    //! \brief Rotates around the center of the polygon list
-    PolygonList rotateAroundCenter(const Angle& angle, const QVector3D& axis = {0, 0, 1});
-
     //! \brief computes total, signed area of all polygons in the list
     Area totalArea();
 

@@ -482,10 +482,6 @@ PolygonList PolygonList::rotateAround(const Point& center, const Angle& angle, c
     return rv;
 }
 
-PolygonList PolygonList::rotateAroundCenter(const Angle& angle, const QVector3D& axis) {
-    return rotateAround(boundingRectCenter(), angle, axis);
-}
-
 int64_t PolygonList::totalLength() {
     int64_t total_length = 0;
     for (Polygon polygon : (*this)) {
