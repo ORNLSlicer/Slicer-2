@@ -86,11 +86,6 @@ namespace ORNL {
         }
     }
 
-    void ScanLayer::applyMapping()
-    {
-        //NOP
-    }
-
     void ScanLayer::connectPaths(Point& start, int& start_index, QVector<QSharedPointer<RegionBase>>& previousRegions)
     {
         for (QSharedPointer<IslandBase> island : m_islands) {

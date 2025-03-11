@@ -371,63 +371,6 @@ namespace ORNL
         return rv;
     }
 
-    QString IngersollWriter::writeSpline(const Point &start_point,
-                                  const Point &a_control_point,
-                                  const Point &b_control_point,
-                                  const Point &end_point,
-                                  const QSharedPointer<SettingsBase> params)
-    {
-        QString rv;
-
-
-        Velocity speed = params->setting<Velocity>(Constants::SegmentSettings::kSpeed);
-        int rpm = params->setting<int>(Constants::SegmentSettings::kExtruderSpeed);
-        float output_rpm = rpm * m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio);
-        int material_number = params->setting<int>(Constants::SegmentSettings::kMaterialNumber);
-        auto region_type = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
-        auto path_modifiers = params->setting<PathModifiers>(Constants::SegmentSettings::kPathModifiers);
-
-        for (int extruder : params->setting<QVector<int>>(Constants::SegmentSettings::kExtruders))
-        {
-            //turn on the extruder if it isn't already on
-            if (m_extruders_on[0] == false && rpm > 0) //only check first extruder
-            {
-                rv += writeExtruderOn(region_type, rpm, extruder);
-            }
-            // Update extruder speed if needed
-            if (m_extruders_on[0] == true && rpm != m_current_rpm) //only check first extruder
-            {
-                rv += "EXTRUDER(" % QString::number(output_rpm) % ")" % commentSpaceLine("UPDATE EXTRUDER RPM");
-                m_current_rpm = rpm;
-            }
-
-        }
-
-        rv += m_G5;
-
-        if (getFeedrate() != speed)
-        {
-            setFeedrate(speed);
-            rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
-        }
-
-        rv += m_i % QString::number(Distance(a_control_point.x() - start_point.x()).to(m_meta.m_distance_unit), 'f', 4) %
-              m_j % QString::number(Distance(a_control_point.y() - start_point.y()).to(m_meta.m_distance_unit), 'f', 4) %
-              m_p % QString::number(Distance(b_control_point.x() - end_point.x()).to(m_meta.m_distance_unit), 'f', 4) %
-              m_q % QString::number(Distance(b_control_point.y() - end_point.y()).to(m_meta.m_distance_unit), 'f', 4) %
-              m_x % QString::number(Distance(end_point.x()).to(m_meta.m_distance_unit), 'f', 4) %
-              m_y % QString::number(Distance(end_point.y()).to(m_meta.m_distance_unit), 'f', 4) %
-              getZWValue(end_point);
-
-        // Add comment for gcode parser
-        if (path_modifiers != PathModifiers::kNone)
-            rv += commentSpaceLine(toString(region_type) % m_space % toString(path_modifiers));
-        else
-            rv += commentSpaceLine(toString(region_type));
-
-        return rv;
-    }
-
     QString IngersollWriter::writeScan(Point target_point, Velocity speed, bool on_off)
     {
         QString rv;

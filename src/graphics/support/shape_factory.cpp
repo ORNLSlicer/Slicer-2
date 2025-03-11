@@ -1077,7 +1077,9 @@ namespace ORNL
         }
     }
 
-    void ShapeFactory::createBuildVolumeRectangle(QVector3D min, QVector3D max, float x_grid_dist, float y_grid_dist, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors) {
+    void ShapeFactory::createBuildVolumeRectangle(const QVector3D& min, const QVector3D& max, const float& x_grid_dist, const float& x_grid_offset, const float& y_grid_dist,
+                                                  const float& y_grid_offset, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors)
+    {
         float printer_x_min = min.x();
         float printer_x_max = max.x();
         float printer_y_min = min.y();
@@ -1143,7 +1145,7 @@ namespace ORNL
             float totalDist = printer_x_max - printer_x_min;
 
             if (x_grid_dist < totalDist) {
-                float currentX = printer_x_min + x_grid_dist;
+                float currentX = printer_x_min + x_grid_offset;
 
                 while (currentX < printer_x_max) {
                     vertices.push_back(currentX); vertices.push_back(printer_y_min); vertices.push_back(printer_z_min);
@@ -1157,7 +1159,7 @@ namespace ORNL
             float totalDist = printer_y_max - printer_y_min;
 
             if (y_grid_dist < totalDist) {
-                float currentY = printer_y_min + y_grid_dist;
+                float currentY = printer_y_min + y_grid_offset;
 
                 while (currentY < printer_y_max) {
                     vertices.push_back(printer_x_min); vertices.push_back(currentY); vertices.push_back(printer_z_min);

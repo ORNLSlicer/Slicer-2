@@ -24,7 +24,7 @@ namespace ORNL
     Distance MotionEstimation::calculateTimeAndVolume(
             int layer, bool isFIncluded, bool isGOCommand, QVector<bool> extrudersOn,
             Time &G1F_time, Time &layer_time,
-            Volume &layer_volume)
+            Volume &layer_volume, bool use_b)
     {
         //minimum distance to be considered move for estimate calculation
         double m_min_threshold = 10;
@@ -49,6 +49,18 @@ namespace ORNL
 
                     return 0;
                 }
+            }
+            de = m_current_e;
+        }
+
+        // if using B and de > 0, calculate time based on de and then return
+        // this is because time estimate is based on extrusion time not motion time
+        if (qAbs(de)> m_min_threshold && use_b) {
+            if (m_current_speed > 0) {
+                Time t = MotionEstimation::getTravelTime(de, m_current_speed, m_xy_acceleration);
+                layer_time += t;
+                MotionEstimation::setVVector(0, 0, w_table_speed());
+                return 0;
             }
             de = m_current_e;
         }

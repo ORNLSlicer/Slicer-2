@@ -79,19 +79,6 @@ namespace ORNL
                                  const bool& ccw,
                                  const QSharedPointer<SettingsBase> params) { return QString(); }
 
-        //! \brief writes a spline using the G5 command
-        //! \param start_point the starting location
-        //! \param a_control_point first control point
-        //! \param b_control_point second control point
-        //! \param end_point the ending location
-        //! \param params the settings base
-        //! \return a string with the gcode command
-         virtual QString writeSpline(const Point& start_point,
-                                     const Point& a_control_point,
-                                     const Point& b_control_point,
-                                     const Point& end_point,
-                                     const QSharedPointer<SettingsBase> params) { return QString();};
-
         //! \brief Writes G-Code to be executed after each path
         virtual QString writeAfterPath(RegionType type) = 0;
 

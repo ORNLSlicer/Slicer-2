@@ -1,0 +1,54 @@
+﻿---
+AlignAfterOpenBracket: Align
+AlignConsecutiveMacros: 'true'
+AlignOperands: 'true'
+AlignTrailingComments: 'true'
+AllowShortBlocksOnASingleLine: 'true'
+BreakBeforeBraces: Custom
+BraceWrapping:
+    BeforeElse: 'true'
+ColumnLimit: '120'
+CompactNamespaces: 'false'
+ContinuationIndentWidth: '4'
+Cpp11BracedListStyle: 'true'
+FixNamespaceComments: 'true'
+IncludeBlocks: 'Regroup'
+IncludeCategories:
+  - Regex: '^<openvdb/.*>' # Ensure OpenVDB includes come first
+    Priority: -1
+  - Regex: '^".*"' # Local includes
+    Priority: 1
+  - Regex: '^<([a-zA-Z0-9_]+)>$' # Standard library headers (e.g., <vector>, <iostream>)
+    Priority: 2
+  - Regex: '^<assimp/.*>' # Assimp
+    Priority: 3
+  - Regex: '^<boost/.*>' # Boost
+    Priority: 4
+  - Regex: '^<CGAL/.*>' # CGAL
+    Priority: 5
+  - Regex: '^<fmt/.*>' # FMT
+    Priority: 6
+  - Regex: '^<opencascade/.*>' # OpenCascade
+    Priority: 7
+  - Regex: '^<Qt.*/.*>' # Qt
+    Priority: 8
+  - Regex: '^<range/v3/.*>' # Range-v3
+    Priority: 9
+  - Regex: '^<spdlog/.*>' # spdlog
+    Priority: 10
+  - Regex: '<taskflow/.*>' # Taskflow
+    Priority: 11
+  - Regex: '^<vtk/.*>'  # VTK
+    Priority: 12
+IndentCaseLabels: 'true'
+IndentPPDirectives: BeforeHash
+IndentWidth: '4'
+PointerAlignment: Left
+SortIncludes: 'true'
+SpaceBeforeAssignmentOperators: 'true'
+SpaceBeforeCpp11BracedList: 'true'
+SpaceBeforeInheritanceColon: 'true'
+SpaceBeforeParens: ControlStatements
+TabWidth: '4'
+
+...

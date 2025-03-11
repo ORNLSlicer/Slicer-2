@@ -15,7 +15,6 @@ namespace ORNL
         // Fetch and sort parts
         m_parts = {
             SlicingUtilities::GetPartsByType(CSM->parts(), MeshType::kBuild),
-            SlicingUtilities::GetPartsByType(CSM->parts(), MeshType::kEmbossSubmesh),
             SlicingUtilities::GetPartsByType(CSM->parts(), MeshType::kClipping),
             SlicingUtilities::GetPartsByType(CSM->parts(), MeshType::kSettings),
         };
@@ -65,7 +64,7 @@ namespace ORNL
                 part_meta.steps_processed = part->countStepPairs();
                 part_meta.part_start = SlicingUtilities::GetPartStart(part, part_meta.steps_processed);
 
-                BufferedSlicer slicer(mesh, part_sb,  m_parts.settings_parts, m_parts.emboss_parts, part->ranges(), 0, 0, m_use_cgal_cross_section);
+                BufferedSlicer slicer(mesh, part_sb,  m_parts.settings_parts, part->ranges(), 0, 0, m_use_cgal_cross_section);
                 QSharedPointer<BufferedSlicer::SliceMeta> next_layer_meta = nullptr;
                 int last_step_count = 0;
                 do
@@ -149,7 +148,7 @@ namespace ORNL
                     if(m_mesh_processing(mesh, part_sb))
                         return; // halt slicing
 
-                QSharedPointer<BufferedSlicer> slicer = QSharedPointer<BufferedSlicer>::create(mesh, part_sb, m_parts.settings_parts, m_parts.emboss_parts, part->ranges(), previous_buffer_size, future_buffer_size);
+                QSharedPointer<BufferedSlicer> slicer = QSharedPointer<BufferedSlicer>::create(mesh, part_sb, m_parts.settings_parts, part->ranges(), previous_buffer_size, future_buffer_size);
                 m_mesh_slicers.insert(slicer_index, slicer);
                 ++slicer_index;
             }
