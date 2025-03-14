@@ -1,14 +1,13 @@
 #include "widgets/part_widget/part_widget.h"
 
-// Qt
-#include <QFileDialog>
-#include <QMessageBox>
-
-// Local
 #include "graphics/view/part_view.h"
+#include "managers/preferences_manager.h"
 #include "managers/session_manager.h"
 #include "managers/settings/settings_manager.h"
 #include "utilities/mathutils.h"
+
+#include <QFileDialog>
+#include <QMessageBox>
 
 namespace ORNL {
 PartWidget::PartWidget(QWidget* parent) : QWidget(parent) { this->setupWidget(); }
@@ -27,8 +26,6 @@ QSet<QSharedPointer<Part>> PartWidget::parts() {
         gop_translation *= Constants::OpenGL::kViewToObject;
 
         QMatrix4x4 object_transformation = MathUtils::composeTransformMatrix(gop_translation, gop_rotation, gop_scale);
-
-        // TODO (if it's important): update parent children here.
 
         p->setTransformation(object_transformation);
         p->rootMesh()->setType(item->meshType());
@@ -195,8 +192,6 @@ void PartWidget::updatePartTransformations() {
 
         QMatrix4x4 object_transformation = MathUtils::composeTransformMatrix(gop_translation, gop_rotation, gop_scale);
 
-        // TODO (if it's important): update parent children here.
-
         p->setTransformation(object_transformation);
         p->rootMesh()->setType(item->meshType());
     }
@@ -230,34 +225,9 @@ void PartWidget::modelSelectionUpdate(QSharedPointer<PartMetaItem> item) {
 }
 
 void PartWidget::modelTransformationUpdate(QSharedPointer<PartMetaItem> item) {
-    if (item->rotation() != QQuaternion(1, 0, 0, 0) && item->scale() != QVector3D(1, 1, 1))
+    if (item->rotation() != QQuaternion(1, 0, 0, 0) && item->scale() != QVector3D(1, 1, 1)) {
         emit displayRotationInfoMsg();
-
-    // IMPORTANT NOTE: there is no intention of keeping this as is. The layer bar should
-    // work off of the PartMetaItem, not the part itself. The this currently exists just to
-    // keep the bar in working order and should be replaced as soon as the layerbar is either
-    // updated or removed.
-
-    // ANOTHER IMPORTANT NOTE: The connection to the layerbar from this function is culprit for the slowdown
-    // while translating. This is yet another reason for a layerbar rework.
-
-    // A THIRD IMPORTANT NOTE: This slot is disconnected right now.
-
-    /*
-    QSharedPointer<Part> p = item->part();
-
-    QVector3D    gop_translation = item->translation();
-    QQuaternion  gop_rotation    = item->rotation();
-    QVector3D    gop_scale       = item->scale();
-
-    gop_translation *= Constants::OpenGL::kViewToObject;
-
-    QMatrix4x4 object_transformation = MathUtils::composeTransformMatrix(gop_translation, gop_rotation, gop_scale);
-
-    p->setTransformation(object_transformation);
-
-    emit modified(p);
-    */
+    }
 }
 
 void PartWidget::modelRemovalUpdate(QSharedPointer<PartMetaItem> item) {
@@ -273,17 +243,18 @@ void PartWidget::modelRemovalUpdate(QSharedPointer<PartMetaItem> item) {
 }
 
 void PartWidget::positionIssues(QList<QSharedPointer<Part>> opl, QList<QSharedPointer<Part>> fpl) {
-    for (auto part_meta_item : m_model->items()) // Clear old status
-    {
+    for (auto part_meta_item : m_model->items()) {
         m_part_control->setFloatingStatus(part_meta_item->part()->name(), false);
         m_part_control->setOutsideStatus(part_meta_item->part()->name(), false);
     }
 
-    for (auto& part : opl)
+    for (auto& part : opl) {
         m_part_control->setOutsideStatus(part->name(), true);
+    }
 
-    for (auto& part : fpl)
+    for (auto& part : fpl) {
         m_part_control->setFloatingStatus(part->name(), true);
+    }
 }
 
 void PartWidget::setStatusSelection(QString name) {

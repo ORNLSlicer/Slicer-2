@@ -1,26 +1,16 @@
 #include "graphics/view/part_view.h"
 
-// Qt
-#include <QMessageBox>
-#include <QStack>
-#include <QToolTip>
-
-// Local
 #include "graphics/graphics_object.h"
-#include "graphics/objects/arrow_object.h"
 #include "graphics/objects/axes_object.h"
 #include "graphics/objects/cube/plane_object.h"
-#include "graphics/objects/cube_object.h"
 #include "graphics/objects/grid_object.h"
 #include "graphics/objects/part_object.h"
 #include "graphics/objects/printer/cartesian_printer_object.h"
 #include "graphics/objects/printer/cylindrical_printer_object.h"
 #include "graphics/objects/printer/printer_object.h"
 #include "graphics/objects/printer/toroidal_printer_object.h"
-#include "graphics/objects/sphere_object.h"
 #include "graphics/objects/text_object.h"
 #include "graphics/support/part_picker.h"
-#include "graphics/support/shape_factory.h"
 #include "managers/preferences_manager.h"
 #include "managers/session_manager.h"
 #include "managers/settings/settings_manager.h"
@@ -28,6 +18,10 @@
 #include "utilities/mathutils.h"
 #include "widgets/part_widget/model/part_meta_model.h"
 #include "widgets/part_widget/right_click_menu.h"
+
+#include <QMessageBox>
+#include <QStack>
+#include <QToolTip>
 
 namespace ORNL {
 PartView::PartView(QSharedPointer<SettingsBase> sb) {
