@@ -325,6 +325,19 @@ static GcodeMeta ORNLMeta = {
     rev / minute,
     ".gcode"
 };
+static GcodeMeta ORNLMetricMeta = {
+    GcodeSyntax::kCincinnati,
+    QString("("), //starting_delim
+    QString(")"), //ending_delim
+    mm,
+    s,
+    degree,
+    g,
+    mm / minute,
+    mm / s / s,
+    rev / minute,
+    ".gcode"
+};
 static GcodeMeta TormachMeta = {
     GcodeSyntax::kTormach,
     QString("("), //starting_delim

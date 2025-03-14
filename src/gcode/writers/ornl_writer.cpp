@@ -241,8 +241,11 @@ namespace ORNL
         {
             setFeedrate(speed);
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
+            if(m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) != (int)MachineType::kWire_Arc)
+            {
+                rv += m_s % QString::number(output_rpm);
+            }
 
-            rv += m_s % QString::number(output_rpm);
             m_current_rpm = rpm;
 
             m_layer_start = false;
@@ -255,7 +258,7 @@ namespace ORNL
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         }
 
-        if (rpm != m_current_rpm)
+        if (rpm != m_current_rpm && m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) != (int)MachineType::kWire_Arc)
         {
             rv += m_s % QString::number(output_rpm);
             m_current_rpm = rpm;
@@ -308,7 +311,7 @@ namespace ORNL
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         }
 
-        if (rpm != m_current_rpm)
+        if (rpm != m_current_rpm && m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) != (int)MachineType::kWire_Arc)
         {
             rv += m_s % QString::number(rpm);
             m_current_rpm = rpm;
@@ -420,8 +423,14 @@ namespace ORNL
     QString ORNLWriter::writeShutdown()
     {
         QString rv;
-        rv += m_M5 % commentSpaceLine("TURN EXTRUDER OFF END OF PRINT") %
-              writeTamperOff();
+        if(m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) == (int)MachineType::kWire_Arc)
+        {
+            rv += m_M5 % commentSpaceLine("TURN WELDER OFF END OF PRINT");
+        }
+        else
+        {
+            rv += m_M5 % commentSpaceLine("TURN EXTRUDER OFF END OF PRINT");
+        }
 
         rv += m_sb->setting< QString >(Constants::PrinterSettings::GCode::kEndCode) % m_newline %
               "M30" % commentSpaceLine("END OF G-CODE");
@@ -442,74 +451,67 @@ namespace ORNL
             return {};
     }
 
-    QString ORNLWriter::writeTamperOn()
-    {
-        QString rv;
-        return rv;
-    }
-
-    QString ORNLWriter::writeTamperOff()
-    {
-        QString rv;
-        return rv;
-    }
-
     QString ORNLWriter::writeExtruderOn(RegionType type, int rpm, int extruder_number)
     {
         QString rv;
         m_extruders_on[extruder_number] = true;
         float output_rpm;
 
-        rv += writeTamperOn();
-
-        if (m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed) > 0)
+        if(m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) == (int)MachineType::kWire_Arc)
         {
-            output_rpm = m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio) * m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed);
-
-            // Only update the current rpm if not using feedrate scaling. An updated rpm value here could prevent the S parameter
-            // from being issued during the first G1 motion of the path and thus the extruder rate won't properly scale
-            if(!(m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime) &&
-                 m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod) == (int)ForceMinimumLayerTime::kSlow_Feedrate))
-                m_current_rpm = m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed);
-
-            rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("TURN EXTRUDER ON");
-
-            if (type == RegionType::kInset)
-            {
-                if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInset) > 0)
-                    rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInset));
-            }
-            else if (type == RegionType::kSkin)
-            {
-                if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkin) > 0)
-                    rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkin));
-            }
-            else if (type == RegionType::kInfill)
-            {
-                if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInfill) > 0)
-                    rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInfill));
-            }
-            else if (type == RegionType::kSkeleton)
-            {
-                if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkeleton) > 0)
-                    rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkeleton));
-            }
-            else
-            {
-                if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayPerimeter) > 0)
-                    rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayPerimeter));
-            }
+            rv += m_M3 % commentSpaceLine("TURN WELDER ON");
         }
         else
         {
-            output_rpm = m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio) * rpm;
-            rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("TURN EXTRUDER ON");
+            if (m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed) > 0)
+            {
+                output_rpm = m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio) * m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed);
 
-            // Only update the current rpm if not using feedrate scaling. An updated rpm value here could prevent the S parameter
-            // from being issued during the first G1 motion of the path and thus the extruder rate won't properly scale
-            if(!(m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime) &&
-                 m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod) == (int)ForceMinimumLayerTime::kSlow_Feedrate))
-                m_current_rpm = rpm;
+                       // Only update the current rpm if not using feedrate scaling. An updated rpm value here could prevent the S parameter
+                       // from being issued during the first G1 motion of the path and thus the extruder rate won't properly scale
+                if(!(m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime) &&
+                      m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod) == (int)ForceMinimumLayerTime::kSlow_Feedrate))
+                    m_current_rpm = m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed);
+
+                rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("TURN EXTRUDER ON");
+
+                if (type == RegionType::kInset)
+                {
+                    if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInset) > 0)
+                        rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInset));
+                }
+                else if (type == RegionType::kSkin)
+                {
+                    if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkin) > 0)
+                        rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkin));
+                }
+                else if (type == RegionType::kInfill)
+                {
+                    if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInfill) > 0)
+                        rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInfill));
+                }
+                else if (type == RegionType::kSkeleton)
+                {
+                    if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkeleton) > 0)
+                        rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkeleton));
+                }
+                else
+                {
+                    if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayPerimeter) > 0)
+                        rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayPerimeter));
+                }
+            }
+            else
+            {
+                output_rpm = m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio) * rpm;
+                rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("TURN EXTRUDER ON");
+
+                       // Only update the current rpm if not using feedrate scaling. An updated rpm value here could prevent the S parameter
+                       // from being issued during the first G1 motion of the path and thus the extruder rate won't properly scale
+                if(!(m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime) &&
+                      m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod) == (int)ForceMinimumLayerTime::kSlow_Feedrate))
+                    m_current_rpm = rpm;
+            }
         }
 
         return rv;
@@ -521,11 +523,18 @@ namespace ORNL
 
         QString rv;
         m_extruders_on[extruder_number] = false;
-        if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOffDelay) > 0)
+
+        if(m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) == (int)MachineType::kWire_Arc)
         {
-            rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOffDelay));
+            rv += m_M5 % commentSpaceLine("TURN WELDER OFF");
         }
-        rv += writeTamperOff() % m_M5 % commentSpaceLine("TURN EXTRUDER OFF");
+        else
+        {
+            if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOffDelay) > 0)
+            {
+                rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOffDelay));
+            }
+        }
         m_current_rpm = 0;
         return rv;
     }
