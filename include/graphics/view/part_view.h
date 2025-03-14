@@ -70,7 +70,12 @@ class PartView : public BaseView {
     //! \todo This should be done using the selected parts instead.
     void centerPart(QString name);
 
-    //! \brief Drops the selected parts to the printer bed.
+    //! @brief Centers (x, y) the selected parts in the build volume.
+    //! @details Maintains relative positions of selected parts.
+    void centerSelectedParts();
+
+    //! @brief Drops the selected parts to the printer bed.
+    //! @details Maintains relative positions of selected parts.
     void dropSelectedParts();
 
     //! \brief Callback for when printer settings are changed.

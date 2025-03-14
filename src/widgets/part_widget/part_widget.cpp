@@ -379,12 +379,13 @@ void PartWidget::setupEvents() {
     connect(PM.get(), &PreferencesManager::angleUnitChanged, this,
             [this](Angle new_unit, Angle old_unit) { m_toolbar->updateAngleUnits(new_unit, old_unit); });
 
-    connect(m_toolbar, &PartToolbar::centerParts, [this]() { m_part_view->centerPart(m_status_state.selected_part); });
+    // Connect the part toolbar to the part view
+    connect(m_toolbar, &PartToolbar::centerParts, m_part_view, &PartView::centerSelectedParts);
     connect(m_toolbar, &PartToolbar::dropPartsToFloor, m_part_view, &PartView::dropSelectedParts);
+    connect(m_toolbar, &PartToolbar::setupAlignment, m_part_view, &PartView::setupAlignment);
+
     connect(this, &PartWidget::resized, m_toolbar, &PartToolbar::resize);
     connect(this, &PartWidget::resized, m_view_controls, &ViewControlsToolbar::resize);
-
-    connect(m_toolbar, &PartToolbar::setupAlignment, m_part_view, &PartView::setupAlignment);
 
     // Buttons -> PartWidget: Connect view buttons
     connect(m_view_controls, &ViewControlsToolbar::setIsoView, m_part_view, &PartView::setForwardView);

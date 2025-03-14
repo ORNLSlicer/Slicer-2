@@ -163,6 +163,42 @@ restart_check:
     }
 }
 
+void PartView::centerSelectedParts() {
+    // Calculate the bounding box of the selected parts.
+    QVector3D group_min = m_selected_objects.values().first()->minimum();
+    QVector3D group_max = m_selected_objects.values().first()->maximum();
+
+    for (const auto& gop : m_selected_objects) {
+        QVector3D part_min = gop->minimum();
+        QVector3D part_max = gop->maximum();
+        group_min.setX(std::min(group_min.x(), part_min.x()));
+        group_min.setY(std::min(group_min.y(), part_min.y()));
+        group_max.setX(std::max(group_max.x(), part_max.x()));
+        group_max.setY(std::max(group_max.y(), part_max.y()));
+    }
+
+    // Calculate the center of the bounding box.
+    QVector3D group_center((group_min.x() + group_max.x()) / 2.0f, (group_min.y() + group_max.y()) / 2.0f, 0.0f);
+
+    // Compute the offset to move the center of the bounding box to the printer center.
+    QVector3D offset = m_printer->printerCenter() - group_center;
+    offset.setZ(0.0f); // Do not move the parts in the z direction.
+
+    // Move the selected parts.
+    for (const auto& gop : m_selected_objects) {
+        QVector3D translation = gop->translation() + offset;
+
+        gop->translateAbsolute(translation);
+
+        this->blockModel();
+        m_model->lookupByGraphic(gop)->setTranslation(translation);
+        this->permitModel();
+    }
+
+    this->postTransformCheck();
+    this->update();
+}
+
 void PartView::dropSelectedParts() {
     for (auto& gop : m_selected_objects) {
         dropPart(gop);
@@ -322,12 +358,7 @@ void PartView::initView() {
     float width_diff = (max.x() * 1.2) - max.x();
     float length_diff = (max.y() * 1.2) - max.y();
 
-    float diff = 0;
-
-    if (width_diff > length_diff)
-        diff = width_diff;
-    else
-        diff = length_diff;
+    float diff = (width_diff > length_diff) ? width_diff : length_diff;
 
     float length = (max.x() - min.x()) + (2 * diff);
     float width = (max.y() - min.y()) + (2 * diff);
@@ -554,7 +585,6 @@ void PartView::handleRightMove(QPointF mouse_ndc_pos) {
     QMatrix4x4 view_mtrx = this->viewMatrix();
 
     QVector3D right = QVector3D(view_mtrx(0, 0), view_mtrx(0, 1), view_mtrx(0, 2));
-    // QVector3D up = QVector3D(view_mtrx(1,0), view_mtrx(1,1), view_mtrx(1,2));
     QVector3D up = QVector3D(0, 0, 1);
 
     right.setZ(0);
@@ -563,8 +593,6 @@ void PartView::handleRightMove(QPointF mouse_ndc_pos) {
     QQuaternion qr = QQuaternion::fromAxisAndAngle(right, r.x());
     qr *= QQuaternion::fromAxisAndAngle(up, r.z());
 
-    // qDebug() << "Applied rotation" << qr.toEulerAngles();
-
     for (auto& gop : m_selected_objects) {
         if (gop->locked()) {
             QToolTip::showText(QCursor::pos(), "This object is locked.", nullptr, QRect(), 300000);
@@ -572,8 +600,6 @@ void PartView::handleRightMove(QPointF mouse_ndc_pos) {
         }
 
         m_model->lookupByGraphic(gop)->setRotation(gop->rotation(), true);
-
-        // qDebug() << gop->name() << "rotates to" << gop->rotation().toEulerAngles() << gop->rotation();
     }
 
     this->update();
@@ -823,8 +849,6 @@ void PartView::modelParentingUpdate(QSharedPointer<PartMetaItem> pm) {
     if (parent_pm_gop != nullptr)
         parent_pm_gop->unselect();
 
-    // Check parents - This is frankly confusing, so I'm going to step through it in good detail.
-
     // If the parent of the graphics part is not the same as the graphics part for this update, then
     // its parent has changed. It needs to be removed from the old parent and added to the new one.
     if (parent_pm_gop != parent_gop) {
@@ -1027,8 +1051,6 @@ void PartView::blockModel() {
     QObject::disconnect(m_model.get(), &PartMetaModel::selectionUpdate, this, &PartView::modelSelectionUpdate);
     QObject::disconnect(m_model.get(), &PartMetaModel::parentingUpdate, this, &PartView::modelParentingUpdate);
     QObject::disconnect(m_model.get(), &PartMetaModel::transformUpdate, this, &PartView::modelTranformUpdate);
-    // Removal/visual update never needs to be disconnected as it is currently only modified by the right click
-    // menu/part widget (i.e. externally)
 }
 
 void PartView::permitModel() {
