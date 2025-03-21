@@ -761,7 +761,7 @@ void PolymerSlicer::postProcess(nlohmann::json opt_data) {
             // so that each layer starts where the last layer ended
             m_global_layers[g_layer_num]->connectPaths(global_sb, current_points, start_indices, previous_regions_list);
 
-            m_global_layers[g_layer_num]->calculateModifiers(global_sb, current_points);
+            m_global_layers[g_layer_num]->calculateModifiers(global_sb, current_points, g_layer_num);
 
             m_global_layers[g_layer_num]->reorient();
 

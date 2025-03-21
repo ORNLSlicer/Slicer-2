@@ -31,7 +31,7 @@ namespace ORNL
             void reorient();
 
             //! \brief Creates path modifiers; must be called after connectPaths()
-            void calculateModifiers(QSharedPointer<SettingsBase> global_sb, QVector<Point>& current_location);
+            void calculateModifiers(QSharedPointer<SettingsBase> global_sb, QVector<Point>& current_location, int layer_num);
 
             //! \brief Adjusts pathing on a layer to account for multiple fixed nozzles
             void adjustFixedMultiNozzle();

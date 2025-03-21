@@ -564,6 +564,7 @@ const QString Constants::ProfileSettings::Perimeter::kPower = "perimeter_power";
 const QString Constants::ProfileSettings::Perimeter::kFocus = "perimeter_focus";
 const QString Constants::ProfileSettings::Perimeter::kSpotSize = "perimeter_spot_size";
 const QString Constants::ProfileSettings::Perimeter::kEnableLeadIn = "perimeter_lead_in";
+const QString Constants::ProfileSettings::Perimeter::kLeadInFirstLayerOnly = "perimeter_lead_in_first_layer";
 const QString Constants::ProfileSettings::Perimeter::kEnableLeadInX = "perimeter_lead_in_x";
 const QString Constants::ProfileSettings::Perimeter::kEnableLeadInY = "perimeter_lead_in_y";
 const QString Constants::ProfileSettings::Perimeter::kEnableFlyingStart = "perimeter_flying_start";

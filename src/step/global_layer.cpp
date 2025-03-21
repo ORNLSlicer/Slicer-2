@@ -35,7 +35,7 @@ namespace ORNL {
         }
     }
 
-    void GlobalLayer::calculateModifiers(QSharedPointer<SettingsBase> global_sb, QVector<Point> &current_location)
+    void GlobalLayer::calculateModifiers(QSharedPointer<SettingsBase> global_sb, QVector<Point> &current_location, int layer_num)
     {
         int num_nozzles = global_sb->setting<int>(Constants::ExperimentalSettings::MultiNozzle::kNozzleCount);
         for (int tool = 0; tool < num_nozzles; ++tool)
@@ -45,7 +45,8 @@ namespace ORNL {
                 QSharedPointer<IslandBase> firstIsland = m_island_order[tool].front();
 
                 if(firstIsland->getSb()->setting<bool>(Constants::ProfileSettings::Perimeter::kEnable) &&
-                        firstIsland->getSb()->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableLeadIn))
+                        firstIsland->getSb()->setting<bool>(Constants::ProfileSettings::Perimeter::kEnableLeadIn) &&
+                    (layer_num == 0 || !global_sb->setting<bool>(Constants::ProfileSettings::Perimeter::kLeadInFirstLayerOnly)))
                 {
                     Point leadIn = Point(firstIsland->getSb()->setting<Distance>(Constants::ProfileSettings::Perimeter::kEnableLeadInX),
                                          firstIsland->getSb()->setting<Distance>(Constants::ProfileSettings::Perimeter::kEnableLeadInY),

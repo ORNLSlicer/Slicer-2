@@ -623,6 +623,7 @@ class Constants {
             static const QString kFocus;
             static const QString kSpotSize;
             static const QString kEnableLeadIn;
+            static const QString kLeadInFirstLayerOnly;
             static const QString kEnableLeadInX;
             static const QString kEnableLeadInY;
             static const QString kEnableFlyingStart;
