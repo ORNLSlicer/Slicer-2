@@ -17,16 +17,6 @@
 #include <vtkSmartPointer.h>
 #define emit
 
-// only needed for ITK, currently on hold
-// #include "itkImage.h"
-// #include "itkImageFileWriter.h"
-// #include "itkPoint.h"
-// #include "itkPolygonSpatialObject.h"
-// #include "itkSpatialObjectToImageFilter.h"
-// #include "itkPasteImageFilter.h"
-// #include "itkImageDuplicator.h"
-// #include "itkFlipImageFilter.h"
-
 namespace ORNL {
 /*!
  * \class ImageSlicer
@@ -93,18 +83,6 @@ class ImageSlicer : public TraditionalAST {
     //! \param gridWidth: width of entire build volume
     //! \param gridHeight: height of entire build volume
     void createImageStencilVTK(QVector<PolygonListAndColor> geometryAndColor, int layer, double xResolution,
-                               double yResolution, int gridWidth, int gridHeight);
-
-    //! \brief Create a stencil image using ITK (2D optimized version of VTK)
-    //! \brief Currently, this function doesn't work quite right. For some reason, ITK will not render certain images
-    //! correctly when creating the stencil. \brief I need to figure out why and test speed against VTK implementation.
-    //! \param geometryAndColor: Vector of polygonlists from cross-sections and associated colors
-    //! \param layer: Current layer needed for file output
-    //! \param xResolution: X resolution of images
-    //! \param yResolution: Y resolution of images
-    //! \param gridWidth: width of entire build volume
-    //! \param gridHeight: height of entire build volume
-    void createImageStencilITK(QVector<PolygonListAndColor> geometryAndColor, int layer, double xResolution,
                                double yResolution, int gridWidth, int gridHeight);
 
     //!\brief Number of digits for image file name to allow sequencing of layers

@@ -13,9 +13,6 @@ namespace ORNL {
 ImageSlicer::ImageSlicer(QString gcodeLocation) : TraditionalAST(gcodeLocation, true) {}
 
 void ImageSlicer::preProcess(nlohmann::json opt_data) {
-    // QElapsedTimer timer;
-    // timer.start();
-
     QVector<QSharedPointer<Part>> parts = SlicingUtilities::GetPartsByType(CSM->parts(), MeshType::kBuild);
     QVector<QSharedPointer<Part>> moreParts = SlicingUtilities::GetPartsByType(CSM->parts(), MeshType::kSupport);
     parts += moreParts;
@@ -173,13 +170,10 @@ void ImageSlicer::preProcess(nlohmann::json opt_data) {
                 }
                 if (result.size() > 0)
                     currentCrossSections.push_back(PolygonListAndColor(result, allMeshes[j].m_id));
-                // currentCrossSections.push_back(PolygonListAndColor(result, 65535));//PolygonListAndColor(result,
-                // allMeshes[j].m_id));//PolygonListAndColor(result, (j + 1) * 10000));
             }
         }
         createImageStencilVTK(currentCrossSections, slicing_planes[i].m_layer, xResolution, yResolution, volumeXDim,
                               volumeYDim);
-        // createImageStencilITK(currentCrossSections, i, xResolution, yResolution, volumeXDim, volumeYDim);
     }
 
     // create companion json file
@@ -199,14 +193,6 @@ void ImageSlicer::preProcess(nlohmann::json opt_data) {
     file.open(QIODevice::WriteOnly);
     file.write(originalName.dump().c_str());
     file.close();
-
-    //            QString filename = "C:\\Code\\vtkexample\\totaltime.txt";
-    //            QFile file(filename);
-    //            if (file.open(QIODevice::ReadWrite)) {
-    //                QTextStream stream(&file);
-    //                stream << QString::number(timer.elapsed());
-    //            }
-    //            file.close();
 }
 
 void ImageSlicer::createImageStencilVTK(QVector<PolygonListAndColor> geometryAndColor, int layer, double xResolution,
@@ -289,131 +275,6 @@ void ImageSlicer::createImageStencilVTK(QVector<PolygonListAndColor> geometryAnd
             .c_str());
     imageWriter->SetInputData(fullImage);
     imageWriter->Write();
-}
-
-void ImageSlicer::createImageStencilITK(QVector<PolygonListAndColor> geometryAndColor, int layer, double xResolution,
-                                        double yResolution, int gridWidth, int gridHeight) {
-    //        using pixelType = unsigned short;
-    //        const int dimension = 2;
-    //        using ImageType = itk::Image<pixelType, dimension>;
-
-    //        ImageType::RegionType region;
-    ////        ImageType::IndexType  start;
-    ////        start[0] = 0;
-    ////        start[1] = 0;
-
-    //        ImageType::SizeType size;
-    //        size[0] = gridWidth;
-    //        size[1] = gridHeight;
-
-    //        region.SetSize(size);
-    ////        region.SetIndex(start);
-
-    //        auto fullImage = ImageType::New();
-    //        fullImage->SetRegions(region);
-    //        fullImage->Allocate();
-    //        fullImage->FillBuffer(0);
-
-    //        using PolygonType = itk::PolygonSpatialObject<dimension>;
-    //        using SpatialObjectToImageFilterType = itk::SpatialObjectToImageFilter<PolygonType, ImageType>;
-
-    //        using FilterType = itk::PasteImageFilter<ImageType, ImageType>;
-
-    ////        int i = 0;
-    ////        std::vector<FilterType*> pasteFilters;
-    ////        std::vector<ImageType*> locals;
-    //        for(PolygonListAndColor polyListAndColor : geometryAndColor)
-    //        {
-    //            Point minPt = Point(std::rint(polyListAndColor.crossSection.min().x() / xResolution),
-    //            std::rint((polyListAndColor.crossSection.min().y() / yResolution))); Point maxPt =
-    //            Point(std::rint(polyListAndColor.crossSection.max().x() / xResolution),
-    //            std::rint((polyListAndColor.crossSection.max().y() / yResolution)));
-
-    //            auto fullPolygon = PolygonType::New();
-    //            typename PolygonType::PointType point;
-    //            typename PolygonType::PolygonPointType polygonPoint;
-
-    //            polyListAndColor.crossSection.removeAt(3);
-    //            polyListAndColor.crossSection.removeAt(3);
-    ////            polyListAndColor.crossSection.removeAt(1);
-
-    //            int count = 0;
-    //            for (Polygon polygon : polyListAndColor.crossSection)
-    //            {
-    //                fullPolygon->GetPoints().reserve(fullPolygon->GetPoints().size() + polygon.size());
-    //                Point p1 = polygon[0];
-    //                Point p2 = polygon[(polygon.size() + 1) % polygon.size()];
-    //                qDebug() << "size" << polygon.size();// << (polygon.size() + 1) % polygon.size();
-    //                //qDebug() << p1.x() << p1.y() << p2.x() << p2.y();
-    //                if(count > 0)
-    //                {
-    //                    std::reverse(polygon.begin(), polygon.end());
-    //                }
-    //                for (int i = 0; i < polygon.size() + 1; ++i)
-    //                {
-    //                    //qDebug() << "iterator" << i << i % polygon.size();
-    //                    Point p = polygon[i % polygon.size()];
-    //                    point[0] = p.x() / xResolution - minPt.x();
-    //                    point[1] = p.y() / yResolution - minPt.y();
-    //                    qDebug() << point[0] << point[1];
-    //                    polygonPoint.SetPositionInObjectSpace(point);
-    //                    fullPolygon->GetPoints().push_back(polygonPoint);
-    //                }
-    //                count++;
-    //            }
-
-    //            fullPolygon->SetIsClosed(true);
-    //            fullPolygon->Update();
-
-    //            auto localImage = SpatialObjectToImageFilterType::New();
-    //            ImageType::SizeType localSize;
-    //            localSize[0] = maxPt.x() - minPt.x();
-    //            localSize[1] = maxPt.y() - minPt.y();
-    //            localImage->SetSize(localSize);
-    //            localImage->SetInput(fullPolygon);
-    //            localImage->SetInsideValue(polyListAndColor.color);
-    //            localImage->SetOutsideValue(0);
-    //            localImage->Update();
-
-    //            auto localImageOut = localImage->GetOutput();
-    //            ImageType::IndexType index;
-    //            index[0] = minPt.x();
-    //            index[1] = minPt.y();
-
-    //            auto copyImage = FilterType::New();
-    //            copyImage->SetSourceImage(localImageOut);
-    //            copyImage->SetSourceRegion(localImageOut->GetLargestPossibleRegion());
-    //            copyImage->SetDestinationIndex(index);
-    //            copyImage->SetDestinationImage(fullImage);
-    //            copyImage->Update();
-
-    ////            locals.push_back(localImageOut);
-    ////            pasteFilters.push_back(copyImage);
-
-    // //           QString imageName = "C:\\Code\\itkexample\\test_" + QString::number(i) + ".png";
-    // //           itk::WriteImage(copyImage->GetOutput(), imageName.toStdString());
-    //            fullImage = copyImage->GetOutput();
-    // //           ++i;
-    ////            if(i == 2)
-    ////            {
-    ////                QString imageName = "C:\\Code\\itkexample\\test_" + QString::number(layer) + ".png";
-    ////                itk::WriteImage(copyImage->GetOutput(), imageName.toStdString());
-    ////            }
-    //        }
-
-    //        using FlipImageFilterType = itk::FlipImageFilter<ImageType>;
-    //        auto flipFilter = FlipImageFilterType::New();
-    //        flipFilter->SetInput(fullImage);
-    //        FlipImageFilterType::FlipAxesArrayType flipAxes;
-    //        flipAxes[0] = false;
-    //        flipAxes[1] = true;
-    //        flipFilter->SetFlipAxes(flipAxes);
-
-    //        //QString imageName = "C:\\Code\\itkexample\\test_" + QString::number(layer) + ".png";
-    //        std::string val = std::to_string(layer);
-    //        std::string filename = "C:\\Code\\itkexample\\" + std::string(m_total_digits - std::min(m_total_digits,
-    //        (int)val.length()), '0') + val + ".png"; itk::WriteImage(flipFilter->GetOutput(), filename);
-    //        //itk::WriteImage(fullImage, imageName.toStdString());
 }
 
 void ImageSlicer::postProcess(nlohmann::json opt_data) { emit statusUpdate(StatusUpdateStepType::kPostProcess, 100); }
