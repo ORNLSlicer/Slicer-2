@@ -241,7 +241,7 @@ namespace ORNL
         {
             setFeedrate(speed);
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
-            if(m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) != (int)MachineType::kWire_Arc)
+            if(m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType) != MachineType::kWire_Arc)
             {
                 rv += m_s % QString::number(output_rpm);
             }
@@ -258,7 +258,7 @@ namespace ORNL
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         }
 
-        if (rpm != m_current_rpm && m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) != (int)MachineType::kWire_Arc)
+        if (rpm != m_current_rpm && m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType) != MachineType::kWire_Arc)
         {
             rv += m_s % QString::number(output_rpm);
             m_current_rpm = rpm;
@@ -311,7 +311,7 @@ namespace ORNL
             rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         }
 
-        if (rpm != m_current_rpm && m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) != (int)MachineType::kWire_Arc)
+        if (rpm != m_current_rpm && m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType) != MachineType::kWire_Arc)
         {
             rv += m_s % QString::number(rpm);
             m_current_rpm = rpm;
@@ -423,7 +423,7 @@ namespace ORNL
     QString ORNLWriter::writeShutdown()
     {
         QString rv;
-        if(m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) == (int)MachineType::kWire_Arc)
+        if(m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType) == MachineType::kWire_Arc)
         {
             rv += m_M5 % commentSpaceLine("TURN WELDER OFF END OF PRINT");
         }
@@ -457,7 +457,7 @@ namespace ORNL
         m_extruders_on[extruder_number] = true;
         float output_rpm;
 
-        if(m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) == (int)MachineType::kWire_Arc)
+        if(m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType) == MachineType::kWire_Arc)
         {
             rv += m_M3 % commentSpaceLine("TURN WELDER ON");
         }
@@ -524,7 +524,7 @@ namespace ORNL
         QString rv;
         m_extruders_on[extruder_number] = false;
 
-        if(m_sb->setting<int>(Constants::PrinterSettings::MachineSetup::kMachineType) == (int)MachineType::kWire_Arc)
+        if(m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType) == MachineType::kWire_Arc)
         {
             rv += m_M5 % commentSpaceLine("TURN WELDER OFF");
         }
