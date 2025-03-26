@@ -173,6 +173,11 @@ namespace ORNL {
                 if(allMeshes[j].m_mesh->max().z() >= currentPlane.point().z())
                 {
                     PolygonList result = CrossSection::doCrossSection(allMeshes[j].m_mesh, currentPlane, shift_amount, average_normal, GSM->getGlobal());
+                    for(int i = result.size() - 1; i >= 0; --i)
+                    {
+                        if(result[i].size() <= 2)
+                            result.removeAt(i);
+                    }
                     if(result.size() > 0)
                         currentCrossSections.push_back(PolygonListAndColor(result, allMeshes[j].m_id));
                     //currentCrossSections.push_back(PolygonListAndColor(result, 65535));//PolygonListAndColor(result, allMeshes[j].m_id));//PolygonListAndColor(result, (j + 1) * 10000));
