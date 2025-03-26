@@ -1,198 +1,120 @@
 {
-    description = "ORNL Slicer 2 - An advanced object slicer";
+  description = "ORNL Slicer 2 - An advanced object slicer";
 
-    inputs = {
-        nixpkgs.url = github:mdfbaam/nixpkgs/slicer2;
-        utils.url = github:numtide/flake-utils;
+  inputs = {
+    nixpkgs.url = gitlab:mdf/nixpkgs/slicer2?host=code.ornl.gov;
+    utils.url   = github:numtide/flake-utils;
+  };
+
+  outputs = inputs @ { self, utils, ... }: utils.lib.eachDefaultSystem (system: let
+    config = rec {
+      pkgs = import inputs.nixpkgs {
+        inherit system;
+        inherit (import ./nix/nixpkgs/config.nix {}) overlays config;
+      };
+
+      stdenv = llvm.stdenv;
+
+      llvm = rec {
+        packages = pkgs.llvmPackages_18;
+        stdenv   = packages.stdenv;
+
+        tooling = rec {
+          lldb = packages.lldb;
+          clang-tools = packages.clang-tools;
+          clang-tools-libcxx = clang-tools.override {
+              enableLibcxx = true;
+          };
+        };
+      };
+    };
+  in with config; rec {
+    inherit config;
+
+    lib = rec {
+      fetchVersion = version_file: let
+        inherit (lib.pipe version_file [ builtins.readFile builtins.fromJSON ]) major minor patch suffix;
+        suffixShort = builtins.substring 0 1 suffix;
+
+        version      = "${major}.${minor}.${patch}+${suffix}";
+        revisionHash = self.shortRev or self.dirtyShortRev;
+        fullVersion  = "${version}-${revisionHash}";
+      in fullVersion;
+
+      mkPackages = pkgs: rec {
+        ornl = rec {
+          libraries = rec {
+            sockets  = pkgs.qt5.callPackage ./nix/packages/sockets {};
+
+            clipper  = pkgs.callPackage ./nix/packages/clipper  {};
+            kuba-zip = pkgs.callPackage ./nix/packages/kuba-zip {};
+            psimpl   = pkgs.callPackage ./nix/packages/psimpl   {};
+          };
+
+          slicer2 = pkgs.qt5.callPackage ./nix/slicer2 {
+            src     = self;
+            version = (lib.fetchVersion ./version.json);
+
+            inherit (libraries) sockets kuba-zip clipper psimpl;
+            inherit stdenv;
+          };
+        };
+      };
+    } // config.pkgs.lib;
+
+    legacyPackages = {
+      inherit (lib.mkPackages pkgs) ornl;
+      windows = (lib.mkPackages pkgs.pkgsCross.mingwW64);
     };
 
-    outputs = attrs @ { self, ... }: attrs.utils.lib.eachDefaultSystem (system: rec {
-        config = rec {
-            pkgsNative = import attrs.nixpkgs {
-                inherit system;
-                config = {
-                    glibc.withLdFallbackPatch = true;
-                };
-            };
-
-            pkgsMinGW64 = (import attrs.nixpkgs { inherit system; }).pkgsCross.mingwW64;
-
-            llvm = pkgsNative.llvmPackages_18;
-        };
-
-        derivations = { pkgs, stdenv ? pkgs.stdenv }: with config; rec {
-            ornl = {
-                slicer2 = stdenv.mkDerivation rec {
-                    pname = "ornl-slicer2";
-                    version = "1.01-" + (builtins.substring 0 8 (if (self ? rev) then self.rev else "dirty"));
-
-                    src = self;
-
-                    buildInputs = [
-                        pkgs.qt5.qtbase
-                        pkgs.qt5.qtcharts
-
-                        pkgs.assimp
-                        pkgs.boost184
-                        pkgs.cgal_5
-                        pkgs.eigen
-                        pkgs.gmp
-                        pkgs.nlohmann_json
-                        pkgs.mpfr
-                        pkgs.hdf5
-                        pkgs.vtk-qt5
-                        pkgs.tbb
-                    ] ++ pkgs.lib.optionals (stdenv == llvm.stdenv) [
-                        llvm.openmp
-                    ];
-
-                    nativeBuildInputs = [
-                        pkgsNative.cmake
-                        pkgsNative.ninja
-                        pkgsNative.pkg-config
-                        pkgsNative.breakpointHook
-                        pkgsNative.qt5.wrapQtAppsHook
-                    ];
-
-                    # Workaround for non-NixOS to find GPU drivers
-                    # TODO: add more linux distro paths as they are found or query ldconfig
-                    qtWrapperArgs = pkgs.lib.optionals stdenv.isLinux [
-                        "--suffix LD_FALLBACK_PATH : /usr/lib/x86_64-linux-gnu"
-                    ];
-
-                    # The current build system is a bit weird, so we have to do some manual copying.
-                    installPhase = ''
-                        runHook preInstall
-
-                        mkdir -p $out/bin
-                        cp ornl_slicer_2 $out/bin/slicer2
-                        cp -r templates $out/bin
-                        cp -r layerbartemplates $out/bin
-
-
-                        mkdir -p $out/share/doc
-                        cp Slicer_2_User_Guide.pdf $out/share/doc
-
-                        runHook postInstall
-                    '';
-
-                    meta.mainProgram = "slicer2";
-                };
-            };
-
-            ide = {
-                qtcreator = pkgs.qtcreator.overrideAttrs (final: prev: {
-                    qtWrapperArgs = prev.qtWrapperArgs ++ pkgs.lib.optionals stdenv.isLinux [
-                        "--suffix LD_FALLBACK_PATH : /usr/lib/x86_64-linux-gnu"
-                    ];
-
-                    cmakeFlags = prev.cmakeFlags ++ [
-                        "-DBUILD_PLUGIN_CLANGFORMAT=OFF"
-                    ];
-                });
-            };
-        };
-
-        packages = with config; rec {
-            default = ornl.slicer2;
-
-            inherit ( derivations { pkgs = pkgsNative; stdenv = llvm.stdenv; } ) ornl libs ide;
-            windows = derivations { pkgs = pkgsMinGW64; };
-        };
-
-        bundlers.${system} = rec {
-            default = drv: self.apps.${system}.default;
-        };
-
-        apps.${system} = rec {
-            default = ornl-slicer2;
-
-            ornl-slicer2 = {
-                type = "app";
-                program = "${self.packages.${system}.ornl.slicer2}/bin/slicer2";
-            };
-        };
-
-        devShells = with config; rec {
-            default = s2-dev;
-
-            # Main developer shell.
-            s2-dev = pkgsNative.mkShell.override { stdenv = llvm.stdenv; } rec {
-                name = "s2-dev";
-
-                packages = [
-                    pkgsNative.cntr
-
-                    pkgsNative.ccache
-                    pkgsNative.git
-                    pkgsNative.python3
-		    pkgsNative.python3Packages.pandas
-		    pkgsNative.python3Packages.odfpy
-                    pkgsNative.jq
-                    pkgsNative.moreutils
-
-                    pkgsNative.doxygen
-                    pkgsNative.graphviz
-
-                    pkgsNative.clazy
-                    llvm.lldb
-                    llvm.clang-tools
-                ] ++ self.outputs.packages.${system}.ornl.slicer2.buildInputs
-                  ++ self.outputs.packages.${system}.ornl.slicer2.nativeBuildInputs;
-
-                nativeBuildInputs = [
-                    pkgsNative.qt5.wrapQtAppsHook
-                    pkgsNative.makeWrapper
-                    pkgsNative.openssl
-                ];
-
-                # For dev, we want to disable hardening.
-                hardeningDisable = [
-                    "bindnow"
-                    "format"
-                    "fortify"
-                    "fortify3"
-                    "pic"
-                    "relro"
-                    "stackprotector"
-                    "strictoverflow"
-                ];
-
-                shellHook = ''
-                    # Some util variables
-                    export FLAKE_ROOT=$(git rev-parse --show-toplevel)
-
-                    # Utility function to update tools in the cmake preset, called manually.
-                    function manualUpdatePreset() {
-                        local NIX_CMAKE_PRESET_FILE="$FLAKE_ROOT/cmake/presets/nix.json"
-                        local QT5_PLUGIN_PATH="${pkgsNative.qt5.qtbase}/${pkgsNative.qt5.qtbase.qtPluginPrefix}:${pkgsNative.qt5.qtdeclarative}/${pkgsNative.qt5.qtbase.qtPluginPrefix}"
-
-                        jq --indent 4 '.configurePresets[0].cmakeExecutable                   = "${pkgsNative.cmake}/bin/cmake"' "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
-                        jq --indent 4 '.configurePresets[0].cacheVariables.CMAKE_C_COMPILER   = "${llvm.clang}/bin/clang"'       "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
-                        jq --indent 4 '.configurePresets[0].cacheVariables.CMAKE_CXX_COMPILER = "${llvm.clang}/bin/clang++"'     "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
-                        jq --indent 4 '.configurePresets[0].cacheVariables.CMAKE_MAKE_PROGRAM = "${pkgsNative.ninja}/bin/ninja"' "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
-                        jq --indent 4 '.configurePresets[0].environment.QT_PLUGIN_PATH        = "'"$QT5_PLUGIN_PATH"'"'          "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
-
-                        jq --indent 4 '.configurePresets[0].vendor."qt.io/QtCreator/1.0".debugger.Binary  = "${llvm.lldb}/bin/lldb"' "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
-                        jq --indent 4 '.configurePresets[0].vendor."qt.io/QtCreator/1.0".debugger.Version = "${llvm.lldb.version}"'  "$NIX_CMAKE_PRESET_FILE" | sponge "$NIX_CMAKE_PRESET_FILE"
-
-                        echo "Updated cmake preset."
-                    }
-
-                    # Allow software to find OpenGL drivers.
-                    export LD_FALLBACK_PATH=/usr/lib/x86_64-linux-gnu
-
-                    # Lastly, let the XDG_CONFIG_HOME be set to the flake root.
-                    export XDG_CONFIG_HOME="$FLAKE_ROOT/.xdg_config"
-                '';
-
-                QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgsNative.qt5.qtbase.bin}/lib/qt-${pkgsNative.qt5.qtbase.version}/plugins";
-            };
-        };
-    });
-
-    nixConfig = {
-        extra-substituters = [ "https://mdfbaam.cachix.org" ];
-        extra-trusted-public-keys = [ "mdfbaam.cachix.org-1:WCQinXaMJP7Ny4sMlKdisNUyhcO2MHnPoobUef5aTmQ=" ];
+    packages = rec {
+      default = slicer2;
+      slicer2 = legacyPackages.ornl.slicer2;
     };
+
+    devShells = rec {
+      default = s2-dev;
+
+      # Main developer shell.
+      s2-dev = pkgs.mkShell.override { inherit stdenv; } rec {
+        name = "s2-dev";
+
+        packages = [
+          pkgs.cntr
+
+          pkgs.ccache
+          pkgs.git
+          pkgs.jq
+          pkgs.moreutils
+
+          pkgs.doxygen
+          pkgs.graphviz
+
+          pkgs.clazy
+
+          llvm.tooling.lldb
+          llvm.tooling.clang-tools
+
+          (
+            pkgs.python3.withPackages (py: [
+              py.pandas
+              py.odfpy
+            ])
+          )
+        ];
+
+        inputsFrom = [
+          legacyPackages.ornl.slicer2
+        ];
+
+        LD_FALLBACK_PATH = "/usr/lib/x86_64-linux-gnu";
+        QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
+      };
+    };
+  });
+
+  nixConfig = {
+    extra-substituters = [ "https://mdfbaam.cachix.org" ];
+    extra-trusted-public-keys = [ "mdfbaam.cachix.org-1:WCQinXaMJP7Ny4sMlKdisNUyhcO2MHnPoobUef5aTmQ=" ];
+  };
 }

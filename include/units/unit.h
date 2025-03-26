@@ -6,7 +6,6 @@
 #include <QMetaType>
 #include <QString>
 #include <QtMath>
-#include <fifo_map.hpp>
 #include <ostream>
 #include <sstream>
 #include <string>

@@ -9,7 +9,6 @@
 
 #include <QMessageBox>
 
-#include <fifo_map.hpp>
 #include <nlohmann/json.hpp>
 
 using json = fifojson;

@@ -16,7 +16,6 @@
 
 // Json
 #include <nlohmann/json.hpp>
-#include <fifo_map.hpp>
 
 // Local
 #include "widgets/settings/setting_pane.h"

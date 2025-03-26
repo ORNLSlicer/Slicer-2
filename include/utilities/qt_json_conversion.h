@@ -7,14 +7,11 @@
 #include <QVector3D>
 #include <QVector>
 #include <nlohmann/json.hpp>
-#include <fifo_map.hpp>
 #include <string>
 
 
 //using json = nlohmann::json;
-template<class K, class V, class dummy_compare, class A>
-using my_workaround_fifo_map = nlohmann::fifo_map<K, V, nlohmann::fifo_map_compare<K>, A>;
-using fifojson = nlohmann::basic_json<my_workaround_fifo_map>;
+using fifojson = nlohmann::ordered_json;
 
 //! \brief Function for going from json to QString
 void to_json(fifojson& j, const QString& s);

@@ -2,18 +2,20 @@
   "nodes": {
     "nixpkgs": {
       "locked": {
-        "lastModified": 1723474834,
-        "narHash": "sha256-5c/e7l3fDwdWbQzadnIn2zY8L1V0dCFN2i5JDViyEuw=",
-        "owner": "mdfbaam",
+        "host": "code.ornl.gov",
+        "lastModified": 1741382907,
+        "narHash": "sha256-/Paa/7HS1dT0uyVSx+0oZ8ayXMAOAg66hUlj+JA/GyQ=",
+        "owner": "mdf",
         "repo": "nixpkgs",
-        "rev": "c3da6d68fe68ed3146c067e7e6b807b236133e87",
-        "type": "github"
+        "rev": "cc08b9a5b23b0a424f561a00c4b973304d25f46d",
+        "type": "gitlab"
       },
       "original": {
-        "owner": "mdfbaam",
+        "host": "code.ornl.gov",
+        "owner": "mdf",
         "ref": "slicer2",
         "repo": "nixpkgs",
-        "type": "github"
+        "type": "gitlab"
       }
     },
     "root": {
@@ -42,11 +44,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1710146030,
-        "narHash": "sha256-SZ5L6eA7HJ/nmkzGG7/ISclqe6oZdOZTNoesiInkXPQ=",
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "b1d9ab70662946ef0850d488da1c9019f3a9752a",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
         "type": "github"
       },
       "original": {

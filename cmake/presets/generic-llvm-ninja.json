@@ -4,7 +4,7 @@
         {
             "name":        "generic-llvm-ninja",
             "displayName": "Generic (llvm-ninja)",
-            "description": "Basic configuration with the LLVM toolchain using Ninja generator - all dependencies must be in standard locations.",
+            "description": "Basic configuration with the LLVM toolchain using Ninja generator.",
             "generator":   "Ninja Multi-Config",
             "binaryDir":   "${sourceDir}/build/${presetName}",
             "cacheVariables": {
@@ -15,11 +15,18 @@
     ],
     "buildPresets": [
         {
-            "name": "all-generic-llvm-ninja",
-            "displayName": "All (generic-llvm-ninja)",
-            "description": "Build all targets using generic LLVM.",
+            "name": "debug-generic-llvm-ninja",
+            "displayName": "Debug (llvm-ninja)",
+            "description": "Compile a debug build using LLVM Clang.",
             "configurePreset": "generic-llvm-ninja",
-            "inheritConfigureEnvironment": true
+            "configuration": "Debug"
+        },
+        {
+            "name": "release-generic-llvm-ninja",
+            "displayName": "Release (llvm-ninja)",
+            "description": "Compile a release build using LLVM Clang.",
+            "configurePreset": "generic-llvm-ninja",
+            "configuration": "Release"
         }
     ]
 }

@@ -4,7 +4,7 @@
 #include "external_files/parsers/external_grid_reader.h"
 #include "units/unit.h"
 
-#include "xlsxdocument.h"
+//#include "xlsxdocument.h"
 
 namespace ORNL
 {
@@ -17,6 +17,7 @@ namespace ORNL
     {
         try
         {
+            /*
             QXlsx::Document xlsx(m_filename);
 
             double xMin, yMin, zMin, xMax = INT_MIN, yMax = INT_MIN, zMax = INT_MIN;
@@ -179,6 +180,7 @@ namespace ORNL
                 emit statusUpdate((double)(row + 1) / (double)totalRows * 100);
             }
             emit gridFileProcessed(gridInfo);
+            */
         }
         catch(ExceptionBase eb)
         {

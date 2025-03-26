@@ -26,7 +26,28 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), m_status(false) {
 
 void MainWindow::continueStartup() {
     PM->importPreferences();
-    GSM->loadAllGlobals(qApp->applicationDirPath() + "/templates/");
+
+    QString app_path = qApp->applicationDirPath();
+
+    QStringList template_paths = {
+         app_path + "/templates/",
+         app_path + "/../../../templates/",
+         app_path + "/../usr/slicer2/templates/"
+    };
+
+    QString templates;
+
+    for (QString path : template_paths) {
+        if (QDir(path).exists()) {
+            templates = path;
+        }
+    }
+
+    if (!templates.isEmpty()) {
+        GSM->loadAllGlobals(templates);
+    } else {
+        qWarning() << "Cannot find base templates directory.";
+    }
 
     QString tmp = CSM->getMostRecentSettingFolderLocation();
 
@@ -38,7 +59,7 @@ void MainWindow::continueStartup() {
 
     GSM->loadAllGlobals(tmp);
     GSM->constructActiveGlobal(CSM->getMostRecentSettingHistory());
-    GSM->loadLayerBarTemplate(qApp->applicationDirPath() + "/layerbartemplates");
+    //GSM->loadLayerBarTemplate(qApp->applicationDirPath() + "/layerbartemplates");
     GSM->loadLayerBarTemplate(CSM->getMostRecentLayerBarSettingFolderLocation());
     this->setupClasses();
     this->setupUi();
