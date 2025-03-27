@@ -44,13 +44,13 @@ class IngersollParser : public CommonParser {
     //! G0 must be overridden due to wire feed, formatting is adjusted and then
     //! referred to base G0 handler
     //! \param params Parameters of current interest include: X, Y, Z, speed
-    void G0Handler(QVector<QStringRef> params) override;
+    void G0Handler(QVector<QString> params) override;
 
     //! \brief Handler for 'G1' command for motion
     //! G1 must be overridden due to wire feed, formatting is adjusted and then
     //! referred to base G1 handler
     //! \param params Parameters of current interest include: X, Y, Z, speed
-    void G1Handler(QVector<QStringRef> params) override;
+    void G1Handler(QVector<QString> params) override;
 
   private:
     //! \brief UA and H parameters to ignore in G1's

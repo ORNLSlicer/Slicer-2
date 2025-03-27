@@ -108,7 +108,7 @@ void GCodeAML3DSaver::run()
             if(lines[i].startsWith(G0) || lines[i].startsWith(G1))
             {
                 QString temp = lines[i].mid(0, lines[i].indexOf(m_selected_meta.m_comment_starting_delimiter));
-                QVector<QStringRef> params = temp.splitRef(space);
+                QVector<QString> params = temp.split(space);
 
                 // There shouldn't be any G0 motions in the output, and velocity isn't even passed via csv, but I'm leaving this line for reference
                 if(params[0] == G0)
@@ -121,13 +121,13 @@ void GCodeAML3DSaver::run()
                     for(int j = 1, end = params.size(); j < end; ++j)
                     {
                         if(params[j].startsWith(x))
-                            xval = params[j].mid(1).toString();
+                            xval = params[j].mid(1);
                         else if(params[j].startsWith(y))
-                            yval = params[j].mid(1).toString();
+                            yval = params[j].mid(1);
                         else if(params[j].startsWith(z))
-                            zval = params[j].mid(1).toString();
+                            zval = params[j].mid(1);
                         else if(params[j].startsWith(f))
-                            velocity = params[j].mid(1).toString();
+                            velocity = params[j].mid(1);
                     }
                 }
 

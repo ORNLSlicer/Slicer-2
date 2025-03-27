@@ -35,33 +35,33 @@ namespace ORNL
             //! \brief Handler for 'G28' command for homing
             //! \param params Accepted by function for formatting check, but are not
             //! used for the command
-            virtual void G28Handler(QVector<QStringRef> params);
+            virtual void G28Handler(QVector<QString> params);
 
             //! \brief Handler for 'G92' command for filament reset to 0
             //! \param params Single parameter of interest: E, passed to common parser handler
-            virtual void G92Handler(QVector<QStringRef> params);
+            virtual void G92Handler(QVector<QString> params);
 
             //! \brief Handler for 'M83' command for switching extruder to relative mode
             //! \param params Accepted by function for formatting check, but are not
             //! used for the command
-            virtual void M83Handler(QVector<QStringRef> params);
+            virtual void M83Handler(QVector<QString> params);
 
             //! \brief Handler for 'M605' command to change dual nozzle modes
             //! \param params S0, S1, or S2 are used to indicate which dual-nozzle mode
             //!        to use
-            virtual void M605Handler(QVector<QStringRef> params);
+            virtual void M605Handler(QVector<QString> params);
 
             //! \brief Handler for all tool change commands ( T0, T1, ... T6)
             //! \param params Accepted by function for formatting check, but are not
             //!        used for the command
-            virtual void THandler(QVector<QStringRef> params);
+            virtual void THandler(QVector<QString> params);
 
         private:
             //! \brief Predefined string for home command
             QString m_home_string;
 
             //! \brief Predefined parameters referencing home command
-            QVector<QStringRef> m_home_parameters;
+            QVector<QString> m_home_parameters;
     };
 }  // namespace ORNL
 

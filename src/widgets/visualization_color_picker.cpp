@@ -9,7 +9,6 @@ VisualizationColorPicker::VisualizationColorPicker(QString name, QColor color, Q
 
         QGridLayout* color_tab_layout = new QGridLayout(this);
         color_tab_layout->setVerticalSpacing(0);
-        color_tab_layout->setMargin(0);
 
         colorTypeLbl = new QLabel(name);
         sampleTextLbl = new QLabel("(This is how it looks!!!)");

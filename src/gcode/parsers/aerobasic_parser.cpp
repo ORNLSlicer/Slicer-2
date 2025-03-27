@@ -9,21 +9,21 @@ namespace ORNL
         config();
     }
 
-    void AeroBasicParser::G0Handler(QVector<QStringRef> params)
+    void AeroBasicParser::G0Handler(QVector<QString> params)
     {
         CommonParser::G0Handler(params);
     }
 
-    void AeroBasicParser::G1Handler(QVector<QStringRef> params)
+    void AeroBasicParser::G1Handler(QVector<QString> params)
     {
         CommonParser::G1Handler(params);
     }
 
-    void AeroBasicParser::G2Handler(QVector<QStringRef> params)
+    void AeroBasicParser::G2Handler(QVector<QString> params)
     {
         // AeroBasic supports strining G2/3 with G1 to linearly interpolate in the Z axis,
         // this behaves like if Z was also specified
-        QVector<QStringRef> cleaned_params;
+        QVector<QString> cleaned_params;
         for(auto& param : params)
             if(param != "G1")
                 cleaned_params.append(param);
@@ -31,11 +31,11 @@ namespace ORNL
         CommonParser::G2Handler(cleaned_params);
     }
 
-    void AeroBasicParser::G3Handler(QVector<QStringRef> params)
+    void AeroBasicParser::G3Handler(QVector<QString> params)
     {
         // AeroBasic supports strining G2/3 with G1 to linearly interpolate in the Z axis,
         // this behaves like if Z was also specified
-        QVector<QStringRef> cleaned_params;
+        QVector<QString> cleaned_params;
         for(auto& param : params)
             if(param != "G1")
                 cleaned_params.append(param);
@@ -43,7 +43,7 @@ namespace ORNL
         CommonParser::G3Handler(cleaned_params);
     }
 
-    void AeroBasicParser::G4Handler(QVector<QStringRef> params)
+    void AeroBasicParser::G4Handler(QVector<QString> params)
     {
         CommonParser::G4Handler(params);
     }

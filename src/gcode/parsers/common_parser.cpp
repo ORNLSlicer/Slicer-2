@@ -11,6 +11,7 @@
 #include <QTextStream>
 #include <QVector>
 #include <QtMath>
+#include <QRegExp>
 
 namespace ORNL {
 CommonParser::CommonParser(GcodeMeta meta, bool allowLayerAlter, QStringList& lines, QStringList& upperLines)
@@ -80,17 +81,17 @@ QHash<QString, double> CommonParser::parseFooter() {
     bool foundForcedMinLayerTimeMethod = false;
     while (startsWithDelimiter(m_upper_lines[m_current_end_line]) || m_upper_lines[m_current_end_line].length() == 0) {
         if (m_upper_lines[m_current_end_line].length() > 0) {
-            QStringRef setting = parseComment(m_upper_lines[m_current_end_line]);
+            QString setting = parseComment(m_upper_lines[m_current_end_line]);
             if (setting.compare(printerHeader) != 0 && setting.compare(materialHeader) != 0) {
-                QVector<QStringRef> setting_split = setting.split(' ', QString::SkipEmptyParts);
+                QVector<QString> setting_split = setting.split(' ', Qt::SkipEmptyParts);
                 // make sure we have a valid pair
                 if (setting_split.size() == 2) {
-                    QString key = setting_split[0].toString(); // may or may not be suffixed
+                    QString key = setting_split[0]; // may or may not be suffixed
                     QString key_root = key;
 
                     // if key is suffixed, remove the suffix
                     int suffix_loc = -1;
-                    suffix_loc = key_root.lastIndexOf(QRegExp("_\\d+"));
+                    suffix_loc = key_root.lastIndexOf(QRegularExpression("_\\d+"));
                     if (suffix_loc >= 0)
                         key_root.truncate(suffix_loc);
 
@@ -223,7 +224,7 @@ void CommonParser::preallocateVisualCommands(int layerSkip) {
     QStringMatcher layerDelimiter(m_layer_delimiter);
     int commandsInLayer = 0;
     QRegExp digitExpression("\\d+");
-    QRegExp gMotionCommand("^G0|^G1|^G2|^G3|^G5");
+    QRegularExpression gMotionCommand("^G0|^G1|^G2|^G3|^G5");
     m_current_layer = 0;
     bool skip = false;
     for (int i = m_current_line; i < m_current_end_line; ++i) {
@@ -348,7 +349,7 @@ QList<QList<GcodeCommand>> CommonParser::parseLines(int layerSkip) {
             // Save the current line to be sent for the parseCommand function
             newCurrentLine = m_upper_lines[m_current_line];
         }
-        if (!m_upper_lines[m_current_line].midRef(0).trimmed().isEmpty()) {
+        if (!m_upper_lines[m_current_line].mid(0).trimmed().isEmpty()) {
             if (skip) {
                 m_layer_skip_lines.insert(m_current_line);
                 if (layerDelimiter.indexIn(m_upper_lines[m_current_line]) != -1) {
@@ -611,7 +612,7 @@ void CommonParser::setAcceleration(NT value) { MotionEstimation::m_current_accel
 
 void CommonParser::setSleepTime(NT value) { m_sleep_time = value; }
 
-void CommonParser::G0Handler(QVector<QStringRef> params) {
+void CommonParser::G0Handler(QVector<QString> params) {
     if (params.empty()) {
         QString exceptionString;
         QTextStream(&exceptionString) << "No parameters for command G0, on line number "
@@ -627,7 +628,7 @@ void CommonParser::G0Handler(QVector<QStringRef> params) {
     bool no_error, x_not_used = true, y_not_used = true, z_not_used = true, w_not_used = true,
                    is_motion_command = false;
 
-    for (QStringRef ref : params) {
+    for (QString ref : params) {
         // Retriving the first character in the QString and making it a char
         current_parameter = ref.at(0).toLatin1();
         current_value = ref.right(ref.size() - 1).toDouble(&no_error);
@@ -689,7 +690,7 @@ void CommonParser::G0Handler(QVector<QStringRef> params) {
             default:
                 QString exceptionString;
                 QTextStream(&exceptionString)
-                    << "Error: Unknown parameter " << ref.toString() << " on GCode line "
+                    << "Error: Unknown parameter " << ref << " on GCode line "
                     << m_current_gcode_command.getLineNumber() << ", for GCode command G0" << "\n"
                     << "With GCode command string: " << getCurrentCommandString();
                 //                    throw IllegalParameterException(exceptionString);
@@ -720,7 +721,7 @@ void CommonParser::G0Handler(QVector<QStringRef> params) {
         MotionEstimation::m_travel_distance += temp;
 }
 
-void CommonParser::G1Handler(QVector<QStringRef> params) {
+void CommonParser::G1Handler(QVector<QString> params) {
     // validate parameters
     if (params.empty()) {
         QString exceptionString;
@@ -736,7 +737,7 @@ void CommonParser::G1Handler(QVector<QStringRef> params) {
     bool no_error, x_not_used = true, y_not_used = true, z_not_used = true, w_not_used = true, f_not_used = true,
                    s_not_used = true, e_not_used = true, is_motion_command = false;
 
-    for (QStringRef ref : params) {
+    for (QString ref : params) {
         // Retriving the first character in the QString and making it a char
         current_parameter = ref.at(0).toLatin1();
         current_value = ref.right(ref.size() - 1).toDouble(&no_error);
@@ -875,7 +876,7 @@ void CommonParser::G1Handler(QVector<QStringRef> params) {
             default:
                 QString exceptionString;
                 QTextStream(&exceptionString)
-                    << "Error: Unknown parameter " << ref.toString() << " on GCode line "
+                    << "Error: Unknown parameter " << ref << " on GCode line "
                     << m_current_gcode_command.getLineNumber() << ", for GCode command G1" << "\n"
                     << "With GCode command string: " << getCurrentCommandString();
                 throw IllegalParameterException(exceptionString);
@@ -910,12 +911,12 @@ void CommonParser::G1Handler(QVector<QStringRef> params) {
     m_with_F_value = false;
 }
 
-void CommonParser::G1HandlerHelper(QVector<QStringRef> params, QVector<QStringRef> optionalParams) {
+void CommonParser::G1HandlerHelper(QVector<QString> params, QVector<QString> optionalParams) {
     char current_parameter;
     NT current_value;
     bool no_error;
 
-    for (QStringRef ref : optionalParams) {
+    for (QString ref : optionalParams) {
         // Retriving the first character in the QString and making it a char
         current_parameter = ref.at(0).toLatin1();
         current_value = ref.right(ref.size() - 1).toDouble(&no_error);
@@ -925,7 +926,7 @@ void CommonParser::G1HandlerHelper(QVector<QStringRef> params, QVector<QStringRe
     G1Handler(params);
 }
 
-void CommonParser::G2Handler(QVector<QStringRef> params) {
+void CommonParser::G2Handler(QVector<QString> params) {
     if (params.empty()) {
         QString exceptionString;
         QTextStream(&exceptionString) << "No parameters for command G2, on line number "
@@ -943,7 +944,7 @@ void CommonParser::G2Handler(QVector<QStringRef> params) {
                    r_not_used = true;
     ;
 
-    for (QStringRef ref : params) {
+    for (QString ref : params) {
         // Retriving the first character in the QString and making it a char
         current_parameter = ref.at(0).toLatin1();
         current_value = ref.right(ref.size() - 1).toDouble(&no_error);
@@ -1088,7 +1089,7 @@ void CommonParser::G2Handler(QVector<QStringRef> params) {
             default:
                 QString exceptionString;
                 QTextStream(&exceptionString)
-                    << "Error: Unknown parameter " << ref.toString() << " on GCode line "
+                    << "Error: Unknown parameter " << ref << " on GCode line "
                     << m_current_gcode_command.getLineNumber() << ", for GCode command G2" << "\n"
                     << "With GCode command string: " << getCurrentCommandString();
                 throw IllegalParameterException(exceptionString);
@@ -1115,7 +1116,7 @@ void CommonParser::G2Handler(QVector<QStringRef> params) {
     setYPos(temp_y);
 }
 
-void CommonParser::G3Handler(QVector<QStringRef> params) {
+void CommonParser::G3Handler(QVector<QString> params) {
     if (params.empty()) {
         QString exceptionString;
         QTextStream(&exceptionString) << "No parameters for command G3, on line number "
@@ -1132,7 +1133,7 @@ void CommonParser::G3Handler(QVector<QStringRef> params) {
                    k_not_used = true, f_not_used = true, s_not_used = true, w_not_used = true, e_not_used = true,
                    r_not_used = true;
 
-    for (QStringRef ref : params) {
+    for (QString ref : params) {
         // Retriving the first character in the QString and making it a char
         current_parameter = ref.at(0).toLatin1();
         current_value = ref.right(ref.size() - 1).toDouble(&no_error);
@@ -1281,7 +1282,7 @@ void CommonParser::G3Handler(QVector<QStringRef> params) {
             default:
                 QString exceptionString;
                 QTextStream(&exceptionString)
-                    << "Error: Unknown parameter " << ref.toString() << " on GCode line "
+                    << "Error: Unknown parameter " << ref << " on GCode line "
                     << m_current_gcode_command.getLineNumber() << ", for GCode command G3" << "\n"
                     << "With GCode command string: " << getCurrentCommandString();
                 throw IllegalParameterException(exceptionString);
@@ -1316,7 +1317,7 @@ void CommonParser::G3Handler(QVector<QStringRef> params) {
     setZPos(temp_z);
 }
 
-void CommonParser::G4Handler(QVector<QStringRef> params) {
+void CommonParser::G4Handler(QVector<QString> params) {
     if (params.empty()) {
         QString exceptionString;
         QTextStream(&exceptionString) << "No parameters for command G4, on line number "
@@ -1330,7 +1331,7 @@ void CommonParser::G4Handler(QVector<QStringRef> params) {
     NT current_value;
     bool no_error, p_not_used = true, s_not_used = true, f_not_used = true, x_not_used = true;
 
-    for (QStringRef ref : params) {
+    for (QString ref : params) {
         // Retriving the first character in the QString and making it a char
         current_parameter = ref.at(0).toLatin1();
         current_value = ref.right(ref.size() - 1).toDouble(&no_error);
@@ -1385,7 +1386,7 @@ void CommonParser::G4Handler(QVector<QStringRef> params) {
             default:
                 QString exceptionString;
                 QTextStream(&exceptionString)
-                    << "Error: Unknown parameter " << ref.toString() << " on GCode line "
+                    << "Error: Unknown parameter " << ref << " on GCode line "
                     << m_current_gcode_command.getLineNumber() << ", for GCode command G4" << "\n"
                     << "With GCode command string: " << getCurrentCommandString();
                 throw IllegalParameterException(exceptionString);
@@ -1403,7 +1404,7 @@ void CommonParser::G4Handler(QVector<QStringRef> params) {
     m_layer_times[m_current_layer][m_current_nozzle] += m_current_gcode_command.getParameters()['P'];
 }
 
-void CommonParser::G5Handler(QVector<QStringRef> params) {
+void CommonParser::G5Handler(QVector<QString> params) {
     if (params.empty()) {
         QString exceptionString;
         QTextStream(&exceptionString) << "No parameters for command G5, on line number "
@@ -1420,7 +1421,7 @@ void CommonParser::G5Handler(QVector<QStringRef> params) {
                        p_not_used = true, q_not_used = true, f_not_used = true, s_not_used = true, w_not_used = true,
                        e_not_used = true;
 
-    for (const QStringRef& ref : params) {
+    for (const QString& ref : params) {
         current_parameter = ref.at(0).toLatin1();
         current_value = ref.right(ref.size() - 1).toDouble(&number_error);
         if (!number_error) {
@@ -1562,7 +1563,7 @@ void CommonParser::G5Handler(QVector<QStringRef> params) {
             default:
                 QString exceptionString;
                 QTextStream(&exceptionString)
-                    << "Error: Unknown parameter " << ref.toString() << " on GCode line "
+                    << "Error: Unknown parameter " << ref << " on GCode line "
                     << m_current_gcode_command.getLineNumber() << ", for GCode command G3" << "\n"
                     << "With GCode command string: " << getCurrentCommandString();
                 throw IllegalParameterException(exceptionString);
@@ -1589,10 +1590,10 @@ void CommonParser::G5Handler(QVector<QStringRef> params) {
     setZPos(temp_z);
 }
 
-void CommonParser::M3Handler(QVector<QStringRef> params) {
+void CommonParser::M3Handler(QVector<QString> params) {
     char current_parameter;
     bool no_error;
-    for (QStringRef ref : params) {
+    for (QString ref : params) {
         current_parameter = ref.at(0).toLatin1();
         if (current_parameter == 'S' || current_parameter == 's') {
             m_current_extruders_speed = ref.right(ref.size() - 1).toDouble(&no_error);
@@ -1610,7 +1611,7 @@ void CommonParser::M3Handler(QVector<QStringRef> params) {
     }
 }
 
-void CommonParser::M5Handler(QVector<QStringRef> params) {
+void CommonParser::M5Handler(QVector<QString> params) {
     m_current_spindle_speed = m_current_extruders_speed = 0;
     for (int i = 0, end = m_extruders_on.size(); i < end; ++i) {
         if (m_extruders_active[i])
@@ -1772,7 +1773,7 @@ void CommonParser::getMinMaxModifier(double& minModifier, double& maxModifier) {
             if (parameters.contains(m_f_parameter.toLatin1())) {
                 QString& line = m_lines[current_layer_motion_end->getLineNumber()];
                 QRegularExpressionMatch myMatch = m_f_param_and_value.match(line);
-                double value = myMatch.capturedRef().mid(1).toDouble();
+                double value = myMatch.captured().mid(1).toDouble();
 
                 minFeedRate = std::min(minFeedRate, value);
                 maxFeedRate = std::max(maxFeedRate, value);
@@ -1809,7 +1810,7 @@ void CommonParser::AdjustFeedrate(double modifier) {
 
                     if (line.startsWith("M3 ")) {
                         QRegularExpressionMatch myMatch = m_s_param_and_value.match(line);
-                        double value = myMatch.capturedRef().mid(1).toDouble();
+                        double value = myMatch.captured().mid(1).toDouble();
 
                         if (value != 0) {
                             double extruderModifier =
@@ -1821,9 +1822,9 @@ void CommonParser::AdjustFeedrate(double modifier) {
                                 extruderModifier = 1 / extruderModifier;
                             }
 
-                            line = line.leftRef(myMatch.capturedStart()) % m_s_parameter %
+                            line = line.left(myMatch.capturedStart()) % m_s_parameter %
                                    QString::number(value * modifier * extruderModifier, 'f', 4) %
-                                   line.midRef(myMatch.capturedEnd());
+                                   line.mid(myMatch.capturedEnd());
 
                             m_lines.insert(cmd_index + 1, line);
                             m_lines.removeAt(cmd_index);
@@ -1833,9 +1834,9 @@ void CommonParser::AdjustFeedrate(double modifier) {
 
                 QString& line = m_lines[current_layer_motion_end->getLineNumber()];
                 QRegularExpressionMatch myMatch = m_f_param_and_value.match(line);
-                double value = myMatch.capturedRef().mid(1).toDouble();
-                line = line.leftRef(myMatch.capturedStart()) % m_f_parameter %
-                       QString::number(value * modifier, 'f', 4) % line.midRef(myMatch.capturedEnd());
+                double value = myMatch.captured().mid(1).toDouble();
+                line = line.left(myMatch.capturedStart()) % m_f_parameter %
+                       QString::number(value * modifier, 'f', 4) % line.mid(myMatch.capturedEnd());
                 current_layer_motion_end->addParameter(m_f_parameter.toLatin1(),
                                                        parameters[m_f_parameter.toLatin1()] * modifier);
             }
@@ -1845,15 +1846,15 @@ void CommonParser::AdjustFeedrate(double modifier) {
             {
                 QString& line = m_lines[current_layer_motion_end->getLineNumber()];
                 QRegularExpressionMatch myMatch = m_q_param_and_value.match(line);
-                double value = myMatch.capturedRef().mid(1).toDouble();
+                double value = myMatch.captured().mid(1).toDouble();
                 double extruderModifier =
                     sb->setting<double>(Constants::MaterialSettings::Cooling::kExtruderScaleFactor);
                 // If slowing down, the multiplier for the extruder should be the inverse of the scale factor
                 if (modifier < 1)
                     extruderModifier = 1 / extruderModifier;
-                line = line.leftRef(myMatch.capturedStart()) % m_q_parameter %
+                line = line.left(myMatch.capturedStart()) % m_q_parameter %
                        QString::number(value * modifier * extruderModifier, 'f', 4) %
-                       line.midRef(myMatch.capturedEnd());
+                       line.mid(myMatch.capturedEnd());
                 current_layer_motion_end->addParameter(m_q_parameter.toLatin1(),
                                                        parameters[m_q_parameter.toLatin1()] * modifier);
             }
@@ -1861,15 +1862,15 @@ void CommonParser::AdjustFeedrate(double modifier) {
                 !sb->setting<bool>(Constants::ProfileSettings::SpecialModes::kEnableWidthHeight)) {
                 QString& line = m_lines[current_layer_motion_end->getLineNumber()];
                 QRegularExpressionMatch myMatch = m_s_param_and_value.match(line);
-                double value = myMatch.capturedRef().mid(1).toDouble();
+                double value = myMatch.captured().mid(1).toDouble();
                 double extruderModifier =
                     sb->setting<double>(Constants::MaterialSettings::Cooling::kExtruderScaleFactor);
                 // If slowing down, the multiplier for the extruder should be the inverse of the scale factor
                 if (modifier < 1)
                     extruderModifier = 1 / extruderModifier;
-                line = line.leftRef(myMatch.capturedStart()) % m_s_parameter %
+                line = line.left(myMatch.capturedStart()) % m_s_parameter %
                        QString::number(value * modifier * extruderModifier, 'f', 4) %
-                       line.midRef(myMatch.capturedEnd());
+                       line.mid(myMatch.capturedEnd());
                 current_layer_motion_end->addParameter(m_s_parameter.toLatin1(),
                                                        parameters[m_s_parameter.toLatin1()] * modifier);
             }

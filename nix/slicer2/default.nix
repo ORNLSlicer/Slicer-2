@@ -5,8 +5,8 @@
 
   cmake, ninja, wrapQtAppsHook, git,
 
-  qtbase, qtcharts, assimp, boost184, cgal_5, eigen, gmp, nlohmann_json, mpfr,
-  hdf5, vtk-qt5, tbb, kuba-zip, clipper, psimpl, sockets
+  qtbase, qtcharts, qt5compat, assimp, boost184, cgal_5, eigen, gmp, nlohmann_json, mpfr,
+  hdf5, vtk-qt, tbb, kuba-zip, clipper, psimpl, sockets
 }:
 
 stdenv.mkDerivation rec {
@@ -17,6 +17,7 @@ stdenv.mkDerivation rec {
   buildInputs = [
     qtbase
     qtcharts
+    qt5compat
     assimp
     boost184
     cgal_5
@@ -25,7 +26,7 @@ stdenv.mkDerivation rec {
     nlohmann_json
     mpfr
     hdf5
-    vtk-qt5
+    vtk-qt
     tbb
     kuba-zip
     clipper

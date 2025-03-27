@@ -25,7 +25,7 @@ namespace ORNL
       {
           if(polyline.indexIn(line) != -1 || hatches.indexIn(line) != -1)
           {
-              QVector<QStringRef> parameters = line.splitRef(',');
+              QVector<QString> parameters = line.split(',');
               totalExpansion += parameters[1].toInt();
           }
       }
@@ -51,17 +51,17 @@ namespace ORNL
   }
 
   //assume we find them in order
-  void RPBFParser::PolylinesHandler(QVector<QStringRef> params)
+  void RPBFParser::PolylinesHandler(QVector<QString> params)
   {
 
       //line requires expansion
       if(params.size() > 9)
       {
           int currentIndex = this->getCurrentLine();
-          QVector<QStringRef> prefix {params[0], params[1]};
+          QVector<QString> prefix {params[0], params[1]};
           int j = 2;
           m_lines_copy[currentIndex] = SegmentHelper(m_polyline, Constants::RegionTypeStrings::kPerimeter, prefix,
-                                                     QVector<QStringRef> { params[j], params[j + 1], params[j + 2], params[j + 3], params[j + 4], params[j + 5], params[j + 6] });
+                                                     QVector<QString> { params[j], params[j + 1], params[j + 2], params[j + 3], params[j + 4], params[j + 5], params[j + 6] });
           m_upper_lines_copy[currentIndex] = m_lines_copy[currentIndex];
           ++currentIndex;
           j += 7;
@@ -69,7 +69,7 @@ namespace ORNL
           for(int end = params.size(); j < end; j += 7)
           {
               QString newLine = SegmentHelper(m_polyline, Constants::RegionTypeStrings::kPerimeter, prefix,
-                                              QVector<QStringRef> { params[j], params[j + 1], params[j + 2], params[j + 3], params[j + 4], params[j + 5], params[j + 6] });
+                                              QVector<QString> { params[j], params[j + 1], params[j + 2], params[j + 3], params[j + 4], params[j + 5], params[j + 6] });
               m_lines_copy.insert(currentIndex, newLine);
               m_upper_lines_copy.insert(currentIndex, newLine);
               ++currentIndex;
@@ -80,19 +80,19 @@ namespace ORNL
       m_extruders_on[0] = true;
       QString newParameterList = m_x_param % params[4] % m_y_param % params[5];
       QString optionalParameterList = m_x_param % params[2] % m_y_param % params[3];
-      CommonParser::G1HandlerHelper(newParameterList.splitRef(' '), optionalParameterList.splitRef(' '));
+      CommonParser::G1HandlerHelper(newParameterList.split(' '), optionalParameterList.split(' '));
   }
 
-  void RPBFParser::HatchesHandler(QVector<QStringRef> params)
+  void RPBFParser::HatchesHandler(QVector<QString> params)
   {
       //line requires expansion
       if(params.size() > 9)
       {
           int currentIndex = this->getCurrentLine();
-          QVector<QStringRef> prefix {params[0], params[1]};
+          QVector<QString> prefix {params[0], params[1]};
           int j = 2;
           m_lines_copy[currentIndex] = SegmentHelper(m_hatches, Constants::RegionTypeStrings::kInfill, prefix,
-                                                     QVector<QStringRef> { params[j], params[j + 1], params[j + 2], params[j + 3], params[j + 4], params[j + 5], params[j + 6] });
+                                                     QVector<QString> { params[j], params[j + 1], params[j + 2], params[j + 3], params[j + 4], params[j + 5], params[j + 6] });
           m_upper_lines_copy[currentIndex] = m_lines_copy[currentIndex];
           ++currentIndex;
           j += 7;
@@ -100,7 +100,7 @@ namespace ORNL
           for(int end = params.size(); j < end; j += 7)
           {
               QString newLine = SegmentHelper(m_hatches, Constants::RegionTypeStrings::kInfill, prefix,
-                                              QVector<QStringRef> { params[j], params[j + 1], params[j + 2], params[j + 3], params[j + 4], params[j + 5], params[j + 6] });
+                                              QVector<QString> { params[j], params[j + 1], params[j + 2], params[j + 3], params[j + 4], params[j + 5], params[j + 6] });
               m_lines_copy.insert(currentIndex, newLine);
               m_upper_lines_copy.insert(currentIndex, newLine);
               ++currentIndex;
@@ -111,10 +111,10 @@ namespace ORNL
       m_extruders_on[0] = true;
       QString newParameterList = m_x_param % params[4] % m_y_param % params[5];
       QString optionalParameterList = m_x_param % params[2] % m_y_param % params[3];
-      CommonParser::G1HandlerHelper(newParameterList.splitRef(' '), optionalParameterList.splitRef(' '));
+      CommonParser::G1HandlerHelper(newParameterList.split(' '), optionalParameterList.split(' '));
   }
 
-  QString RPBFParser::SegmentHelper(QString command, QString type, QVector<QStringRef> prefix, QVector<QStringRef> params)
+  QString RPBFParser::SegmentHelper(QString command, QString type, QVector<QString> prefix, QVector<QString> params)
   {
      return command % prefix[0] % m_comma % prefix[1] % m_comma % params[0] % m_comma % params[1] % m_comma % params[2]
         % m_comma % params[3] % m_comma % params[4] % m_comma % params[5] % m_comma % params[6] % m_space %

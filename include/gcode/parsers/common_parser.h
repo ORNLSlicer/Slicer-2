@@ -313,7 +313,7 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        virtual void G0Handler(QVector<QStringRef> params);
+        virtual void G0Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'G1' Gcode command for linear
         //! movement. This function handler
@@ -330,10 +330,10 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        virtual void G1Handler(QVector<QStringRef> params);
+        virtual void G1Handler(QVector<QString> params);
 
 
-        void G1HandlerHelper(QVector<QStringRef> params, QVector<QStringRef> optionalParams);
+        void G1HandlerHelper(QVector<QString> params, QVector<QString> optionalParams);
 
         //! \brief Function handler for the 'G2' Gcode command for clockwise arc
         //! movement. This function handler
@@ -353,7 +353,7 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        virtual void G2Handler(QVector<QStringRef> params);
+        virtual void G2Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'G3' Gcode command for counter
         //! clockwise arc movement. This function handler
@@ -373,7 +373,7 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        virtual void G3Handler(QVector<QStringRef> params);
+        virtual void G3Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'G4' command for setting the sleep
         //! time of the extruder. This function handler
@@ -386,7 +386,7 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        virtual void G4Handler(QVector<QStringRef> params);
+        virtual void G4Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'G5' Gcode command for b-splines
         //!        accepts the following parameters:
@@ -403,7 +403,7 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        virtual void G5Handler(QVector<QStringRef> params);
+        virtual void G5Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'M3' command for setting the sleep
         //! time of the extruder. This function handler
@@ -416,7 +416,7 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        virtual void M3Handler(QVector<QStringRef> params);
+        virtual void M3Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'G4' command for setting the sleep
         //! time of the extruder. This function handler
@@ -429,7 +429,7 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        virtual void M5Handler(QVector<QStringRef> params);
+        virtual void M5Handler(QVector<QString> params);
 
         //! \brief Modify layer time by inserting dwell at the end of layer
         //! \param dwellTime Amount of time to dwell

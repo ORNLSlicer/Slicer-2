@@ -28,8 +28,8 @@ include(build_info)
 FetchBuildInfo()
 
 function(FindDependencies)
-    find_package(Qt5 REQUIRED COMPONENTS
-        Core Gui Widgets Concurrent OpenGL Network Charts
+    find_package(Qt6 REQUIRED COMPONENTS
+        Core Gui Widgets Concurrent OpenGL Network Charts Core5Compat
     )
 
     find_package(assimp        REQUIRED)
@@ -63,13 +63,14 @@ function(FindDependencies)
     set(RESULT_VAR "")
     list(
         APPEND RESULT_VAR
-        Qt5::Gui
-        Qt5::Widgets
-        Qt5::OpenGL
-        Qt5::Core
-        Qt5::Concurrent
-        Qt5::Network
-        Qt5::Charts
+        Qt6::Gui
+        Qt6::Widgets
+        Qt6::OpenGL
+        Qt6::Core
+        Qt6::Concurrent
+        Qt6::Network
+        Qt6::Charts
+        Qt6::Core5Compat
         assimp::assimp
         Boost::system
         CGAL::CGAL

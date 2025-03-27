@@ -328,7 +328,7 @@ namespace ORNL {
                 edges += {vertice[i].distance(vertice[j]), {i, j}};
             }
         }
-        qSort(edges);
+        std::sort(edges.begin(), edges.end());
 
         //! \note Keep picking current shortest edge, if it forms a circle, drop it (Kruskal algorithm)
         QVector<QSet<int>> chosen_vertice;
@@ -409,7 +409,7 @@ namespace ORNL {
                 distance_ordered_edges += {distance, {index_0, index_1}};
             }
         }
-        qSort(distance_ordered_edges);
+        std::sort(distance_ordered_edges.begin(), distance_ordered_edges.end());
 
         //! \note Keep picking the shortest edge
         QVector<QPair<int, int>> minimal_matching;

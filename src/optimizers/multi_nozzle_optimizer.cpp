@@ -10,7 +10,7 @@ namespace ORNL
         int num_islands = islands.size();
         assert(num_islands > 0);
 
-        qSort(islands.begin(), islands.end(), islandAreaLessThan);
+        std::sort(islands.begin(), islands.end(), islandAreaLessThan);
 
         QVector<float> extruder_areas;
         for (int i = 0; i < nozzle_count; ++i)
@@ -39,9 +39,9 @@ namespace ORNL
         assert(num_islands > 0);
 
         if (axis == Axis::kX)
-            qSort(islands.begin(), islands.end(), islandLocationXLessThan);
+            std::sort(islands.begin(), islands.end(), islandLocationXLessThan);
         else if (axis == Axis::kY)
-            qSort(islands.begin(), islands.end(), islandLocationYLessThan);
+            std::sort(islands.begin(), islands.end(), islandLocationYLessThan);
         else
             assert(false);
 

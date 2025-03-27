@@ -42,7 +42,7 @@ AboutWindow::AboutWindow(QWidget* parent) : QWidget() {
     lblVersion->setFont(f);
     layout->addWidget(lblVersion, 1, 0, 1, 2, Qt::AlignCenter);
 
-    layout->addWidget(new QLabel("Compiled on " + QString(SLICER2_CONFIG_TIMESTAMP) + " without GPU support"), 2, 0, 1, 2,
+    layout->addWidget(new QLabel("Compiled on " + QTime().addSecs(SLICER2_CONFIG_TIMESTAMP).toString() + " without GPU support"), 2, 0, 1, 2,
                       Qt::AlignCenter);
 
     QGridLayout* gpu_layout = new QGridLayout();

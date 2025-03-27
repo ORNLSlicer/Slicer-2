@@ -32,7 +32,7 @@ void MainWindow::continueStartup() {
     QStringList template_paths = {
          app_path + "/templates/",
          app_path + "/../../../templates/",
-         app_path + "/../usr/slicer2/templates/"
+         app_path + "/../share/slicer2/templates/"
     };
 
     QString templates;

@@ -99,8 +99,8 @@ void ImageSlicer::preProcess(nlohmann::json opt_data) {
     QSharedPointer<SettingsBase> consoleSettings = GSM->getConsoleSettings();
     if (!consoleSettings->empty()) {
         if (consoleSettings->contains(Constants::ConsoleOptionStrings::kSingleSliceHeight)) {
-            QVector<double> heights = QVector<double>::fromStdVector(
-                consoleSettings->setting<std::vector<double>>(Constants::ConsoleOptionStrings::kSingleSliceHeight));
+            auto vec = consoleSettings->setting<std::vector<double>>(Constants::ConsoleOptionStrings::kSingleSliceHeight);
+            QVector<double> heights = QVector<double>(vec.begin(), vec.end());
             for (double height : heights) {
                 int layer = qRound(height / layerHeight()) - 1;
                 if (layer < 0)
@@ -110,8 +110,8 @@ void ImageSlicer::preProcess(nlohmann::json opt_data) {
         }
 
         if (consoleSettings->contains(Constants::ConsoleOptionStrings::kSingleSliceLayerNumber)) {
-            layers = QVector<int>::fromStdVector(
-                consoleSettings->setting<std::vector<int>>(Constants::ConsoleOptionStrings::kSingleSliceLayerNumber));
+            auto vec = consoleSettings->setting<std::vector<int>>(Constants::ConsoleOptionStrings::kSingleSliceLayerNumber);
+            layers = QVector<int>(vec.begin(), vec.end());
         }
     }
     if (layers.size() > 0)

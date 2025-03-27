@@ -27,6 +27,8 @@
           };
         };
       };
+
+      qt = pkgs.qt6;
     };
   in with config; rec {
     inherit config;
@@ -44,14 +46,14 @@
       mkPackages = pkgs: rec {
         ornl = rec {
           libraries = rec {
-            sockets  = pkgs.qt5.callPackage ./nix/packages/sockets {};
+            sockets  = qt.callPackage ./nix/packages/sockets {};
 
             clipper  = pkgs.callPackage ./nix/packages/clipper  {};
             kuba-zip = pkgs.callPackage ./nix/packages/kuba-zip {};
             psimpl   = pkgs.callPackage ./nix/packages/psimpl   {};
           };
 
-          slicer2 = pkgs.qt5.callPackage ./nix/slicer2 {
+          slicer2 = qt.callPackage ./nix/slicer2 {
             src     = self;
             version = (lib.fetchVersion ./version.json);
 
@@ -108,7 +110,7 @@
         ];
 
         LD_FALLBACK_PATH = "/usr/lib/x86_64-linux-gnu";
-        QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
+        #QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
       };
     };
   });

@@ -166,7 +166,7 @@ void PreferencesManager::importPreferences(QString filepath) {
             m_tcp_port = j["tcp_server_settings"]["port"];
             m_tcp_server_autostart = j["tcp_server_settings"]["auto_start"];
             std::vector<bool> connectivities = j["tcp_server_settings"]["step_connectivity"];
-            m_step_connectivity = QVector<bool>::fromStdVector(connectivities);
+            m_step_connectivity = QVector<bool>(connectivities.begin(), connectivities.end());
         }
 
         if (j.find("katana_server_settings") != j.end()) {

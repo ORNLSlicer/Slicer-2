@@ -83,27 +83,27 @@ namespace ORNL
               &GKNParser::ScanSpeedHandler, this, std::placeholders::_1));
   }
 
-  void GKNParser::G0Handler(QVector<QStringRef> params)
+  void GKNParser::G0Handler(QVector<QString> params)
   {
       QString newParameterList = m_x_param % params[0] % m_y_param % params[1] % m_z_param % params[2];
 
-      CommonParser::G0Handler(newParameterList.splitRef(' '));
+      CommonParser::G0Handler(newParameterList.split(' '));
   }
 
-  void GKNParser::G1Handler(QVector<QStringRef> params)
+  void GKNParser::G1Handler(QVector<QString> params)
   {
       //sometimes speed is a hard-coded value, other times it is a variable to be filled in
-      QString speed = params[8].toString();
+      QString speed = params[8];
       if(m_default_values.contains(speed))
           speed = m_default_values[speed];
 
       QString newParameterList = m_x_param % params[0] % m_y_param % params[1] %
               m_z_param % params[2] % m_f_param % speed;
 
-      CommonParser::G1Handler(newParameterList.splitRef(' '));
+      CommonParser::G1Handler(newParameterList.split(' '));
   }
 
-  void GKNParser::G4Handler(QVector<QStringRef> params)
+  void GKNParser::G4Handler(QVector<QString> params)
   {
       if (params.size() != 1)
       {
@@ -112,7 +112,7 @@ namespace ORNL
 //          QTextStream(&exceptionString)
 //              << "G4 command should have one parameter . Error occured on "
 //                 "GCode line "
-//              << m_current_gcode_command.getLineNumber() << endl
+//              << m_current_gcode_command.getLineNumber() << Qt::endl
 //              << "."
 //              << "With GCode command string: " << getCurrentCommandString();
 //          throw IllegalParameterException(exceptionString);
@@ -120,22 +120,22 @@ namespace ORNL
           return;
       }
 
-      QString newParam = m_p_param % params[0].toString();
+      QString newParam = m_p_param % params[0];
 
-      CommonParser::G4Handler(QVector<QStringRef> { newParam.midRef(0) });
+      CommonParser::G4Handler(QVector<QString> { newParam.mid(0) });
   }
 
-  void GKNParser::M3Handler(QVector<QStringRef> params)
+  void GKNParser::M3Handler(QVector<QString> params)
   {
       //NOP
   }
 
-  void GKNParser::M5Handler(QVector<QStringRef> params)
+  void GKNParser::M5Handler(QVector<QString> params)
   {
       //NOP
   }
 
-  void GKNParser::M6Handler(QVector<QStringRef> params)
+  void GKNParser::M6Handler(QVector<QString> params)
   {
       if(params.size() != 1)
       {
@@ -145,7 +145,7 @@ namespace ORNL
       m_extruders_on[0] = true;
   }
 
-  void GKNParser::M7Handler(QVector<QStringRef> params)
+  void GKNParser::M7Handler(QVector<QString> params)
   {
       if (!params.empty())
       {
@@ -154,7 +154,7 @@ namespace ORNL
 //          QTextStream(&exceptionString)
 //              << "M7 command should have no parameters . Error occured on "
 //                 "GCode line "
-//              << m_current_gcode_command.getLineNumber() << endl
+//              << m_current_gcode_command.getLineNumber() << Qt::endl
 //              << "."
 //              << "With GCode command string: " << getCurrentCommandString();
 //          throw IllegalParameterException(exceptionString);
@@ -165,21 +165,21 @@ namespace ORNL
   }
 
   //assume we find them in order
-  void GKNParser::PrintSpeedHandler(QVector<QStringRef> params)
+  void GKNParser::PrintSpeedHandler(QVector<QString> params)
   {
       if(m_default_values.size() == 0)
-          m_default_values.insert("PRINT_SPEED", params[1].toString());
+          m_default_values.insert("PRINT_SPEED", params[1]);
       else
-          m_default_values.insert("PRINT_SPEED" % QString::number(m_default_values.size()), params[1].toString());
+          m_default_values.insert("PRINT_SPEED" % QString::number(m_default_values.size()), params[1]);
   }
 
-  void GKNParser::RapidSpeedHandler(QVector<QStringRef> params)
+  void GKNParser::RapidSpeedHandler(QVector<QString> params)
   {
-      m_default_values.insert("RAPID_SPEED", params[1].toString());
+      m_default_values.insert("RAPID_SPEED", params[1]);
   }
 
-  void GKNParser::ScanSpeedHandler(QVector<QStringRef> params)
+  void GKNParser::ScanSpeedHandler(QVector<QString> params)
   {
-      m_default_values.insert("SCAN_SPEED", params[1].toString());
+      m_default_values.insert("SCAN_SPEED", params[1]);
   }
 }
