@@ -1,11 +1,6 @@
-// Main Module
+
 #include "threading/slicers/polymer_slicer.h"
 
-// Qt
-#include <QDir>
-#include <QSharedPointer>
-
-// Local
 #include "managers/session_manager.h"
 #include "managers/settings/settings_manager.h"
 #include "optimizers/layer_order_optimizer.h"
@@ -20,7 +15,9 @@
 #include "step/layer/regions/infill.h"
 #include "step/layer/regions/perimeter.h"
 #include "step/layer/regions/skin.h"
-#include "utilities/mathutils.h"
+
+#include <QtCore/QDir>
+#include <QtCore/QSharedPointer>
 
 namespace ORNL {
 
@@ -761,7 +758,7 @@ void PolymerSlicer::postProcess(nlohmann::json opt_data) {
             // so that each layer starts where the last layer ended
             m_global_layers[g_layer_num]->connectPaths(global_sb, current_points, start_indices, previous_regions_list);
 
-            m_global_layers[g_layer_num]->calculateModifiers(global_sb, current_points);
+            m_global_layers[g_layer_num]->calculateModifiers(global_sb, current_points, g_layer_num);
 
             m_global_layers[g_layer_num]->reorient();
 
