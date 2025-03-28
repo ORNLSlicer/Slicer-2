@@ -2,8 +2,11 @@
   description = "ORNL Slicer 2 - An advanced object slicer";
 
   inputs = {
-    nixpkgs.url = gitlab:mdf/nixpkgs/slicer2?host=code.ornl.gov;
-    utils.url   = github:numtide/flake-utils;
+    nixpkgs.url  = gitlab:mdf/nixpkgs/slicer2?host=code.ornl.gov;
+    utils.url    = github:numtide/flake-utils;
+    appimage = {
+      url = github:ralismark/nix-appimage;
+    };
   };
 
   outputs = inputs @ { self, utils, ... }: utils.lib.eachDefaultSystem (system: let
@@ -72,6 +75,12 @@
     packages = rec {
       default = slicer2;
       slicer2 = legacyPackages.ornl.slicer2;
+    };
+
+    bundlers = rec {
+      default = appimage;
+
+      appimage = inputs.appimage.bundlers.${system}.default;
     };
 
     devShells = rec {

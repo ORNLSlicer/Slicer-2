@@ -15,6 +15,31 @@ jobs:
       - uses: cachix/install-nix-action@v27
       - run: nix flake check --all-systems
 
+  linux:
+    env:
+      ci_derivation: ornl.slicer2
+      out_link: slicer2.appimage
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v27
+      - name: Setup Environment
+        run: echo "artifact=$(nix eval --raw .#${ci_derivation}.name).appimage" >> $GITHUB_ENV
+      - name: Compile Linux Build
+        run: nix build -L .#${{ env.ci_derivation }} --accept-flake-config
+      - name: Bundle Output
+        run: |
+            nix bundle -L --bundler .#appimage .#${{ env.ci_derivation }} -o ${{ env.out_link }}
+            cp ${{ env.out_link }} ${{ env.artifact }}
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.artifact }}
+          path: ${{ env.artifact }}
+
   windows:
     env:
       ci_derivation: windows.ornl.slicer2
@@ -29,9 +54,9 @@ jobs:
       - name: Setup Environment
         run: echo "artifact=$(nix eval --raw .#${ci_derivation}.name).zip" >> $GITHUB_ENV
       - name: Compile Windows Build
-        run: nix build .#${{ env.ci_derivation }} --accept-flake-config -o slicer2
+        run: nix build -L .#${{ env.ci_derivation }} --accept-flake-config -o ${{ env.out_link }}
       - name: Compress Artifacts
-        run: zip -r ${{ env.artifact }} slicer2
+        run: zip -r ${{ env.artifact }} ${{ env.out_link }}
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
