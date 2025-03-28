@@ -1,5 +1,5 @@
 {
-  stdenv, fetchFromGitHub,
+  lib, stdenv, fetchFromGitHub,
 
   cmake
 }:
@@ -17,6 +17,12 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [
     cmake
+  ];
+
+  cmakeFlags = [
+    # NOP
+  ] ++ lib.optionals stdenv.hostPlatform.isMinGW [
+    "-DCMAKE_DISABLE_TESTING=ON"
   ];
 
   meta = {

@@ -27,8 +27,6 @@
           };
         };
       };
-
-      qt = pkgs.qt6;
     };
   in with config; rec {
     inherit config;
@@ -43,17 +41,19 @@
         fullVersion  = "${version}-${revisionHash}";
       in fullVersion;
 
-      mkPackages = pkgs: rec {
+      mkPackages = { pkgs, stdenv ? pkgs.stdenv }: rec {
+        nixpkgs = pkgs;
+
         ornl = rec {
           libraries = rec {
-            sockets  = qt.callPackage ./nix/packages/sockets {};
+            sockets  = pkgs.qt6.callPackage ./nix/packages/sockets {};
 
             clipper  = pkgs.callPackage ./nix/packages/clipper  {};
             kuba-zip = pkgs.callPackage ./nix/packages/kuba-zip {};
             psimpl   = pkgs.callPackage ./nix/packages/psimpl   {};
           };
 
-          slicer2 = qt.callPackage ./nix/slicer2 {
+          slicer2 = pkgs.qt6.callPackage ./nix/slicer2 {
             src     = self;
             version = (lib.fetchVersion ./version.json);
 
@@ -65,8 +65,8 @@
     } // config.pkgs.lib;
 
     legacyPackages = {
-      inherit (lib.mkPackages pkgs) ornl;
-      windows = (lib.mkPackages pkgs.pkgsCross.mingwW64);
+      inherit (lib.mkPackages { inherit pkgs stdenv; } ) ornl;
+      windows = (lib.mkPackages { pkgs = pkgs.pkgsCross.mingwW64; });
     };
 
     packages = rec {

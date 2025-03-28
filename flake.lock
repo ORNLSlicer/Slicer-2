@@ -3,11 +3,11 @@
     "nixpkgs": {
       "locked": {
         "host": "code.ornl.gov",
-        "lastModified": 1741382907,
-        "narHash": "sha256-/Paa/7HS1dT0uyVSx+0oZ8ayXMAOAg66hUlj+JA/GyQ=",
+        "lastModified": 1743115647,
+        "narHash": "sha256-gsHX7CAochvFVI/L+JLhkWCV9qOQclSScj5dkwT0PLY=",
         "owner": "mdf",
         "repo": "nixpkgs",
-        "rev": "cc08b9a5b23b0a424f561a00c4b973304d25f46d",
+        "rev": "d0b955ff33af1c2ae6e002d06fc6968791ababfe",
         "type": "gitlab"
       },
       "original": {

@@ -3,10 +3,10 @@
 
   lib, stdenv,
 
-  cmake, ninja, wrapQtAppsHook, git,
+  cmake, pkg-config, ninja, wrapQtAppsHook, deployQtWinPluginsHook,
 
-  qtbase, qtcharts, qt5compat, assimp, boost184, cgal_5, eigen, gmp, nlohmann_json, mpfr,
-  hdf5, vtk-qt, tbb, kuba-zip, clipper, psimpl, sockets
+  qtbase, qtcharts, qt5compat, assimp, boost184, cgal_5, eigen, nlohmann_json, gmp, mpfr,
+  hdf5, vtk-qt, kuba-zip, clipper, psimpl, sockets
 }:
 
 stdenv.mkDerivation rec {
@@ -22,16 +22,15 @@ stdenv.mkDerivation rec {
     boost184
     cgal_5
     eigen
-    gmp
     nlohmann_json
-    mpfr
     hdf5
     vtk-qt
-    tbb
     kuba-zip
     clipper
     psimpl
     sockets
+    gmp
+    mpfr
   ];
 
   cmakeFlags = [
@@ -40,15 +39,26 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [
     cmake
+    pkg-config
     ninja
+  ] ++ lib.optionals stdenv.isLinux [
     wrapQtAppsHook
-    git
+  ] ++ lib.optionals stdenv.hostPlatform.isMinGW [
+    deployQtWinPluginsHook
   ];
+
+  dontWrapQtApps = stdenv.hostPlatform.isMinGW;
 
   qtWrapperArgs = lib.optionals stdenv.isLinux [
     "--suffix LD_FALLBACK_PATH : /usr/lib/x86_64-linux-gnu"
   ];
 
   meta = {
+    description = "An advanced object slicer for toolpathing by ORNL";
+    homepage = "https://github.com/ORNLSlicer/Slicer-2/";
+    license = lib.licenses.gpl3;
+    maintainers = with lib.maintainers; [
+      cadkin
+    ];
   };
 }

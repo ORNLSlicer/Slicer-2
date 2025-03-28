@@ -1,5 +1,5 @@
 {
-  stdenv, fetchFromGitHub,
+  lib, stdenv, fetchFromGitHub,
 
   cmake,
 
@@ -27,8 +27,11 @@ stdenv.mkDerivation rec {
 
   buildInputs = [
     qtbase
+  ] ++ lib.optionals stdenv.isLinux [
     wrapQtAppsHook
   ];
+
+  dontWrapQtApps = stdenv.hostPlatform.isMinGW;
 
   meta = {
     description = "TCP Sockets built around Qt";

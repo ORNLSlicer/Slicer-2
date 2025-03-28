@@ -85,13 +85,13 @@ int main(int argc, char* argv[]) {
     }
     else {
         QApplication a(argc, argv);
-#ifdef WIN32
-        HWND consoleWnd = GetConsoleWindow();
-        DWORD dwProcessId;
-        GetWindowThreadProcessId(consoleWnd, &dwProcessId);
-        if (GetCurrentProcessId() == dwProcessId)
-            ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
-#endif
+//#ifdef WIN32
+//        HWND consoleWnd = GetConsoleWindow();
+//        DWORD dwProcessId;
+//        GetWindowThreadProcessId(consoleWnd, &dwProcessId);
+//        if (GetCurrentProcessId() == dwProcessId)
+//            ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+//#endif
 
         Q_INIT_RESOURCE(icons);
         Q_INIT_RESOURCE(shaders);
