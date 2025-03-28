@@ -31,6 +31,9 @@ stdenv.mkDerivation rec {
     sockets
     gmp
     mpfr
+  ] ++ lib.optionals stdenv.hostPlatform.isMinGW [
+    # Note: intentionally NOT native. Hook refers to target plugins internally.
+    deployQtWinPluginsHook
   ];
 
   cmakeFlags = [
@@ -43,8 +46,6 @@ stdenv.mkDerivation rec {
     ninja
   ] ++ lib.optionals stdenv.isLinux [
     wrapQtAppsHook
-  ] ++ lib.optionals stdenv.hostPlatform.isMinGW [
-    deployQtWinPluginsHook
   ];
 
   dontWrapQtApps = stdenv.hostPlatform.isMinGW;

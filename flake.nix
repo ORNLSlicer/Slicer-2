@@ -75,24 +75,18 @@
     };
 
     devShells = rec {
-      default = s2-dev;
+      default = s2Dev;
 
       # Main developer shell.
-      s2-dev = pkgs.mkShell.override { inherit stdenv; } rec {
+      s2Dev = pkgs.mkShell.override { inherit stdenv; } rec {
         name = "s2-dev";
 
         packages = [
-          pkgs.cntr
-
-          pkgs.ccache
           pkgs.git
           pkgs.jq
-          pkgs.moreutils
 
           pkgs.doxygen
           pkgs.graphviz
-
-          pkgs.clazy
 
           llvm.tooling.lldb
           llvm.tooling.clang-tools
@@ -103,6 +97,9 @@
               py.odfpy
             ])
           )
+        ] ++ lib.optionals stdenv.isLinux [
+          pkgs.cntr
+          pkgs.clazy
         ];
 
         inputsFrom = [
