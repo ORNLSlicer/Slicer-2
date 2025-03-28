@@ -1,0 +1,40 @@
+---
+name: Nix CI
+on: [push, pull_request]
+jobs:
+  check:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ./
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v27
+      - run: nix flake check --all-systems
+
+  windows:
+    env:
+      ci_derivation: windows.ornl.slicer2
+      out_link: slicer2
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v27
+      - name: Setup Environment
+        run: echo "artifact=$(nix eval --raw .#${ci_derivation}.name).zip" >> $GITHUB_ENV
+      - name: Compile Windows Build
+        run: nix build .#${{ env.ci_derivation }} --accept-flake-config -o slicer2
+      - name: Compress Artifacts
+        run: zip -r ${{ env.artifact }} slicer2
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.artifact }}
+          path: ${{ env.artifact }}
+
