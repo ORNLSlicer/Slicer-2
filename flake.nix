@@ -68,7 +68,7 @@
     } // config.pkgs.lib;
 
     legacyPackages = {
-      inherit (lib.mkPackages { inherit pkgs stdenv; } ) ornl;
+      inherit (lib.mkPackages { inherit pkgs stdenv; } ) ornl nixpkgs;
       windows = (lib.mkPackages { pkgs = pkgs.pkgsCross.mingwW64; });
     };
 
@@ -107,6 +107,7 @@
             ])
           )
         ] ++ lib.optionals stdenv.isLinux [
+          pkgs.nsis
           pkgs.cntr
           pkgs.clazy
         ];
@@ -116,7 +117,6 @@
         ];
 
         LD_FALLBACK_PATH = "/usr/lib/x86_64-linux-gnu";
-        #QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
       };
     };
   });

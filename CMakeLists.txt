@@ -32,16 +32,6 @@ function(FindDependencies)
         Core Gui Widgets Concurrent OpenGL Network Charts Core5Compat
     )
 
-    #find_package(PkgConfig      REQUIRED)
-
-    #pkg_check_modules(GMP    REQUIRED IMPORTED_TARGET gmp)
-    #pkg_check_modules(GMPXX  REQUIRED IMPORTED_TARGET gmpxx)
-    #pkg_check_modules(MPFR   REQUIRED IMPORTED_TARGET mpfr)
-
-    #set(GMP_INCLUDE_DIR   ${GMP_INCLUDE_DIRS})
-    #set(GMPXX_INCLUDE_DIR ${GMPXX_INCLUDE_DIRS})
-    #set(MPFR_INCLUDE_DIR  ${MPFR_INCLUDE_DIRS})
-
     find_package(assimp        REQUIRED)
     find_package(Boost         REQUIRED COMPONENTS system)
     find_package(CGAL          REQUIRED)

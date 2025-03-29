@@ -25,15 +25,17 @@ jobs:
         working-directory: ./
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: 'true'
       - uses: cachix/install-nix-action@v27
       - name: Setup Environment
-        run: echo "artifact=$(nix eval --raw .#${ci_derivation}.name).appimage" >> $GITHUB_ENV
+        run: echo "artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name).appimage" >> $GITHUB_ENV
       - name: Compile Linux Build
         run: nix build -L .#${{ env.ci_derivation }} --accept-flake-config
       - name: Bundle Output
         run: |
-            nix bundle -L --bundler .#appimage .#${{ env.ci_derivation }} -o ${{ env.out_link }}
-            cp ${{ env.out_link }} ${{ env.artifact }}
+          nix bundle -L --bundler .#appimage .#${{ env.ci_derivation }} -o ${{ env.out_link }}
+          cp ${{ env.out_link }} ${{ env.artifact }}
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -44,22 +46,39 @@ jobs:
     env:
       ci_derivation: windows.ornl.slicer2
       out_link: slicer2
+      nsis_script: scripts/installer.nsi
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: 'true'
       - uses: cachix/install-nix-action@v27
       - name: Setup Environment
-        run: echo "artifact=$(nix eval --raw .#${ci_derivation}.name).zip" >> $GITHUB_ENV
+        run: |
+          echo "install_artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name)-installer.exe" >> $GITHUB_ENV
+          echo "package_artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name)-portable" >> $GITHUB_ENV
+          echo "version=$(nix eval --raw .#${{ env.ci_derivation }}.version)" >> $GITHUB_ENV
       - name: Compile Windows Build
         run: nix build -L .#${{ env.ci_derivation }} --accept-flake-config -o ${{ env.out_link }}
-      - name: Compress Artifacts
-        run: zip -r ${{ env.artifact }} ${{ env.out_link }}
-      - name: Upload Artifacts
+      - name: Generate Installer
+        run: >
+          nix develop --accept-flake-config --command
+          makensis
+          -DOUTFILE=../${{ env.install_artifact }}
+          -DEXE_SOURCES=${{ env.out_link }}
+          -DVERSION=${{ env.version }}
+          ${{ env.nsis_script }}
+      - name: Upload Portable Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.artifact }}
-          path: ${{ env.artifact }}
+          name: ${{ env.package_artifact }}
+          path: ${{ env.out_link }}
+      - name: Upload Installer Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.install_artifact }}
+          path: ${{ env.install_artifact }}
 
