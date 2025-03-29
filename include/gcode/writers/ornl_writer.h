@@ -85,12 +85,9 @@ class ORNLWriter : public WriterBase {
     QString writeDwell(Time time) override;
 
   private:
-    //! \brief Writes G-Code to enable the tamper
-    QString writeTamperOn();
-    //! \brief Writes G-Code to disable the tamper
-    QString writeTamperOff();
     //! \brief Writes G-Code to enable the extruder
-    QString writeExtruderOn(RegionType type, int rpm, int extruder_number);
+    QString writeExtruderOn(RegionType region_type, int rpm, int extruder_number);
+
     //! \brief Writes G-Code to disable the extruder
     QString writeExtruderOff(int extruder_number);
 
@@ -103,8 +100,10 @@ class ORNLWriter : public WriterBase {
 
     //! \brief true if first travel, false for subsequent travels
     bool m_first_travel;
+
     //! \brief true if first printing segment, false for subsquent paths - needed for Spiralize
     bool m_first_print;
+
     //! \brief true is first print motion of the layer
     bool m_layer_start;
 
