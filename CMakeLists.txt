@@ -106,12 +106,11 @@ target_sources(
 
 target_link_libraries(${PROJECT_NAME} ${SLICER2_DEPS})
 
-list(APPEND COMPILE_FLAGS "-fpermissive" "-Wno-deprecated-declarations")
-if(WIN32)
-    message(STATUS "Windows detected, setting Windows specific compile flags.")
-    list(APPEND COMPILE_FLAGS "-Wl,-mwindows")
+target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fpermissive -Wno-deprecated-declarations>)
+if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "Windows release detected, setting Windows specific compile flags.")
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-mwindows")
 endif()
-target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: ${COMPILE_FLAGS}>)
 
 function(CreateODSTarget)
     option(SLICER2_AUTO_GENERATE_MASTER_CONFIG "Generates the master configuration file as part of the build process" ON)

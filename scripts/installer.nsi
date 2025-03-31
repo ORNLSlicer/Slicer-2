@@ -54,22 +54,22 @@ Section "${HUMAN_APPLICATION}"
     SetOutPath $INSTDIR
 
     File /r "../${EXE_SOURCES}/"
+    File "${ICON}"
 
     ; Generate uninstaller
-    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORG}\${APPLICATION}" "DisplayName"          "${HUMAN_APPLICATION}"
-    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORG}\${APPLICATION}" "UninstallString"      "$\"$INSTDIR\uninstall.exe$\""
-    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORG}\${APPLICATION}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "DisplayName"          "${HUMAN_APPLICATION}"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "DisplayIcon"          "$INSTDIR\slicer2.ico"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "UninstallString"      "$\"$INSTDIR\uninstall.exe$\""
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
 
-    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORG}\${APPLICATION}" "NoModify" 1
-    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORG}\${APPLICATION}" "NoRepair" 1
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "NoModify" 1
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "NoRepair" 1
 
     WriteUninstaller "uninstall.exe"
 SectionEnd
 
 Section "Start Menu Shortcuts"
     SetShellVarContext all
-
-    File "${ICON}"
 
     CreateDirectory "$SMPROGRAMS\${HUMAN_ORG}\${HUMAN_APPLICATION}"
     CreateShortcut  "$SMPROGRAMS\${HUMAN_ORG}\${HUMAN_APPLICATION}\Uninstall.lnk"            "$INSTDIR\uninstall.exe"          "" "$INSTDIR\slicer2.ico" 0
@@ -79,6 +79,8 @@ SectionEnd
 Section "Uninstall"
     DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORG}\${APPLICATION}"
     DeleteRegKey HKLM "Software\${ORG}\${APPLICATION}"
+
+    SetShellVarContext all
 
     RMDir /r "$INSTDIR"
     RMDir /r "$SMPROGRAMS\${HUMAN_ORG}\${HUMAN_APPLICATION}"
