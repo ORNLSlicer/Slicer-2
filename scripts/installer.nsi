@@ -59,6 +59,16 @@ Section "${HUMAN_APPLICATION}"
     ; Generate uninstaller
     WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "DisplayName"          "${HUMAN_APPLICATION}"
     WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "DisplayIcon"          "$INSTDIR\slicer2.ico"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "Publisher"            "Oak Ridge National Lab"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "InstallLocation"      "$INSTDIR"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "DisplayVersion"       "${VERSION}"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "Contact"              "slicer@ornl.gov"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "HelpLink"             "https://github.com/ORNLSlicer/Slicer-2"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "URLInfoAbout"         "https://github.com/ORNLSlicer/Slicer-2"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "URLUpdateInfo"        "https://github.com/ORNLSlicer/Slicer-2/releases"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "Readme"               "$INSTDIR\share\doc\slicer2\slicer2_user_guide.pdf"
+    WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "Comments"             "An advanced object slicer by ORNL"
+
     WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "UninstallString"      "$\"$INSTDIR\uninstall.exe$\""
     WriteRegStr   HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
 
