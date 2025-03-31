@@ -67,9 +67,13 @@ Section "${HUMAN_APPLICATION}"
 SectionEnd
 
 Section "Start Menu Shortcuts"
+    SetShellVarContext all
+
+    File "${ICON}"
+
     CreateDirectory "$SMPROGRAMS\${HUMAN_ORG}\${HUMAN_APPLICATION}"
-    CreateShortcut  "$SMPROGRAMS\${HUMAN_ORG}\${HUMAN_APPLICATION}\Uninstall.lnk"            "$INSTDIR\uninstall.exe"          "" "${ICON}" 0
-    CreateShortcut  "$SMPROGRAMS\${HUMAN_ORG}\${HUMAN_APPLICATION}\${HUMAN_APPLICATION}.lnk" "$INSTDIR\bin\${APPLICATION}.exe" "" "${ICON}" 0
+    CreateShortcut  "$SMPROGRAMS\${HUMAN_ORG}\${HUMAN_APPLICATION}\Uninstall.lnk"            "$INSTDIR\uninstall.exe"          "" "$INSTDIR\slicer2.ico" 0
+    CreateShortcut  "$SMPROGRAMS\${HUMAN_ORG}\${HUMAN_APPLICATION}\${HUMAN_APPLICATION}.lnk" "$INSTDIR\bin\${APPLICATION}.exe" "" "$INSTDIR\slicer2.ico" 0
 SectionEnd
 
 Section "Uninstall"
