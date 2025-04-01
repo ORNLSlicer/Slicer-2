@@ -87,7 +87,7 @@ Section "Start Menu Shortcuts"
 SectionEnd
 
 Section "Uninstall"
-    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ORG}\${APPLICATION}"
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPLICATION}"
     DeleteRegKey HKLM "Software\${ORG}\${APPLICATION}"
 
     SetShellVarContext all
