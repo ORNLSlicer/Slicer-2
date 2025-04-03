@@ -1176,7 +1176,7 @@ class Constants {
 
         class Themes {
           public:
-            static const QString kLightMode;
+            static const QString kSystemMode;
             static const QString kDarkMode;
             static const QStringList kThemes;
         };

@@ -29,11 +29,8 @@ void MainWindow::continueStartup() {
 
     QString app_path = qApp->applicationDirPath();
 
-    QStringList template_paths = {
-         app_path + "/templates/",
-         app_path + "/../../../templates/",
-         app_path + "/../share/slicer2/templates/"
-    };
+    QStringList template_paths = {app_path + "/templates/", app_path + "/../../../templates/",
+                                  app_path + "/../share/slicer2/templates/"};
 
     QString templates;
 
@@ -45,7 +42,8 @@ void MainWindow::continueStartup() {
 
     if (!templates.isEmpty()) {
         GSM->loadAllGlobals(templates);
-    } else {
+    }
+    else {
         qWarning() << "Cannot find base templates directory.";
     }
 
@@ -59,7 +57,7 @@ void MainWindow::continueStartup() {
 
     GSM->loadAllGlobals(tmp);
     GSM->constructActiveGlobal(CSM->getMostRecentSettingHistory());
-    //GSM->loadLayerBarTemplate(qApp->applicationDirPath() + "/layerbartemplates");
+    // GSM->loadLayerBarTemplate(qApp->applicationDirPath() + "/layerbartemplates");
     GSM->loadLayerBarTemplate(CSM->getMostRecentLayerBarSettingFolderLocation());
     this->setupClasses();
     this->setupUi();
@@ -684,7 +682,8 @@ void MainWindow::setupEvents() {
     });
 
     connect(m_actions["manual"].action, &QAction::triggered, this, [this] {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(qApp->applicationDirPath() + "/Slicer_2_User_Guide.pdf"));
+        QDesktopServices::openUrl(
+            QUrl::fromLocalFile(qApp->applicationDirPath() + "/../share/doc/slicer2/slicer2_user_guide.pdf"));
     });
     connect(m_actions["repo"].action, &QAction::triggered, this,
             [this] { QDesktopServices::openUrl(QUrl("https://github.com/ORNLSlicer/Slicer-2")); });
