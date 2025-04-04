@@ -16,7 +16,6 @@ namespace ORNL
 
     class GcodeParser : private QObject
     {
-        Q_OBJECT
     public:
         //! \brief Creates a GcodeParser with no specified List to act upon.
         GcodeParser();

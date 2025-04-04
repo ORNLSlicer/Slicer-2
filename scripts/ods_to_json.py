@@ -50,10 +50,9 @@ def main():
         raise(Exception("Unsupported file type. First argument must be '.ods' file."))
 
     # import the first sheet of the ods file specified by the first command line argument
-    data_table = pandas.read_excel(ods_file, engine="odf")
+    data_table = pandas.read_excel(ods_file, engine="odf", na_filter=False)
 
     data_table.set_index('name', inplace=True)
-    data_table.fillna('', inplace=True)  # fill in empty spaces with empty strings
 
     # correct all the other types from mis-tytping on import
     data_table = data_table.astype(types)
