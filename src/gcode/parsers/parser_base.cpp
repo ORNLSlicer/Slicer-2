@@ -3,7 +3,6 @@
 #include <QDebug>
 #include <QString>
 #include <QStringList>
-#include <QStringListIterator>
 #include <QTextStream>
 #include <iostream>
 
@@ -13,7 +12,7 @@ namespace ORNL
 {
     ParserBase::ParserBase()
     {
-        m_block_split_delimiter = QRegExp("[\\(*\\)*\\,*\\s]|/");
+        m_block_split_delimiter = QRegularExpression("[\\(*\\)*\\,*\\s]|/");
         m_leading_colon = QChar(':');
         m_beginning_layer_matcher.setPattern("BEGINNING LAYER");
         m_layer_pattern = QRegularExpression("W*(\\d+)W*");
@@ -32,12 +31,12 @@ namespace ORNL
         m_current_gcode_command.setLineNumber(line_number);
 
         //remove comments and return QString
-        //need actual QString in order to splitRef with regex
+        //need actual QString in order to split with regex
         extractComments(command_string);
 
         //trimming is handled as part of regex
-        QVector<QStringRef> command_string_split = command_string.splitRef(
-                    m_block_split_delimiter, QString::SkipEmptyParts);
+        QVector<QString> command_string_split = command_string.split(
+                    m_block_split_delimiter, Qt::SkipEmptyParts);
 
         //just comments so return
         if (command_string_split.isEmpty())
@@ -57,13 +56,13 @@ namespace ORNL
         //get command as std::string to easily collapse extra 0's, then convert to QString
         //for later matching.  Must have QString to match in hash so no need to keep ref.
         //However, all other parameters can remain as ref.
-        std::string stdCommand = command_string_split[0].toString().toStdString();
+        std::string stdCommand = command_string_split[0].toStdString();
         int firstNonZero = std::min(stdCommand.find_first_not_of('0', 1), stdCommand.size()-1);
         if(firstNonZero != 1)
             stdCommand.erase(1, firstNonZero);
         QString command = QString::fromStdString(stdCommand);
 
-        QHash< QString, std::function< void(QVector<QStringRef>) > >::iterator
+        QHash< QString, std::function< void(QVector<QString>) > >::iterator
                 temp_iter;
         // First element should always be the command
         if ((temp_iter = m_command_mapping.find(command)) !=
@@ -108,7 +107,7 @@ namespace ORNL
 
     void ParserBase::addCommandMapping(
         QString command_string,
-        std::function< void(QVector<QStringRef>) > function_handle)
+        std::function< void(QVector<QString>) > function_handle)
     {
         if(m_command_mapping.contains(command_string))
                 m_command_mapping.remove(command_string);
@@ -155,7 +154,7 @@ namespace ORNL
                     QTextStream(&exceptionString)
                             << "Comment not closed within GCode file, on line "
                             << m_current_gcode_command.getLineNumber() << "."
-                            << endl
+                            << Qt::endl
                             << "With GCode command string: "
                             << getCurrentCommandString();
                     throw IllegalParameterException(exceptionString);
@@ -166,8 +165,8 @@ namespace ORNL
                 }
             }
 
-            QStringRef comment(command.midRef(start_index + m_block_comment_starting_delimiter.size(), end_index));
-            m_current_gcode_command.setComment(comment.trimmed().toString());
+            QString comment(command.mid(start_index + m_block_comment_starting_delimiter.size(), end_index));
+            m_current_gcode_command.setComment(comment.trimmed());
 
             if(start_index > 0)
                 command = command.left(start_index - 1);
@@ -176,7 +175,7 @@ namespace ORNL
         }
     }
 
-    QStringRef ParserBase::parseComment(QString& line)
+    QString ParserBase::parseComment(QString& line)
     {
         int start_index = m_block_comment_starting_delimiter_matcher.indexIn(line) + m_block_comment_starting_delimiter.size();
         int end_index = -1;
@@ -190,7 +189,7 @@ namespace ORNL
                 QTextStream(&exceptionString)
                         << "Comment not closed within GCode file, on line "
                         << m_current_gcode_command.getLineNumber() << "."
-                        << endl
+                        << Qt::endl
                         << "With GCode command string: "
                         << getCurrentCommandString();
                 throw IllegalParameterException(exceptionString);
@@ -203,7 +202,7 @@ namespace ORNL
         else
             end_index = line.length() - 1;
 
-        return line.midRef(start_index, end_index);
+        return line.mid(start_index, end_index);
     }
 
     void ParserBase::setCurrentCommand(QString command)
@@ -219,7 +218,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "Error with numerical conversion for GCode command on GCode "
                    "line "
-                << m_current_gcode_command.getLineNumber() << "." << endl
+                << m_current_gcode_command.getLineNumber() << "." << Qt::endl
                 << "With GCode command string: " << getCurrentCommandString();
 //            throw IllegalArgumentException(exceptionString);
         }

@@ -34,10 +34,10 @@ namespace ORNL
                 &IngersollParser::G1Handler, this, std::placeholders::_1));
     }
 
-    void IngersollParser::G0Handler(QVector<QStringRef> params)
+    void IngersollParser::G0Handler(QVector<QString> params)
     {
-        QVector<QStringRef> interestedParams;
-        for(QStringRef& p : params)
+        QVector<QString> interestedParams;
+        for(QString& p : params)
         {
             if(!p.startsWith(m_ua_parameter))
                 interestedParams.push_back(p);
@@ -46,10 +46,10 @@ namespace ORNL
         CommonParser::G0Handler(interestedParams);
     }
 
-    void IngersollParser::G1Handler(QVector<QStringRef> params)
+    void IngersollParser::G1Handler(QVector<QString> params)
     {
-        QVector<QStringRef> interestedParams;
-        for(QStringRef& p : params)
+        QVector<QString> interestedParams;
+        for(QString& p : params)
         {
             if(p[0] != m_h_parameter && !p.startsWith(m_ua_parameter))
                 interestedParams.push_back(p);

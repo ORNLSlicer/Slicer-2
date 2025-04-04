@@ -23,7 +23,7 @@ namespace ORNL
                 &DmgDmuParser::M5Handler, this, std::placeholders::_1));
     }
 
-    void DmgDmuParser::M3Handler(QVector<QStringRef> params)
+    void DmgDmuParser::M3Handler(QVector<QString> params)
     {
         if(params.size() != 1)
         {
@@ -32,7 +32,7 @@ namespace ORNL
 //            QTextStream(&exceptionString)
 //                << "M5 command should have no parameters . Error occured on "
 //                   "GCode line "
-//                << m_current_gcode_command.getLineNumber() << endl
+//                << m_current_gcode_command.getLineNumber() << Qt::endl
 //                << "."
 //                << "With GCode command string: " << getCurrentCommandString();
 //            throw IllegalParameterException(exceptionString);
@@ -42,7 +42,7 @@ namespace ORNL
         m_extruder_ON = true;
     }
 
-    void DmgDmuParser::M5Handler(QVector<QStringRef> params)
+    void DmgDmuParser::M5Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -51,7 +51,7 @@ namespace ORNL
 //            QTextStream(&exceptionString)
 //                << "M5 command should have no parameters . Error occured on "
 //                   "GCode line "
-//                << m_current_gcode_command.getLineNumber() << endl
+//                << m_current_gcode_command.getLineNumber() << Qt::endl
 //                << "."
 //                << "With GCode command string: " << getCurrentCommandString();
 //            throw IllegalParameterException(exceptionString);

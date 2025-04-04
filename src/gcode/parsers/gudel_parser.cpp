@@ -23,7 +23,7 @@ namespace ORNL
                 &GudelParser::M5Handler, this, std::placeholders::_1));
     }
 
-    void GudelParser::M3Handler(QVector<QStringRef> params)
+    void GudelParser::M3Handler(QVector<QString> params)
     {
         if(params.size() != 1)
         {
@@ -34,7 +34,7 @@ namespace ORNL
         m_extruder_ON = true;
     }
 
-    void GudelParser::M5Handler(QVector<QStringRef> params)
+    void GudelParser::M5Handler(QVector<QString> params)
     {
         if (!params.empty())
         {

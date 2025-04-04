@@ -3,7 +3,6 @@
 
 #include <gcode/writers/writer_base.h>
 #include "utilities/mathutils.h"
-#include <QMatrix>
 
 #include "graphics/support/shape_factory.h"
 
@@ -133,8 +132,8 @@ namespace ORNL {
         double li1 = b.distance(c)();
         double qi = a.distance(c)();
 
-        QVector3D li_v = b.toQVector3D() - a.toQVector2D();
-        QVector3D li1_v = c.toQVector3D() - b.toQVector2D();
+        QVector3D li_v = b.toQVector3D() - a.toQVector3D();
+        QVector3D li1_v = c.toQVector3D() - b.toQVector3D();
 
         double det = QVector3D::crossProduct(li_v, li1_v).z();
 

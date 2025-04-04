@@ -52,7 +52,7 @@ namespace ORNL
         //!        for error checking purposes.
         //! \throws IllegalParameterException This occurs when another parameter
         //! is passed to this function.
-        void M0Handler(QVector<QStringRef> params);
+        void M0Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'M1' command for waiting for user
         //! input to stop the machine.
@@ -60,7 +60,7 @@ namespace ORNL
         //!        for error checking purposes.
         //! \throws IllegalParameterException This occurs when another parameter
         //! is passed to this function.
-        virtual void M1Handler(QVector<QStringRef> params);
+        virtual void M1Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'M3' command for turning the extruder on
         //! and setting the spindle speed rate.
@@ -73,7 +73,7 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        //virtual void M3Handler(QVector<QStringRef> params);
+        //virtual void M3Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'M5' command for turning off the
         //! extruder.
@@ -81,7 +81,7 @@ namespace ORNL
         //!        for error checking purposes.
         //! \throws IllegalParameterException This occurs when another parameter
         //! is passed to this function.
-        //virtual void M5Handler(QVector<QStringRef> params);
+        //virtual void M5Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'M10' command for turning on dynamic
         //! spindle/extruder servo control.
@@ -89,7 +89,7 @@ namespace ORNL
         //!        for error checking purposes.
         //! \throws IllegalParameterException This occurs when another parameter
         //! is passed to this function.
-        virtual void M10Handler(QVector<QStringRef> params);
+        virtual void M10Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'M11' command for turning off
         //! dynamic spindle/extruder servo control.
@@ -97,7 +97,7 @@ namespace ORNL
         //!        for error checking purposes.
         //! \throws IllegalParameterException This occurs when another parameter
         //! is passed to this function.
-        virtual void M11Handler(QVector<QStringRef> params);
+        virtual void M11Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'M12' command for adjusting the
         //! perminiter spindle.
@@ -105,27 +105,27 @@ namespace ORNL
         //!        for error checking purposes.
         //! \throws IllegalParameterException This occurs when another parameter
         //! is passed to this function.
-        virtual void M12Handler(QVector<QStringRef> params);
+        virtual void M12Handler(QVector<QString> params);
 
         //! \brief Function Handler for the 'M13' command for inset spindle
         //! adjustment.
         // TODO: Figure out what insert spindle override even means.
         // think this means there is a special fillset type for this.
-        virtual void M13Handler(QVector<QStringRef> params);
+        virtual void M13Handler(QVector<QString> params);
 
         //! \brief Function Handler that performs all modifcations to the
         //!        internal data structures if a M14 command is encountered
         // TODO: Figure out what infill override means.
         // Think this means there is a special infill setting that is most
         // likely hard coded in.
-        virtual void M14Handler(QVector<QStringRef> params);
+        virtual void M14Handler(QVector<QString> params);
 
         //! \brief Function Handler that performs all modifcations to the
         //!        internal data structures if a M15 command is encountered
         // TODO: Figure out what it means by skin spindle override.
         // Think this means that the machine is doing a skin fill type and does
         // a different path type etc.
-        virtual void M15Handler(QVector<QStringRef> params);
+        virtual void M15Handler(QVector<QString> params);
 
         //! \brief Function Handler for the 'M16' command that
         // TODO: Just resets everything?
@@ -135,7 +135,7 @@ namespace ORNL
         //!        for error checking purposes.
         //! \throws IllegalParameterException This occurs when another parameter
         //! is passed to this function.
-        virtual void M16Handler(QVector<QStringRef> params);
+        virtual void M16Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'M30' command for stating the end of
         //! Gcode commands within a Gcode file..
@@ -143,7 +143,7 @@ namespace ORNL
         //!        for error checking purposes.
         //! \throws IllegalParameterException This occurs when another parameter
         //! is passed to this function.
-        virtual void M30Handler(QVector<QStringRef> params);
+        virtual void M30Handler(QVector<QString> params);
 
         // TODO: this
         //! \brief Function handler for the 'M60' command for turning on the
@@ -158,7 +158,7 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        virtual void M60Handler(QVector<QStringRef> params);
+        virtual void M60Handler(QVector<QString> params);
 
         //! \brief Function Handler for the 'M61' command for turning the feed
         //! shaker off.
@@ -166,7 +166,7 @@ namespace ORNL
         //!        for error checking purposes.
         //! \throws IllegalParameterException This occurs when another parameter
         //! is passed to this function.
-        virtual void M61Handler(QVector<QStringRef> params);
+        virtual void M61Handler(QVector<QString> params);
 
         //! \brief Function Handler for the 'M64' command for turing on and
         //! setting the tamper control level.
@@ -179,7 +179,7 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        virtual void M64Handler(QVector<QStringRef> params);
+        virtual void M64Handler(QVector<QString> params);
 
         //! \brief Function Handler for the 'M65' command for turning off the
         //! tamper control level.
@@ -187,7 +187,7 @@ namespace ORNL
         //!        checking purposes.
         //! \throws IllegalParameterException This occurs when another parameter
         //! is passed to this function.
-        virtual void M65Handler(QVector<QStringRef> params);
+        virtual void M65Handler(QVector<QString> params);
 
         //! \brief Function Handler for the 'M66' command for setting the
         //! acceleration value.
@@ -200,7 +200,7 @@ namespace ORNL
         //!                                   a duplicate parameter, if a
         //!                                   required parameter is not passed,
         //!                                   or an illegal parameter passed.
-        virtual void M66Handler(QVector<QStringRef> params);
+        virtual void M66Handler(QVector<QString> params);
 
         //! \brief Function Handler for the 'M68' command that sends the
         //! extruder to the park position.
@@ -208,7 +208,7 @@ namespace ORNL
         //!        checking purposes.
         //! \throws IllegalParameterException This occurs when another parameter
         //! is passed to this function.
-        virtual void M68Handler(QVector<QStringRef> params);
+        virtual void M68Handler(QVector<QString> params);
 
         //! \brief Function handler for the 'M69' Gcode command for purging the
         //! extruder. This fucntion handler
@@ -233,11 +233,11 @@ namespace ORNL
         //! a conversion error, a parameter missing a value,
         //!                                   a duplicate parameter, or if an
         //!                                   illegal parameter passed.
-        virtual void M69Handler(QVector<QStringRef> params);
+        virtual void M69Handler(QVector<QString> params);
 
         //! \brief Funciton handler for tool changes in GCode. For now its just
         //! a placeholder function.
-        virtual void ToolChangeHandler(QVector<QStringRef> params);
+        virtual void ToolChangeHandler(QVector<QString> params);
 
     private:
         bool m_voltage_control = true;

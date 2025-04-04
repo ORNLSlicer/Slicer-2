@@ -1,6 +1,5 @@
 ![ORNL Slicer 2 for next-gen additive manufacturing](doc/Slicer2.gif)
 
-- [Design goals](#design-goals)
 - [Support](#support)
   - [Report Bugs](https://github.com/ORNLSlicer/Slicer-2/issues)
   - [Releases](https://github.com/ORNLSlicer/Slicer-2/wiki/Previous%20Releases)
@@ -11,23 +10,7 @@
 - [Contributors and Thanks](#contributors-and-thanks)
 - [Engagement](#Engagement)
 - [Contact](#contact)
-- [Share] (#share)
-
-## Design goals
-
-There are numerous slicers available either open-source or commercial. In many cases, each of these slicers is attempting to solve different goals. ORNL Slicer 2.0 was designed with these goals in mind:
-
-- **Easy Syntax Addition**. For us, as a research organization, we regularly find that a new machine does not quite fit the style of already existing machines. This can be due to a slightly different g-code flavor or the system being experimental. If a new machine is based on a g-code like output, we wanted its addition to be easy while leveraging already existing code.
-
-- **Networking**. We look at slicing as part of a software ecosystem. The geometric evaluation of the object must interact with other pieces of software or the machines themselves. To that end, Slicer 2 is built with connectivity in mind as we push towards slicing as a platform instead of a simple program.
-
-- **Closing the loop**.  Unlike the traditional, sequential process of slicing and preparing g-code, we push for an iterative process. The slicer should be involved in the construction of the object to ingest sensor feedback and manipulate pathing as necessary. This goes hand-in-hand with the network connectivity and creates what we call [Slice on the Fly](https://repositories.lib.utexas.edu/handle/2152/90721).
- 
-- **Total Control**. Slicer 2 is meant to allow complete control of your pathing process. Currently, there are nearly 500 settings to be adjusted with more constantly added. This includes not just global settings, but also settings related to each layer, each object, or specific volumes.
-
-- **Experimental Systems**. We are a research institution. As a result, you will see code dedicated to support of experimental systems that are likely to not be found elsewhere. For example, rotary powder bed fusion, sheet lamination with pick and place, autonomous systems for construction, and novel hybrid approaches.
-
-- **Future Goals**. Our plans are always changing. Currently, we are focused on the development of unique solutions for hybrid systems, laser powder bed, and the expansion of modularity and connectivity with frameworks such as ROS. We are also working to expand connectivity with augmented reality solutions.
+- [Share](#share)
 
 ## Support
 

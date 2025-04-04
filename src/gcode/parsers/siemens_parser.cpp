@@ -29,13 +29,13 @@ namespace ORNL
                 &SiemensParser::ExtruderOffHandler, this, std::placeholders::_1));
     }
 
-    void SiemensParser::BeadAreaHandler(QVector<QStringRef> params)
+    void SiemensParser::BeadAreaHandler(QVector<QString> params)
     {
         //redirect - essentially M3 command
         CommonParser::M3Handler(params);
     }
 
-    void SiemensParser::ExtruderOffHandler(QVector<QStringRef> params)
+    void SiemensParser::ExtruderOffHandler(QVector<QString> params)
     {
         //redirect - essentially M5 command
         CommonParser::M5Handler(params);

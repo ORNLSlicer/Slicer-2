@@ -626,7 +626,7 @@ namespace ORNL {
         static QMutex lock;
         QMutexLocker locker(& lock);
 
-        #define precision_qDebug() qDebug() << fixed << qSetRealNumberPrecision(1)
+        #define precision_qDebug() qDebug() << Qt::fixed << qSetRealNumberPrecision(1)
 
         //! Print input geometry
         qDebug() << "Layer " << layer_num << "Input Geometry:";
@@ -650,7 +650,7 @@ namespace ORNL {
         static QMutex lock;
         QMutexLocker locker(& lock);
 
-        #define precision_qDebug() qDebug() << fixed << qSetRealNumberPrecision(1)
+        #define precision_qDebug() qDebug() << Qt::fixed << qSetRealNumberPrecision(1)
 
         //! Print input geometry
         qDebug() << "Input Geometry";

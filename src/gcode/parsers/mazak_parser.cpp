@@ -35,16 +35,16 @@ namespace ORNL
                 &MazakParser::G442Handler, this, std::placeholders::_1));
     }
 
-    void MazakParser::G1Handler(QVector<QStringRef> params)
+    void MazakParser::G1Handler(QVector<QString> params)
     {
-        for(QStringRef& p : params)
+        for(QString& p : params)
         {
             if(p[0] == m_f_parameter)
             {
-                QStringRef val = p.mid(1).trimmed();
+                QString val = p.mid(1).trimmed();
                 if(val == m_feedrate_reference)
                 {
-                    p = m_feedrate.midRef(0);
+                    p = m_feedrate.mid(0);
                     break;
                 }
             }
@@ -54,7 +54,7 @@ namespace ORNL
     }
 
     //G441 (Turn Laser ON)
-    void MazakParser::G441Handler(QVector<QStringRef> params)
+    void MazakParser::G441Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -63,7 +63,7 @@ namespace ORNL
 //            QTextStream(&exceptionString)
 //                << "G441 command should have no parameters . Error occured on "
 //                   "GCode line "
-//                << m_current_gcode_command.getLineNumber() << endl
+//                << m_current_gcode_command.getLineNumber() << Qt::endl
 //                << "."
 //                << "With GCode command string: " << getCurrentCommandString();
 //            throw IllegalParameterException(exceptionString);
@@ -75,7 +75,7 @@ namespace ORNL
     }
 
     //G442 (LASER OFF)
-    void MazakParser::G442Handler(QVector<QStringRef> params)
+    void MazakParser::G442Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -84,7 +84,7 @@ namespace ORNL
 //            QTextStream(&exceptionString)
 //                << "G442 command should have no parameters . Error occured on "
 //                   "GCode line "
-//                << m_current_gcode_command.getLineNumber() << endl
+//                << m_current_gcode_command.getLineNumber() << Qt::endl
 //                << "."
 //                << "With GCode command string: " << getCurrentCommandString();
 //            throw IllegalParameterException(exceptionString);
@@ -95,8 +95,8 @@ namespace ORNL
         m_extruders_on[0] = false;
     }
 
-    void MazakParser::FeedRateHandler(QVector<QStringRef> params)
+    void MazakParser::FeedRateHandler(QVector<QString> params)
     {
-        m_feedrate = "F" % params[1].toString();
+        m_feedrate = "F" % params[1];
     }
 }

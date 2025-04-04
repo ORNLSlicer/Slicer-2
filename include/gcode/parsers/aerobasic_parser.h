@@ -25,23 +25,23 @@ namespace ORNL
 
             //! \brief forwards aliases to common parser version
             //! \param params gcode-params
-            void G0Handler(QVector<QStringRef> params) override;
+            void G0Handler(QVector<QString> params) override;
 
             //! \brief forwards aliases to common parser version
             //! \param params gcode-params
-            void G1Handler(QVector<QStringRef> params) override;
+            void G1Handler(QVector<QString> params) override;
 
             //! \brief forwards aliases to common parser version
             //! \param params gcode-params
-            void G2Handler(QVector<QStringRef> params) override;
+            void G2Handler(QVector<QString> params) override;
 
             //! \brief forwards aliases to common parser version
             //! \param params gcode-params
-            void G3Handler(QVector<QStringRef> params) override;
+            void G3Handler(QVector<QString> params) override;
 
             //! \brief forwards aliases to common parser version
             //! \param params gcode-params
-            void G4Handler(QVector<QStringRef> params) override;
+            void G4Handler(QVector<QString> params) override;
 
             //! \brief Function to initialize syntax specific handlers
             virtual void config() override;

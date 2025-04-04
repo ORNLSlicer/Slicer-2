@@ -56,7 +56,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "No parameters for command M3, on line number "
                 << m_current_gcode_command.getLineNumber()
-                << ". Need at least one for this command." << endl
+                << ". Need at least one for this command." << Qt::endl
                 << "GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
         }
@@ -96,7 +96,7 @@ namespace ORNL
                         << "Error: Unknown parameter " << *i
                         << " on GCode line "
                         << m_current_gcode_command.getLineNumber()
-                        << ", for GCode command M3" << endl
+                        << ", for GCode command M3" << Qt::endl
                         << "With GCode command string: "
                         << getCurrentCommandString();
                     throw IllegalParameterException(exceptionString);
@@ -110,7 +110,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "Error not all required parameters passed for GCode command "
                    "on line  "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
         }
@@ -126,7 +126,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M5 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
@@ -143,7 +143,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M30 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
@@ -158,7 +158,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M68 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
@@ -175,7 +175,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "Tool change command should have no parameters . Error "
                    "occured on GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
         }

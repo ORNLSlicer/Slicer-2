@@ -6,6 +6,7 @@
 #include "units/unit.h"
 
 #include <QRegularExpression>
+#include <QRegularExpression>
 #include <QString>
 
 namespace ORNL {
@@ -55,7 +56,7 @@ class RPBFExporter {
     const QString m_extra_header = "//G-Code generated";
 
     //! \brief Regular expressions
-    const QRegExp m_spaces = QRegExp("^\\s+");
+    const QRegularExpression m_spaces = QRegularExpression("^\\s+");
     const QRegularExpression m_comments = QRegularExpression(R"(//.*)");
 
     //! \brief String matchers

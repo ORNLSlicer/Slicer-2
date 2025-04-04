@@ -1,6 +1,8 @@
 //Main Module
 #include "geometry/mesh/mesh_vertex.h"
 
+#include <QMatrix4x4>
+
 namespace ORNL
 {
     MeshVertex::MeshVertex(const QVector3D& location, const QVector3D& normal)
@@ -11,7 +13,7 @@ namespace ORNL
     }
 
     void MeshVertex::transform(const QMatrix4x4& transform) {
-        location = transform * location;
+        location = transform * location; // QVector3D(transform * QVector4D(location));
     }
 
     #ifndef __CUDACC__

@@ -21,15 +21,7 @@ struct GcodeMeta {
     QString m_layer_count_delimiter = "LAYER COUNT";
     QString m_layer_delimiter = "BEGINNING LAYER";
 
-    bool operator==(const GcodeMeta& rhs) {
-        return m_syntax_id == rhs.m_syntax_id && m_comment_starting_delimiter == rhs.m_comment_starting_delimiter &&
-               m_comment_ending_delimiter == rhs.m_comment_ending_delimiter && m_distance_unit == rhs.m_distance_unit &&
-               m_time_unit == rhs.m_time_unit && m_angle_unit == rhs.m_angle_unit && m_mass_unit == rhs.m_mass_unit &&
-               m_velocity_unit == rhs.m_velocity_unit && m_acceleration_unit == rhs.m_acceleration_unit &&
-               m_angular_velocity_unit == rhs.m_angular_velocity_unit && m_file_suffix == rhs.m_file_suffix &&
-               hasTravels == rhs.hasTravels && m_layer_count_delimiter == rhs.m_layer_count_delimiter &&
-               m_layer_delimiter == rhs.m_layer_delimiter;
-    }
+    bool operator==(const GcodeMeta& rhs) const = default;
 };
 
 //! \brief A namespace just to make the meta structs pretty to access and prevent

@@ -105,7 +105,7 @@ Polygon PolygonList::convexHull() const {
         }
     };
 
-    qSort(all_points.begin(), all_points.end(), HullSort());
+    std::sort(all_points.begin(), all_points.end(), HullSort());
 
     // positive for left turn, 0 for straight, negative for right turn
     auto ccw = [](const ClipperLib2::IntPoint& p0, const ClipperLib2::IntPoint& p1,

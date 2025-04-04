@@ -7,7 +7,6 @@
 
 // Json
 #include <nlohmann/json.hpp>
-#include <fifo_map.hpp>
 
 // Local
 #include "units/derivative_units.h"

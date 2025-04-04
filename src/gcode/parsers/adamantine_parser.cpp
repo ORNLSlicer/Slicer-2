@@ -9,7 +9,7 @@ namespace ORNL
         config();
 
         m_home_string = QLatin1String("X0 Y0 Z0");
-        m_home_parameters = m_home_string.splitRef(' ');
+        m_home_parameters = m_home_string.split(' ');
     }
 
     void AdamantineParser::config()
@@ -54,29 +54,29 @@ namespace ORNL
     }
 
     //G28 X0 Y0 F1500 ; Home X and Y
-    void AdamantineParser::G28Handler(QVector<QStringRef> params)
+    void AdamantineParser::G28Handler(QVector<QString> params)
     {
         //redirect - essentially G1 with predetermined location
         CommonParser::G1Handler(m_home_parameters);
     }
 
     //G92 E0 ; reset filament axis to 0
-    void AdamantineParser::G92Handler(QVector<QStringRef> params)
+    void AdamantineParser::G92Handler(QVector<QString> params)
     {
         //redirect - essentially G1 with E parameter
         CommonParser::G1Handler(params);
     }
 
     //M83 ; use relative distances for extrusion
-    void AdamantineParser::M83Handler(QVector<QStringRef> params)
+    void AdamantineParser::M83Handler(QVector<QString> params)
     {
         m_e_absolute = false;
     }
 
-    void AdamantineParser::M605Handler(QVector<QStringRef> params)
+    void AdamantineParser::M605Handler(QVector<QString> params)
     {
         int s_param = -1;
-        for(const QStringRef& ref : params)
+        for(const QString& ref : params)
         {
             bool no_error = true;
             char current_parameter = ref.at(0).toLatin1();
@@ -108,7 +108,7 @@ namespace ORNL
         }
     }
 
-    void AdamantineParser::THandler(QVector<QStringRef> params)
+    void AdamantineParser::THandler(QVector<QString> params)
     {
         int extruder_number = m_current_gcode_command.getCommandID();
         for(int i = 0; i < m_num_extruders; ++i)

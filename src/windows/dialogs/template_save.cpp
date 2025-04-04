@@ -329,7 +329,7 @@ void TemplateSaveDialog::setupInsert() {
     m_layout->addWidget(m_all_check_box, 2, 1, 1, 1);
 
     int index = 3;
-    for (QString str : m_maj.toList()) {
+    for (QString str : m_maj) {
         m_category_check_boxes.insert(str, new ProgrammaticCheckBox(str, this));
         m_layout->addWidget(m_category_check_boxes[str], index, 1, 1, 1);
         ++index;
