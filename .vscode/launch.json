@@ -1,0 +1,11 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb-dap",
+            "request": "launch",
+            "name": "Launch Target (LLDB)",
+            "program": "${command:cmake.launchTargetPath}"
+        }
+    ]
+}

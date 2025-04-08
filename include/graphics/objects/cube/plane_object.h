@@ -22,8 +22,10 @@ namespace ORNL {
             //! \param color: Plane color.
             PlaneObject(BaseView* view, float length, float width, QColor color = QColor(127, 0, 255, 102));
 
-            //! \brief Sets the angles of rotation lock.
-            void setLockedRotationAngle(Angle pitch, Angle yaw, Angle roll);
+            //! \brief Sets the rotation of the plane.
+            //! \param rotation: New rotation quaternion.
+            void setLockedRotationQuaternion(const QQuaternion& rotation);
+
             //! \brief If the plane should lock rotation.
             void setLockedRotation(bool lock);
 

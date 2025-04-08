@@ -52,9 +52,6 @@ namespace ORNL {
             }
         }
 
-        if (static_cast<SlicerType>(this->getSb()->setting<int>(Constants::ExperimentalSettings::PrinterConfig::kSlicerType)) == SlicerType::kConformalSlice) {
-            this->applyMapping();
-        }
     }
 
     void Layer::connectPaths(Point& start, int& start_index, QVector<QSharedPointer<RegionBase>>& previousRegions) {
@@ -386,12 +383,6 @@ namespace ORNL {
         return Point(0, 0, 0);
     }
 
-    void Layer::applyMapping() {
-        for (QSharedPointer<IslandBase> island : m_islands) {
-            island->applyMapping(m_parameterization, m_normal_offset);
-        }
-    }
-
     void Layer::unorient() {
         if (!this->isDirty()) {
             //raise the layer by half the layer height, because cross-sections are taken at the center of a layer
@@ -482,22 +473,6 @@ namespace ORNL {
 
     Point Layer::getFinalLayerLocation() {
         return getIslands().last()->getRegions().last()->getPaths().last().back()->end();
-    }
-
-    QSharedPointer<Parameterization> Layer::getParameterization() {
-        return m_parameterization;
-    }
-
-    void Layer::setParameterization(QSharedPointer<Parameterization> parameterization) {
-        m_parameterization = parameterization;
-    }
-
-    QVector3D Layer::getNormalOffset() {
-        return m_normal_offset;
-    }
-
-    void Layer::setNormalOffset(QVector3D normal) {
-        m_normal_offset = normal;
     }
 
     void Layer::setSettingsPolygons(QVector<SettingsPolygon> &settings_polygons) {

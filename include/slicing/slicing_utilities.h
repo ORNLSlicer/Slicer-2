@@ -17,12 +17,6 @@ namespace ORNL
     class SlicingUtilities
     {
         public:
-            /*!
-             * \brief Breaks a root mesh into printable segments
-             * \param sb: settings base to use
-             * \param parts: the parts that need segmented
-             */
-            static void SegmentRoot(QSharedPointer<SettingsBase> sb, QMap<QString, QSharedPointer<Part>> parts);
 
             /*!
              * \brief identifies meshes from a list of parts with a certain type

@@ -59,7 +59,7 @@ void GCodeAML3DSaver::run()
         QString fileSuffix = "_1_1_" % QString::number(layerNum);
 
         QFileInfo fi(m_filename);
-        QString filePath = fi.absolutePath() + "\\" + fi.baseName() + fileSuffix + "_deposit.csv";
+        QString filePath = fi.absolutePath() + QDir::separator() + fi.baseName() + fileSuffix + "_deposit.csv";
 
         QFile file(filePath);
 

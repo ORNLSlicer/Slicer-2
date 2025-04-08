@@ -3,28 +3,26 @@
 
 //! \file ornl_writer.h
 
+#include "gcode/gcode_meta.h"
 #include "gcode/writers/writer_base.h"
 #include "managers/settings/settings_manager.h"
-#include "gcode/gcode_meta.h"
 
-namespace ORNL
-{
+namespace ORNL {
 /*!
-     * \class SandiaWriter
-     * \brief The gcode writer for the Sandia syntax
-     */
-class SandiaWriter : public WriterBase
-{
-public:
-
+ * \class SandiaWriter
+ * \brief The gcode writer for the Sandia syntax
+ */
+class SandiaWriter : public WriterBase {
+  public:
     //! \brief Constructor
     SandiaWriter(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb);
 
     //! \brief Writes important settings info to the header for the operator to read
-    QString writeSettingsHeader(GcodeSyntax syntax);
+    QString writeSettingsHeader(GcodeSyntax syntax) override;
 
     //! \brief Writes initial setup instructions for the machine state
-    QString writeInitialSetup(Distance minimum_x, Distance minimum_y, Distance maximum_x, Distance maximum_y, int num_layers) override;
+    QString writeInitialSetup(Distance minimum_x, Distance minimum_y, Distance maximum_x, Distance maximum_y,
+                              int num_layers) override;
 
     //! \brief Writes G-Code to be executed at the start of the layer
     QString writeBeforeLayer(float min_z, QSharedPointer<SettingsBase> sb) override;
@@ -49,30 +47,12 @@ public:
                         QSharedPointer<SettingsBase> params) override;
 
     //! \brief Writes G-Code for line
-    QString writeLine(const Point& start_point,
-                      const Point& target_point,
+    QString writeLine(const Point& start_point, const Point& target_point,
                       const QSharedPointer<SettingsBase> params) override;
 
     //! \brief Writes G-Code for arc
-    QString writeArc(const Point &start_point,
-                     const Point &end_point,
-                     const Point &center_point,
-                     const Angle &angle,
-                     const bool &ccw,
-                     const QSharedPointer<SettingsBase> params) override;
-
-    //! \brief writes a spline using the G5 command
-    //! \param start_point the starting location
-    //! \param a_control_point first control point
-    //! \param b_control_point second control point
-    //! \param end_point the ending location
-    //! \param params the settings base
-    //! \return a string with the gcode command
-    QString writeSpline(const Point& start_point,
-                        const Point& a_control_point,
-                        const Point& b_control_point,
-                        const Point& end_point,
-                        const QSharedPointer<SettingsBase> params) override;
+    QString writeArc(const Point& start_point, const Point& end_point, const Point& center_point, const Angle& angle,
+                     const bool& ccw, const QSharedPointer<SettingsBase> params) override;
 
     //! \brief Writes G-Code for scan
     QString writeScan(Point target_point, Velocity speed, bool on_off) override;
@@ -84,8 +64,7 @@ public:
     QString writeAfterRegion(RegionType type) override;
 
     //! \brief Writes G-Code to be executed after each scan
-    QString writeAfterScan(Distance beadWidth, Distance laserStep,
-                           Distance laserResolution) override;
+    QString writeAfterScan(Distance beadWidth, Distance laserStep, Distance laserResolution) override;
 
     //! \brief Writes G-Code to be executed at the end of each island
     QString writeAfterIsland() override;
@@ -105,8 +84,7 @@ public:
     //! \brief Writes G-Code for a pause, G4
     QString writeDwell(Time time) override;
 
-private:
-
+  private:
     //! \brief Writes G-Code to enable the tamper
     QString writeTamperOn();
     //! \brief Writes G-Code to disable the tamper
@@ -130,6 +108,6 @@ private:
     //! \brief true is first print motion of the layer
     bool m_layer_start;
 
-};  // class SANDIAWriter
-}  // namespace ORNL
-#endif  // SANDIA_WRITER_H
+}; // class SANDIAWriter
+} // namespace ORNL
+#endif // SANDIA_WRITER_H

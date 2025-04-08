@@ -2,138 +2,118 @@
 #define POLYMERSLICER_H
 
 // Local
-#include "threading/traditional_ast.h"
 #include "step/global_layer.h"
+#include "threading/traditional_ast.h"
 
-//#include "slicing/preprocessor.h"
-//#include "slicing/buffered_slicer.h"
+// #include "slicing/preprocessor.h"
+// #include "slicing/buffered_slicer.h"
 
 namespace ORNL {
-    /*!
-     * \class PolymerSlicer
-     * \brief Implementation of SlicingThread for polymer slices.
-     */
-    class PolymerSlicer : public TraditionalAST {
-        public:
-            PolymerSlicer(QString gcodeLocation);
+/*!
+ * \class PolymerSlicer
+ * \brief Implementation of SlicingThread for polymer slices.
+ */
+class PolymerSlicer : public TraditionalAST {
+  public:
+    PolymerSlicer(QString gcodeLocation);
 
-        protected:
-            //! \brief Creates layer steps by performing cross-sections.
-            //! \param opt_data: optional sensor data
-            void preProcess(nlohmann::json opt_data = nlohmann::json()) override;
+  protected:
+    //! \brief Creates layer steps by performing cross-sections.
+    //! \param opt_data: optional sensor data
+    void preProcess(nlohmann::json opt_data = nlohmann::json()) override;
 
-            //! \brief Post processing including support, etc.
-            //! \param opt_data: optional sensor data
-            void postProcess(nlohmann::json opt_data = nlohmann::json()) override;
+    //! \brief Post processing including support, etc.
+    //! \param opt_data: optional sensor data
+    void postProcess(nlohmann::json opt_data = nlohmann::json()) override;
 
-            //! \brief Spiralizes the paths of each layer, connecting them to those above and below
-            //! \param global_sb: global settings base
-            void spiralizeLayers(QSharedPointer<SettingsBase> global_sb);
+    //! \brief Parent override.  Writes out gcode.
+    //! \param file: File pointer to write gcode out to
+    //! \param base: WriterBase that creates actual gcode output
+    void writeGCode() override;
 
-            //! \brief Exports spiral visualization files to temp gcode directory
-            void exportSpiralVisFiles();
+  private:
+    //! \brief Processes perimeters on a part. Gives each perimeter the total layer count.
+    //! \param part: The part whose perimeters need processing
+    //! \param part_start: The first layer number of the part
+    //! \param last_layer_count: The total layer count of the part
+    void processPerimeter(QSharedPointer<Part> part, int part_start, int last_layer_count);
 
-            //! \brief Writes out gcode for spiral paths
-            void writeSpiralGCode();
+    //! \brief Gives the infill the total layer count.
+    //! \param part: The part whose perimeters need processing
+    //! \param part_start: The first layer number of the part
+    //! \param last_layer_count: The total layer count of the part
+    void processInfill(QSharedPointer<Part> part, int part_start, int last_layer_count);
 
-            //! \brief Parent override.  Writes out gcode.
-            //! \param file: File pointer to write gcode out to
-            //! \param base: WriterBase that creates actual gcode output
-            void writeGCode() override;
+    //! \brief Creates layer steps for support structure
+    //! \param part: Part to create supports for
+    //! \param layer_count: Total number of layers
+    //! \param partStart: Index for starting layer of current part
+    void processSupport(QSharedPointer<Part> part, int layer_count, int partStart);
 
-        private:
-            //! \brief process geometry on above layer on a part for ironing
-            //! \param part the part to process
-            //! \param part_start the layer number to start on
-            //! \param last_layer_count the last layer number
-            void processGeometryAboveIroning(QSharedPointer<Part> part, int part_start, int last_layer_count);
+    //! \brief processes skins on a part
+    //! \param part: the part to process
+    //! \param part_start: the layer number to start on
+    //! \param last_layer_count: the last layer number
+    void processSkin(QSharedPointer<Part> part, int part_start, int last_layer_count);
 
-            //! \brief Processes perimeters on a part. Gives each perimeter the total layer count.
-            //! \param part: The part whose perimeters need processing
-            //! \param part_start: The first layer number of the part
-            //! \param last_layer_count: The total layer count of the part
-            void processPerimeter(QSharedPointer<Part> part, int part_start, int last_layer_count);
+    //! \brief adds raft to part if needed
+    //! \param part: the part to process
+    //! \param part_start: the layer number to start on
+    //! \param part_sb :the settings to use
+    void processRaft(QSharedPointer<Part> part, int part_start, QSharedPointer<SettingsBase> part_sb);
 
-            //! \brief Gives the infill the total layer count.
-            //! \param part: The part whose perimeters need processing
-            //! \param part_start: The first layer number of the part
-            //! \param last_layer_count: The total layer count of the part
-            void processInfill(QSharedPointer<Part> part, int part_start, int last_layer_count);
+    //! \brief adds brim to part if needed
+    //! \param part: the part to process
+    //! \param part_sb: the settings to use
+    void processBrim(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb);
 
-            //! \brief Creates layer steps for support structure
-            //! \param part: Part to create supports for
-            //! \param layer_count: Total number of layers
-            //! \param partStart: Index for starting layer of current part
-            void processSupport(QSharedPointer<Part> part, int layer_count, int partStart);
+    //! \brief adds skirt to part if needed
+    //! \param part: the part to process
+    //! \param part_sb: the settings to use
+    void processSkirt(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb);
 
-            //! \brief processes skins on a part
-            //! \param part: the part to process
-            //! \param part_start: the layer number to start on
-            //! \param last_layer_count: the last layer number
-            void processSkin(QSharedPointer<Part> part, int part_start, int last_layer_count);
+    //! \brief adds thermal scans to part if needed
+    //! \param part: the part to process
+    //! \param part_sb: the settings to use
+    void processThermalScan(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb);
 
-            //! \brief adds raft to part if needed
-            //! \param part: the part to process
-            //! \param part_start: the layer number to start on
-            //! \param part_sb :the settings to use
-            void processRaft(QSharedPointer<Part> part, int part_start, QSharedPointer<SettingsBase> part_sb);
+    //! \brief adds laser scans to part if needed
+    //! \param part: the part to process
+    //! \param part_sb: the settings to use
+    void processLaserScan(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb);
 
-            //! \brief adds brim to part if needed
-            //! \param part: the part to process
-            //! \param part_sb: the settings to use
-            void processBrim(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb);
+    //! \brief adds anchors to part if needed
+    //! \param part: the part to process
+    //! \param part_sb: the settings to use
+    void processAnchors(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb);
 
-            //! \brief adds skirt to part if needed
-            //! \param part: the part to process
-            //! \param part_sb: the settings to use
-            void processSkirt(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb);
+    //! \brief computes global layer assignments for a set of parts
+    //! \param parts: parts to use
+    //! \param settings: settings to use
+    void processGlobalLayers(QVector<QSharedPointer<Part>> parts, const QSharedPointer<SettingsBase>& settings);
 
-            //! \brief adds thermal scans to part if needed
-            //! \param part: the part to process
-            //! \param part_sb: the settings to use
-            void processThermalScan(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb);
+    void assignNozzles(const QSharedPointer<SettingsBase>& settings);
 
-            //! \brief adds laser scans to part if needed
-            //! \param part: the part to process
-            //! \param part_sb: the settings to use
-            void processLaserScan(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb);
+    //! \brief computes layer links for threading, used in SinglePath algorithm
+    //! \param parts: parts to use
+    void processLayerLinks(QVector<QSharedPointer<Part>> parts);
 
-            //! \brief adds anchors to part if needed
-            //! \param part: the part to process
-            //! \param part_sb: the settings to use
-            void processAnchors(QSharedPointer<Part> part, QSharedPointer<SettingsBase> part_sb);
+    //! \brief checks if any parts is the CSM are dirty
+    //! \return if any part is dirty
+    bool anythingDirty();
 
-            //! \brief computes global layer assignments for a set of parts
-            //! \param parts: parts to use
-            //! \param settings: settings to use
-            void processGlobalLayers(QVector<QSharedPointer<Part>> parts, const QSharedPointer<SettingsBase>& settings);
+    //! \brief list of global layers
+    QList<QSharedPointer<GlobalLayer>> m_global_layers;
 
-            void assignNozzles(const QSharedPointer<SettingsBase>& settings);
+    //! \brief cached layer settings
+    QList<QSharedPointer<SettingsBase>> m_saved_layer_settings;
 
-            //! \brief computes layer links for threading, used in SinglePath algorithm
-            //! \param parts: parts to use
-            void processLayerLinks(QVector<QSharedPointer<Part>> parts);
+    //! \brief height of the half-height bead in the first layer
+    int m_half_layer_height = 0;
 
-            //! \brief checks if any parts is the CSM are dirty
-            //! \return if any part is dirty
-            bool anythingDirty();
-
-            //! \brief list of global layers
-            QList<QSharedPointer<GlobalLayer>> m_global_layers;
-
-            //! \brief cached layer settings
-            QList<QSharedPointer<SettingsBase>> m_saved_layer_settings;
-
-            //! \brief spiral paths
-            QVector<Path> m_spiral_paths;
-
-            //! \brief height of the half-height bead in the first layer
-            int m_half_layer_height = 0;
-
-            //! \brief layer that we are currently on
-            uint m_layer_num;
-
-    };
-}
+    //! \brief layer that we are currently on
+    uint m_layer_num;
+};
+} // namespace ORNL
 
 #endif // POLYMERSLICER_H

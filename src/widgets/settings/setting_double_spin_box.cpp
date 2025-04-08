@@ -39,7 +39,7 @@ namespace ORNL
             this->setMaximum(500);
             unitText = "%";
         }
-        else if(type == "unitless float")
+        else if(type == "unitless_float")
         {
             this->setMinimum(-9999.99);
             this->setMaximum(9999.99);

@@ -63,8 +63,10 @@ namespace ORNL {
             Constants::PrinterSettings::Dimensions::kEnableW,
             Constants::PrinterSettings::Dimensions::kEnableGridX,
             Constants::PrinterSettings::Dimensions::kGridXDistance,
+            Constants::PrinterSettings::Dimensions::kGridXOffset,
             Constants::PrinterSettings::Dimensions::kEnableGridY,
-            Constants::PrinterSettings::Dimensions::kGridYDistance
+            Constants::PrinterSettings::Dimensions::kGridYDistance,
+            Constants::PrinterSettings::Dimensions::kGridYOffset
         };
 
         if (printer_settings.contains(key)) {

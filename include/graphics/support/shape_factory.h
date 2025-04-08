@@ -176,13 +176,15 @@ namespace ORNL
          *  @param min Min value of rectangle
          *  @param max Max value of rectangle
          *  @param x_grid_dist: Distance between grid lines in x direction
+         *  @param x_grid_offset: Distance to offset the first grid line from the minimum X
          *  @param y_grid_dist: Distance between grid lines in y direction
+         *  @param y_grid_offset: Distance to offset the first grid line from the minimum Y
          *  @param color Color of resulting volume
          *  @param vertices Vector of vertices to append the new vertices to
          *  @param colors Vector of colors to append the new colors to
          */
-        static void createBuildVolumeRectangle(QVector3D min, QVector3D max, float x_grid_dist, float y_grid_dist,
-                                               const QColor& color, std::vector<float>& vertices, std::vector<float>& colors);
+        static void createBuildVolumeRectangle(const QVector3D& min, const QVector3D& max, const float& x_grid_dist, const float& x_grid_offset, const float& y_grid_dist,
+                                               const float& y_grid_offset, const QColor& color, std::vector<float>& vertices, std::vector<float>& colors);
 
         /*! \brief Create cylinder for build volume representation
          *

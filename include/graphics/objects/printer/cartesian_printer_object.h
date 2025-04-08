@@ -40,7 +40,9 @@ namespace ORNL {
             QVector3D m_min;
             QVector3D m_max;
             float m_x_grid;
+            float m_x_grid_offset;
             float m_y_grid;
+            float m_y_grid_offset;
 
             //! \brief Object spawn location
             QVector3D m_floor_center;
