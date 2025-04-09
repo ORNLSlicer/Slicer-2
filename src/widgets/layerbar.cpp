@@ -925,7 +925,7 @@ void LayerBar::mouseReleaseEvent(QMouseEvent* event) {
         m_track_change = false;
 
         QVector<LayerDot*> selection_copy = m_selection;
-        qSort(selection_copy.begin(), selection_copy.end(),
+        std::sort(selection_copy.begin(), selection_copy.end(),
               [](LayerDot* a, LayerDot* b) { return a->getLayer() < b->getLayer(); }); // sort low to high
 
         // Upon release, calculate each dot's new position.
@@ -1595,7 +1595,7 @@ void LayerBar::changeSelectedSettings() {
 
     QVector<LayerDot*> selected_copy = m_selection;
     // sort from low to high, so that low value is always found first
-    qSort(selected_copy.begin(), selected_copy.end(),
+    std::sort(selected_copy.begin(), selected_copy.end(),
           [](LayerDot* a, LayerDot* b) { return a->getLayer() < b->getLayer(); }); // sort low to high
 
     for (int i = 0; i < selected_copy.size(); ++i) // intentionally re-evaluating array size bc it will change

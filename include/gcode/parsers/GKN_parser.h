@@ -36,56 +36,56 @@ class GKNParser : public CommonParser {
     //! G0 must be overridden due to unique format, formatting is adjusted and then
     //! referred to base G0 handler
     //! \param params Parameters of current interest include: X, Y, Z
-    void G0Handler(QVector<QStringRef> params) override;
+    void G0Handler(QVector<QString> params) override;
 
     //! \brief Handler for 'G1' command for motion
     //! G1 must be overridden due to unique format, formatting is adjusted and then
     //! referred to base G1 handler
     //! \param params Parameters of current interest include: X, Y, Z, speed
-    void G1Handler(QVector<QStringRef> params) override;
+    void G1Handler(QVector<QString> params) override;
 
     //! \brief Handler for 'G4' command for motion
     //! G4 must be overridden due to unique format, formatting is adjusted and then
     //! referred to base G0 handler
     //! \param params Parameters of current interest include: wait time
-    void G4Handler(QVector<QStringRef> params) override;
+    void G4Handler(QVector<QString> params) override;
 
     //! \brief Handler for 'M3' command
     //! M3 must be overriden as all other formats use it for extruder on
     //! \param params Accepted by function for formatting check, but are not
     //! used for the command
-    void M3Handler(QVector<QStringRef> params) override;
+    void M3Handler(QVector<QString> params) override;
 
     //! \brief Handler for 'M5' command
     //! M5 must be overriden as all other formats use it for extruder off
     //! \param params Accepted by function for formatting check, but are not
     //! used for the command
-    void M5Handler(QVector<QStringRef> params) override;
+    void M5Handler(QVector<QString> params) override;
 
     //! \brief Handler for 'M6' command for turning on extruder
     //! \param params Accepted by function for formatting check, but are not
     //! used for the command
-    virtual void M6Handler(QVector<QStringRef> params);
+    virtual void M6Handler(QVector<QString> params);
 
     //! \brief Handler for 'M7' command for turning on extruder
     //! \param params Accepted by function for formatting check, but are not
     //! used for the command
-    virtual void M7Handler(QVector<QStringRef> params);
+    virtual void M7Handler(QVector<QString> params);
 
     //! \brief Handler for 'PRINT_SPEED' command.  Used as variable replacement
     //! throughout gcode file
     //! \param params Should be single param containing speed
-    virtual void PrintSpeedHandler(QVector<QStringRef> params);
+    virtual void PrintSpeedHandler(QVector<QString> params);
 
     //! \brief Handler for 'RAPID_SPEED' command.  Used as variable replacement
     //! throughout gcode file
     //! \param params Should be single param containing speed
-    virtual void RapidSpeedHandler(QVector<QStringRef> params);
+    virtual void RapidSpeedHandler(QVector<QString> params);
 
     //! \brief Handler for 'SCAN_SPEED' command.  Used as variable replacement
     //! throughout gcode file
     //! \param params Should be single param containing speed
-    virtual void ScanSpeedHandler(QVector<QStringRef> params);
+    virtual void ScanSpeedHandler(QVector<QString> params);
 
   private:
     //! \brief Predefined strings used to adjust formatting for G commands

@@ -276,7 +276,7 @@ void PartObject::transformationCallback() {
     label_pos.setZ(this->maximum().z() + 0.5);
     m_label_object->translateAbsolute(label_pos, false);
 
-    m_plane_object->scaleAbsolute(QVector3D(this->scaling().x(), this->scaling().y(), 0));
+    m_plane_object->scaleAbsolute(QVector3D(this->scaling().x(), this->scaling().y(), 1));
 
     float length = this->minimumBoundingBox()[MBB_FLB].distanceToPoint(this->minimumBoundingBox()[MBB_FRB]);
     float width = this->minimumBoundingBox()[MBB_FLB].distanceToPoint(this->minimumBoundingBox()[MBB_BLB]);

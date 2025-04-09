@@ -9,7 +9,6 @@
 
 #include <QMessageBox>
 
-#include <fifo_map.hpp>
 #include <nlohmann/json.hpp>
 
 using json = fifojson;
@@ -115,7 +114,7 @@ enum class ThemeName {
 inline QString toString(ThemeName theme) {
     switch (theme) {
         case ThemeName::kLightMode:
-            return Constants::UI::Themes::kLightMode;
+            return Constants::UI::Themes::kSystemMode;
         case ThemeName::kDarkMode:
             return Constants::UI::Themes::kDarkMode;
     }

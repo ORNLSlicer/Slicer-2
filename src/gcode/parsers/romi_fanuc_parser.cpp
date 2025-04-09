@@ -23,7 +23,7 @@ namespace ORNL
                 &RomiFanucParser::M5Handler, this, std::placeholders::_1));
     }
 
-    void RomiFanucParser::M3Handler(QVector<QStringRef> params)
+    void RomiFanucParser::M3Handler(QVector<QString> params)
     {
         if(params.size() != 1)
         {
@@ -34,7 +34,7 @@ namespace ORNL
         m_extruder_ON = true;
     }
 
-    void RomiFanucParser::M5Handler(QVector<QStringRef> params)
+    void RomiFanucParser::M5Handler(QVector<QString> params)
     {
         if (!params.empty())
         {

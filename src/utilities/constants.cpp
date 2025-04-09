@@ -564,6 +564,7 @@ const QString Constants::ProfileSettings::Perimeter::kPower = "perimeter_power";
 const QString Constants::ProfileSettings::Perimeter::kFocus = "perimeter_focus";
 const QString Constants::ProfileSettings::Perimeter::kSpotSize = "perimeter_spot_size";
 const QString Constants::ProfileSettings::Perimeter::kEnableLeadIn = "perimeter_lead_in";
+const QString Constants::ProfileSettings::Perimeter::kLeadInFirstLayerOnly = "perimeter_lead_in_first_layer";
 const QString Constants::ProfileSettings::Perimeter::kEnableLeadInX = "perimeter_lead_in_x";
 const QString Constants::ProfileSettings::Perimeter::kEnableLeadInY = "perimeter_lead_in_y";
 const QString Constants::ProfileSettings::Perimeter::kEnableFlyingStart = "perimeter_flying_start";
@@ -630,6 +631,7 @@ const QString Constants::ProfileSettings::Infill::kLineSpacing = "infill_line_sp
 const QString Constants::ProfileSettings::Infill::kDensity = "infill_density";
 const QString Constants::ProfileSettings::Infill::kManualLineSpacing = "infill_manual_spacing";
 const QString Constants::ProfileSettings::Infill::kPattern = "infill_pattern";
+const QString Constants::ProfileSettings::Infill::kPrintInfillEveryXLayers = "infill_every_x_layers";
 const QString Constants::ProfileSettings::Infill::kBasedOnPrinter = "infill_based_on_printer";
 const QString Constants::ProfileSettings::Infill::kAngle = "infill_angle";
 const QString Constants::ProfileSettings::Infill::kAngleRotation = "infill_angle_rotation";
@@ -1026,10 +1028,10 @@ const int Constants::UI::PartControl::kLeftOffset = 10;
 const int Constants::UI::PartControl::kBottomOffset = 10;
 
 // Themes
-const QString Constants::UI::Themes::kLightMode = "Light (default)";
+const QString Constants::UI::Themes::kSystemMode = "System (default)";
 const QString Constants::UI::Themes::kDarkMode = "Dark Mode";
 
-const QStringList Constants::UI::Themes::kThemes = {Constants::UI::Themes::kLightMode,
+const QStringList Constants::UI::Themes::kThemes = {Constants::UI::Themes::kSystemMode,
                                                     Constants::UI::Themes::kDarkMode};
 
 //================================================================================

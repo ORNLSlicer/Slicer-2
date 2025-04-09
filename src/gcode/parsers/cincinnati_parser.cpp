@@ -104,7 +104,7 @@ namespace ORNL
 
 
     // TODO: This
-    void CincinnatiParser::M0Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M0Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -112,7 +112,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M0 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
@@ -121,7 +121,7 @@ namespace ORNL
 
 
     // TODO: This
-    void CincinnatiParser::M1Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M1Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -129,7 +129,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M1 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
@@ -137,7 +137,7 @@ namespace ORNL
     }
 
 
-//    void CincinnatiParser::M3Handler(QVector<QStringRef> params)
+//    void CincinnatiParser::M3Handler(QVector<QString> params)
 //    {
 //        char current_parameter;
 //        int current_value;
@@ -149,13 +149,13 @@ namespace ORNL
 //            QTextStream(&exceptionString)
 //                << "No parameters for command M3, on line number "
 //                << m_current_gcode_command.getLineNumber()
-//                << ". Need at least one for this command." << endl
+//                << ". Need at least one for this command." << Qt::endl
 //                << "GCode command string: " << getCurrentCommandString();
 //            throw IllegalParameterException(exceptionString);
 //        }
 
 
-//        for(QStringRef ref : params)
+//        for(QString ref : params)
 //        {
 //            // Retriving the first character in the QString and making it a char
 //            current_parameter = ref.at(0).toLatin1();
@@ -186,10 +186,10 @@ namespace ORNL
 //                default:
 //                    QString exceptionString;
 //                    QTextStream(&exceptionString)
-//                        << "Error: Unknown parameter " << ref.toString()
+//                        << "Error: Unknown parameter " << ref
 //                        << " on GCode line "
 //                        << m_current_gcode_command.getLineNumber()
-//                        << ", for GCode command M3" << endl
+//                        << ", for GCode command M3" << Qt::endl
 //                        << "With GCode command string: "
 //                        << getCurrentCommandString();
 //                    throw IllegalParameterException(exceptionString);
@@ -203,7 +203,7 @@ namespace ORNL
 //            QTextStream(&exceptionString)
 //                << "Error not all required parameters passed for GCode command "
 //                   "on line  "
-//                << m_current_gcode_command.getLineNumber() << endl
+//                << m_current_gcode_command.getLineNumber() << Qt::endl
 //                << "With GCode command string: " << getCurrentCommandString();
 //            throw IllegalParameterException(exceptionString);
 //        }
@@ -211,7 +211,7 @@ namespace ORNL
 //        m_extruder_ON = true;
 //    }
 
-//    void CincinnatiParser::M5Handler(QVector<QStringRef> params)
+//    void CincinnatiParser::M5Handler(QVector<QString> params)
 //    {
 //        if (!params.empty())
 //        {
@@ -219,7 +219,7 @@ namespace ORNL
 //            QTextStream(&exceptionString)
 //                << "M5 command should have no parameters . Error occured on "
 //                   "GCode line "
-//                << m_current_gcode_command.getLineNumber() << endl
+//                << m_current_gcode_command.getLineNumber() << Qt::endl
 //                << "."
 //                << "With GCode command string: " << getCurrentCommandString();
 //            throw IllegalParameterException(exceptionString);
@@ -228,7 +228,7 @@ namespace ORNL
 //        m_extruder_ON = false;
 //    }
 
-    void CincinnatiParser::M10Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M10Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -236,7 +236,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M10 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
@@ -245,7 +245,7 @@ namespace ORNL
         m_dynamic_spindle_control = true;
     }
 
-    void CincinnatiParser::M11Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M11Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -253,7 +253,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M11 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
@@ -262,7 +262,7 @@ namespace ORNL
         m_dynamic_spindle_control = false;
     }
 
-    void CincinnatiParser::M12Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M12Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -270,14 +270,14 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M12 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
         }
     }
 
-    void CincinnatiParser::M13Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M13Handler(QVector<QString> params)
     {
         // TODO: Insert spindle override, have no idea what this means.
         //       Basically add or subtract the value to the correct variable
@@ -287,14 +287,14 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M13 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
         }
     }
 
-    void CincinnatiParser::M14Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M14Handler(QVector<QString> params)
     {
         // TODO: Infill Spindle override. Have no idea what this does.
         //       Basically add or subtract the value to the correct variable
@@ -304,14 +304,14 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M14 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
         }
     }
 
-    void CincinnatiParser::M15Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M15Handler(QVector<QString> params)
     {
         // TODO: Skin Spindle override. Have no idea what this does.
         //       Basically add or subtract the value to the correct variable
@@ -321,14 +321,14 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M15 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
         }
     }
 
-    void CincinnatiParser::M16Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M16Handler(QVector<QString> params)
     {
         // TODO: Spindle Override Reset. Resets the 3 Commands above (M13, M14,
         // M15) back to 100%.
@@ -338,14 +338,14 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M16 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
         }
     }
 
-    void CincinnatiParser::M30Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M30Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -353,7 +353,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M30 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
@@ -361,12 +361,12 @@ namespace ORNL
     }
 
 
-    void CincinnatiParser::M60Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M60Handler(QVector<QString> params)
     {
         // TODO: Add feed shaker variables and control logic.
     }
 
-    void CincinnatiParser::M61Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M61Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -374,7 +374,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M61 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
@@ -382,13 +382,13 @@ namespace ORNL
     }
 
 
-    void CincinnatiParser::M64Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M64Handler(QVector<QString> params)
     {
         // TODO: Voltage control (range of 0 - 1), Need to do this after I fix
         //       control commands having parameters
     }
 
-    void CincinnatiParser::M65Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M65Handler(QVector<QString> params)
     {
         // TODO: Voltage control, (resets to 0? or a boolean on/off?)
         if (params.size() > 0)
@@ -398,7 +398,7 @@ namespace ORNL
                 QTextStream(&exceptionString)
                     << "M65 command should have no parameters . Error occured "
                        "on GCode line "
-                    << m_current_gcode_command.getLineNumber() << endl
+                    << m_current_gcode_command.getLineNumber() << Qt::endl
                     << "."
                     << "With GCode command string: "
                     << getCurrentCommandString();
@@ -409,7 +409,7 @@ namespace ORNL
         m_voltage_control_value = 1.0;
     }
 
-    void CincinnatiParser::M66Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M66Handler(QVector<QString> params)
     {
         // TODO: Sets the acceleration value, has a parameter.
         // NOTE: Apparently this command sets the inverse acceleration thing???
@@ -423,12 +423,12 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "No parameters for command M66, on line number "
                 << m_current_gcode_command.getLineNumber()
-                << ". Need at least one for this command." << endl
+                << ". Need at least one for this command." << Qt::endl
                 << "GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
         }
 
-        for(QStringRef ref : params)
+        for(QString ref : params)
         {
             // Retriving the first character in the QString and making it a char
             current_parameter = ref.at(0).toLatin1();
@@ -486,13 +486,13 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "Error not all required parameters passed for GCode command "
                    "on line  "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
         }
     }
 
-    void CincinnatiParser::M68Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M68Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -500,7 +500,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "M68 command should have no parameters . Error occured on "
                    "GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "."
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
@@ -509,7 +509,7 @@ namespace ORNL
         m_park = true;
     }
 
-    void CincinnatiParser::M69Handler(QVector<QStringRef> params)
+    void CincinnatiParser::M69Handler(QVector<QString> params)
     {
         // TODO: Purges the extruder.
         // Sets defaults
@@ -525,7 +525,7 @@ namespace ORNL
         bool no_error, f_not_used = true, l_not_used = true, p_not_used = true,
                        s_not_used = true, t_not_used = true;
 
-        for(QStringRef ref : params)
+        for(QString ref : params)
         {
             // Retriving the first character in the QString and making it a char
             current_parameter = ref.at(0).toLatin1();
@@ -614,10 +614,10 @@ namespace ORNL
                 default:
                     QString exceptionString;
                     QTextStream(&exceptionString)
-                        << "Error: Unknown parameter " << ref.toString()
+                        << "Error: Unknown parameter " << ref
                         << " on GCode line "
                         << m_current_gcode_command.getLineNumber()
-                        << ", for GCode command M64." << endl
+                        << ", for GCode command M64." << Qt::endl
                         << "With GCode command string: "
                         << getCurrentCommandString();
                     throw IllegalParameterException(exceptionString);
@@ -626,7 +626,7 @@ namespace ORNL
         }
     }
 
-    void CincinnatiParser::ToolChangeHandler(QVector<QStringRef> params)
+    void CincinnatiParser::ToolChangeHandler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -634,7 +634,7 @@ namespace ORNL
             QTextStream(&exceptionString)
                 << "Tool change command should have no parameters . Error "
                    "occured on GCode line "
-                << m_current_gcode_command.getLineNumber() << endl
+                << m_current_gcode_command.getLineNumber() << Qt::endl
                 << "With GCode command string: " << getCurrentCommandString();
             throw IllegalParameterException(exceptionString);
         }

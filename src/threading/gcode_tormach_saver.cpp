@@ -119,18 +119,18 @@ namespace ORNL
             {
                 out << "RAPID" % newline;
                 QString temp = line.mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
-                QVector<QStringRef> params = temp.splitRef(space);
+                QVector<QString> params = temp.split(space);
 
                 if(params[0] == G0)
                 {
                     for(int i = 1, end = params.size(); i < end; ++i)
                     {
                         if(params[i].startsWith(x))
-                            xval = params[i].mid(1).toString();
+                            xval = params[i].mid(1);
                         else if(params[i].startsWith(y))
-                            yval = params[i].mid(1).toString();
+                            yval = params[i].mid(1);
                         else if(params[i].startsWith(z))
-                            zval = params[i].mid(1).toString();
+                            zval = params[i].mid(1);
                     }
                 }
                 out << "GOTO / " % xval % commaSpace % yval % commaSpace % zval % commaSpace % "0.0000, 0.0000, 0.0000" % newline;
@@ -138,20 +138,20 @@ namespace ORNL
             else if(line.startsWith(G1))
             {
                 QString temp = line.mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
-                QVector<QStringRef> params = temp.splitRef(space);
+                QVector<QString> params = temp.split(space);
 
                 if(params[0] == G1)
                 {
                     for(int i = 1, end = params.size(); i < end; ++i)
                     {
                         if(params[i].startsWith(x))
-                            xval = params[i].mid(1).toString();
+                            xval = params[i].mid(1);
                         else if(params[i].startsWith(y))
-                            yval = params[i].mid(1).toString();
+                            yval = params[i].mid(1);
                         else if(params[i].startsWith(z))
-                            zval = params[i].mid(1).toString();
+                            zval = params[i].mid(1);
                         else if(params[i].startsWith(f))
-                            velocity = params[i].mid(1).toString();
+                            velocity = params[i].mid(1);
                     }
                 }
                 out << "FEDRAT/ MMPM, " % velocity % newline;

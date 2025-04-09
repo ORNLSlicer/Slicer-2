@@ -204,7 +204,7 @@ namespace ORNL
         {
             int layer_header_index = m_layer_header_matcher.indexIn(sector);
             if(layer_header_index != -1)
-                sector.remove(layer_header_index);
+                sector.removeAt(layer_header_index);
 
             sector.remove(m_comments);
             sector = sector.trimmed();

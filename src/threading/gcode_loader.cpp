@@ -13,13 +13,11 @@
 #include "gcode/parsers/marlin_parser.h"
 #include "gcode/parsers/mazak_parser.h"
 #include "gcode/parsers/mvp_parser.h"
-#include "gcode/parsers/parser_base.h"
 #include "gcode/parsers/rpbf_parser.h"
 #include "gcode/parsers/siemens_parser.h"
 #include "geometry/segments/arc.h"
 #include "geometry/segments/bezier.h"
 #include "geometry/segments/line.h"
-#include "graphics/objects/gcode_object.h"
 #include "managers/preferences_manager.h"
 #include "managers/session_manager.h"
 #include "managers/settings/settings_manager.h"
@@ -149,14 +147,6 @@ void GCodeLoader::savePartsModelObjFile() {
     }
     else {
         return;
-    }
-
-    if (PM->getKatanaSendOutput()) {
-        QThread* thread = QThread::create(sendGcodeModelObjFile, PM->getKatanaTCPIp(), PM->getKatanaTCPPort(),
-                                          toString(m_selected_meta.m_syntax_id), m_filename, strObjFile);
-
-        connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-        thread->start();
     }
 }
 

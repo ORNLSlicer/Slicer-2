@@ -396,7 +396,7 @@ namespace ORNL {
     void SettingBar::setupEvents() {
         connect(m_filter_bar, &QLineEdit::textChanged, this, &SettingBar::filter);
         connect(m_tab_widget, &QTabWidget::currentChanged, this, &SettingBar::updateDisplayedLists);
-        connect(m_combo_box, QOverload<const QString &>::of(&QComboBox::currentIndexChanged), this, &SettingBar::updateSettings);
+        connect(m_combo_box, QOverload<const QString &>::of(&QComboBox::currentTextChanged), this, &SettingBar::updateSettings);
     }
 
     //this function iterates through each tab of each pane, and make those rows enabled/disabled

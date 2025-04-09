@@ -123,14 +123,6 @@ void MainControl::gcodeParseComplete() {
     QString partName = info.baseName();
     QString filepath = info.absolutePath();
 
-    // if bundling files, create folder based on name
-    //             if(m_bundle_files_checkbox->isChecked())
-    //             {
-    //                 filepath = filepath % '/' % partName;
-    //                 QDir dir(filepath);
-    //                 dir.mkdir(filepath);
-    //             }
-
     QString gcodeFileName = filepath % '/' % partName % m_selected_meta.m_file_suffix;
     if (QFile::exists(gcodeFileName))
         QFile::remove(gcodeFileName);

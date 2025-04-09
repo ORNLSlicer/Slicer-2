@@ -34,7 +34,7 @@ SessionManager::SessionManager() : m_file(QString()), m_sensor_files_generated(f
     // Create static location for gcode output for session
     QString appPathStr = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir appPath(appPathStr);
-    QString httpAppLocationStr = QCoreApplication::applicationDirPath() + QDir::separator() + "http_config";
+    QString httpAppLocationStr = QDir::temp().absolutePath() + "/http_config";
     QDir httpConfigPath(httpAppLocationStr);
     try {
         if (!appPath.exists())

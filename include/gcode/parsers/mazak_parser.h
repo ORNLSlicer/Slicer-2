@@ -33,22 +33,22 @@ class MazakParser : public CommonParser {
     //! G1 must be overridden due to unique format, formatting is adjusted and then
     //! referred to base G1 handler
     //! \param params Parameters of current interest include: X, Y, Z, speed
-    void G1Handler(QVector<QStringRef> params) override;
+    void G1Handler(QVector<QString> params) override;
 
     //! \brief Handler for 'G441' command for turning on laser
     //! \param params Accepted by function for formatting check, but are not
     //! used for the command
-    virtual void G441Handler(QVector<QStringRef> params);
+    virtual void G441Handler(QVector<QString> params);
 
     //! \brief Handler for 'G442' command for turning off lazer
     //! \param params Accepted by function for formatting check, but are not
     //! used for the command
-    virtual void G442Handler(QVector<QStringRef> params);
+    virtual void G442Handler(QVector<QString> params);
 
     //! \brief Handler for '#981' command.  Used as variable replacement
     //! throughout gcode file
     //! \param params Should be single param containing speed
-    virtual void FeedRateHandler(QVector<QStringRef> params);
+    virtual void FeedRateHandler(QVector<QString> params);
 
   private:
     //! \brief Feedrate replacement'#981' command.  Used as F variable.

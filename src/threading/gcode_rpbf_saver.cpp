@@ -35,19 +35,19 @@ void GCodeRPBFSaver::run() {
     int lastLine = lines.size() - 1;
     while (!xFound || !yFound || !sectorFound) {
         if (x_origin_matcher.indexIn(lines[lastLine]) != -1) {
-            QStringRef valWithDelimiter = lines[lastLine].splitRef(' ')[1];
+            QString valWithDelimiter = lines[lastLine].split(' ')[1];
             valWithDelimiter.chop(m_selected_meta.m_comment_ending_delimiter.size());
             x_origin = valWithDelimiter.toInt();
             xFound = true;
         }
         if (y_origin_matcher.indexIn(lines[lastLine]) != -1) {
-            QStringRef valWithDelimiter = lines[lastLine].splitRef(' ')[1];
+            QString valWithDelimiter = lines[lastLine].split(' ')[1];
             valWithDelimiter.chop(m_selected_meta.m_comment_ending_delimiter.size());
             y_origin = valWithDelimiter.toInt();
             yFound = true;
         }
         if (sector_count_matcher.indexIn(lines[lastLine]) != -1) {
-            QStringRef valWithDelimiter = lines[lastLine].splitRef(' ')[1];
+            QString valWithDelimiter = lines[lastLine].split(' ')[1];
             valWithDelimiter.chop(m_selected_meta.m_comment_ending_delimiter.size());
             sector_count = valWithDelimiter.toInt();
             sectorFound = true;
@@ -72,7 +72,7 @@ void GCodeRPBFSaver::run() {
     QString comment;
     QString sectorHeader = "//SECTOR SPLIT//";
     QStringMatcher sectorHeaderMatcher(sectorHeader), layerHeaderMatcher(m_selected_meta.m_layer_delimiter);
-    QRegExp spaces("^\\s+");
+    QRegularExpression spaces("^\\s+");
     int layer_count = 0;
     int total_sectors = GSM->getGlobal()->setting<int>(Constants::ProfileSettings::Infill::kSectorCount);
     double limit = 2.0 * M_PI;

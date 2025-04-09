@@ -23,7 +23,7 @@ namespace ORNL
                 &HaasParser::M5Handler, this, std::placeholders::_1));
     }
 
-    void HaasParser::M3Handler(QVector<QStringRef> params)
+    void HaasParser::M3Handler(QVector<QString> params)
     {
         if(params.size() != 1)
         {
@@ -34,7 +34,7 @@ namespace ORNL
         m_extruder_ON = true;
     }
 
-    void HaasParser::M5Handler(QVector<QStringRef> params)
+    void HaasParser::M5Handler(QVector<QString> params)
     {
         if (!params.empty())
         {

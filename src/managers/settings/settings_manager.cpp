@@ -5,6 +5,7 @@
 #include <QStandardPaths>
 #include <QDirIterator>
 #include <QMessageBox>
+#include <QRegularExpression>
 
 
 // Local
@@ -325,7 +326,7 @@ namespace ORNL
         for(auto& el : j[Constants::SettingFileStrings::kSettings].items())
         {
             QString key_root = QString::fromStdString(el.key());
-            int last_index = key_root.lastIndexOf(QRegExp("_\\d+")); //index of suffix
+            int last_index = key_root.lastIndexOf(QRegularExpression("_\\d+")); //index of suffix
             if (last_index >= 0)
             {
                 key_root.chop(key_root.size() - last_index);  //remove suffix

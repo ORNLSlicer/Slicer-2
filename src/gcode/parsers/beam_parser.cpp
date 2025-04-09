@@ -24,7 +24,7 @@ namespace ORNL
 
     }
 
-    void BeamParser::M110Handler(QVector<QStringRef> params)
+    void BeamParser::M110Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -33,7 +33,7 @@ namespace ORNL
 //            QTextStream(&exceptionString)
 //                << "M110 command should have no parameters . Error occured on "
 //                   "GCode line "
-//                << m_current_gcode_command.getLineNumber() << endl
+//                << m_current_gcode_command.getLineNumber() << Qt::endl
 //                << "."
 //                << "With GCode command string: " << getCurrentCommandString();
 //            throw IllegalParameterException(exceptionString);
@@ -44,7 +44,7 @@ namespace ORNL
         m_extruders_on[0] = true;
     }
 
-    void BeamParser::M111Handler(QVector<QStringRef> params)
+    void BeamParser::M111Handler(QVector<QString> params)
     {
         if (!params.empty())
         {
@@ -53,7 +53,7 @@ namespace ORNL
 //            QTextStream(&exceptionString)
 //                << "M111 command should have no parameters . Error occured on "
 //                   "GCode line "
-//                << m_current_gcode_command.getLineNumber() << endl
+//                << m_current_gcode_command.getLineNumber() << Qt::endl
 //                << "."
 //                << "With GCode command string: " << getCurrentCommandString();
 //            throw IllegalParameterException(exceptionString);

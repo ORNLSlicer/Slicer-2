@@ -13,6 +13,10 @@
 
 #include <qdatetime.h>
 
+// Boost
+#include <boost/preprocessor.hpp>
+
+
 namespace ORNL {
 AboutWindow::AboutWindow(QWidget* parent) : QWidget() {
     // make it behave the same as "About Qt" window: The window is modal to the application and blocks input to all
@@ -32,18 +36,11 @@ AboutWindow::AboutWindow(QWidget* parent) : QWidget() {
     QFont f = QApplication::font();
     f.setPointSize(10);
 
-    QFile versions(":/configs/versions.conf");
-    versions.open(QIODevice::ReadOnly);
-    QString version_string = versions.readAll();
-    fifojson version_data = json::parse(version_string.toStdString());
-    QString version = version_data["slicer_2_version"];
+    QString version = "Version " BOOST_PP_STRINGIZE(SLICER2_VERSION);
 
     QLabel* lblVersion = new QLabel(version);
     lblVersion->setFont(f);
     layout->addWidget(lblVersion, 1, 0, 1, 2, Qt::AlignCenter);
-
-    layout->addWidget(new QLabel("Compiled on " + QString(APP_COMPILE_TIME) + " without GPU support"), 2, 0, 1, 2,
-                      Qt::AlignCenter);
 
     QGridLayout* gpu_layout = new QGridLayout();
     layout->addLayout(gpu_layout, 3, 0, 1, 2, Qt::AlignCenter);

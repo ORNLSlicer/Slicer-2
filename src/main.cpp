@@ -20,6 +20,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <boost/preprocessor.hpp>
+
 int main(int argc, char* argv[]) {
     QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
 
@@ -85,13 +87,16 @@ int main(int argc, char* argv[]) {
     }
     else {
         QApplication a(argc, argv);
-#ifdef WIN32
-        HWND consoleWnd = GetConsoleWindow();
-        DWORD dwProcessId;
-        GetWindowThreadProcessId(consoleWnd, &dwProcessId);
-        if (GetCurrentProcessId() == dwProcessId)
-            ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
-#endif
+        QApplication::setApplicationName("slicer2");
+        QApplication::setOrganizationName("ornl");
+        QApplication::setApplicationVersion(BOOST_PP_STRINGIZE(SLICER2_VERSION));
+//#ifdef WIN32
+//        HWND consoleWnd = GetConsoleWindow();
+//        DWORD dwProcessId;
+//        GetWindowThreadProcessId(consoleWnd, &dwProcessId);
+//        if (GetCurrentProcessId() == dwProcessId)
+//            ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+//#endif
 
         Q_INIT_RESOURCE(icons);
         Q_INIT_RESOURCE(shaders);

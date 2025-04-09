@@ -69,7 +69,7 @@ namespace ORNL
     int GcodeTextBoxWidget::calculateLineNumbersDisplayWidth()
     {
         return 3 +
-            fontMetrics().width(QLatin1Char('9')) *
+            fontMetrics().horizontalAdvance(QLatin1Char('9')) *
             ceil(log10(std::max< int >(2, blockCount())) + 1);
     }
 
@@ -376,7 +376,7 @@ namespace ORNL
         int lineNum = -1;
         int matchedId = 0;
         while (!highlightCursor.isNull() && !highlightCursor.atEnd()) {
-            highlightCursor = document->find(searchString, highlightCursor, 0);
+            highlightCursor = document->find(searchString, highlightCursor);
             if (!highlightCursor.isNull()) {
                 m_matched_lines.append(highlightCursor.blockNumber());
                 if(lineNum < 0) lineNum = highlightCursor.blockNumber();

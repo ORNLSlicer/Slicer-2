@@ -623,6 +623,7 @@ class Constants {
             static const QString kFocus;
             static const QString kSpotSize;
             static const QString kEnableLeadIn;
+            static const QString kLeadInFirstLayerOnly;
             static const QString kEnableLeadInX;
             static const QString kEnableLeadInY;
             static const QString kEnableFlyingStart;
@@ -697,6 +698,7 @@ class Constants {
             static const QString kDensity;
             static const QString kManualLineSpacing;
             static const QString kPattern;
+            static const QString kPrintInfillEveryXLayers;
             static const QString kBasedOnPrinter;
             static const QString kAngle;
             static const QString kAngleRotation;
@@ -1174,7 +1176,7 @@ class Constants {
 
         class Themes {
           public:
-            static const QString kLightMode;
+            static const QString kSystemMode;
             static const QString kDarkMode;
             static const QStringList kThemes;
         };

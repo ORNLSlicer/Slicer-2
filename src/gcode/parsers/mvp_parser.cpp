@@ -27,7 +27,7 @@ namespace ORNL
     }
 
     //M124 (Turn Extruder OFF)
-    void MVPParser::M124Handler(QVector<QStringRef> params)
+    void MVPParser::M124Handler(QVector<QString> params)
     {
         //redirect - essentially an M5 command
         CommonParser::M5Handler(params);

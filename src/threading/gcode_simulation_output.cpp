@@ -73,12 +73,12 @@ void GCodeSimulationOutput::run() {
         if (i + 1 < lines.size() && lines[i + 1].startsWith(g1)) //Check next motion to see if extrusion turns off with S0
         {
             QString temp = lines[i + 1].mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
-            QVector<QStringRef> params = temp.splitRef(space);
+            QVector<QString> params = temp.split(space);
 
             if (params[0] == g1) {
                 for (size_t i = 1, end = params.size(); i < end; i++) {
                     if(params[i].startsWith(s)) {
-                        sval = params[i].mid(1).toString();
+                        sval = params[i].mid(1);
                     }
                 }
                 m_is_g0 = false;
@@ -98,21 +98,21 @@ void GCodeSimulationOutput::run() {
         // Look at current line to create the output
         if (line.startsWith(g0)) {
             QString temp = line.mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
-            QVector<QStringRef> params = temp.splitRef(space);
+            QVector<QString> params = temp.split(space);
 
             if (params[0] == g0) {
                 for (size_t i = 1, end = params.size(); i < end; i++) {
                     if (params[i].startsWith(x)) {
-                        xval = params[i].mid(1).toString();
+                        xval = params[i].mid(1);
                     }
                     else if (params[i].startsWith(y)) {
-                        yval = params[i].mid(1).toString();
+                        yval = params[i].mid(1);
                     }
                     else if (params[i].startsWith(z)) {
-                        zval = params[i].mid(1).toString();
+                        zval = params[i].mid(1);
                     }
                     else if (params[i].startsWith(w)) {
-                        wval = params[i].mid(1).toString();
+                        wval = params[i].mid(1);
                     }
                 }
                 m_is_g0 = true;
@@ -124,27 +124,27 @@ void GCodeSimulationOutput::run() {
         }
         else if (line.startsWith(g1)) {
             QString temp = line.mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
-            QVector<QStringRef> params = temp.splitRef(space);
+            QVector<QString> params = temp.split(space);
 
             if (params[0] == g1) {
                 for (size_t i = 1, end = params.size(); i < end; i++) {
                     if (params[i].startsWith(x)) {
-                        xval = params[i].mid(1).toString();
+                        xval = params[i].mid(1);
                     }
                     else if (params[i].startsWith(y)) {
-                        yval = params[i].mid(1).toString();
+                        yval = params[i].mid(1);
                     }
                     else if (params[i].startsWith(z)) {
-                        zval = params[i].mid(1).toString();
+                        zval = params[i].mid(1);
                     }
                     else if (params[i].startsWith(w)) {
-                        wval = params[i].mid(1).toString();
+                        wval = params[i].mid(1);
                     }
                     else if (params[i].startsWith(f)) {
-                        velocity = params[i].mid(1).toString();
+                        velocity = params[i].mid(1);
                     }
                     else if (params[i].startsWith(s)) {
-                        sval = params[i].mid(1).toString();
+                        sval = params[i].mid(1);
                     }
                 }
                 m_is_g0 = false;
