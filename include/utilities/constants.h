@@ -1300,6 +1300,8 @@ class Constants {
         static const QString kRealTimePrinter;
         static const QString kSingleSliceHeight;
         static const QString kSingleSliceLayerNumber;
+
+        static const QString kVersion;
     };
 };
 } // namespace ORNL

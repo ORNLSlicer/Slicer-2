@@ -3,6 +3,7 @@
 
 // Qt
 #include <QHostAddress>
+#include <boost/preprocessor.hpp>
 
 // Local
 #include "managers/session_manager.h"
@@ -68,10 +69,19 @@ namespace ORNL {
 //            parser.addOption({QString::fromStdString(el.key()), QString::fromStdString(el.value()[Constants::Settings::Master::kToolTip]),
 //                              "value", ""});
 //        }
+
+        parser.addOption({Constants::ConsoleOptionStrings::kVersion, "Current Slicer 2 Version"});
     }
 
     bool CommandLineConverter::checkRequiredSettings(QCommandLineParser& parser, QSharedPointer<SettingsBase> options)
-    {        
+    {
+        if(parser.isSet(Constants::ConsoleOptionStrings::kVersion))
+        {
+            //comment
+            qInfo() << BOOST_PP_STRINGIZE(SLICER2_VERSION);
+            return false;
+        }
+
         //either both or neither stls/project file were specified.  Must have one or the other.
         if(parser.isSet(Constants::ConsoleOptionStrings::kInputStlFiles) + parser.isSet(Constants::ConsoleOptionStrings::kInputProjectFile) +
                 parser.isSet(Constants::ConsoleOptionStrings::kInputStlFilesDirectory) != 1)
