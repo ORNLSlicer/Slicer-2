@@ -95,21 +95,32 @@ file(GLOB_RECURSE SOURCES "src/**.cpp")
 file(GLOB_RECURSE HEADERS "include/**.h")
 file(GLOB_RECURSE RESOURCES "resources/**.qrc")
 
-add_executable(${PROJECT_NAME})
+add_library(${PROJECT_NAME}_obj OBJECT)
 target_sources(
-    ${PROJECT_NAME}
-    PUBLIC ${SOURCES} ${RESOURCES}
+    ${PROJECT_NAME}_obj
+    PRIVATE ${SOURCES} ${RESOURCES}
     PUBLIC FILE_SET HEADERS
     BASE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include
     FILES ${HEADERS}
 )
 
-target_link_libraries(${PROJECT_NAME} ${SLICER2_DEPS})
+target_link_libraries(${PROJECT_NAME}_obj ${SLICER2_DEPS})
+target_compile_options(${PROJECT_NAME}_obj PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fpermissive -Wno-deprecated-declarations>)
 
-target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fpermissive -Wno-deprecated-declarations>)
-if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Release")
-    message(STATUS "Windows release detected, setting Windows specific compile flags.")
+if(UNIX)
+    add_executable(${PROJECT_NAME})
+    target_sources(${PROJECT_NAME} PRIVATE ${MAIN})
+    target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_obj)
+elseif(WIN32)
+    message(STATUS "Windows detected, generating Windows targets.")
+    add_executable(${PROJECT_NAME})
+    target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_obj)
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-mwindows")
+
+    add_executable(${PROJECT_NAME}_cli)
+    target_link_libraries(${PROJECT_NAME}_cli ${PROJECT_NAME}_obj)
+else()
+    message(FATAL_ERROR "Unknown runtime host, no targets generated.")
 endif()
 
 function(CreateODSTarget)
