@@ -107,20 +107,15 @@ target_sources(
 target_link_libraries(${PROJECT_NAME}_obj ${SLICER2_DEPS})
 target_compile_options(${PROJECT_NAME}_obj PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fpermissive -Wno-deprecated-declarations>)
 
-if(UNIX)
-    add_executable(${PROJECT_NAME})
-    target_sources(${PROJECT_NAME} PRIVATE ${MAIN})
-    target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_obj)
-elseif(WIN32)
+add_executable(${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_obj)
+
+if(WIN32)
     message(STATUS "Windows detected, generating Windows targets.")
-    add_executable(${PROJECT_NAME})
-    target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_obj)
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-mwindows")
 
     add_executable(${PROJECT_NAME}_cli)
     target_link_libraries(${PROJECT_NAME}_cli ${PROJECT_NAME}_obj)
-else()
-    message(FATAL_ERROR "Unknown runtime host, no targets generated.")
 endif()
 
 function(CreateODSTarget)
