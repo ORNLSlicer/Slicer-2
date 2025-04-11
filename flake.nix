@@ -44,7 +44,7 @@
         fullVersion  = "${version}-${revisionHash}";
       in fullVersion;
 
-      mkPackages = { pkgs, stdenv ? pkgs.stdenv }: rec {
+      mkPackages = { pkgs, stdenv ? pkgs.stdenv, llvm ? pkgs.llvmPackages }: rec {
         nixpkgs = pkgs;
 
         ornl = rec {
@@ -60,6 +60,8 @@
             src     = self;
             version = (lib.fetchVersion ./version.json);
 
+            openmp  = llvm.openmp;
+
             inherit (libraries) sockets kuba-zip clipper psimpl;
             inherit stdenv;
           };
@@ -68,8 +70,18 @@
     } // config.pkgs.lib;
 
     legacyPackages = {
-      inherit (lib.mkPackages { inherit pkgs stdenv; } ) ornl nixpkgs;
-      windows = (lib.mkPackages { pkgs = pkgs.pkgsCross.mingwW64; });
+      inherit (
+        lib.mkPackages {
+          inherit pkgs stdenv;
+          llvm = llvm.packages;
+        }
+      ) ornl nixpkgs;
+
+      windows = (
+        lib.mkPackages {
+          pkgs = pkgs.pkgsCross.mingwW64;
+        }
+      );
     };
 
     packages = rec {

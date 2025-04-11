@@ -47,7 +47,7 @@ function(FindDependencies)
     if(TARGET CGAL::Eigen3_support)
         message(STATUS "Eigen found and configred with CGAL.")
     else()
-    	message(FATAL_ERROR "CGAL was NOT compiled with Eigen support.")
+        message(FATAL_ERROR "CGAL was NOT compiled with Eigen support.")
     endif()
 
     set(OPTIONAL_PACKAGES "")

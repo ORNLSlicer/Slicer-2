@@ -6,7 +6,9 @@
   cmake, pkg-config, ninja, wrapQtAppsHook, deployQtWinPluginsHook,
 
   qtbase, qtcharts, qt5compat, assimp, boost184, cgal_5, eigen, nlohmann_json, gmp, mpfr,
-  hdf5, vtk-qt, kuba-zip, clipper, psimpl, sockets
+  hdf5, vtk-qt, kuba-zip, clipper, psimpl, sockets,
+
+  openmp ? null
 }:
 
 stdenv.mkDerivation rec {
@@ -31,6 +33,8 @@ stdenv.mkDerivation rec {
     sockets
     gmp
     mpfr
+  ] ++ lib.optionals (openmp != null) [
+    openmp
   ] ++ lib.optionals stdenv.hostPlatform.isMinGW [
     # Note: intentionally NOT native. Hook refers to target plugins internally.
     deployQtWinPluginsHook
