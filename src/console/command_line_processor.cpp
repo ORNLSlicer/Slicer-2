@@ -77,7 +77,6 @@ namespace ORNL {
     {
         if(parser.isSet(Constants::ConsoleOptionStrings::kVersion))
         {
-            //comment
             qInfo() << BOOST_PP_STRINGIZE(SLICER2_VERSION);
             return false;
         }
