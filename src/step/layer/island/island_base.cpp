@@ -185,6 +185,16 @@ void IslandBase::compute(uint layer_num, QSharedPointer<SyncManager>& sync) {
         // Combine and pass to sp
         QVector<SinglePath::PolygonList> combined_geometry;
 
+        auto sp_poly_from_polyline = [](const ORNL::Polyline& poly) -> SinglePath::Polygon {
+            SinglePath::Polygon sp_poly;
+
+            for (const ORNL::Point& p : poly) {
+                sp_poly.append(p);
+            }
+
+            return sp_poly;
+        };
+
         QSharedPointer<Perimeter> perimeters = nullptr;
         QSharedPointer<Inset> insets = nullptr;
 
@@ -200,27 +210,25 @@ void IslandBase::compute(uint layer_num, QSharedPointer<SyncManager>& sync) {
         // If perimeters are found, add them
         if (perimeters != nullptr) {
 
-            for (auto& poly_list : perimeters->getComputedGeometry()) {
-                SinglePath::PolygonList sp_poly_list;
-                for (auto& polygon : poly_list) {
-                    SinglePath::Polygon sp_polygon = polygon;
-                    sp_polygon.setRegionType(SinglePath::RegionType::kPerimeter);
-                    sp_poly_list.append(sp_polygon);
-                }
-                combined_geometry.append(sp_poly_list);
+            for (auto& poly : perimeters->getComputedGeometry()) {
+                SinglePath::Polygon sp_polygon = sp_poly_from_polyline(poly);
+                sp_polygon.setRegionType(SinglePath::RegionType::kPerimeter);
+
+                SinglePath::PolygonList sp_polylist;
+                sp_polylist.append(sp_polygon);
+                combined_geometry.append(sp_polylist);
             }
         }
 
         // If insets are found, add them
         if (insets != nullptr) {
-            for (auto& poly_list : insets->getComputedGeometry()) {
-                SinglePath::PolygonList sp_poly_list;
-                for (auto& polygon : poly_list) {
-                    SinglePath::Polygon sp_polygon = polygon;
-                    sp_polygon.setRegionType(SinglePath::RegionType::kInset);
-                    sp_poly_list.append(sp_polygon);
-                }
-                combined_geometry.append(sp_poly_list);
+            for (auto& poly : insets->getComputedGeometry()) {
+                SinglePath::Polygon sp_polygon = sp_poly_from_polyline(poly);
+                sp_polygon.setRegionType(SinglePath::RegionType::kPerimeter);
+
+                SinglePath::PolygonList sp_polylist;
+                sp_polylist.append(sp_polygon);
+                combined_geometry.append(sp_polylist);
             }
         }
 

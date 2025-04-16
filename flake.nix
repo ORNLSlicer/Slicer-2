@@ -56,9 +56,28 @@
             psimpl   = pkgs.callPackage ./nix/packages/psimpl   {};
           };
 
+          addons = rec {
+            singlepath = pkgs.qt6.callPackage ./nix/addons/singlepath {
+              inherit (libraries) clipper;
+              inherit stdenv;
+            };
+          };
+
           slicer2 = pkgs.qt6.callPackage ./nix/slicer2 {
             src     = self;
             version = (lib.fetchVersion ./version.json);
+
+            inherit (libraries) sockets kuba-zip clipper psimpl;
+            inherit stdenv;
+          };
+
+          slicer2WithSinglePath = pkgs.qt6.callPackage ./nix/slicer2 {
+            src     = self;
+            version = (lib.fetchVersion ./version.json);
+
+            addons  = [
+              addons.singlepath
+            ];
 
             inherit (libraries) sockets kuba-zip clipper psimpl;
             inherit stdenv;
@@ -113,7 +132,7 @@
         ];
 
         inputsFrom = [
-          legacyPackages.ornl.slicer2
+          legacyPackages.ornl.slicer2WithSinglePath
         ];
 
         LD_FALLBACK_PATH = "/usr/lib/x86_64-linux-gnu";

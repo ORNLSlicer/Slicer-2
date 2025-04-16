@@ -87,8 +87,32 @@ function(FindDependencies)
     set(RESULT_VAR ${RESULT_VAR} PARENT_SCOPE)
 endfunction()
 
+function(FindAddons)
+    set(OPTIONAL_PACKAGES "")
+    find_package(singlepath)
+    if(singlepath_FOUND)
+        message(STATUS "Single Path addon found.")
+        list(APPEND OPTIONAL_PACKAGES ornl::singlepath)
+    endif()
+
+    message(STATUS "Discovered Addons: ${OPTIONAL_PACKAGES}")
+
+    set(RESULT_VAR "")
+    list(
+        APPEND RESULT_VAR
+        ${OPTIONAL_PACKAGES}
+    )
+
+    set(RESULT_VAR ${RESULT_VAR} PARENT_SCOPE)
+endfunction()
+
+set(SLICER2_DEPS "")
+
 FindDependencies()
-set(SLICER2_DEPS ${RESULT_VAR})
+list(APPEND SLICER2_DEPS ${RESULT_VAR})
+
+FindAddons()
+list(APPEND SLICER2_DEPS ${RESULT_VAR})
 
 # Find all project files.
 file(GLOB_RECURSE SOURCES "src/**.cpp")
