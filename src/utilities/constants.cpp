@@ -1206,4 +1206,6 @@ const QString Constants::ConsoleOptionStrings::kRealTimePrinter = "real_time_pri
 const QString Constants::ConsoleOptionStrings::kSingleSliceHeight = "single_slice_height";
 const QString Constants::ConsoleOptionStrings::kSingleSliceLayerNumber = "single_slice_layer_number";
 
+const QString Constants::ConsoleOptionStrings::kVersion = "version";
+
 } // namespace ORNL
