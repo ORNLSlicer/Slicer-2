@@ -86,11 +86,6 @@ namespace ORNL {
         }
     }
 
-    void ScanLayer::applyMapping()
-    {
-        //NOP
-    }
-
     void ScanLayer::connectPaths(Point& start, int& start_index, QVector<QSharedPointer<RegionBase>>& previousRegions)
     {
         for (QSharedPointer<IslandBase> island : m_islands) {
@@ -131,13 +126,13 @@ namespace ORNL {
 
     Point ScanLayer::getEndLocation()
     {
-        for(auto iter = m_islands.end(); iter != m_islands.begin(); --iter)
-        {
-            auto regions = iter->data()->getRegions();
-            for(int region_index = regions.size() - 1; region_index >= 0; --region_index)
+
+        for(auto& island : m_islands) {
+            auto regions = island->getRegions();
+            for(int region_index = regions.size() - 1; region_index >= 0; region_index--)
             {
                 auto paths = regions[region_index]->getPaths();
-                for(int path_index = paths.size() - 1; path_index >= 0; --path_index)
+                for(int path_index = paths.size() - 1; path_index >= 0; path_index--)
                 {
                     auto path = paths[path_index];
                     if(path.size() > 0)

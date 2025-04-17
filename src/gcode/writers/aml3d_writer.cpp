@@ -349,16 +349,6 @@ QString AML3DWriter::writeArc(const Point &start_point,
     return rv;
 }
 
-QString AML3DWriter::writeSpline(const Point &start_point,
-                                   const Point &a_control_point,
-                                   const Point &b_control_point,
-                                   const Point &end_point,
-                                   const QSharedPointer<SettingsBase> params)
-{
-    QString rv;
-    return rv;
-}
-
 QString AML3DWriter::writeScan(Point target_point, Velocity speed, bool on_off)
 {
     QString rv;

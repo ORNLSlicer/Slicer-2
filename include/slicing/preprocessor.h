@@ -51,7 +51,6 @@ namespace ORNL
             struct Parts
             {
                 QVector<QSharedPointer<Part>> build_parts;
-                QVector<QSharedPointer<Part>> emboss_parts;
                 QVector<QSharedPointer<Part>> clipping_parts;
                 QVector<QSharedPointer<Part>> settings_parts;
             };

@@ -45,7 +45,7 @@ void GCodeMarlinSaver::run()
     }
 
     QFileInfo fi(m_filename);
-    QString filePath = fi.absolutePath() + "\\" + fi.baseName() + "_command_data.txt";
+    QString filePath = fi.absolutePath() + QDir::separator() + fi.baseName() + "_command_data.txt";
 
     QFile file(filePath);
     file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text);
@@ -57,7 +57,7 @@ void GCodeMarlinSaver::run()
         if(line.startsWith(G1))
         {
             QString temp = line.mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
-            QVector<QStringRef> params = temp.splitRef(space);
+            QVector<QString> params = temp.split(space);
 
             if(line.contains("TRAVEL") || line.contains("TIP WIPE") || line.contains("COAST") || line.contains("LIFT") || line.contains("FLYING START"))
             {
@@ -70,15 +70,15 @@ void GCodeMarlinSaver::run()
                 for(int i = 1, end = params.size(); i < end; ++i)
                 {
                     if(params[i].startsWith(x))
-                        xval = params[i].mid(1).toString();
+                        xval = params[i].mid(1);
                     else if(params[i].startsWith(y))
-                        yval = params[i].mid(1).toString();
+                        yval = params[i].mid(1);
                     else if(params[i].startsWith(z))
-                        zval = params[i].mid(1).toString();
+                        zval = params[i].mid(1);
                     else if(params[i].startsWith(f))
-                        feedrate = params[i].mid(1).toString();
+                        feedrate = params[i].mid(1);
                     else if(params[i].startsWith(e)) // Note that extrusion values aren't currently being used
-                        extrusionAmount = params[i].mid(1).toString();
+                        extrusionAmount = params[i].mid(1);
                 }
             }
 

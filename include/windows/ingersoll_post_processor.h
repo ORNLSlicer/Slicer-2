@@ -17,7 +17,6 @@ namespace ORNL
      */
     class IngersollPostProcessor : public QWidget
     {
-        Q_OBJECT
     public:
         //! \brief Constructor
         IngersollPostProcessor(QWidget* parent);
@@ -34,7 +33,7 @@ namespace ORNL
         QWidget *parentWindow;
         void closeEvent(QCloseEvent *event);
 
-    private:       
+    private:
         QString savedPath;
         QGridLayout *m_layout;
         QStatusBar *m_statusbar;

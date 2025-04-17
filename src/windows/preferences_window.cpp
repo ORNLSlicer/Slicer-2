@@ -114,7 +114,7 @@ namespace ORNL
         m_mass_unit_combobox = new QComboBox();
         m_mass_unit_combobox->addItems(Constants::Units::kMassUnits);
         m_mass_unit_combobox->setCurrentText(m_preferences_manager->getMassUnitText());
-		
+
         m_rotation_unit_combobox = new QComboBox();
         m_rotation_unit_combobox->addItems(Constants::Units::kRotationUnits);
         m_rotation_unit_combobox->setCurrentText(m_preferences_manager->getRotationUnitText());
@@ -233,7 +233,6 @@ namespace ORNL
 
         QGridLayout* color_tab_layout = new QGridLayout();
         color_tab_layout->setVerticalSpacing(0);
-        color_tab_layout->setMargin(0);
         colorWidget->setLayout(color_tab_layout);
 
         int i = 0;
@@ -342,40 +341,40 @@ namespace ORNL
 
     void PreferencesWindow::setupEvents()
     {
-        connect(m_import_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+        connect(m_import_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setImportUnit));
 
-        connect(m_distance_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+        connect(m_distance_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setDistanceUnit));
 
-        connect(m_velocity_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+        connect(m_velocity_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setVelocityUnit));
 
-        connect(m_acceleration_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+        connect(m_acceleration_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setAccelerationUnit));
 
-        connect(m_density_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+        connect(m_density_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setDensityUnit));
 
-        connect(m_angle_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+        connect(m_angle_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setAngleUnit));
 
-        connect(m_time_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+        connect(m_time_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setTimeUnit));
 
-        connect(m_temperature_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+        connect(m_temperature_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setTemperatureUnit));
 
-        connect(m_voltage_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+        connect(m_voltage_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setVoltageUnit));
 
-        connect(m_mass_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+        connect(m_mass_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setMassUnit));
-				
-        connect(m_rotation_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+
+        connect(m_rotation_unit_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setRotationUnit));
 
-        connect(m_theme_combobox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+        connect(m_theme_combobox, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                 m_preferences_manager.data(), QOverload<QString>::of(&PreferencesManager::setTheme));
 
         connect(m_preferences_manager.get(), &PreferencesManager::importUnitChanged, this, &PreferencesWindow::updateImportUnitVisual);

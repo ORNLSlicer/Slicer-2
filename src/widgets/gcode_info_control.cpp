@@ -126,7 +126,6 @@ namespace ORNL
         m_info_grid->setRowMinimumHeight(1, 15);
         m_info_grid->setColumnStretch(1, 1);
         m_info_grid->setVerticalSpacing(0);
-        m_info_grid->setMargin(0);
 
         setupHeaderWidget();
 

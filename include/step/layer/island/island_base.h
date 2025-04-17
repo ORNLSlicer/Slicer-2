@@ -81,11 +81,6 @@ namespace ORNL {
             //! \brief rotates and then shifts the island by given amounts
             void transform(QQuaternion rotation, Point shift);
 
-            //! \brief applies the conformal mapping
-            //! \param parameterization: the UV map to map with
-            //! \param the normal to shift by
-            void applyMapping(QSharedPointer<Parameterization> parameterization, QVector3D normal_offset);
-
             //! \brief returns the minimun z-value of an island
             float getMinZ();
 

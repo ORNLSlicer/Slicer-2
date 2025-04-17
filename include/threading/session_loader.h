@@ -5,7 +5,7 @@
 #include <QThread>
 
 // Zip
-#include "zip.h"
+#include "zip/zip.h"
 
 // JSON
 #include <nlohmann/json.hpp>

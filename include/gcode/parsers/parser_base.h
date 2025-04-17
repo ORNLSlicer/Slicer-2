@@ -4,8 +4,10 @@
 #include <QHash>
 #include <QString>
 #include <QStringList>
-#include <functional>
+#include <QString>
 #include <QRegularExpression>
+#include <QRegularExpression>
+#include <functional>
 #include "gcode/gcode_command.h"
 #include "units/unit.h"
 
@@ -57,7 +59,7 @@ namespace ORNL
         //!                        structures when passed.
         void addCommandMapping(
             QString command_string,
-            std::function< void(QVector<QStringRef>) > function_handle);
+            std::function< void(QVector<QString>) > function_handle);
 
         //! \brief Sets the comment delimters for use when extracting comments
         //! from the line of text.
@@ -89,7 +91,7 @@ namespace ORNL
         //! \brief Returns the comment in a string rather than inserting it into a gcode
         //! command.  Useful for footer processing.
         //! \param comment A Comment within a Gcode command.
-        QStringRef parseComment(QString& line);
+        QString parseComment(QString& line);
 
         //! \brief Sets the current command of the parser to the current string.
         //! \param command Sets the current command in use.
@@ -116,7 +118,7 @@ namespace ORNL
 
         //! \brief Maps a GCode command to a function handlerm
         //! \brief This function throws a multiple parameter exception.
-        QHash< QString, std::function< void(QVector<QStringRef>) > >
+        QHash< QString, std::function< void(QVector<QString>) > >
             m_command_mapping;  //!< Mappings of GCode command strings
                                 //!< to function handlers which take parameters
 
@@ -134,7 +136,7 @@ namespace ORNL
         //! \brief Current ending delimiter matcher for quicker string comparison
         QStringMatcher m_block_comment_ending_delimiter_matcher;
         //! \brief Delimiter for splitting all commands from all syntaxes
-        QRegExp m_block_split_delimiter;
+        QRegularExpression m_block_split_delimiter;
         //! \brief Char for leading colon collapse (faster execution)
         QChar m_leading_colon;
         //! \brief Matcher for identifying new layers for quicker string comparison

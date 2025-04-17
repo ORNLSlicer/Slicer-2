@@ -41,7 +41,7 @@ namespace ORNL
         }
 
         QFileInfo fi(m_filename);
-        QString filePath = fi.absolutePath() + "\\" + fi.baseName() + "_commands.csv";
+        QString filePath = fi.absolutePath() + QDir::separator() + fi.baseName() + "_commands.csv";
 
         QFile file(filePath);
         file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text);
@@ -53,7 +53,7 @@ namespace ORNL
             if(line.startsWith(G0) || line.startsWith(G1) || line.startsWith(M24) || line.startsWith(M25))
             {
                 QString temp = line.mid(0, line.indexOf(m_selected_meta.m_comment_starting_delimiter));
-                QVector<QStringRef> params = temp.splitRef(space);
+                QVector<QString> params = temp.split(space);
 
                 if(params[0] == G0)
                 {
@@ -65,13 +65,13 @@ namespace ORNL
                     for(int i = 1, end = params.size(); i < end; ++i)
                     {
                         if(params[i].startsWith(x))
-                            xval = params[i].mid(1).toString();
+                            xval = params[i].mid(1);
                         else if(params[i].startsWith(y))
-                            yval = params[i].mid(1).toString();
+                            yval = params[i].mid(1);
                         else if(params[i].startsWith(z))
-                            zval = params[i].mid(1).toString();
+                            zval = params[i].mid(1);
                         else if(params[i].startsWith(f))
-                            velocity = params[i].mid(1).toString();
+                            velocity = params[i].mid(1);
                     }
                 }
                 if(params[0] == M24)
@@ -80,7 +80,7 @@ namespace ORNL
                     {
                         if(params[i].startsWith(s))
                         {
-                            feedrate = params[i].mid(1).toString();
+                            feedrate = params[i].mid(1);
                             break;
                         }
                     }

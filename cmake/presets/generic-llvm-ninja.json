@@ -1,0 +1,32 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name":        "generic-llvm-ninja",
+            "displayName": "Generic (llvm-ninja)",
+            "description": "Basic configuration with the LLVM toolchain using Ninja generator.",
+            "generator":   "Ninja Multi-Config",
+            "binaryDir":   "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER":   "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug-generic-llvm-ninja",
+            "displayName": "Debug (llvm-ninja)",
+            "description": "Compile a debug build using LLVM Clang.",
+            "configurePreset": "generic-llvm-ninja",
+            "configuration": "Debug"
+        },
+        {
+            "name": "release-generic-llvm-ninja",
+            "displayName": "Release (llvm-ninja)",
+            "description": "Compile a release build using LLVM Clang.",
+            "configurePreset": "generic-llvm-ninja",
+            "configuration": "Release"
+        }
+    ]
+}

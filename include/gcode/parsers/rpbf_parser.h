@@ -38,12 +38,12 @@ namespace ORNL
             //! \brief Handler for '$$Polyline' command.
             //! \param params Should include identifier, total, followed by total number of segments
             //! of the form x_start, y_start, x_end, y_end, 0, 0, 0
-            virtual void PolylinesHandler(QVector<QStringRef> params);
+            virtual void PolylinesHandler(QVector<QString> params);
 
             //! \brief Handler for '$$Hatches' command.
             //! \param params Should include identifier, total, followed by total number of segments
             //! of the form x_start, y_start, x_end, y_end, 0, 0, 0
-            virtual void HatchesHandler(QVector<QStringRef> params);
+            virtual void HatchesHandler(QVector<QString> params);
 
         private:
 
@@ -52,7 +52,7 @@ namespace ORNL
             //! \param type Region type used for comment
             //! \param prefix Command prefix that is the same for each expanded line.  Contains placeholder index and vector total.
             //! \param params Individual parameters for each command: x_start, y_start, x_end, y_end, 0, 0, 0
-            QString SegmentHelper(QString command, QString type, QVector<QStringRef> prefix, QVector<QStringRef> params);
+            QString SegmentHelper(QString command, QString type, QVector<QString> prefix, QVector<QString> params);
 
             //! \brief Predefined strings used to adjust formatting for commands
             QLatin1String m_x_param, m_y_param, m_comma, m_space, m_polyline, m_hatches;

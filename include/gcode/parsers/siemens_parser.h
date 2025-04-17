@@ -35,12 +35,12 @@ namespace ORNL
             //! \brief Handler for 'BEAD_AREA' command for turning on extruder
             //! \param params Accepted by function for formatting check, but are not
             //! used for the command
-            virtual void BeadAreaHandler(QVector<QStringRef> params);
+            virtual void BeadAreaHandler(QVector<QString> params);
 
             //! \brief Handler for 'WHEN TRUE DO EXTR_END=2.0' command for turning off extruder
             //! \param params Accepted by function for formatting check, but are not
             //! used for the command
-            virtual void ExtruderOffHandler(QVector<QStringRef> params);
+            virtual void ExtruderOffHandler(QVector<QString> params);
     };
 }  // namespace ORNL
 #endif  // SIEMENSPARSER_H

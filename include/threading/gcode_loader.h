@@ -42,10 +42,14 @@ namespace ORNL
 
             //! \brief signal to UI with info for text and text font color
             //! \param text: text from file to display
-            //! \param fontColors: Hash with formats to define colors for all lines of text. Allows lookup for each line into the hash for appropriate format.
-            //! \param layerFirstLineNumbers: line numbers for BEGINNING LAYER for each layer to jump the cursor to appropriate line when spinbox moves up and down.
-            //! \param layerSkipLineNumbers: line numbers to skip applying formatting to hash based on visualization settings
-            void gcodeLoadedText(QString text, QHash<QString, QTextCharFormat> fontColors, QList<int> layerFirstLineNumbers, QSet<int> layerSkipLineNumbers);
+            //! \param fontColors: Hash with formats to define colors for all lines of text. Allows lookup for each line
+            //! into the hash for appropriate format.
+            //! \param layerFirstLineNumbers: line numbers for BEGINNING LAYER for each layer to jump the cursor to
+            //! appropriate line when spinbox moves up and down.
+            //! \param layerSkipLineNumbers: line numbers to skip applying formatting to hash based on visualization
+            //! settings
+            void gcodeLoadedText(QString text, QHash<QString, QTextCharFormat> fontColors,
+                                 QList<int> layerFirstLineNumbers, QSet<int> layerSkipLineNumbers);
 
             //! \brief Emits error signal
             //! \param msg: Qstring error message
@@ -53,7 +57,8 @@ namespace ORNL
 
             //! \brief signal to layer time window with info
             //! \param layertimes: List of layer times for display
-            void forwardInfoToLayerTimeWindow(QList<QList<Time>> layer_times, QList<double> layer_FR_modifiers, bool adjusted_layer_time);
+            void forwardInfoToLayerTimeWindow(QList<QList<Time>> layer_times, QList<double> layer_FR_modifiers,
+                                              bool adjusted_layer_time);
 
             //! \brief signal to export window with info
             //! \param filename: temp gcode filename to copy
@@ -92,6 +97,30 @@ namespace ORNL
             //! \return color based on comment keywords
             QColor determineFontColor(const QString& comment);
 
+            //! \brief Set the segment display information based on the region type defined in the comment.
+            //! \param segment: Segment to set display info for.
+            //! \param color: Color to set for the segment.
+            //! \param comment: Comment to parse for the segment type.
+            //! \param start_pos: The start position of the segment.
+            //! \param end_pos: The end position of the segment.
+            //! \param line_num: The line number of the segment.
+            //! \param layer_num: The layer number of the segment.
+            void setSegmentDisplayInfo(QSharedPointer<SegmentBase>& segment, const QColor& color,
+                                       const QString& comment, const QVector3D& start_pos, const QVector3D& end_pos,
+                                       const int& line_num, const int& layer_num);
+
+            //! \brief Set the segment meta information. This is the information that is displayed when the user selects
+            //! a segment in the UI.
+            //! \param segment: Segment to set meta info for.
+            //! \param comment: Comment to parse for the segment type.
+            //! \param info_end_pos: The end position of the segment.
+            //! \param extruders_on: Indicates if the extruders are on or off.
+            //! \param info_speed_set: Indicates if the speed is set.
+            //! \param extruders_speed: The speed of the extruders.
+            void setSegmentMetaInfo(QSharedPointer<SegmentBase>& segment, const QString& comment,
+                                    QVector3D& info_end_pos, const bool& extruders_on, const bool& info_speed_set,
+                                    const double& extruders_speed);
+
             //! \brief generate additional export comments
             //! \return string
             QString additionalExportComments();
@@ -105,7 +134,8 @@ namespace ORNL
             //! \param machine name
             //! \param gcode file path
             //! \param model file path
-            void static sendGcodeModelObjFile(QString host, int port, QString machineName, QString gcodeFilePath, QString objFilePath);
+            void static sendGcodeModelObjFile(
+                QString host, int port, QString machineName, QString gcodeFilePath, QString objFilePath);
 
             //! \brief generates an open gl object for a given gcode command
             //! \param line_num: Line number that links visual segment to gcode for highlighting
@@ -113,15 +143,23 @@ namespace ORNL
             //! \param color: Color of segment based on comments from gcode
             //! \param command_id: the id of the gcode command for th segment
             //! \param parameters: Parameters of gcodecommand end (x, y, z, w, i, j, p, q)
-            //! \param extruders_on: vector indicating if each extruder is on or off, determines how many segments to draw
-            //! \param extruder_offsets: vector indicating offset of each extruder relative to ext0, used to determine if shift is necessary
+            //! \param extruders_on: vector indicating if each extruder is on or off, determines how many segments to
+            //! draw
+            //! \param extruder_offsets: vector indicating offset of each extruder relative to ext0, used to determine
+            //! if shift is necessary
             //! \param extruders_speed: double value read from gcode
             //! \param is_travel: if this line is a travel, ignores extruder status
             //! \param optional_parameters: Parameters of gcodecommand for start (x, y, z, w)
             //! \return List of generated visual segments.
-            QVector<QSharedPointer<SegmentBase>> generateVisualSegment(int line_num, int layer_num, const QColor& color, int command_id,
-                                                                       const QMap<char, double>& parameters, QVector<bool> extruders_on, QVector<Point> extruder_offsets,
-                                                                       double extruders_speed, bool is_travel, const QString comment, const QMap<char, double>& optional_parameters = QMap<char, double>());
+            QVector<QSharedPointer<SegmentBase>> generateVisualSegment(int line_num, int layer_num, const QColor& color,
+                                                                       int command_id,
+                                                                       const QMap<char, double>& parameters,
+                                                                       QVector<bool> extruders_on,
+                                                                       QVector<Point> extruder_offsets,
+                                                                       double extruders_speed, bool is_travel,
+                                                                       const QString comment,
+                                                                       const QMap<char, double>&
+                                                                       optional_parameters = QMap<char, double>());
 
             //! \brief Filename.
             QString m_filename;
@@ -137,10 +175,13 @@ namespace ORNL
             QStringList m_lines, m_original_lines;
 
             //! \brief matchers for modifier identification for coloring
-            QStringMatcher m_prestart, m_initial_startup, m_slowdown, m_forward_tipwipe, m_reverse_tipwipe, m_angled_tipwipe, m_coasting, m_spirallift, m_rampingup, m_rampingdown, m_leadin;
+            QStringMatcher m_prestart, m_initial_startup, m_slowdown, m_forward_tipwipe, m_reverse_tipwipe,
+                           m_angled_tipwipe, m_coasting, m_spirallift, m_rampingup, m_rampingdown, m_leadin;
+
             //! \brief matchers for type identification for coloring
-            QStringMatcher m_perimeter, m_perimeter_embossing, m_inset, m_inset_embossing, m_infill, m_ironing, m_skin, m_skeleton, m_support, m_support_roof, m_travel, m_raft, m_brim,
-                           m_skirt, m_laserscan, m_thermalscan;
+            QStringMatcher m_perimeter, m_inset, m_infill, m_skin,
+                           m_skeleton, m_support, m_support_roof, m_travel, m_raft, m_brim, m_skirt, m_laserscan,
+                           m_thermalscan;
 
             //! \brief colors for modifiers to adjust display size
             QVector<QColor> m_modifier_colors;
@@ -151,30 +192,42 @@ namespace ORNL
             //! \brief Settings for visualization
             //! \brief conversion from internal units to OpenGL units
             float m_micron_to_view_conversion;
-            //! \brief Gcode segment width
-            float m_segment_width;
-            //! \briefCurrent Gcode start position
+
+            //! \brief Current Gcode start position
             QVector3D m_start_pos;
+
             //! \brief Origin adjusted for offsets in settings, needed to undo adjustment in gcode
             QVector3D m_origin;
+
             //! \brief Offset for x, y, z
             float m_x_offset, m_y_offset, m_z_offset;
+
             //! \brief Offset for table - w
             float m_table_offset;
+
             //! \brief Previous offset for table - w, used to account for Z, W, or both axes
             float m_prev_table_offset;
+
             //! \brief conversion between color space of Qt to OpenGL
             float m_color_space_conversion;
+
             //! \brief flag to indicate if process should cancel
             bool m_should_cancel;
+
             //! \brief A regular expression to find the layer number in a comment
             QRegularExpression m_layer_pattern;
+
             //! \brief Current Gcode start position for info display
             QVector3D m_info_start_pos;
+
             //! \brief Current Gcode speed for info display
             QString m_info_speed;
+
             //! \brief Current Gcode extruder speed for info display
             QString m_info_extruder_speed;
+
+            //! \brief Current settings for gcode loader
+            QSharedPointer<SettingsBase> m_sb;
     };  // class GCodeLoader
 }  // namespace ORNL
 #endif  // GCODELOADER_H

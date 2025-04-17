@@ -30,34 +30,30 @@ namespace ORNL {
         else this->setTopView();
     }
 
-    void GCodeView::addGCode(QVector<QVector<QSharedPointer<SegmentBase>>> gcode)
-    {
+    void GCodeView::addGCode(QVector<QVector<QSharedPointer<SegmentBase>>> gcode) {
         // Adjust segment widths down if needed
-        if(!m_use_true_segment_widths)
-        {
-            for(auto& layer : gcode)
-            {
-                for(auto& segment : layer)
-                {
-                    segment->setGCodeWidth(segment->getGCodeWidth() * 0.20);
+        if (!m_use_true_segment_widths) {
+            for (auto& layer : gcode) {
+                for (auto& segment : layer) {
+                    segment->setDisplayWidth(segment->displayWidth() * 0.2f);
+                    segment->setDisplayHeight(segment->displayHeight() * 0.2f);
                 }
             }
         }
 
-        if(m_state.ortho) {
+        if (m_state.ortho) {
             m_state.zoom_factor = 1.0f;
             this->resizeGL(this->width(), this->height());
         }
 
-        if(gcode.isEmpty())
-        {
+        if (gcode.isEmpty()) {
             m_printer->orphanChild(m_gcode_object);
             m_gcode_object = nullptr;
         }
-        else
-        {
-            if(m_state.high_layer >= gcode.size())
+        else {
+            if (m_state.high_layer >= gcode.size()) {
                 m_state.high_layer = gcode.size() - 1;
+            }
 
             m_gcode_object = QSharedPointer<GCodeObject>::create(this, gcode, m_segment_info_control);
             m_gcode_object->showLayers(m_state.low_layer, m_state.high_layer);
@@ -67,27 +63,25 @@ namespace ORNL {
         }
 
         // Clear out old ghosted parts
-        for(auto ghost : m_ghosted_parts)
-        {
+        for (auto ghost : m_ghosted_parts) {
             m_printer->orphanChild(ghost);
         }
         m_ghosted_parts.clear();
 
         // Add ghosted parts
-        for(auto item : m_meta_model->items())
-        {
+        for (auto item : m_meta_model->items()) {
             auto gop = QSharedPointer<PartObject>::create(this, item->part());
             gop->setTransparency(item->transparency());
 
-            if(!m_state.showing_ghosts)
+            if (!m_state.showing_ghosts) {
                 gop->hide();
+            }
 
             gop->setTransformation(item->transformation());
             gop->translateAbsolute(QVector3D(item->translation().x(), item->translation().y(), item->translation().z() + m_printer->minimum().z()));
             m_printer->adoptChild(gop);
             m_ghosted_parts[item] = gop;
         }
-
 
         this->update();
         m_gcode = gcode;
@@ -104,26 +98,21 @@ namespace ORNL {
         this->update();
     }
 
-    void GCodeView::updateSegmentWidths(bool use_true_width)
-    {
+    void GCodeView::updateSegmentWidths(bool use_true_width) {
         clear();
         m_use_true_segment_widths = use_true_width;
 
         // Adjust existing G-code
-        if(!m_gcode.isEmpty())
-        {
+        if (!m_gcode.isEmpty()) {
             // Adjust segment widths back up if needed
-            if(m_use_true_segment_widths)
-            {
-                for(auto& layer : m_gcode)
-                {
-                    for(auto& segment : layer)
-                    {
-                        segment->setGCodeWidth(segment->getGCodeWidth() * 5.0);
+            if (m_use_true_segment_widths) {
+                for (auto& layer : m_gcode) {
+                    for (auto& segment : layer) {
+                        segment->setDisplayWidth(segment->displayWidth() * 5.0f);
+                        segment->setDisplayHeight(segment->displayHeight() * 5.0f);
                     }
                 }
             }
-
             addGCode(m_gcode);
         }
     }

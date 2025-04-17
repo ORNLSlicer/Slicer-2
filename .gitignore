@@ -53,6 +53,7 @@
 
 # Build folder
 build/
+result
 
 # VCPKG folder
 contrib/vcpkg
@@ -68,6 +69,10 @@ cmake-build-debug/
 cmake-build-release/
 cmake-build-relwithdebinfo/
 .idea/
+.cache/
+.direnv/
+compile_commands.json
+.xdg_config/
 
 # Binary files we don't want to accidentally track
 *.3ds

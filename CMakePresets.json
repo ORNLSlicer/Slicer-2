@@ -1,7 +1,6 @@
 {
     "version": 6,
     "include": [
-        "cmake/presets/clang.json",
-        "cmake/presets/nix.json"
+        "cmake/presets/generic-llvm-ninja.json"
     ]
 }

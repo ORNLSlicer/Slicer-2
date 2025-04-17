@@ -60,8 +60,9 @@ namespace ORNL {
         return m_color;
     }
 
-    void SegmentBase::setGCodeInfo(float display_width, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num) {
+    void SegmentBase::setDisplayInfo(float display_width, float display_length, float display_height, SegmentDisplayType type, QColor color, uint line_num, uint layer_num) {
         m_display_width = display_width;
+        m_display_length = display_length;
         m_display_height = display_height;
         m_display_type = type;
         m_color = color;
@@ -69,14 +70,12 @@ namespace ORNL {
         m_layer_num = layer_num;
     }
 
-    float SegmentBase::getGCodeWidth()
-    {
-        return m_display_width;
+    void SegmentBase::setDisplayWidth(float display_width) {
+        m_display_width = display_width;
     }
 
-    void SegmentBase::setGCodeWidth(float display_width)
-    {
-        m_display_width = display_width;
+    void SegmentBase::setDisplayHeight(float display_height) {
+        m_display_height = display_height;
     }
 
     void SegmentBase::createGraphic(std::vector<float>& vertices, std::vector<float>& normals, std::vector<float>& colors) {

@@ -5,7 +5,6 @@
 #include <optimizers/polyline_order_optimizer.h>
 #include "geometry/path_modifier.h"
 #include "utilities/mathutils.h"
-#include "geometry/curve_fitting.h"
 
 #ifdef HAVE_SINGLE_PATH
 #include "single_path/single_path.h"
@@ -120,10 +119,6 @@ namespace ORNL {
 
             if(newPath.size() > 0)
             {
-                if(m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableArcFitting) ||
-                        m_sb->setting<bool>(Constants::ExperimentalSettings::CurveFitting::kEnableSplineFitting))
-                    CurveFitting::Fit(newPath, m_sb);
-
                 QVector<Path> temp_path;
                 calculateModifiers(newPath, m_sb->setting<bool>(Constants::PrinterSettings::MachineSetup::kSupportG3), temp_path);
                 PathModifierGenerator::GenerateTravel(newPath, current_location, m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
@@ -142,10 +137,7 @@ namespace ORNL {
         Velocity default_speed                  = m_sb->setting< Velocity >(Constants::ProfileSettings::Inset::kSpeed);
         Acceleration default_acceleration       = m_sb->setting< Acceleration >(Constants::PrinterSettings::Acceleration::kInset);
         AngularVelocity default_extruder_speed  = m_sb->setting< AngularVelocity >(Constants::ProfileSettings::Inset::kExtruderSpeed);
-        float default_esp_value                 = m_sb->setting< float >(Constants::PrinterSettings::Embossing::kESPNominalValue);
         int material_number                     = m_sb->setting< int >(Constants::MaterialSettings::MultiMaterial::kPerimterNum);
-
-        bool embossing_enable = m_sb->setting<bool>(Constants::PrinterSettings::Embossing::kEnableEmbossing);
 
         for (int j = 0, end_cond = line.size(); j < end_cond; ++j)
         {
@@ -205,11 +197,6 @@ namespace ORNL {
                     segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
                     segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kInset);
 
-                    if (embossing_enable) {
-                        segment->getSb()->setSetting(Constants::SegmentSettings::kESP, is_settings_region ? start.getSettings()->setting< float >(Constants::PrinterSettings::Embossing::kESPEmbossingValue) : default_esp_value);
-                        if (is_settings_region) segment->getSb()->setSetting(Constants::SegmentSettings::kPathModifiers, PathModifiers::kEmbossing);
-                    }
-
                     new_path.append(segment);
                     is_settings_region = !is_settings_region;
                     start = point;
@@ -225,11 +212,6 @@ namespace ORNL {
             segment->getSb()->setSetting(Constants::SegmentSettings::kExtruderSpeed,    is_settings_region ? start.getSettings()->setting< AngularVelocity >(Constants::ProfileSettings::Inset::kExtruderSpeed) : default_extruder_speed);
             segment->getSb()->setSetting(Constants::SegmentSettings::kMaterialNumber,   material_number);
             segment->getSb()->setSetting(Constants::SegmentSettings::kRegionType,       RegionType::kInset);
-
-            if (embossing_enable) {
-                segment->getSb()->setSetting(Constants::SegmentSettings::kESP, is_settings_region ? start.getSettings()->setting< float >(Constants::PrinterSettings::Embossing::kESPEmbossingValue) : default_esp_value);
-                if (is_settings_region) segment->getSb()->setSetting(Constants::SegmentSettings::kPathModifiers, PathModifiers::kEmbossing);
-            }
 
             new_path.append(segment);
         }

@@ -2,34 +2,36 @@
 #include <QCommandLineParser>
 
 // Local
-#include "windows/main_window.h"
+#include "configs/settings_base.h"
+#include "console/command_line_processor.h"
 #include "console/main_control.h"
-#include "utilities/msg_handler.h"
-#include "part/part.h"
+#include "external_files/external_grid.h"
 #include "gcode/gcode_command.h"
+#include "geometry/mesh/closed_mesh.h"
+#include "geometry/mesh/mesh_base.h"
+#include "geometry/mesh/open_mesh.h"
+#include "graphics/objects/gcode_object.h"
+#include "part/part.h"
+#include "threading/mesh_loader.h"
 #include "units/unit.h"
 #include "utilities/enums.h"
 #include "utilities/qt_json_conversion.h"
-#include "external_files/external_grid.h"
-#include "graphics/objects/gcode_object.h"
-#include "console/command_line_processor.h"
-#include "configs/settings_base.h"
-#include "geometry/mesh/mesh_base.h"
-#include "geometry/mesh/closed_mesh.h"
-#include "geometry/mesh/open_mesh.h"
-#include "threading/mesh_loader.h"
+#include "windows/main_window.h"
+
 #include <nlohmann/json.hpp>
 
-int main(int argc, char* argv[])
-{
+#include <boost/preprocessor.hpp>
+
+int main(int argc, char* argv[]) {
     QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
 
     // Register the meta type so we can use queued signals/slots.
-    qRegisterMetaType<QSharedPointer<ORNL::Part> >("QSharedPointer<Part>");
-    qRegisterMetaType<QSharedPointer<ORNL::ClosedMesh> >("QSharedPointer<ClosedMesh>");
-    qRegisterMetaType<QSharedPointer<ORNL::OpenMesh> >("QSharedPointer<OpenMesh>");
-    qRegisterMetaType<QSharedPointer<ORNL::MeshBase> >("QSharedPointer<MeshBase>");
-    qRegisterMetaType<QVector<QVector<QSharedPointer<ORNL::SegmentBase>>>>("QVector<QVector<QSharedPointer<SegmentBase>>>");
+    qRegisterMetaType<QSharedPointer<ORNL::Part>>("QSharedPointer<Part>");
+    qRegisterMetaType<QSharedPointer<ORNL::ClosedMesh>>("QSharedPointer<ClosedMesh>");
+    qRegisterMetaType<QSharedPointer<ORNL::OpenMesh>>("QSharedPointer<OpenMesh>");
+    qRegisterMetaType<QSharedPointer<ORNL::MeshBase>>("QSharedPointer<MeshBase>");
+    qRegisterMetaType<QVector<QVector<QSharedPointer<ORNL::SegmentBase>>>>(
+        "QVector<QVector<QSharedPointer<SegmentBase>>>");
     qRegisterMetaType<ORNL::Distance>("Distance");
     qRegisterMetaType<ORNL::Velocity>("Velocity");
     qRegisterMetaType<ORNL::Acceleration>("Acceleration");
@@ -38,7 +40,7 @@ int main(int argc, char* argv[])
     qRegisterMetaType<ORNL::Temperature>("Temperature");
     qRegisterMetaType<ORNL::Voltage>("Voltage");
     qRegisterMetaType<ORNL::Mass>("Mass");
-    qRegisterMetaType<QHash<QString,QTextCharFormat>>("QHash<QString,QTextCharFormat>");
+    qRegisterMetaType<QHash<QString, QTextCharFormat>>("QHash<QString,QTextCharFormat>");
     qRegisterMetaType<QList<ORNL::Time>>("QList<Time>");
     qRegisterMetaType<QList<int>>("QList<int>");
     qRegisterMetaType<QList<double>>("QList<double>");
@@ -56,12 +58,11 @@ int main(int argc, char* argv[])
     qRegisterMetaType<QSet<int>>("QSet<int>");
 
     // Register the message handler so all output is printed in the main window as well.
-    //qInstallMessageHandler(ORNL::msgHandler);
+    // qInstallMessageHandler(ORNL::msgHandler);
 
     QCommandLineParser parser;
 
-    if(argc > 1)
-    {
+    if (argc > 1) {
         QCoreApplication ca(argc, argv);
 
         QSharedPointer<ORNL::SettingsBase> options = QSharedPointer<ORNL::SettingsBase>::create();
@@ -72,11 +73,9 @@ int main(int argc, char* argv[])
 
         bool setupResult = clc.convertOptions(parser, options);
 
-        if(setupResult)
-        {
+        if (setupResult) {
             ORNL::MainControl* control = new ORNL::MainControl(options);
-            QObject::connect(control, &ORNL::MainControl::finished, &ca, &QCoreApplication::quit,
-                             Qt::QueuedConnection);
+            QObject::connect(control, &ORNL::MainControl::finished, &ca, &QCoreApplication::quit, Qt::QueuedConnection);
 
             control->run();
             int ret = ca.exec();
@@ -86,16 +85,18 @@ int main(int argc, char* argv[])
         }
         return 1;
     }
-    else
-    {
+    else {
         QApplication a(argc, argv);
-#ifdef WIN32
-        HWND consoleWnd = GetConsoleWindow();
-        DWORD dwProcessId;
-        GetWindowThreadProcessId(consoleWnd, &dwProcessId);
-        if (GetCurrentProcessId() == dwProcessId)
-               ::ShowWindow( ::GetConsoleWindow(), SW_HIDE );
-#endif
+        QApplication::setApplicationName("slicer2");
+        QApplication::setOrganizationName("ornl");
+        QApplication::setApplicationVersion(BOOST_PP_STRINGIZE(SLICER2_VERSION));
+//#ifdef WIN32
+//        HWND consoleWnd = GetConsoleWindow();
+//        DWORD dwProcessId;
+//        GetWindowThreadProcessId(consoleWnd, &dwProcessId);
+//        if (GetCurrentProcessId() == dwProcessId)
+//            ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+//#endif
 
         Q_INIT_RESOURCE(icons);
         Q_INIT_RESOURCE(shaders);

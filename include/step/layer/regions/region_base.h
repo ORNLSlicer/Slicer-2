@@ -6,8 +6,6 @@
 
 #include <gcode/writers/writer_base.h>
 
-#include <geometry/mesh/advanced/parameterization.h>
-
 
 // Local
 #include "geometry/polygon_list.h"
@@ -83,11 +81,6 @@ namespace ORNL {
             //! \brief Set the settings that the region will use.
             //! \param sb: Pointer to settings base to set
             void setSb(const QSharedPointer<SettingsBase>& sb);
-
-            //! \brief applies the conformal mapping
-            //! \param parameterization is the UV map to map with
-            //! \param normal_offset is the normal to shift by
-            void applyMapping(QSharedPointer<Parameterization> parameterization, QVector3D normal_offset);
 
             //! \brief transforms the region by rotating by then quaternion, then shifting
             void transform(QQuaternion rotation, Point shift);

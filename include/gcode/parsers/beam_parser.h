@@ -32,12 +32,12 @@ namespace ORNL
             //! \brief Handler for 'M110' command for turning on extruder
             //! \param params Accepted by function for formatting check, but are not
             //! used for the command
-            virtual void M110Handler(QVector<QStringRef> params);
+            virtual void M110Handler(QVector<QString> params);
 
             //! \brief Handler for 'M111' command for turning off extruder
             //! \param params Accepted by function for formatting check, but are not
             //! used for the command
-            virtual void M111Handler(QVector<QStringRef> params);
+            virtual void M111Handler(QVector<QString> params);
 
     };
 }
