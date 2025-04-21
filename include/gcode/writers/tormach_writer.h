@@ -85,10 +85,6 @@ class TormachWriter : public WriterBase {
     QString writeDwell(Time time) override;
 
   private:
-    //! \brief Writes G-Code to enable the tamper
-    QString writeTamperOn();
-    //! \brief Writes G-Code to disable the tamper
-    QString writeTamperOff();
     //! \brief Writes G-Code to enable the extruder
     QString writeExtruderOn(RegionType type, int rpm, int extruder_number);
     //! \brief Writes G-Code to disable the extruder
