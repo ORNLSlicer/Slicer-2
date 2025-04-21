@@ -5,7 +5,7 @@
 
 namespace ORNL {
 /*!
- * \class BeamParser
+ * \class GKNParser
  * \brief This class implements the GCode parsing configuration for the
  * GKN 3D printer(s). \note The current commands that this class
  * implements are:
