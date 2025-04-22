@@ -264,7 +264,7 @@ static GcodeMeta TormachMeta = {GcodeSyntax::kTormach,
                                 s,
                                 degree,
                                 g,
-                                mm / s,
+                                mm / minute,
                                 mm / s / s,
                                 rev / minute,
                                 ".nc"};

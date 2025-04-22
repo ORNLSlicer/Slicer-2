@@ -105,6 +105,8 @@ class TormachWriter : public WriterBase {
     bool m_layer_start;
     //! \brief true if wiping tip and no travel has been initiated
     bool m_tip_wipe;
+    //! \brief count the number of beads per layer
+    int m_bead_number;
 
 }; // class TORMACHWriter
 } // namespace ORNL

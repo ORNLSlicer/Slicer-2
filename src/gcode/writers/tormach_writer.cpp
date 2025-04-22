@@ -30,6 +30,7 @@ QString TormachWriter::writeInitialSetup(Distance minimum_x, Distance minimum_y,
     m_layer_start = true;
     m_tip_wipe = false;
     m_min_z = 0.0f;
+    m_bead_number = 0;
     QString rv;
     if (m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableStartupCode))
     {
@@ -68,6 +69,7 @@ QString TormachWriter::writeBeforeLayer(float new_min_z, QSharedPointer<Settings
 {
     m_spiral_layer = sb->setting<bool>(Constants::ProfileSettings::SpecialModes::kEnableSpiralize);
     m_layer_start = true;
+    m_bead_number = 0;
     QString rv;
     rv += "M1 " % commentLine("OPTIONAL STOP - LAYER CHANGE");
     return rv;
@@ -148,6 +150,7 @@ QString TormachWriter::writeTravel(Point start_location, Point target_location, 
     RegionType rType = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
 
     m_tip_wipe = false;
+    m_bead_number ++;
 
     //Use updated start location if this is the first travel
     if(m_first_travel)
@@ -251,7 +254,7 @@ QString TormachWriter::writeLine(const Point& start_point, const Point& target_p
     if (path_modifiers != PathModifiers::kNone)
         rv += commentSpaceLine(toString(region_type) % m_space % toString(path_modifiers));
     else
-        rv += commentSpaceLine(toString(region_type));
+        rv += commentSpaceLine(toString(region_type) % m_space % "Bead #" % QString::number(m_bead_number));
 
     m_first_print = false;
 
