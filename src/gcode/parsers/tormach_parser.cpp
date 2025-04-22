@@ -24,12 +24,12 @@ namespace ORNL
 
     }
 
-    void TormachParser::M64Handler(QVector<QStringRef> params)
+    void TormachParser::M64Handler(QVector<QString> params)
     {
         m_extruders_on[0] = true;
     }
 
-    void TormachParser::M65Handler(QVector<QStringRef> params)
+    void TormachParser::M65Handler(QVector<QString> params)
     {
         m_extruders_on[0] = false;
     }

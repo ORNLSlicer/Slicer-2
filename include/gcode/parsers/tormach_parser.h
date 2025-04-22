@@ -32,12 +32,12 @@ class TormachParser : public CommonParser
     //! \brief Handler for 'M64' command for turning on extruder
     //! \param params Accepted by function for formatting check, but are not
     //! used for the command
-    virtual void M64Handler(QVector<QStringRef> params);
+    virtual void M64Handler(QVector<QString> params);
 
            //! \brief Handler for 'M65' command for turning off extruder
            //! \param params Accepted by function for formatting check, but are not
            //! used for the command
-    virtual void M65Handler(QVector<QStringRef> params);
+    virtual void M65Handler(QVector<QString> params);
 
 };
 }
