@@ -15,6 +15,7 @@
 #include "gcode/parsers/mvp_parser.h"
 #include "gcode/parsers/rpbf_parser.h"
 #include "gcode/parsers/siemens_parser.h"
+#include "gcode/parsers/tormach_parser.h"
 #include "geometry/segments/arc.h"
 #include "geometry/segments/bezier.h"
 #include "geometry/segments/line.h"
@@ -587,7 +588,7 @@ void GCodeLoader::setParser(QStringList& originalLines, QStringList& lines) {
                 m_selected_meta = GcodeMetaList::CincinnatiMeta;
             }
             else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kTormach).toUpper())) {
-                m_parser.reset(new CommonParser(GcodeMetaList::TormachMeta, m_adjust_file, originalLines, lines));
+                m_parser.reset(new TormachParser(GcodeMetaList::TormachMeta, m_adjust_file, originalLines, lines));
                 m_selected_meta = GcodeMetaList::TormachMeta;
             }
             else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kAeroBasic).toUpper())) {
