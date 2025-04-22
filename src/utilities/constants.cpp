@@ -712,6 +712,8 @@ const QString Constants::ProfileSettings::Optimizations::kCustomPointXLocation =
 const QString Constants::ProfileSettings::Optimizations::kCustomPointYLocation = "custom_point_order_y_location";
 const QString Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation =
     "enable_second_custom_point_location";
+const QString Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocationEveryTwo =
+    "enable_second_point_every_two";
 const QString Constants::ProfileSettings::Optimizations::kCustomPointSecondXLocation =
     "custom_second_point_order_x_location";
 const QString Constants::ProfileSettings::Optimizations::kCustomPointSecondYLocation =
