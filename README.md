@@ -31,7 +31,7 @@ This work has been sponsored by work supported by the U.S. Department of Energy,
 
 ## Contributors and Thanks
 
-This work has also benefitied from cooperative research agreements with numerous partners without which Slicer 2 would not have evolved to its current state. A special mention should also be made for the many interns that have contributed to the project.
+This work has also benefitied from cooperative research agreements with numerous partners without which ORNL Slicer 2 would not have evolved to its current state. A special mention should also be made for the many interns that have contributed to the project.
 
 ## Engagement
 
@@ -39,7 +39,7 @@ If expanding on this work is of interest, please feel free to contact us. We are
 
 ## Contact
 
-Questions regarding Slicer 2 can be directed to slicer@ornl.gov.
+Questions regarding ORNL Slicer 2 can be directed to slicer@ornl.gov.
 
 ## Share
 Need an easy way to share/connect to the repo? Use our QR code! A copy can be found in the docs folder of the repo.
