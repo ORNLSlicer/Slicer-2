@@ -23,11 +23,11 @@ There are numerous slicers available either open-source or commercial. In many c
 
 - **Closing the loop**.  Unlike the traditional, sequential process of slicing and preparing g-code, we push for an iterative process. The slicer should be involved in the construction of the object to ingest sensor feedback and manipulate pathing as necessary. This goes hand-in-hand with the network connectivity and creates what we call [Slice on the Fly](https://repositories.lib.utexas.edu/handle/2152/90721).
  
-- **Total Control**. Slicer 2 is meant to allow complete control of your pathing process. Currently, there are nearly 500 settings to be adjusted with more constantly added. This includes not just global settings, but also settings related to each layer, each object, or specific volumes.
+- **Total Control**. Slicer 2 is meant to allow complete control of your pathing process. Currently, there are over 500 settings to be adjusted with more constantly added. This includes not just global settings, but also settings related to each layer, each object, or specific volumes.
 
 - **Experimental Systems**. We are a research institution. As a result, you will see code dedicated to support of experimental systems that are likely to not be found elsewhere. For example, rotary powder bed fusion, sheet lamination with pick and place, autonomous systems for construction, and novel hybrid approaches.
 
-- **Future Goals**. Our plans are always changing. Currently, we are focused on the development of unique solutions for hybrid systems, laser powder bed, and the expansion of modularity and connectivity with frameworks such as ROS. We are also working to expand connectivity with augmented reality solutions.
+- **Future Goals**. Our plans are always changing. Currently, we are focused on the development of unique solutions for hybrid systems, advanced strategies for extrusion/deposition systems, and the expansion of modularity and connectivity with frameworks such as ROS.
 
 ## Support
 
@@ -48,7 +48,7 @@ This work has been sponsored by work supported by the U.S. Department of Energy,
 
 ## Contributors and Thanks
 
-This work has also benefitied from cooperative research agreements with numerous partners without which Slicer 2 would not have evolved to its current state. A special mention should also be made for the many interns that have contributed to the project.
+This work has also benefitied from cooperative research agreements with numerous partners without which ORNL Slicer 2 would not have evolved to its current state. A special mention should also be made for the many interns that have contributed to the project.
 
 ## Engagement
 
