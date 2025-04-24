@@ -40,7 +40,8 @@ namespace ORNL {
         }
 
         // Instantiate the ideal thread amount.
-        for (int i = 0, end = (total_steps > QThread::idealThreadCount() ? QThread::idealThreadCount() : total_steps); i < end; ++i)
+        int thread_count = 1; //QThread::idealThreadCount();
+        for (int i = 0, end = (total_steps > thread_count ? thread_count : total_steps); i < end; ++i)
         {
             StepThread* st = new StepThread();
             m_step_threads.push_back(st);

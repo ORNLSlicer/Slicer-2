@@ -18,7 +18,7 @@ stdenv.mkDerivation rec {
   src = builtins.fetchGit {
     url = "git@github.com:mdfbaam/ORNL-Slicer-2-Single-Path.git";
     ref = "v${version}";
-    rev = "aeabce0af77c9992e49febd084099b18d11e60d9";
+    rev = "5b9cf5650cdc37dbda49bb82e1fc8c4c01f9e51b";
   };
 
   nativeBuildInputs = [

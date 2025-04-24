@@ -129,7 +129,11 @@ target_sources(
 )
 
 target_link_libraries(${PROJECT_NAME}_obj ${SLICER2_DEPS})
-target_compile_options(${PROJECT_NAME}_obj PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fpermissive -Wno-deprecated-declarations>)
+target_compile_options(
+    ${PROJECT_NAME}_obj
+    PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>: $<$<CONFIG:DEBUG>:-Og> -fpermissive -Wno-deprecated-declarations>
+)
 
 add_executable(${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_obj)

@@ -5,7 +5,8 @@
             "type": "lldb-dap",
             "request": "launch",
             "name": "Launch Target (LLDB)",
-            "program": "${command:cmake.launchTargetPath}"
+            "program": "${command:cmake.launchTargetPath}",
+            "commandEscapePrefix": "!"
         }
     ]
 }
