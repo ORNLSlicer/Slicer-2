@@ -353,7 +353,7 @@ QString TormachWriter::writeShutdown()
 {
     QString rv;
     rv += m_sb->setting< QString >(Constants::PrinterSettings::GCode::kEndCode) % m_newline %
-          "M655 P1" % commentSpaceLine("ROBOT READY LOW *****") %
+          "M65 P1" % commentSpaceLine("ROBOT READY LOW *****") %
           "M30" % commentSpaceLine("END OF G-CODE");
     return rv;
 }
