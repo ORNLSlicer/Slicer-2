@@ -108,6 +108,11 @@ QString GCodeLoader::additionalExportComments() {
     travelTypes = travelTypes % closingDelim % "\n";
     travelColors = travelColors % closingDelim % "\n";
 
+    if (m_selected_meta == GcodeMetaList::TormachMeta) //Tormach can't handle parsing the travel types and colors
+    {
+        return partMinTranslation;
+    }
+
     return partMinTranslation % travelTypes % travelColors;
 }
 

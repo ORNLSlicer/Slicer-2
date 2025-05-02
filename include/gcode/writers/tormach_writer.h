@@ -107,6 +107,14 @@ class TormachWriter : public WriterBase {
     bool m_tip_wipe;
     //! \brief count the number of beads per layer
     int m_bead_number;
+    //! \brief minimum x value used for travel pause
+    Distance m_minimum_x;
+    //! \brief maximum x value used for travel pause
+    Distance m_maximum_x;
+    //! \brief minimum y value used for travel pause
+    Distance m_minimum_y;
+    //! \brief maximum yvalue used for travel pause
+    Distance m_maximum_y;
 
 }; // class TORMACHWriter
 } // namespace ORNL

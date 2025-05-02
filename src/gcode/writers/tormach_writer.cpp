@@ -31,6 +31,10 @@ QString TormachWriter::writeInitialSetup(Distance minimum_x, Distance minimum_y,
     m_tip_wipe = false;
     m_min_z = 0.0f;
     m_bead_number = 0;
+    m_minimum_x = minimum_x;
+    m_maximum_x = maximum_x;
+    m_minimum_y = minimum_y;
+    m_maximum_y = maximum_y;
     QString rv;
     if (m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableStartupCode))
     {
@@ -152,7 +156,7 @@ QString TormachWriter::writeTravel(Point start_location, Point target_location, 
     m_tip_wipe = false;
     m_bead_number ++;
 
-    //Use updated start location if this is the first travel
+    // Use updated start location if this is the first travel
     if(m_first_travel)
         new_start_location = m_start_point;
     else
@@ -163,18 +167,18 @@ QString TormachWriter::writeTravel(Point start_location, Point target_location, 
 
     bool travel_lift_required = liftDist > 0;// && !m_first_travel; //do not write a lift on first travel
 
-    //Don't lift for short travel moves
+    // Don't lift for short travel moves
     if(start_location.distance(target_location) < m_sb->setting< Distance >(Constants::ProfileSettings::Travel::kMinTravelForLift))
     {
         travel_lift_required = false;
     }
 
-    //travel_lift vector in direction normal to the layer
-    //with length = lift height as defined in settings
+    // Travel_lift vector in direction normal to the layer
+    // With length = lift height as defined in settings
     QVector3D travel_lift = getTravelLift();
 
-    //write the lift
-    if (travel_lift_required && !m_first_travel && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly))
+    // Write the lift
+    if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly))
     {
         Point lift_destination = new_start_location + travel_lift; //lift destination is above start location
 
@@ -182,11 +186,27 @@ QString TormachWriter::writeTravel(Point start_location, Point target_location, 
         setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed));
     }
 
-    //write the travel
+    // Travel Pause
+    //if pause is enabled and not first travel
+    //if cnetroid move is enabled
+    //centroid move
+    //issue pause
+    if (m_sb->setting< bool >(Constants::ProfileSettings::Travel::kEnableTravelPause) && !m_first_travel)
+    {
+        if(m_sb->setting< bool >(Constants::ProfileSettings::Travel::kEnableTravelCentroidMove))
+        {
+            Distance average_x, average_y;
+            average_x = (m_minimum_x + m_maximum_x) / 2;
+            average_y = (m_minimum_y + m_maximum_y) / 2;
+            Point pause_location(average_x, average_y, m_current_z);
+            rv += m_G0 % writeCoordinates(pause_location) % commentSpaceLine("TRAVEL TO PAUSE LOCATION");
+        }
+        rv += writeDwell(m_sb->setting< Time >(Constants::ProfileSettings::Travel::kTravelPauseDuration));
+    }
+
+    // Write the travel
     Point travel_destination = target_location;
-    if(m_first_travel)
-        travel_destination.z(qAbs(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset)()));
-    else if (travel_lift_required)
+    if (travel_lift_required)
         travel_destination = travel_destination + travel_lift; //travel destination is above the target point
 
     rv += m_G0 % writeCoordinates(travel_destination) % commentSpaceLine("TRAVEL");
@@ -195,7 +215,7 @@ QString TormachWriter::writeTravel(Point start_location, Point target_location, 
     if (m_first_travel) //if this is the first travel
         m_first_travel = false; //update for next one
 
-    //write the travel lower (undo the lift)
+    // Write the travel lower (undo the lift)
     if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftLowerOnly))
     {
         rv += m_G0 % writeCoordinates(target_location) % commentSpaceLine("TRAVEL LOWER Z");
@@ -353,7 +373,7 @@ QString TormachWriter::writeShutdown()
 {
     QString rv;
     rv += m_sb->setting< QString >(Constants::PrinterSettings::GCode::kEndCode) % m_newline %
-          "M655 P1" % commentSpaceLine("ROBOT READY LOW *****") %
+          "M65 P1" % commentSpaceLine("ROBOT READY LOW *****") %
           "M30" % commentSpaceLine("END OF G-CODE");
     return rv;
 }
@@ -437,6 +457,10 @@ QString TormachWriter::writeCoordinates(Point destination)
     Distance target_z = destination.z() + z_offset;
     if(qAbs(target_z - m_last_z) > 10)
     {
+        if(target_z > -1 && target_z < 1) // fix for small value creating negative 0 g-code output
+        {
+            target_z = 0;
+        }
         rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
         m_current_z = target_z;
         m_last_z = target_z;
