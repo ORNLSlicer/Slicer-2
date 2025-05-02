@@ -740,6 +740,9 @@ class Constants {
             static const QString kMinLength;
             static const QString kMinTravelForLift;
             static const QString kLiftHeight;
+            static const QString kEnableTravelPause;
+            static const QString kEnableTravelCentroidMove;
+            static const QString kTravelPauseDuration;
         };
 
         class GCode {
@@ -788,6 +791,7 @@ class Constants {
             static const QString kCustomPointXLocation;
             static const QString kCustomPointYLocation;
             static const QString kEnableSecondCustomLocation;
+            static const QString kEnableSecondCustomLocationEveryTwo;
             static const QString kCustomPointSecondXLocation;
             static const QString kCustomPointSecondYLocation;
         };
