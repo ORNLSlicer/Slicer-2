@@ -174,7 +174,7 @@ QString TormachWriter::writeTravel(Point start_location, Point target_location, 
     QVector3D travel_lift = getTravelLift();
 
     //write the lift
-    if (travel_lift_required && !m_first_travel && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly))
+    if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly))
     {
         Point lift_destination = new_start_location + travel_lift; //lift destination is above start location
 
@@ -184,9 +184,7 @@ QString TormachWriter::writeTravel(Point start_location, Point target_location, 
 
     //write the travel
     Point travel_destination = target_location;
-    if(m_first_travel)
-        travel_destination.z(qAbs(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset)()));
-    else if (travel_lift_required)
+    if (travel_lift_required)
         travel_destination = travel_destination + travel_lift; //travel destination is above the target point
 
     rv += m_G0 % writeCoordinates(travel_destination) % commentSpaceLine("TRAVEL");
@@ -437,6 +435,10 @@ QString TormachWriter::writeCoordinates(Point destination)
     Distance target_z = destination.z() + z_offset;
     if(qAbs(target_z - m_last_z) > 10)
     {
+        if(target_z > -1 && target_z < 1) // fix for small value creating negative 0 g-code output
+        {
+            target_z = 0;
+        }
         rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
         m_current_z = target_z;
         m_last_z = target_z;
