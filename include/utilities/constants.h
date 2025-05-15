@@ -177,6 +177,7 @@ class Constants {
           public:
             static const QString kSyntax;
             static const QString kMachineType;
+            static const QString kForceG1;
             static const QString kSupportG3;
             static const QString kAxisA;
             static const QString kAxisB;
