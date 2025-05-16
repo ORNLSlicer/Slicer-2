@@ -234,6 +234,7 @@ const QString Constants::PathModifierStrings::kPerimeterTipWipe = "PERIMETER TIP
 // Machine Setup
 const QString Constants::PrinterSettings::MachineSetup::kSyntax = "syntax";
 const QString Constants::PrinterSettings::MachineSetup::kMachineType = "machine_type";
+const QString Constants::PrinterSettings::MachineSetup::kForceG1 = "force_G1";
 const QString Constants::PrinterSettings::MachineSetup::kSupportG3 = "supports_G2_3";
 const QString Constants::PrinterSettings::MachineSetup::kAxisA = "axis_a";
 const QString Constants::PrinterSettings::MachineSetup::kAxisB = "axis_b";
@@ -669,6 +670,9 @@ const QString Constants::ProfileSettings::Travel::kSpeed = "travel_speed";
 const QString Constants::ProfileSettings::Travel::kMinLength = "minimum_travel_length";
 const QString Constants::ProfileSettings::Travel::kMinTravelForLift = "minimum_travel_for_lift";
 const QString Constants::ProfileSettings::Travel::kLiftHeight = "travel_lift_height";
+const QString Constants::ProfileSettings::Travel::kEnableTravelPause = "enable_travel_pause";
+const QString Constants::ProfileSettings::Travel::kEnableTravelCentroidMove = "travel_centroid_move";
+const QString Constants::ProfileSettings::Travel::kTravelPauseDuration = "travel_pause_duration";
 
 // G-Code
 const QString Constants::ProfileSettings::GCode::kPerimeterStart = "perimeter_start_code";
@@ -712,6 +716,8 @@ const QString Constants::ProfileSettings::Optimizations::kCustomPointXLocation =
 const QString Constants::ProfileSettings::Optimizations::kCustomPointYLocation = "custom_point_order_y_location";
 const QString Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation =
     "enable_second_custom_point_location";
+const QString Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocationEveryTwo =
+    "enable_second_point_every_two";
 const QString Constants::ProfileSettings::Optimizations::kCustomPointSecondXLocation =
     "custom_second_point_order_x_location";
 const QString Constants::ProfileSettings::Optimizations::kCustomPointSecondYLocation =

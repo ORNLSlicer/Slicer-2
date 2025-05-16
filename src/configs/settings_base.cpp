@@ -117,14 +117,32 @@ namespace ORNL
 
         //alternating seam adjustment
         PointOrderOptimization pointOrder = static_cast<PointOrderOptimization>(setting<int>(Constants::ProfileSettings::Optimizations::kPointOrder));
-        if(pointOrder == PointOrderOptimization::kCustomPoint && setting<bool>(Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation))
+        if(pointOrder == PointOrderOptimization::kCustomPoint && setting<bool>(Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation)
+            && setting<bool>(Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocationEveryTwo))
         {
-            if(layer_number % 2 == 0)
+            if(layer_number % 4 == 0)
             {
                 setSetting(Constants::ProfileSettings::Optimizations::kCustomPointXLocation,
                                (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondXLocation));
                 setSetting(Constants::ProfileSettings::Optimizations::kCustomPointYLocation,
                                (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondYLocation));
+            }
+            else if(layer_number % 3 == 0)
+            {
+                setSetting(Constants::ProfileSettings::Optimizations::kCustomPointXLocation,
+                           (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondXLocation));
+                setSetting(Constants::ProfileSettings::Optimizations::kCustomPointYLocation,
+                           (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondYLocation));
+            }
+        }
+        else if(pointOrder == PointOrderOptimization::kCustomPoint && setting<bool>(Constants::ProfileSettings::Optimizations::kEnableSecondCustomLocation))
+        {
+            if(layer_number % 2 == 0)
+            {
+                setSetting(Constants::ProfileSettings::Optimizations::kCustomPointXLocation,
+                           (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondXLocation));
+                setSetting(Constants::ProfileSettings::Optimizations::kCustomPointYLocation,
+                           (double)setting<double>(Constants::ProfileSettings::Optimizations::kCustomPointSecondYLocation));
             }
         }
 

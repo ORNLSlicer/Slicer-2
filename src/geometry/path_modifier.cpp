@@ -675,26 +675,46 @@ void PathModifierGenerator::GenerateSlowdown(Path& path, Distance slowDownDistan
     }
 }
 
-void PathModifierGenerator::GenerateLayerLeadIn(Path& path, const Point& lead_in_start,
+void PathModifierGenerator::GenerateLayerLeadIn(Path& path, const Point& leadIn,
                                                 QSharedPointer<SettingsBase> sb) {
-    // Find the first build segment in the path
-    auto segment_iter =
-        std::find_if(path.begin(), path.end(), [](auto& segment) { return segment->isPrintingSegment(); });
+    QSharedPointer<SegmentBase> firstBuildSegment;
+    int extRate;
+    int pathSize = path.size();
 
-    // If no build segment is found, return
-    if (segment_iter == path.end()) {
-        return;
-    }
+    for (int i = 0; i < pathSize; i++)
+    {
+        firstBuildSegment = path[i];
+        extRate = path[i]->getSb()->setting<int>(Constants::SegmentSettings::kExtruderSpeed);
+        if (extRate <= 0) //If extrusion rate is zero, must be travel move
+        {
+            path[i]->setEnd(leadIn);
+            continue;
+        }
 
-    QSharedPointer<SegmentBase> first_build_segment = *segment_iter;
+        QSharedPointer<LineSegment> leadInSegment = QSharedPointer<LineSegment>::create(leadIn, firstBuildSegment->start());
+        leadInSegment->getSb()->setSetting(
+            Constants::SegmentSettings::kWidth,
+            firstBuildSegment->getSb()->setting<Distance>(Constants::SegmentSettings::kWidth));
+        leadInSegment->getSb()->setSetting(
+            Constants::SegmentSettings::kHeight,
+            firstBuildSegment->getSb()->setting<Distance>(Constants::SegmentSettings::kHeight));
+        leadInSegment->getSb()->setSetting(
+            Constants::SegmentSettings::kSpeed,
+            firstBuildSegment->getSb()->setting<Velocity>(Constants::SegmentSettings::kSpeed));
+        leadInSegment->getSb()->setSetting(
+            Constants::SegmentSettings::kAccel,
+            firstBuildSegment->getSb()->setting<Acceleration>(Constants::SegmentSettings::kAccel));
+        leadInSegment->getSb()->setSetting(
+            Constants::SegmentSettings::kExtruderSpeed,
+            firstBuildSegment->getSb()->setting<AngularVelocity>(Constants::SegmentSettings::kExtruderSpeed));
+        leadInSegment->getSb()->setSetting(
+            Constants::SegmentSettings::kRegionType,
+            firstBuildSegment->getSb()->setting<RegionType>(Constants::SegmentSettings::kRegionType));
+        leadInSegment->getSb()->setSetting(Constants::SegmentSettings::kPathModifiers, PathModifiers::kLeadIn);
+        path.insert(i, leadInSegment);
 
-    // Create a lead in segment with the same settings as the first build segment
-    QSharedPointer<SegmentBase> lead_in_segment = first_build_segment->clone();
-    lead_in_segment->setStart(lead_in_start);
-    lead_in_segment->setEnd(first_build_segment->start());
-
-    // Insert the lead in segment into the path
-    path.insert(segment_iter - path.begin(), lead_in_segment);
+        break;
+}
 }
 
 void PathModifierGenerator::GenerateTrajectorySlowdown(Path& path, QSharedPointer<SettingsBase> sb) {

@@ -133,7 +133,7 @@ void AbstractSlicingThread::setGcodeOutput(QString output) {
             m_base = QSharedPointer<OkumaWriter>(new OkumaWriter(GcodeMetaList::HaasMetricMeta, GSM->getGlobal()));
             break;
         case GcodeSyntax::kORNL:
-            m_base = QSharedPointer<ORNLWriter>(new ORNLWriter(GcodeMetaList::ORNLMeta, GSM->getGlobal()));
+            m_base = QSharedPointer<ORNLWriter>(new ORNLWriter(GcodeMetaList::ORNLMetricMeta, GSM->getGlobal()));
             break;
         case GcodeSyntax::kRomiFanuc:
             m_base =
