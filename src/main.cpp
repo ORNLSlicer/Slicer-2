@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QStyleFactory>
 
 // Local
 #include "configs/settings_base.h"
@@ -87,6 +88,8 @@ int main(int argc, char* argv[]) {
     }
     else {
         QApplication a(argc, argv);
+        QApplication::setStyle(QStyleFactory::create("fusion"));
+
         QApplication::setApplicationName("slicer2");
         QApplication::setOrganizationName("ornl");
         QApplication::setApplicationVersion(BOOST_PP_STRINGIZE(SLICER2_VERSION));
