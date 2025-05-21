@@ -394,10 +394,7 @@ QString ORNLWriter::writeAfterLayer() {
 
 QString ORNLWriter::writeShutdown() {
     QString rv;
-    if (m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType) == MachineType::kWire_Arc) {
-        rv += m_M5 % commentSpaceLine("TURN WELDER OFF END OF PRINT");
-    }
-    else {
+    if (m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType) == MachineType::kPellet) {
         rv += m_M5 % commentSpaceLine("TURN EXTRUDER OFF END OF PRINT");
     }
 
