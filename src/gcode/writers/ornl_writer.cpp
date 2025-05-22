@@ -243,7 +243,7 @@ QString ORNLWriter::writeLine(const Point& start_point, const Point& target_poin
 
     rv += m_G1;
     // Forces first motion of layer to issue speed (needed for spiralize mode so that feedrate is scaled properly)
-    if (m_layer_start) {
+    if (m_layer_start && m_machine_type != MachineType::kWire_Arc) {
         setFeedrate(speed);
         rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         if (m_machine_type != MachineType::kWire_Arc) {
@@ -256,7 +256,7 @@ QString ORNLWriter::writeLine(const Point& start_point, const Point& target_poin
     }
 
     // Update feedrate and extruder speed if needed - wire arc always requires speed
-    if (getFeedrate() != speed) {
+    if (getFeedrate() != speed || m_machine_type == MachineType::kWire_Arc) {
         setFeedrate(speed);
         rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
     }
