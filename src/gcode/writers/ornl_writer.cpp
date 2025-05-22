@@ -166,6 +166,10 @@ QString ORNLWriter::writeTravel(Point start_location, Point target_location, Tra
     Point new_start_location;
     RegionType rType = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
 
+    // travel_lift vector in direction normal to the layer
+    // with length = lift height as defined in settings
+    QVector3D travel_lift = getTravelLift();
+
     // Use updated start location if this is the first travel
     if (m_first_travel)
         new_start_location = m_start_point;
@@ -181,29 +185,27 @@ QString ORNLWriter::writeTravel(Point start_location, Point target_location, Tra
     if (start_location.distance(target_location) <
         m_sb->setting<Distance>(Constants::ProfileSettings::Travel::kMinTravelForLift)) {
         travel_lift_required = false;
-    }
-
-    // travel_lift vector in direction normal to the layer
-    // with length = lift height as defined in settings
-    QVector3D travel_lift = getTravelLift();
+    }   
 
     // write the lift
     if (travel_lift_required && !m_first_travel &&
         (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly)) {
         Point lift_destination = new_start_location + travel_lift; // lift destination is above start location
 
-        rv += m_G0 % writeCoordinates(lift_destination) % commentSpaceLine("TRAVEL LIFT Z");
+        rv += m_G0 % writeCoordinates(lift_destination) % " RX180 RY0 RZ0 PA0 PC0" % commentSpaceLine("TRAVEL LIFT Z");
         setFeedrate(m_sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kZSpeed));
     }
 
     // write the travel
     Point travel_destination = target_location;
     if (m_first_travel)
-        travel_destination.z(qAbs(m_sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kZOffset)()));
+        travel_destination.z(qAbs(m_sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kZOffset)() +
+                                  m_sb->setting<Distance>(Constants::ProfileSettings::Travel::kLiftHeight)() +
+                                  m_sb->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight)()));
     else if (travel_lift_required)
         travel_destination = travel_destination + travel_lift; // travel destination is above the target point
 
-    rv += m_G0 % writeCoordinates(travel_destination) % commentSpaceLine("TRAVEL");
+    rv += m_G0 % writeCoordinates(travel_destination) % " RX180 RY0 RZ0 PA0 PC0" % commentSpaceLine("TRAVEL");
     setFeedrate(m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
 
     if (m_first_travel)         // if this is the first travel
@@ -211,7 +213,7 @@ QString ORNLWriter::writeTravel(Point start_location, Point target_location, Tra
 
     // write the travel lower (undo the lift)
     if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftLowerOnly)) {
-        rv += m_G0 % writeCoordinates(target_location) % commentSpaceLine("TRAVEL LOWER Z");
+        rv += m_G0 % writeCoordinates(target_location) % " RX180 RY0 RZ0 PA0 PC0" % commentSpaceLine("TRAVEL LOWER Z");
         setFeedrate(m_sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kZSpeed));
     }
 
@@ -243,7 +245,7 @@ QString ORNLWriter::writeLine(const Point& start_point, const Point& target_poin
 
     rv += m_G1;
     // Forces first motion of layer to issue speed (needed for spiralize mode so that feedrate is scaled properly)
-    if (m_layer_start) {
+    if (m_layer_start && m_machine_type != MachineType::kWire_Arc) {
         setFeedrate(speed);
         rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
         if (m_machine_type != MachineType::kWire_Arc) {
@@ -255,8 +257,8 @@ QString ORNLWriter::writeLine(const Point& start_point, const Point& target_poin
         m_layer_start = false;
     }
 
-    // Update feedrate and extruder speed if needed
-    if (getFeedrate() != speed) {
+    // Update feedrate and extruder speed if needed - wire arc always requires speed
+    if (getFeedrate() != speed || m_machine_type == MachineType::kWire_Arc) {
         setFeedrate(speed);
         rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
     }
@@ -266,8 +268,8 @@ QString ORNLWriter::writeLine(const Point& start_point, const Point& target_poin
         m_current_rpm = rpm;
     }
 
-    // writes WXYZ to destination
-    rv += writeCoordinates(target_point);
+    // writes XYZ to destination
+    rv += writeCoordinates(target_point) % " RX180 RY0 RZ0 PA0 PC0";
 
     // add comment for gcode parser
     if (path_modifiers != PathModifiers::kNone)
@@ -543,10 +545,26 @@ QString ORNLWriter::writeCoordinates(Point destination) {
     Distance z_offset = m_sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kZOffset);
 
     Distance target_z = destination.z() + z_offset;
-    if (qAbs(target_z - m_last_z) > 10) {
+    /*if (qAbs(target_z - m_last_z) > 10) {
         rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
         m_current_z = target_z;
         m_last_z = target_z;
+    }*/
+
+    // always specify Z for Wire Arc
+    if (m_machine_type == MachineType::kWire_Arc)
+    {
+        rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+        m_current_z = target_z;
+        m_last_z = target_z;
+    }
+    else
+    {
+        if (qAbs(target_z - m_last_z) > 10) {
+            rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+            m_current_z = target_z;
+            m_last_z = target_z;
+        }
     }
     return rv;
 }
