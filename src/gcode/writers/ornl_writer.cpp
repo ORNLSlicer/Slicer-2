@@ -166,6 +166,10 @@ QString ORNLWriter::writeTravel(Point start_location, Point target_location, Tra
     Point new_start_location;
     RegionType rType = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
 
+    // travel_lift vector in direction normal to the layer
+    // with length = lift height as defined in settings
+    QVector3D travel_lift = getTravelLift();
+
     // Use updated start location if this is the first travel
     if (m_first_travel)
         new_start_location = m_start_point;
@@ -181,11 +185,7 @@ QString ORNLWriter::writeTravel(Point start_location, Point target_location, Tra
     if (start_location.distance(target_location) <
         m_sb->setting<Distance>(Constants::ProfileSettings::Travel::kMinTravelForLift)) {
         travel_lift_required = false;
-    }
-
-    // travel_lift vector in direction normal to the layer
-    // with length = lift height as defined in settings
-    QVector3D travel_lift = getTravelLift();
+    }   
 
     // write the lift
     if (travel_lift_required && !m_first_travel &&
@@ -199,7 +199,9 @@ QString ORNLWriter::writeTravel(Point start_location, Point target_location, Tra
     // write the travel
     Point travel_destination = target_location;
     if (m_first_travel)
-        travel_destination.z(qAbs(m_sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kZOffset)()));
+        travel_destination.z(qAbs(m_sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kZOffset)() +
+                                  m_sb->setting<Distance>(Constants::ProfileSettings::Travel::kLiftHeight)() +
+                                  m_sb->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight)()));
     else if (travel_lift_required)
         travel_destination = travel_destination + travel_lift; // travel destination is above the target point
 
