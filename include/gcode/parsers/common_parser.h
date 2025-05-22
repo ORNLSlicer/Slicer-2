@@ -444,6 +444,12 @@ namespace ORNL
         //! \param modifier Amount to modify feedrate from 0 to 1
         virtual void AdjustFeedrate(double modifier);
 
+        //! \brief Helper function to remove rotation components: RX, RY, RZ, PA, and PC
+        //!         These rotation commands occur for the ORNL syntax and do not contribute to the visualiztion, they don't
+        //!         need parsed. This function creates a new line without those rotations for the purpose of parsing/visualizing.
+        //! \param currentLine: the line of g-code to be modified
+        QString removeRotations(QString currentLine);
+
         //! \brief Helper function that throws an IllegalParameterException when
         //! multiple of the same parameter are encountered. \param parameter
         //! Duplicate Parameter id. \throws IllegalParameterException
