@@ -875,6 +875,7 @@ void CommonParser::G1Handler(QVector<QString> params) {
                     throwMultipleParameterException(current_parameter);
                 }
                 break;
+
             default:
                 QString exceptionString;
                 QTextStream(&exceptionString)
