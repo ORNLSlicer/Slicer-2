@@ -1898,7 +1898,7 @@ QString CommonParser::removeRotations(QString currentLine){
         return currentLine;
     }
 
-    QVector<QStringRef> params = temp.splitRef(space);
+    QVector<QString> params = temp.split(space);
 
     if(params[0] == G1)
     {
