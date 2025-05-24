@@ -30,16 +30,20 @@ QString TormachWriter::writeInitialSetup(Distance minimum_x, Distance minimum_y,
     m_layer_start = true;
     m_tip_wipe = false;
     m_min_z = 0.0f;
+    m_bead_number = 0;
+    m_minimum_x = minimum_x;
+    m_maximum_x = maximum_x;
+    m_minimum_y = minimum_y;
+    m_maximum_y = maximum_y;
     QString rv;
     if (m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableStartupCode))
     {
         rv += commentLine("SAFETY BLOCK - ESTABLISH OPERATIONAL MODES");
-        rv += "G1 F120 " % commentLine("SET INITIAL FEEDRATE");
-        if (m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableWaitForUser))
-        {
-            rv += "M0" % commentSpaceLine("WAIT FOR USER");
-        }
-        rv += writeDwell(0.25);
+        rv += "G21" % commentSpaceLine("SET UNITS TO MILLIMETERS");
+        rv += "G90" % commentSpaceLine("USE ABSOLUTE POSITIONING");
+        rv += "G54" % commentSpaceLine("WORK COORDINATE SYSTEM");
+        rv += "T1 G43 H1" % commentSpaceLine("SET TOOL HEIGHT OF TORCH");
+        rv += "M64 P1" % commentSpaceLine("ROBOT READY HIGH - WAIT FOR INPUT HIGH*****");
     }
 
     if(m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableBoundingBox))
@@ -53,17 +57,6 @@ QString TormachWriter::writeInitialSetup(Distance minimum_x, Distance minimum_y,
               % "M0" % commentSpaceLine("WAIT FOR USER");
 
         m_start_point = Point(minimum_x, minimum_y, 0);
-    }
-
-    if (m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableMaterialLoad))
-    {
-        rv += writePurge(m_sb->setting< int >(Constants::MaterialSettings::Purge::kInitialScrewRPM),
-                         m_sb->setting< int >(Constants::MaterialSettings::Purge::kInitialDuration),
-                         m_sb->setting< int >(Constants::MaterialSettings::Purge::kInitialTipWipeDelay));
-        if (m_sb->setting< int >(Constants::PrinterSettings::GCode::kEnableWaitForUser))
-        {
-            rv += "M0" % commentSpaceLine("WAIT FOR USER");
-        }
     }
 
     if(m_sb->setting< QString >(Constants::PrinterSettings::GCode::kStartCode) != "")
@@ -80,6 +73,7 @@ QString TormachWriter::writeBeforeLayer(float new_min_z, QSharedPointer<Settings
 {
     m_spiral_layer = sb->setting<bool>(Constants::ProfileSettings::SpecialModes::kEnableSpiralize);
     m_layer_start = true;
+    m_bead_number = 0;
     QString rv;
     rv += "M1 " % commentLine("OPTIONAL STOP - LAYER CHANGE");
     return rv;
@@ -160,8 +154,9 @@ QString TormachWriter::writeTravel(Point start_location, Point target_location, 
     RegionType rType = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
 
     m_tip_wipe = false;
+    m_bead_number ++;
 
-    //Use updated start location if this is the first travel
+    // Use updated start location if this is the first travel
     if(m_first_travel)
         new_start_location = m_start_point;
     else
@@ -172,18 +167,18 @@ QString TormachWriter::writeTravel(Point start_location, Point target_location, 
 
     bool travel_lift_required = liftDist > 0;// && !m_first_travel; //do not write a lift on first travel
 
-    //Don't lift for short travel moves
+    // Don't lift for short travel moves
     if(start_location.distance(target_location) < m_sb->setting< Distance >(Constants::ProfileSettings::Travel::kMinTravelForLift))
     {
         travel_lift_required = false;
     }
 
-    //travel_lift vector in direction normal to the layer
-    //with length = lift height as defined in settings
+    // Travel_lift vector in direction normal to the layer
+    // With length = lift height as defined in settings
     QVector3D travel_lift = getTravelLift();
 
-    //write the lift
-    if (travel_lift_required && !m_first_travel && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly))
+    // Write the lift
+    if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly))
     {
         Point lift_destination = new_start_location + travel_lift; //lift destination is above start location
 
@@ -191,11 +186,27 @@ QString TormachWriter::writeTravel(Point start_location, Point target_location, 
         setFeedrate(m_sb->setting< Velocity >(Constants::PrinterSettings::MachineSpeed::kZSpeed));
     }
 
-    //write the travel
+    // Travel Pause
+    //if pause is enabled and not first travel
+    //if cnetroid move is enabled
+    //centroid move
+    //issue pause
+    if (m_sb->setting< bool >(Constants::ProfileSettings::Travel::kEnableTravelPause) && !m_first_travel)
+    {
+        if(m_sb->setting< bool >(Constants::ProfileSettings::Travel::kEnableTravelCentroidMove))
+        {
+            Distance average_x, average_y;
+            average_x = (m_minimum_x + m_maximum_x) / 2;
+            average_y = (m_minimum_y + m_maximum_y) / 2;
+            Point pause_location(average_x, average_y, m_current_z);
+            rv += m_G0 % writeCoordinates(pause_location) % commentSpaceLine("TRAVEL TO PAUSE LOCATION");
+        }
+        rv += writeDwell(m_sb->setting< Time >(Constants::ProfileSettings::Travel::kTravelPauseDuration));
+    }
+
+    // Write the travel
     Point travel_destination = target_location;
-    if(m_first_travel)
-        travel_destination.z(qAbs(m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset)()));
-    else if (travel_lift_required)
+    if (travel_lift_required)
         travel_destination = travel_destination + travel_lift; //travel destination is above the target point
 
     rv += m_G0 % writeCoordinates(travel_destination) % commentSpaceLine("TRAVEL");
@@ -204,7 +215,7 @@ QString TormachWriter::writeTravel(Point start_location, Point target_location, 
     if (m_first_travel) //if this is the first travel
         m_first_travel = false; //update for next one
 
-    //write the travel lower (undo the lift)
+    // Write the travel lower (undo the lift)
     if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftLowerOnly))
     {
         rv += m_G0 % writeCoordinates(target_location) % commentSpaceLine("TRAVEL LOWER Z");
@@ -237,12 +248,6 @@ QString TormachWriter::writeLine(const Point& start_point, const Point& target_p
 
         }
     }
-    if ((path_modifiers == PathModifiers::kForwardTipWipe || path_modifiers == PathModifiers::kReverseTipWipe
-            || path_modifiers == PathModifiers::kPerimeterTipWipe) && m_extruders_on[0] && !m_tip_wipe)
-    {
-        m_tip_wipe = true;
-        rv += commentLine("UPDATE VOLTAGE FOR TIP WIPE");
-    }
 
     rv += m_G1;
     // Forces first motion of layer to issue speed (needed for spiralize mode so that feedrate is scaled properly)
@@ -250,10 +255,7 @@ QString TormachWriter::writeLine(const Point& start_point, const Point& target_p
     {
         setFeedrate(speed);
         rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
-
-        rv += m_s % QString::number(output_rpm);
         m_current_rpm = rpm;
-
         m_layer_start = false;
     }
 
@@ -264,20 +266,15 @@ QString TormachWriter::writeLine(const Point& start_point, const Point& target_p
         rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
     }
 
-    if (rpm != m_current_rpm)
-    {
-        rv += m_s % QString::number(output_rpm);
-        m_current_rpm = rpm;
-    }
 
-    //writes WXYZ to destination
+    //writes XYZ to destination
     rv += writeCoordinates(target_point);
 
     //add comment for gcode parser
     if (path_modifiers != PathModifiers::kNone)
         rv += commentSpaceLine(toString(region_type) % m_space % toString(path_modifiers));
     else
-        rv += commentSpaceLine(toString(region_type));
+        rv += commentSpaceLine(toString(region_type) % m_space % "Bead #" % QString::number(m_bead_number));
 
     m_first_print = false;
 
@@ -292,60 +289,6 @@ QString TormachWriter::writeArc(const Point &start_point,
                              const QSharedPointer<SettingsBase> params)
 {
     QString rv;
-
-    Velocity speed = params->setting<Velocity>(Constants::SegmentSettings::kSpeed);
-    int rpm = params->setting<int>(Constants::SegmentSettings::kExtruderSpeed);
-    int material_number = params->setting<int>(Constants::SegmentSettings::kMaterialNumber);
-    auto region_type = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
-    auto path_modifiers = params->setting<PathModifiers>(Constants::SegmentSettings::kPathModifiers);
-    float output_rpm = rpm * m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio);
-
-    for (int extruder : params->setting<QVector<int>>(Constants::SegmentSettings::kExtruders))
-    {
-        //turn on the extruder if it isn't already on
-        if (m_extruders_on[0] == false && rpm > 0) //only check first extruder
-        {
-            rv += writeExtruderOn(region_type, rpm, extruder);
-        }
-    }
-
-    rv += ((ccw) ? m_G3 : m_G2);
-
-    if (getFeedrate() != speed)
-    {
-        setFeedrate(speed);
-        rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
-    }
-
-    if (rpm != m_current_rpm)
-    {
-        rv += m_s % QString::number(rpm);
-        m_current_rpm = rpm;
-    }
-
-    rv += m_i % QString::number(Distance(center_point.x() - start_point.x()).to(m_meta.m_distance_unit), 'f', 4) %
-          m_j % QString::number(Distance(center_point.y() - start_point.y()).to(m_meta.m_distance_unit), 'f', 4) %
-          m_x % QString::number(Distance(end_point.x()).to(m_meta.m_distance_unit), 'f', 4) %
-          m_y % QString::number(Distance(end_point.y()).to(m_meta.m_distance_unit), 'f', 4);
-
-    // write vertical coordinate along the correct axis (Z or W) according to printer settings
-    // only output Z/W coordinate if there was a change in Z/W
-    Distance z_offset = m_sb->setting< Distance >(Constants::PrinterSettings::Dimensions::kZOffset);
-
-    Distance target_z = end_point.z() + z_offset;
-    if(qAbs(target_z - m_last_z) > 10)
-    {
-        rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
-        m_current_z = target_z;
-        m_last_z = target_z;
-    }
-
-    // Add comment for gcode parser
-    if (path_modifiers != PathModifiers::kNone)
-        rv += commentSpaceLine(toString(region_type) % m_space % toString(path_modifiers));
-    else
-        rv += commentSpaceLine(toString(region_type));
-
     return rv;
 }
 
@@ -429,10 +372,8 @@ QString TormachWriter::writeAfterLayer()
 QString TormachWriter::writeShutdown()
 {
     QString rv;
-    rv += m_M5 % commentSpaceLine("TURN EXTRUDER OFF END OF PRINT") %
-          writeTamperOff();
-
     rv += m_sb->setting< QString >(Constants::PrinterSettings::GCode::kEndCode) % m_newline %
+          "M65 P1" % commentSpaceLine("ROBOT READY LOW *****") %
           "M30" % commentSpaceLine("END OF G-CODE");
     return rv;
 }
@@ -451,91 +392,53 @@ QString TormachWriter::writeDwell(Time time)
         return {};
 }
 
-QString TormachWriter::writeTamperOn()
-{
-    QString rv;
-    return rv;
-}
-
-QString TormachWriter::writeTamperOff()
-{
-    QString rv;
-    return rv;
-}
-
 QString TormachWriter::writeExtruderOn(RegionType type, int rpm, int extruder_number)
 {
     QString rv;
     m_extruders_on[extruder_number] = true;
-    float output_rpm;
 
-    rv += writeTamperOn();
-
-    if (m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed) > 0)
-    {
-        output_rpm = m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio) * m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed);
-
-        // Only update the current rpm if not using feedrate scaling. An updated rpm value here could prevent the S parameter
-        // from being issued during the first G1 motion of the path and thus the extruder rate won't properly scale
-        if(!(m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime) &&
-              m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod) == (int)ForceMinimumLayerTime::kSlow_Feedrate))
-            m_current_rpm = m_sb->setting< int >(Constants::MaterialSettings::Extruder::kInitialSpeed);
-
-        rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("TURN EXTRUDER ON");
-
-        if (type == RegionType::kInset)
-        {
-            if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInset) > 0)
-                rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInset));
-        }
-        else if (type == RegionType::kSkin)
-        {
-            if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkin) > 0)
-                rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkin));
-        }
-        else if (type == RegionType::kInfill)
-        {
-            if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInfill) > 0)
-                rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayInfill));
-        }
-        else if (type == RegionType::kSkeleton)
-        {
-            if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkeleton) > 0)
-                rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelaySkeleton));
-        }
-        else
-        {
-            if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayPerimeter) > 0)
-                rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOnDelayPerimeter));
+    if (type == RegionType::kInset) {
+        if (m_sb->setting<Time>(Constants::MaterialSettings::Extruder::kOnDelayInset) > 0) {
+            rv += writeDwell(m_sb->setting<Time>(Constants::MaterialSettings::Extruder::kOnDelayInset));
         }
     }
-    else
-    {
-        output_rpm = m_sb->setting< float >(Constants::PrinterSettings::MachineSpeed::kGearRatio) * rpm;
-        rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("TURN EXTRUDER ON");
-
-        // Only update the current rpm if not using feedrate scaling. An updated rpm value here could prevent the S parameter
-        // from being issued during the first G1 motion of the path and thus the extruder rate won't properly scale
-        if(!(m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTime) &&
-              m_sb->setting< int >(Constants::MaterialSettings::Cooling::kForceMinLayerTimeMethod) == (int)ForceMinimumLayerTime::kSlow_Feedrate))
-            m_current_rpm = rpm;
+    else if (type == RegionType::kSkin) {
+        if (m_sb->setting<Time>(Constants::MaterialSettings::Extruder::kOnDelaySkin) > 0) {
+            rv += writeDwell(m_sb->setting<Time>(Constants::MaterialSettings::Extruder::kOnDelaySkin));
+        }
     }
+    else if (type == RegionType::kInfill) {
+        if (m_sb->setting<Time>(Constants::MaterialSettings::Extruder::kOnDelayInfill) > 0) {
+            rv += writeDwell(m_sb->setting<Time>(Constants::MaterialSettings::Extruder::kOnDelayInfill));
+        }
+    }
+    else if (type == RegionType::kSkeleton) {
+        if (m_sb->setting<Time>(Constants::MaterialSettings::Extruder::kOnDelaySkeleton) > 0) {
+            rv += writeDwell(m_sb->setting<Time>(Constants::MaterialSettings::Extruder::kOnDelaySkeleton));
+        }
+    }
+    else {
+        if (m_sb->setting<Time>(Constants::MaterialSettings::Extruder::kOnDelayPerimeter) > 0) {
+            rv += writeDwell(m_sb->setting<Time>(Constants::MaterialSettings::Extruder::kOnDelayPerimeter));
+        }
+    }
+
+    rv += "M64 P0" % commentSpaceLine("WELDING START -HIGH *******");
+    rv += "M66 P0 L1 Q10" % commentSpaceLine("ARC STABLE, WAIT FOR FEEDBACK FOR MAX 10 SECONDS BEFORE TIME OUT*******");
 
     return rv;
 }
 
 QString TormachWriter::writeExtruderOff(int extruder_number)
 {
-    //update to use extruder number
-
     QString rv;
     m_extruders_on[extruder_number] = false;
     if(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOffDelay) > 0)
     {
         rv += writeDwell(m_sb->setting< Time >(Constants::MaterialSettings::Extruder::kOffDelay));
     }
-    rv += writeTamperOff() % m_M5 % commentSpaceLine("TURN EXTRUDER OFF");
     m_current_rpm = 0;
+    rv += "M65 P0" % commentSpaceLine("Welding Start -Low*******");
     return rv;
 }
 
@@ -554,6 +457,10 @@ QString TormachWriter::writeCoordinates(Point destination)
     Distance target_z = destination.z() + z_offset;
     if(qAbs(target_z - m_last_z) > 10)
     {
+        if(target_z > -1 && target_z < 1) // fix for small value creating negative 0 g-code output
+        {
+            target_z = 0;
+        }
         rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
         m_current_z = target_z;
         m_last_z = target_z;

@@ -15,6 +15,7 @@
 #include "gcode/parsers/mvp_parser.h"
 #include "gcode/parsers/rpbf_parser.h"
 #include "gcode/parsers/siemens_parser.h"
+#include "gcode/parsers/tormach_parser.h"
 #include "geometry/segments/arc.h"
 #include "geometry/segments/bezier.h"
 #include "geometry/segments/line.h"
@@ -106,6 +107,11 @@ QString GCodeLoader::additionalExportComments() {
     }
     travelTypes = travelTypes % closingDelim % "\n";
     travelColors = travelColors % closingDelim % "\n";
+
+    if (m_selected_meta == GcodeMetaList::TormachMeta) //Tormach can't handle parsing the travel types and colors
+    {
+        return partMinTranslation;
+    }
 
     return partMinTranslation % travelTypes % travelColors;
 }
@@ -558,8 +564,8 @@ void GCodeLoader::setParser(QStringList& originalLines, QStringList& lines) {
                 m_selected_meta = GcodeMetaList::ORNLMeta;
             }
             else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kORNL).toUpper())) {
-                m_parser.reset(new CommonParser(GcodeMetaList::ORNLMeta, m_adjust_file, originalLines, lines));
-                m_selected_meta = GcodeMetaList::ORNLMeta;
+                m_parser.reset(new CommonParser(GcodeMetaList::ORNLMetricMeta, m_adjust_file, originalLines, lines));
+                m_selected_meta = GcodeMetaList::ORNLMetricMeta;
             }
             else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kRomiFanuc).toUpper())) {
                 m_parser.reset(new CommonParser(GcodeMetaList::RomiFanucMeta, m_adjust_file, originalLines, lines));
@@ -587,7 +593,7 @@ void GCodeLoader::setParser(QStringList& originalLines, QStringList& lines) {
                 m_selected_meta = GcodeMetaList::CincinnatiMeta;
             }
             else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kTormach).toUpper())) {
-                m_parser.reset(new CincinnatiParser(GcodeMetaList::TormachMeta, m_adjust_file, originalLines, lines));
+                m_parser.reset(new TormachParser(GcodeMetaList::TormachMeta, m_adjust_file, originalLines, lines));
                 m_selected_meta = GcodeMetaList::TormachMeta;
             }
             else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kAeroBasic).toUpper())) {

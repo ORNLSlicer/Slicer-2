@@ -33,9 +33,6 @@ class ORNLWriter : public WriterBase {
     //! \brief Writes G-Code to be exectued before each island
     QString writeBeforeIsland() override;
 
-    //! \brief Writes G-Code to be executed before each scan
-    QString writeBeforeScan(Point min, Point max, int layer, int boundingBox, Axis axis, Angle angle) override;
-
     //! \brief Writes G-Code to be executed at the start of each region
     QString writeBeforeRegion(RegionType type, int pathSize) override;
 
@@ -54,17 +51,11 @@ class ORNLWriter : public WriterBase {
     QString writeArc(const Point& start_point, const Point& end_point, const Point& center_point, const Angle& angle,
                      const bool& ccw, const QSharedPointer<SettingsBase> params) override;
 
-    //! \brief Writes G-Code for scan
-    QString writeScan(Point target_point, Velocity speed, bool on_off) override;
-
     //! \brief Writes G-Code to be executed after each path
     QString writeAfterPath(RegionType type) override;
 
     //! \brief Writes G-Code to be executed after each region
     QString writeAfterRegion(RegionType type) override;
-
-    //! \brief Writes G-Code to be executed after each scan
-    QString writeAfterScan(Distance beadWidth, Distance laserStep, Distance laserResolution) override;
 
     //! \brief Writes G-Code to be executed at the end of each island
     QString writeAfterIsland() override;
@@ -84,7 +75,8 @@ class ORNLWriter : public WriterBase {
     //! \brief Writes G-Code for a pause, G4
     QString writeDwell(Time time) override;
 
-  private:
+  private:    //! \brief Defines the machine type - used to differentiate between polymer extrusion and wire-arc
+    MachineType m_machine_type;
     //! \brief Writes G-Code to enable the extruder
     QString writeExtruderOn(RegionType region_type, int rpm, int extruder_number);
 
@@ -98,14 +90,19 @@ class ORNLWriter : public WriterBase {
     AngularVelocity m_current_rpm;
     int m_current_recipe;
 
-    //! \brief true if first travel, false for subsequent travels
+    //! \brief True if first travel, false for subsequent travels
     bool m_first_travel;
 
-    //! \brief true if first printing segment, false for subsquent paths - needed for Spiralize
+    //! \brief True if first printing segment, false for subsquent paths - needed for Spiralize
     bool m_first_print;
 
-    //! \brief true is first print motion of the layer
+    //! \brief True is first print motion of the layer
     bool m_layer_start;
+
+    //! \brief Defines the current region type - useful for determining how to enable/disable deposition
+    RegionType m_current_type;
+
+
 
 }; // class ORNLWriter
 } // namespace ORNL

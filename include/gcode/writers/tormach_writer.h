@@ -85,10 +85,6 @@ class TormachWriter : public WriterBase {
     QString writeDwell(Time time) override;
 
   private:
-    //! \brief Writes G-Code to enable the tamper
-    QString writeTamperOn();
-    //! \brief Writes G-Code to disable the tamper
-    QString writeTamperOff();
     //! \brief Writes G-Code to enable the extruder
     QString writeExtruderOn(RegionType type, int rpm, int extruder_number);
     //! \brief Writes G-Code to disable the extruder
@@ -109,6 +105,16 @@ class TormachWriter : public WriterBase {
     bool m_layer_start;
     //! \brief true if wiping tip and no travel has been initiated
     bool m_tip_wipe;
+    //! \brief count the number of beads per layer
+    int m_bead_number;
+    //! \brief minimum x value used for travel pause
+    Distance m_minimum_x;
+    //! \brief maximum x value used for travel pause
+    Distance m_maximum_x;
+    //! \brief minimum y value used for travel pause
+    Distance m_minimum_y;
+    //! \brief maximum yvalue used for travel pause
+    Distance m_maximum_y;
 
 }; // class TORMACHWriter
 } // namespace ORNL

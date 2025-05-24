@@ -345,6 +345,9 @@ QList<QList<GcodeCommand>> CommonParser::parseLines(int layerSkip) {
             }
             continue;
         }
+        else if (m_upper_lines[m_current_line].contains("RZ") && m_upper_lines[m_current_line].contains("PC")) {
+            newCurrentLine = removeRotations(m_upper_lines[m_current_line]);
+        }
         else {
             // Save the current line to be sent for the parseCommand function
             newCurrentLine = m_upper_lines[m_current_line];
@@ -1877,6 +1880,51 @@ void CommonParser::AdjustFeedrate(double modifier) {
             --current_layer_motion_end;
         }
     }
+}
+
+QString CommonParser::removeRotations(QString currentLine){
+    QChar space(' '), x('X'), y('Y'), z('Z'), f('F'), s('S'), zero('0'), newline('\n');
+    QString RX("RX"), RY("RY"), RZ("RZ"), PA("PA"), PC("PC");
+    QString G0("G0"), G1("G1");
+    QString xval, yval, zval, velocity, feedrate, newLine, temp, comment;
+
+    if(currentLine.startsWith(G0) || currentLine.startsWith(G1))
+    {
+        temp = currentLine.mid(0, currentLine.indexOf(getCommentStartDelimiter()));
+        comment = currentLine.mid(currentLine.indexOf(getCommentStartDelimiter()), currentLine.indexOf(newline));
+    }
+    else
+    {
+        return currentLine;
+    }
+
+    QVector<QString> params = temp.split(space);
+
+    if(params[0] == G1)
+    {
+        newLine = "G1 ";
+    }
+    else if (params[0] == G0)
+    {
+        newLine = "G0 ";
+    }
+    else
+    {
+        return currentLine;
+    }
+
+    for(int i = 1, end = params.size(); i < end; ++i)
+    {
+        if(params[i].startsWith(RX) || params[i].startsWith(RY) || params[i].startsWith(RZ)
+            || params[i].startsWith(PA) || params[i].startsWith(PC))
+            continue;
+        else
+            newLine += params[i] % space;
+    }
+
+    newLine += comment;
+
+    return newLine;
 }
 
 void CommonParser::throwMultipleParameterException(char parameter) {

@@ -21,6 +21,7 @@ QString ORNLWriter::writeInitialSetup(Distance minimum_x, Distance minimum_y, Di
                                       int num_layers) {
     m_current_z = m_sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kZOffset);
     m_current_rpm = 0;
+    m_machine_type = m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType);
     for (int ext = 0, end = m_extruders_on.size(); ext < end; ++ext) // all extruders off initially
         m_extruders_on[ext] = false;
     m_first_travel = true;
@@ -77,7 +78,7 @@ QString ORNLWriter::writeBeforeLayer(float new_min_z, QSharedPointer<SettingsBas
     m_spiral_layer = sb->setting<bool>(Constants::ProfileSettings::SpecialModes::kEnableSpiralize);
     m_layer_start = true;
     QString rv;
-    rv += "M1 " % commentLine("OPTIONAL STOP - LAYER CHANGE");
+    rv += "M01 " % commentLine("OPTIONAL STOP - LAYER CHANGE");
     return rv;
 }
 
@@ -91,18 +92,43 @@ QString ORNLWriter::writeBeforeIsland() {
     return rv;
 }
 
-QString ORNLWriter::writeBeforeScan(Point min, Point max, int layer, int boundingBox, Axis axis, Angle angle) {
-    QString rv;
-    return rv;
-}
-
 QString ORNLWriter::writeBeforeRegion(RegionType type, int pathSize) {
     QString rv;
+    m_current_type = type;
+    if ((!m_spiral_layer || m_first_print) && m_machine_type == MachineType::kWire_Arc)
+    {
+        if (type == RegionType::kPerimeter)
+        {
+            rv += "M1001" % commentSpaceLine("ROBOT 1 - MIG");
+        }
+        else if (type == RegionType::kInset)
+        {
+            rv += "M1001" % commentSpaceLine("ROBOT 1 - MIG");
+        }
+        else if (type == RegionType::kSkeleton)
+        {
+            rv += "M1001" % commentSpaceLine("ROBOT 1 - MIG");
+        }
+        else if (type == RegionType::kSkin)
+        {
+            rv += "M1002" % commentSpaceLine("ROBOT 2 - ELECTRO-SLAG");
+        }
+        else if (type == RegionType::kInfill)
+        {
+            rv += "M1002" % commentSpaceLine("ROBOT 2 - ELECTRO-SLAG");
+        }
+        else if (type == RegionType::kSupport)
+        {
+            rv += "M1001" % commentSpaceLine("ROBOT 1 - MIG");
+        }
+        else {}
+    }
     return rv;
 }
 
 QString ORNLWriter::writeBeforePath(RegionType type) {
     QString rv;
+    m_current_type = type;
     if (!m_spiral_layer || m_first_print) {
         if (type == RegionType::kPerimeter) {
             if (!m_sb->setting<QString>(Constants::ProfileSettings::GCode::kPerimeterStart).isEmpty())
@@ -140,6 +166,10 @@ QString ORNLWriter::writeTravel(Point start_location, Point target_location, Tra
     Point new_start_location;
     RegionType rType = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
 
+    // travel_lift vector in direction normal to the layer
+    // with length = lift height as defined in settings
+    QVector3D travel_lift = getTravelLift();
+
     // Use updated start location if this is the first travel
     if (m_first_travel)
         new_start_location = m_start_point;
@@ -155,29 +185,27 @@ QString ORNLWriter::writeTravel(Point start_location, Point target_location, Tra
     if (start_location.distance(target_location) <
         m_sb->setting<Distance>(Constants::ProfileSettings::Travel::kMinTravelForLift)) {
         travel_lift_required = false;
-    }
-
-    // travel_lift vector in direction normal to the layer
-    // with length = lift height as defined in settings
-    QVector3D travel_lift = getTravelLift();
+    }   
 
     // write the lift
     if (travel_lift_required && !m_first_travel &&
         (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly)) {
         Point lift_destination = new_start_location + travel_lift; // lift destination is above start location
 
-        rv += m_G0 % writeCoordinates(lift_destination) % commentSpaceLine("TRAVEL LIFT Z");
+        rv += m_G0 % writeCoordinates(lift_destination) % " RX180 RY0 RZ0 PA0 PC0" % commentSpaceLine("TRAVEL LIFT Z");
         setFeedrate(m_sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kZSpeed));
     }
 
     // write the travel
     Point travel_destination = target_location;
     if (m_first_travel)
-        travel_destination.z(qAbs(m_sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kZOffset)()));
+        travel_destination.z(qAbs(m_sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kZOffset)() +
+                                  m_sb->setting<Distance>(Constants::ProfileSettings::Travel::kLiftHeight)() +
+                                  m_sb->setting<Distance>(Constants::ProfileSettings::Layer::kLayerHeight)()));
     else if (travel_lift_required)
         travel_destination = travel_destination + travel_lift; // travel destination is above the target point
 
-    rv += m_G0 % writeCoordinates(travel_destination) % commentSpaceLine("TRAVEL");
+    rv += m_G0 % writeCoordinates(travel_destination) % " RX180 RY0 RZ0 PA0 PC0" % commentSpaceLine("TRAVEL");
     setFeedrate(m_sb->setting<Velocity>(Constants::ProfileSettings::Travel::kSpeed));
 
     if (m_first_travel)         // if this is the first travel
@@ -185,7 +213,7 @@ QString ORNLWriter::writeTravel(Point start_location, Point target_location, Tra
 
     // write the travel lower (undo the lift)
     if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftLowerOnly)) {
-        rv += m_G0 % writeCoordinates(target_location) % commentSpaceLine("TRAVEL LOWER Z");
+        rv += m_G0 % writeCoordinates(target_location) % " RX180 RY0 RZ0 PA0 PC0" % commentSpaceLine("TRAVEL LOWER Z");
         setFeedrate(m_sb->setting<Velocity>(Constants::PrinterSettings::MachineSpeed::kZSpeed));
     }
 
@@ -201,7 +229,6 @@ QString ORNLWriter::writeLine(const Point& start_point, const Point& target_poin
     RegionType region_type = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
     PathModifiers path_modifiers = params->setting<PathModifiers>(Constants::SegmentSettings::kPathModifiers);
     float output_rpm = rpm * m_sb->setting<float>(Constants::PrinterSettings::MachineSpeed::kGearRatio);
-    MachineType machine_type = m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType);
 
     QString rv;
 
@@ -218,10 +245,10 @@ QString ORNLWriter::writeLine(const Point& start_point, const Point& target_poin
 
     rv += m_G1;
     // Forces first motion of layer to issue speed (needed for spiralize mode so that feedrate is scaled properly)
-    if (m_layer_start) {
+    if (m_layer_start && m_machine_type != MachineType::kWire_Arc) {
         setFeedrate(speed);
         rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
-        if (machine_type != MachineType::kWire_Arc) {
+        if (m_machine_type != MachineType::kWire_Arc) {
             rv += m_s % QString::number(output_rpm);
         }
 
@@ -230,19 +257,19 @@ QString ORNLWriter::writeLine(const Point& start_point, const Point& target_poin
         m_layer_start = false;
     }
 
-    // Update feedrate and extruder speed if needed
-    if (getFeedrate() != speed) {
+    // Update feedrate and extruder speed if needed - wire arc always requires speed
+    if (getFeedrate() != speed || m_machine_type == MachineType::kWire_Arc) {
         setFeedrate(speed);
         rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
     }
 
-    if (rpm != m_current_rpm && machine_type != MachineType::kWire_Arc) {
+    if (rpm != m_current_rpm && m_machine_type != MachineType::kWire_Arc) {
         rv += m_s % QString::number(output_rpm);
         m_current_rpm = rpm;
     }
 
-    // writes WXYZ to destination
-    rv += writeCoordinates(target_point);
+    // writes XYZ to destination
+    rv += writeCoordinates(target_point) % " RX180 RY0 RZ0 PA0 PC0";
 
     // add comment for gcode parser
     if (path_modifiers != PathModifiers::kNone)
@@ -267,7 +294,6 @@ QString ORNLWriter::writeArc(const Point& start_point, const Point& end_point, c
     auto region_type = params->setting<RegionType>(Constants::SegmentSettings::kRegionType);
     auto path_modifiers = params->setting<PathModifiers>(Constants::SegmentSettings::kPathModifiers);
     float output_rpm = rpm * m_sb->setting<float>(Constants::PrinterSettings::MachineSpeed::kGearRatio);
-    MachineType machine_type = m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType);
     Distance z_offset = m_sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kZOffset);
 
     for (int extruder : params->setting<QVector<int>>(Constants::SegmentSettings::kExtruders)) {
@@ -285,7 +311,7 @@ QString ORNLWriter::writeArc(const Point& start_point, const Point& end_point, c
         rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
     }
 
-    if (rpm != m_current_rpm && machine_type != MachineType::kWire_Arc) {
+    if (rpm != m_current_rpm && m_machine_type != MachineType::kWire_Arc) {
         rv += m_s % QString::number(rpm);
         m_current_rpm = rpm;
     }
@@ -312,11 +338,6 @@ QString ORNLWriter::writeArc(const Point& start_point, const Point& end_point, c
         rv += commentSpaceLine(toString(region_type));
     }
 
-    return rv;
-}
-
-QString ORNLWriter::writeScan(Point target_point, Velocity speed, bool on_off) {
-    QString rv;
     return rv;
 }
 
@@ -357,11 +378,6 @@ QString ORNLWriter::writeAfterRegion(RegionType type) {
     return rv;
 }
 
-QString ORNLWriter::writeAfterScan(Distance beadWidth, Distance laserStep, Distance laserResolution) {
-    QString rv;
-    return rv;
-}
-
 QString ORNLWriter::writeAfterIsland() {
     QString rv;
     return rv;
@@ -380,14 +396,11 @@ QString ORNLWriter::writeAfterLayer() {
 
 QString ORNLWriter::writeShutdown() {
     QString rv;
-    if (m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType) == MachineType::kWire_Arc) {
-        rv += m_M5 % commentSpaceLine("TURN WELDER OFF END OF PRINT");
-    }
-    else {
+    if (m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType) == MachineType::kPellet) {
         rv += m_M5 % commentSpaceLine("TURN EXTRUDER OFF END OF PRINT");
     }
 
-    rv += m_sb->setting<QString>(Constants::PrinterSettings::GCode::kEndCode) % m_newline % "M30" %
+    rv += m_sb->setting<QString>(Constants::PrinterSettings::GCode::kEndCode) % m_newline % "M02" %
           commentSpaceLine("END OF G-CODE");
     return rv;
 }
@@ -409,13 +422,23 @@ QString ORNLWriter::writeExtruderOn(RegionType region_type, int rpm, int extrude
     m_extruders_on[extruder_number] = true;
     float output_rpm;
 
-    // Retrieve the machine type
-    MachineType machine_type = m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType);
-
-    if (machine_type == MachineType::kWire_Arc) {
-        rv += m_M3 % commentSpaceLine("TURN WELDER ON");
+    if (m_machine_type == MachineType::kWire_Arc)
+    {
+        if(m_current_type == RegionType::kInfill || m_current_type == RegionType::kSkin)
+        {
+            rv += "M200" % commentSpaceLine("STRIP CLAD ON");
+            rv += "M202" % commentSpaceLine("STRIP FEED ON");
+            rv += "M204" % commentSpaceLine("FLUX FEED ON");
+        }
+        else
+        {
+            rv += "M100" % commentSpaceLine("WIRE ARC WELDER ON");
+            rv += "M102" % commentSpaceLine("WIRE FEED ON");
+            rv += "M104" % commentSpaceLine("WIRE SHIELDING ON");
+        }
     }
-    else {
+    else
+    {
         // Retrieve relevant settings
         int initial_speed = m_sb->setting<int>(Constants::MaterialSettings::Extruder::kInitialSpeed);
         float gear_ratio = m_sb->setting<float>(Constants::PrinterSettings::MachineSpeed::kGearRatio);
@@ -483,13 +506,25 @@ QString ORNLWriter::writeExtruderOff(int extruder_number) {
     m_extruders_on[extruder_number] = false;
 
     // Retrieve relevant settings
-    MachineType machine_type = m_sb->setting<MachineType>(Constants::PrinterSettings::MachineSetup::kMachineType);
     Time off_delay = m_sb->setting<Time>(Constants::MaterialSettings::Extruder::kOffDelay);
 
-    if (machine_type == MachineType::kWire_Arc) {
-        rv += m_M5 % commentSpaceLine("TURN WELDER OFF");
+    if (m_machine_type == MachineType::kWire_Arc)
+    {
+        if(m_current_type == RegionType::kInfill || m_current_type == RegionType::kSkin)
+        {
+            rv += "M201" % commentSpaceLine("STRIP CLAD OFF");
+            rv += "M203" % commentSpaceLine("STRIP FEED OFF");
+            rv += "M205" % commentSpaceLine("FLUX FEED OFF");
+        }
+        else
+        {
+            rv += "M101" % commentSpaceLine("WIRE ARC WELDER OFF");
+            rv += "M103" % commentSpaceLine("WIRE FEED OFF");
+            rv += "M105" % commentSpaceLine("WIRE SHIELDING OFF");
+        }
     }
-    else if (off_delay > 0) {
+    else if (off_delay > 0)
+    {
         rv += writeDwell(off_delay);
     }
 
@@ -510,10 +545,26 @@ QString ORNLWriter::writeCoordinates(Point destination) {
     Distance z_offset = m_sb->setting<Distance>(Constants::PrinterSettings::Dimensions::kZOffset);
 
     Distance target_z = destination.z() + z_offset;
-    if (qAbs(target_z - m_last_z) > 10) {
+    /*if (qAbs(target_z - m_last_z) > 10) {
         rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
         m_current_z = target_z;
         m_last_z = target_z;
+    }*/
+
+    // always specify Z for Wire Arc
+    if (m_machine_type == MachineType::kWire_Arc)
+    {
+        rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+        m_current_z = target_z;
+        m_last_z = target_z;
+    }
+    else
+    {
+        if (qAbs(target_z - m_last_z) > 10) {
+            rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+            m_current_z = target_z;
+            m_last_z = target_z;
+        }
     }
     return rv;
 }
