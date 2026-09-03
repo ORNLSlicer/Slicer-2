@@ -778,14 +778,24 @@ QColor GCodeLoader::determineFontColor(const QString& comment) {
     if (m_support.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kSupport);
     }
+    if (m_helical.indexIn(comment) != -1) {
+        if (m_perimeter.indexIn(comment) != -1) {
+            return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kHelicalPerimeter);
+        }
+        if (m_inset.indexIn(comment) != -1) {
+            return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kHelicalInset);
+        }
+        if (m_infill.indexIn(comment) != -1) {
+            return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kHelicalInfill);
+        }
+
+        return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kHelical);
+    }
     if (m_perimeter.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kPerimeter);
     }
     if (m_radial.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kRadial);
-    }
-    if (m_helical.indexIn(comment) != -1) {
-        return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kHelical);
     }
     if (m_inset.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kInset);
@@ -823,6 +833,8 @@ QColor GCodeLoader::determineSegmentColor(int command_id, const QString& comment
     if (command_id != 2 && command_id != 3) { return color; }
 
     if (containsColorPriorityModifier(comment)) { return color; }
+
+    if (m_helical.indexIn(comment) != -1) { return color; }
 
     if (m_perimeter.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kPerimeterArc);
