@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 #include <qcolor.h>
+#include <qhashfunctions.h>
 #include <qtcoreexports.h>
 
 #include "constants.h"
@@ -137,7 +138,6 @@ inline QString toString(HelicalPathBoundaryPolicy handling) {
 /*!
  * @enum HelicalPathZClipRounding
  * @brief Controls where Clip Z helical paths end relative to full revolutions.
-
  */
 enum class HelicalPathZClipRounding : uint8_t {
     //! @brief End exactly at the highest-Z model intersection.
