@@ -208,6 +208,33 @@ inline QString toString(CylinderAxisSource mode) {
 }
 
 /*!
+ * @enum HelicalInfillRevolutionsRounding
+ * @brief Controls how helical infill is rounded to whole revolutions.
+ */
+enum class HelicalInfillRevolutionsRounding : uint8_t {
+    //! @brief Round to the nearest whole number of revolutions.
+    kRound = 0,
+
+    //! @brief Round down to the nearest whole number of revolutions.
+    kFloor = 1,
+
+    //! @brief Round up to the nearest whole number of revolutions.
+    kCeil = 2
+};
+
+inline QString toString(HelicalInfillRevolutionsRounding rounding) {
+    switch (rounding) {
+        case HelicalInfillRevolutionsRounding::kFloor:
+            return "Floor";
+        case HelicalInfillRevolutionsRounding::kCeil:
+            return "Ceil";
+        case HelicalInfillRevolutionsRounding::kRound:
+        default:
+            return "Round";
+    }
+}
+
+/*!
  * \enum AffectedArea
  * \brief The AffectedArea enum
  */

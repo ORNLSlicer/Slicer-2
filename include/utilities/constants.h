@@ -888,6 +888,16 @@ class Constants {
             static const QString kImagePixelSizeX;
             static const QString kImagePixelSizeY;
         };
+
+        class Helical {
+           public:
+            static const QString kHelicalPerimeterRevolutions;
+            static const QString kHelicalInsetRevolutions;
+            static const QString kHelicalPerimeterStepover;
+            static const QString kHelicalInsetStepover;
+            static const QString kHelicalInfillStepover;
+            static const QString kHelicalInfillRevolutionsRounding;
+        };
     };
 
     class ExperimentalSettings {
