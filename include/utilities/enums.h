@@ -855,6 +855,9 @@ enum class VisualizationColors {
     kTipWipeReverse,
     kTravel,
     kUnknown,
+    kHelicalPerimeter,
+    kHelicalInset,
+    kHelicalInfill,
 
     Length
 };
@@ -899,6 +902,9 @@ VisualizationColorDefinitions() {
             {VisualizationColors::kTipWipeReverse, "TipWipeReverse", QColor(179, 128, 255, 255)},
             {VisualizationColors::kTravel, "Travel", QColor(233, 175, 198, 255)},
             {VisualizationColors::kUnknown, "Unknown", QColor(0, 0, 0, 255)},
+            {VisualizationColors::kHelicalPerimeter, "HelicalPerimeter", QColor(0, 0, 255, 255)},
+            {VisualizationColors::kHelicalInset, "HelicalInset", QColor(0, 204, 255, 255)},
+            {VisualizationColors::kHelicalInfill, "HelicalInfill", QColor(0, 255, 0, 255)},
         }};
 
     return definitions;
