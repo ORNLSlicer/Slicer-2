@@ -10,6 +10,9 @@
 #include <vector>
 
 #include "managers/preferences_manager.h"
+#define private public
+#include "threading/gcode_loader.h"
+#undef private
 #include "utilities/enums.h"
 
 namespace {
@@ -51,6 +54,9 @@ const std::vector<ExpectedVisualizationColor>& expectedVisualizationColors() {
         {ORNL::VisualizationColors::kTipWipeReverse, "TipWipeReverse", QColor(179, 128, 255, 255)},
         {ORNL::VisualizationColors::kTravel, "Travel", QColor(233, 175, 198, 255)},
         {ORNL::VisualizationColors::kUnknown, "Unknown", QColor(0, 0, 0, 255)},
+        {ORNL::VisualizationColors::kHelicalPerimeter, "HelicalPerimeter", QColor(153, 51, 255, 255)},
+        {ORNL::VisualizationColors::kHelicalInset, "HelicalInset", QColor(178, 102, 255, 255)},
+        {ORNL::VisualizationColors::kHelicalInfill, "HelicalInfill", QColor(102, 0, 204, 255)},
     };
 
     return expected;
@@ -83,6 +89,10 @@ bool throwsInvalidArgumentForDefault(ORNL::VisualizationColors color) {
     }
 
     return false;
+}
+
+QColor configuredColor(ORNL::VisualizationColors color) {
+    return ORNL::PreferencesManager::getInstance()->getVisualizationColor(color);
 }
 }  // namespace
 
@@ -160,6 +170,35 @@ int main() {
                              "Expected preference visualization color default to match definition.");
         }
     }
+
+    ORNL::GCodeLoader loader(QString(), false);
+    passed &= expect(loader.determineFontColor(QStringLiteral("HELICAL PERIMETER")) ==
+                         configuredColor(ORNL::VisualizationColors::kHelicalPerimeter),
+                     "Expected helical perimeter comments to use the helical perimeter color.");
+    passed &= expect(loader.determineFontColor(QStringLiteral("HELICAL INSET")) ==
+                         configuredColor(ORNL::VisualizationColors::kHelicalInset),
+                     "Expected helical inset comments to use the helical inset color.");
+    passed &= expect(loader.determineFontColor(QStringLiteral("HELICAL INFILL")) ==
+                         configuredColor(ORNL::VisualizationColors::kHelicalInfill),
+                     "Expected helical infill comments to use the helical infill color.");
+    passed &= expect(
+        loader.determineFontColor(QStringLiteral("HELICAL")) == configuredColor(ORNL::VisualizationColors::kHelical),
+        "Expected generic helical comments to keep the generic helical color.");
+    passed &= expect(loader.determineFontColor(QStringLiteral("HELICAL SUPPORT PERIMETER")) ==
+                         configuredColor(ORNL::VisualizationColors::kSupport),
+                     "Expected support comments to keep precedence over helical region colors.");
+    passed &= expect(loader.determineSegmentColor(2, QStringLiteral("HELICAL PERIMETER")) ==
+                         configuredColor(ORNL::VisualizationColors::kHelicalPerimeter),
+                     "Expected helical perimeter arcs to keep the helical perimeter color.");
+    passed &= expect(loader.determineSegmentColor(3, QStringLiteral("HELICAL INSET")) ==
+                         configuredColor(ORNL::VisualizationColors::kHelicalInset),
+                     "Expected helical inset arcs to keep the helical inset color.");
+    passed &= expect(loader.determineSegmentColor(2, QStringLiteral("PERIMETER")) ==
+                         configuredColor(ORNL::VisualizationColors::kPerimeterArc),
+                     "Expected planar perimeter arcs to keep the perimeter arc color.");
+    passed &= expect(loader.determineSegmentColor(3, QStringLiteral("INSET")) ==
+                         configuredColor(ORNL::VisualizationColors::kInsetArc),
+                     "Expected planar inset arcs to keep the inset arc color.");
 
     return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 }
