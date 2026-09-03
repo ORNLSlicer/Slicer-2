@@ -1,7 +1,8 @@
 #pragma once
 
-#include <QCoreApplication>
-#include <QMessageBox>
+#include <QString>
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 
@@ -831,156 +832,76 @@ enum class VisualizationColors {
     Length
 };
 
-inline QString VisualizationColorsName(VisualizationColors color) {
-    switch (color) {
-        case VisualizationColors::kBrim:
-            return "Brim";
-        case VisualizationColors::kCoasting:
-            return "Coasting";
-        case VisualizationColors::kInfill:
-            return "Infill";
-        case VisualizationColors::kInitialStartup:
-            return "InitialStartup";
-        case VisualizationColors::kInset:
-            return "Inset";
-        case VisualizationColors::kInsetArc:
-            return "InsetArc";
-        case VisualizationColors::kLaserScan:
-            return "LaserScan";
-        case VisualizationColors::kLeadIn:
-            return "LeadIn";
-        case VisualizationColors::kFlyingStart:
-            return "FlyingStart";
-        case VisualizationColors::kPerimeter:
-            return "Perimeter";
-        case VisualizationColors::kPerimeterArc:
-            return "PerimeterArc";
-        case VisualizationColors::kPrestart:
-            return "Prestart";
-        case VisualizationColors::kRaft:
-            return "Raft";
-        case VisualizationColors::kRadial:
-            return "Radial";
-        case VisualizationColors::kHelical:
-            return "Helical";
-        case VisualizationColors::kRampingDown:
-            return "RampingDown";
-        case VisualizationColors::kRampingUp:
-            return "RampingUp";
-        case VisualizationColors::kSkeleton:
-            return "Skeleton";
-        case VisualizationColors::kSkin:
-            return "Skin";
-        case VisualizationColors::kSkirt:
-            return "Skirt";
-        case VisualizationColors::kSlowDown:
-            return "SlowDown";
-        case VisualizationColors::kSpiralLift:
-            return "SpiralLift";
-        case VisualizationColors::kSupport:
-            return "Support";
-        case VisualizationColors::kSupportRoof:
-            return "SupportRoof";
-        case VisualizationColors::kThermalScan:
-            return "ThermalScan";
-        case VisualizationColors::kTipWipeAngled:
-            return "TipWipeAngled";
-        case VisualizationColors::kTipWipeForward:
-            return "TipWipeForward";
-        case VisualizationColors::kTipWipeReverse:
-            return "TipWipeReverse";
-        case VisualizationColors::kTravel:
-            return "Travel";
+struct VisualizationColorDefinition {
+    VisualizationColors color;
+    const char* name;
+    QColor default_color;
+};
 
-        case VisualizationColors::kUnknown:
-        case VisualizationColors::Length:
-            return "Unknown";
+inline const std::array<VisualizationColorDefinition, static_cast<std::size_t>(VisualizationColors::Length)>&
+VisualizationColorDefinitions() {
+    static const std::array<VisualizationColorDefinition, static_cast<std::size_t>(VisualizationColors::Length)>
+        definitions {{
+            {VisualizationColors::kBrim, "Brim", QColor(200, 113, 55, 255)},
+            {VisualizationColors::kCoasting, "Coasting", QColor(211, 95, 141, 255)},
+            {VisualizationColors::kInfill, "Infill", QColor(0, 255, 0, 255)},
+            {VisualizationColors::kInitialStartup, "InitialStartup", QColor(135, 222, 205, 255)},
+            {VisualizationColors::kInset, "Inset", QColor(0, 204, 255, 255)},
+            {VisualizationColors::kInsetArc, "InsetArc", QColor(0, 184, 255, 255)},
+            {VisualizationColors::kLaserScan, "LaserScan", QColor(90, 255, 90, 255)},
+            {VisualizationColors::kLeadIn, "LeadIn", QColor(255, 153, 51, 255)},
+            {VisualizationColors::kFlyingStart, "FlyingStart", QColor(120, 150, 250)},
+            {VisualizationColors::kPerimeter, "Perimeter", QColor(0, 0, 255, 255)},
+            {VisualizationColors::kPerimeterArc, "PerimeterArc", QColor(32, 64, 255, 255)},
+            {VisualizationColors::kPrestart, "Prestart", QColor(204, 0, 255, 255)},
+            {VisualizationColors::kRaft, "Raft", QColor(102, 102, 102, 255)},
+            {VisualizationColors::kRadial, "Radial", QColor(47, 82, 102, 255)},
+            {VisualizationColors::kHelical, "Helical", QColor(127, 0, 255, 255)},
+            {VisualizationColors::kRampingDown, "RampingDown", QColor(22, 99, 137, 255)},
+            {VisualizationColors::kRampingUp, "RampingUp", QColor(99, 22, 137, 255)},
+            {VisualizationColors::kSkeleton, "Skeleton", QColor(160, 44, 44, 255)},
+            {VisualizationColors::kSkin, "Skin", QColor(0, 128, 0, 255)},
+            {VisualizationColors::kSkirt, "Skirt", QColor(211, 188, 95, 255)},
+            {VisualizationColors::kSlowDown, "SlowDown", QColor(44, 160, 137, 255)},
+            {VisualizationColors::kSpiralLift, "SpiralLift", QColor(113, 55, 200, 255)},
+            {VisualizationColors::kSupport, "Support", QColor(255, 102, 0, 255)},
+            {VisualizationColors::kSupportRoof, "SupportRoof", QColor(255, 179, 128, 255)},
+            {VisualizationColors::kThermalScan, "ThermalScan", QColor(240, 130, 130, 255)},
+            {VisualizationColors::kTipWipeAngled, "TipWipeAngled", QColor(179, 128, 255, 255)},
+            {VisualizationColors::kTipWipeForward, "TipWipeForward", QColor(179, 128, 255, 255)},
+            {VisualizationColors::kTipWipeReverse, "TipWipeReverse", QColor(179, 128, 255, 255)},
+            {VisualizationColors::kTravel, "Travel", QColor(233, 175, 198, 255)},
+            {VisualizationColors::kUnknown, "Unknown", QColor(0, 0, 0, 255)},
+        }};
 
-        default:
-            QMessageBox::critical(
-                Q_NULLPTR, QCoreApplication::applicationName(),
-                "Unimplemented corosponding visualization colors string.\n"
-                "With a new enum entry for color, a corrosponding name (in VisualizationColorsName) and\n"
-                "default color value (in VisualizationColorsDefaults) needs to be created.",
-                QMessageBox::Cancel);
-            throw std::invalid_argument("Unimplemented corosponding visualization colors string");
-    }
+    return definitions;
 }
 
-inline constexpr const QColor VisualizationColorsDefaults(VisualizationColors color) {
-    switch (color) {
-        case VisualizationColors::kBrim:
-            return QColor(200, 113, 55, 255);
-        case VisualizationColors::kCoasting:
-            return QColor(211, 95, 141, 255);
-        case VisualizationColors::kInfill:
-            return QColor(0, 255, 0, 255);
-        case VisualizationColors::kInitialStartup:
-            return QColor(135, 222, 205, 255);
-        case VisualizationColors::kInset:
-            return QColor(0, 204, 255, 255);
-        case VisualizationColors::kInsetArc:
-            return QColor(0, 184, 255, 255);
-        case VisualizationColors::kLaserScan:
-            return QColor(90, 255, 90, 255);
-        case VisualizationColors::kLeadIn:
-            return QColor(255, 153, 51, 255);
-        case VisualizationColors::kFlyingStart:
-            return QColor(120, 150, 250);
-        case VisualizationColors::kPerimeter:
-            return QColor(0, 0, 255, 255);
-        case VisualizationColors::kPerimeterArc:
-            return QColor(32, 64, 255, 255);
-        case VisualizationColors::kPrestart:
-            return QColor(204, 0, 255, 255);
-        case VisualizationColors::kRaft:
-            return QColor(102, 102, 102, 255);
-        case VisualizationColors::kRadial:
-            return QColor(47, 82, 102, 255);
-        case VisualizationColors::kHelical:
-            return QColor(127, 0, 255, 255);
-        case VisualizationColors::kRampingDown:
-            return QColor(22, 99, 137, 255);
-        case VisualizationColors::kRampingUp:
-            return QColor(99, 22, 137, 255);
-        case VisualizationColors::kSkeleton:
-            return QColor(160, 44, 44, 255);
-        case VisualizationColors::kSkin:
-            return QColor(0, 128, 0, 255);
-        case VisualizationColors::kSkirt:
-            return QColor(211, 188, 95, 255);
-        case VisualizationColors::kSlowDown:
-            return QColor(44, 160, 137, 255);
-        case VisualizationColors::kSpiralLift:
-            return QColor(113, 55, 200, 255);
-        case VisualizationColors::kSupport:
-            return QColor(255, 102, 0, 255);
-        case VisualizationColors::kSupportRoof:
-            return QColor(255, 179, 128, 255);
-        case VisualizationColors::kThermalScan:
-            return QColor(240, 130, 130, 255);
-        case VisualizationColors::kTipWipeAngled:
-            return QColor(179, 128, 255, 255);
-        case VisualizationColors::kTipWipeForward:
-            return QColor(179, 128, 255, 255);
-        case VisualizationColors::kTipWipeReverse:
-            return QColor(179, 128, 255, 255);
-        case VisualizationColors::kTravel:
-            return QColor(233, 175, 198, 255);
-
-        case VisualizationColors::kUnknown:
-        case VisualizationColors::Length:
-            return QColor(0, 0, 0, 255);
-
-        default:
-            QMessageBox::critical(
-                Q_NULLPTR, QCoreApplication::applicationName(),
-                "Unimplemented corosponding visualization default color.\n"
-                "With a new enum entry for color, a corrosponding name (in VisualizationColorsName) and\n"
-                "default color value (in VisualizationColorsDefaults) needs to be created.",
-                QMessageBox::Cancel);
-            throw std::invalid_argument("Unimplemented corosponding visualization default color");
+inline const VisualizationColorDefinition& VisualizationColorDefinitionFor(VisualizationColors color) {
+    for (const VisualizationColorDefinition& definition : VisualizationColorDefinitions()) {
+        if (definition.color == color) { return definition; }
     }
+
+    throw std::invalid_argument("Unimplemented corresponding visualization color");
+}
+
+inline QString VisualizationColorsName(VisualizationColors color) {
+    return VisualizationColorDefinitionFor(color).name;
+}
+
+inline QColor VisualizationColorsDefaults(VisualizationColors color) {
+    return VisualizationColorDefinitionFor(color).default_color;
+}
+
+inline bool VisualizationColorFromName(const QString& name, VisualizationColors& color) {
+    for (const VisualizationColorDefinition& definition : VisualizationColorDefinitions()) {
+        if (name == definition.name) {
+            color = definition.color;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 enum class SegmentDisplayType : uint8_t {

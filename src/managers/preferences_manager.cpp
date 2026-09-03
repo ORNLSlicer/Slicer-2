@@ -34,25 +34,6 @@ constexpr int kVisualizationColorMigrationVersion            = 1;
 constexpr const char* kVisualizationColorMigrationVersionKey = "visualization_color_migration_version";
 
 /*!
- * \brief Resolve a persisted visualization color name to its enum value.
- * \param name Persisted visualization color name.
- * \param color Output enum value when the name is recognized.
- * \return True if \p name maps to a known VisualizationColors entry.
- */
-bool visualizationColorFromName(const std::string& name, VisualizationColors& color) {
-    int visualizationColorsLength = (int)VisualizationColors::Length;
-    for (int i = 0; i < visualizationColorsLength; ++i) {
-        VisualizationColors colorEnum = (VisualizationColors)i;
-        if (VisualizationColorsName(colorEnum).toStdString() == name) {
-            color = colorEnum;
-            return true;
-        }
-    }
-
-    return false;
-}
-
-/*!
  * \brief Parse a persisted visualization color string.
  * \param colorText Hex color text, with or without a leading '#'.
  * \param valid Output validity flag from Qt's color parser.
@@ -165,26 +146,19 @@ void PreferencesManager::setVisualizationColor(QString name, QColor value) {
 }
 
 QColor PreferencesManager::revertVisualizationColor(QString name) {
-    int visualizationColorsLength = (int)VisualizationColors::Length;
-    for (int i = 0; i < visualizationColorsLength; ++i) {
-        VisualizationColors colorEnum = (VisualizationColors)i;
-        if (VisualizationColorsName(colorEnum) == name) {
-            m_visualization_qcolors[name.toStdString()] = VisualizationColorsDefaults(colorEnum);
-            m_dirty                                     = true;
-            break;
-        }
+    VisualizationColors colorEnum;
+    if (VisualizationColorFromName(name, colorEnum)) {
+        m_visualization_qcolors[name.toStdString()] = VisualizationColorsDefaults(colorEnum);
+        m_dirty                                     = true;
     }
 
     return m_visualization_qcolors[name.toStdString()];
 }
 
 bool PreferencesManager::isDefaultVisualizationColor(QString name) {
-    int visualizationColorsLength = (int)VisualizationColors::Length;
-    for (int i = 0; i < visualizationColorsLength; ++i) {
-        VisualizationColors colorEnum = (VisualizationColors)i;
-        if (VisualizationColorsName(colorEnum) == name) {
-            return m_visualization_qcolors[name.toStdString()] == VisualizationColorsDefaults(colorEnum);
-        }
+    VisualizationColors colorEnum;
+    if (VisualizationColorFromName(name, colorEnum)) {
+        return m_visualization_qcolors[name.toStdString()] == VisualizationColorsDefaults(colorEnum);
     }
 
     return false;
@@ -215,16 +189,13 @@ void PreferencesManager::setDefaultVisualizationColors(
     }
 
     m_visualization_qcolors.clear();
-    int visualizationColorsLength = (int)VisualizationColors::Length;
-    for (int i = 0; i < visualizationColorsLength; ++i) {
-        VisualizationColors colorEnum = (VisualizationColors)i;
-        m_visualization_qcolors[VisualizationColorsName(colorEnum).toStdString()] =
-            VisualizationColorsDefaults(colorEnum);
+    for (const VisualizationColorDefinition& definition : VisualizationColorDefinitions()) {
+        m_visualization_qcolors[definition.name] = definition.default_color;
     }
 
     for (const auto& color : migratedVisualizationColorsHex) {
         VisualizationColors colorEnum;
-        if (!visualizationColorFromName(color.first, colorEnum)) { continue; }
+        if (!VisualizationColorFromName(QString::fromStdString(color.first), colorEnum)) { continue; }
 
         if (color.second.empty()) {
             m_dirty = true;
