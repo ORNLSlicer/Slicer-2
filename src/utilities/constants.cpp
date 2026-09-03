@@ -853,6 +853,15 @@ const QString Constants::ProfileSettings::Slicing::kArcsPerRevolution         = 
 const QString Constants::ProfileSettings::Slicing::kImagePixelSizeX           = "image_pixel_size_x";
 const QString Constants::ProfileSettings::Slicing::kImagePixelSizeY           = "image_pixel_size_y";
 
+// Helical
+const QString Constants::ProfileSettings::Helical::kHelicalPerimeterRevolutions = "helical_perimeter_revolutions";
+const QString Constants::ProfileSettings::Helical::kHelicalInsetRevolutions     = "helical_inset_revolutions";
+const QString Constants::ProfileSettings::Helical::kHelicalPerimeterStepover    = "helical_perimeter_stepover";
+const QString Constants::ProfileSettings::Helical::kHelicalInsetStepover        = "helical_inset_stepover";
+const QString Constants::ProfileSettings::Helical::kHelicalInfillStepover       = "helical_infill_stepover";
+const QString Constants::ProfileSettings::Helical::kHelicalInfillRevolutionsRounding =
+    "helical_infill_revolutions_rounding";
+
 //================================================================================
 // Experimental Settings
 //================================================================================
