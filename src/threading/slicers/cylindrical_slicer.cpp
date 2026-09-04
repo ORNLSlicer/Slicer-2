@@ -4,6 +4,7 @@
 #include <QTextStream>
 #include <algorithm>
 #include <cmath>
+#include <optional>
 
 #include <nlohmann/json_fwd.hpp>
 #include <qcontainerfwd.h>
@@ -30,6 +31,7 @@
 #include "managers/settings/settings_manager.h"
 #include "part/part.h"
 #include "slicing/helical_path_rounding.h"
+#include "slicing/helical_region_profile.h"
 #include "slicing/slicing_utilities.h"
 #include "step/layer/cylindrical_layer.h"
 #include "threading/traditional_ast.h"
@@ -120,6 +122,12 @@ struct HelixClipResult {
     bool has_outside_points = false;
 };
 
+//! @brief Sampled polyline for one retained helical profile region run.
+struct HelicalRegionPolylineRun {
+    RegionType region_type = RegionType::kUnknown;
+    Polyline polyline;
+};
+
 //! @brief Calculates combined bounds for non-empty meshes.
 bool meshBounds(const QVector<QSharedPointer<MeshBase>>& meshes, Point& mesh_min, Point& mesh_max) {
     bool has_bounds = false;
@@ -146,10 +154,115 @@ bool meshBounds(const QVector<QSharedPointer<MeshBase>>& meshes, Point& mesh_min
     return has_bounds;
 }
 
+//! @brief Adds a point unless it duplicates the current polyline endpoint.
+void appendDistinct(Polyline& polyline, const Point& point) {
+    if (polyline.isEmpty() || polyline.last() != point) { polyline.push_back(point); }
+}
+
 //! @brief Linearly interpolates between two points.
 Point interpolate(const Point& start, const Point& end, double t) {
     return Point(start.x() + (end.x() - start.x()) * t, start.y() + (end.y() - start.y()) * t,
                  start.z() + (end.z() - start.z()) * t);
+}
+
+//! @brief Returns the point on a helical region profile at a cumulative revolution coordinate.
+Point pointAtProfileRevolutions(const HelicalRegionProfile& profile, const Point& center, Distance radius,
+                                HelicalPathHandedness handedness, Angle start_angle, double revolutions) {
+    const double direction = handedness == HelicalPathHandedness::kLeftHanded ? -1.0 : 1.0;
+    const double angle     = start_angle() + direction * revolutions * 2.0 * M_PI;
+    const Distance z       = profile.zAtRevolutions(revolutions);
+
+    return Point(center.x() + radius() * std::cos(angle), center.y() + radius() * std::sin(angle), z());
+}
+
+//! @brief Samples one profile band interval without crossing region boundaries.
+Polyline createProfileRunPolyline(const HelicalRegionProfile& profile, const HelicalRegionProfileBand& band,
+                                  const Point& center, Distance radius, HelicalPathHandedness handedness,
+                                  Angle start_angle, double start_revolutions, double end_revolutions) {
+    Polyline polyline;
+    if (end_revolutions <= start_revolutions || band.pitch <= 0) { return polyline; }
+
+    const double interval_revolutions = end_revolutions - start_revolutions;
+    const double vertical_per_radian  = band.pitch() / (2.0 * M_PI);
+    const double length_per_radian    = std::hypot(radius(), vertical_per_radian);
+    const Distance target_segment_length =
+        band.pitch / 2.0 > kMinCircleSegmentLength ? band.pitch / 2.0 : kMinCircleSegmentLength;
+    const int segments = std::clamp(
+        static_cast<int>(std::ceil(interval_revolutions * 2.0 * M_PI * length_per_radian / target_segment_length())), 1,
+        20000);
+
+    polyline.reserve(segments + 1);
+    for (int i = 0; i <= segments; ++i) {
+        const double t = static_cast<double>(i) / static_cast<double>(segments);
+        polyline.push_back(pointAtProfileRevolutions(profile, center, radius, handedness, start_angle,
+                                                     start_revolutions + interval_revolutions * t));
+    }
+
+    return polyline;
+}
+
+//! @brief Samples all helical profile bands up to the requested cumulative revolution coordinate.
+QVector<HelicalRegionPolylineRun> createHelicalRegionRuns(const HelicalRegionProfile& profile, const Point& center,
+                                                          Distance radius, HelicalPathHandedness handedness,
+                                                          Angle start_angle, double retained_revolutions) {
+    QVector<HelicalRegionPolylineRun> runs;
+    const double end_revolutions = std::min(retained_revolutions, profile.totalRevolutions());
+    if (end_revolutions <= 0.0) { return runs; }
+
+    for (const HelicalRegionProfileBand& band : profile.bands) {
+        const double run_start = std::max(band.start_revolutions, 0.0);
+        const double run_end   = std::min(band.endRevolutions(), end_revolutions);
+        if (run_end <= run_start) { continue; }
+
+        Polyline polyline =
+            createProfileRunPolyline(profile, band, center, radius, handedness, start_angle, run_start, run_end);
+        if (polyline.size() >= 2) { runs.push_back(HelicalRegionPolylineRun {band.region_type, polyline}); }
+    }
+
+    return runs;
+}
+
+//! @brief Flattens adjacent region runs into one polyline used only for model-intersection testing.
+Polyline flattenHelicalRegionRuns(const QVector<HelicalRegionPolylineRun>& runs) {
+    Polyline polyline;
+    for (const HelicalRegionPolylineRun& run : runs) {
+        for (const Point& point : run.polyline) { appendDistinct(polyline, point); }
+    }
+
+    return polyline;
+}
+
+//! @brief Applies z-clip rounding in cumulative profile-revolution space.
+std::optional<double> retainedProfileRevolutions(const HelicalRegionProfile& profile,
+                                                 const HelixClipResult& clip_result,
+                                                 HelicalPathZClipRounding rounding) {
+    constexpr double revolution_tolerance = 1.0e-9;
+
+    if (clip_result.intersections.isEmpty()) {
+        if (!clip_result.has_inside_points || clip_result.has_outside_points) { return std::nullopt; }
+
+        return profile.totalRevolutions();
+    }
+
+    const auto highest_intersection =
+        std::max_element(clip_result.intersections.cbegin(), clip_result.intersections.cend(),
+                         [](const HelicalPathBoundaryIntersection& lhs, const HelicalPathBoundaryIntersection& rhs) {
+                             return lhs.point.z() < rhs.point.z();
+                         });
+
+    const double raw_revolutions = profile.revolutionsAtZ(Distance(highest_intersection->point.z()));
+    double retained_revolutions  = raw_revolutions;
+    if (rounding == HelicalPathZClipRounding::kCompleteRevolution) {
+        retained_revolutions = std::ceil(raw_revolutions - revolution_tolerance);
+    }
+    else if (rounding == HelicalPathZClipRounding::kLastFullRevolution) {
+        retained_revolutions = std::floor(raw_revolutions + revolution_tolerance);
+    }
+
+    retained_revolutions = std::min(retained_revolutions, profile.totalRevolutions());
+    if (retained_revolutions <= revolution_tolerance) { return std::nullopt; }
+
+    return retained_revolutions;
 }
 
 //! @brief Returns the nearest cached cross section index for a point Z.
@@ -514,7 +627,6 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
     const Distance layer_height =
         positiveOrFallback(part_sb->setting<Distance>(PS::Layer::kLayerHeight), kDefaultCylindricalLayerHeight);
     const Distance bead_width = positiveOrFallback(part_sb->setting<Distance>(PS::Layer::kBeadWidth), layer_height);
-    const Distance section_spacing    = bead_width / 2.0 > kMinSectionSpacing ? bead_width / 2.0 : kMinSectionSpacing;
     const bool helix_counterclockwise = handedness == HelicalPathHandedness::kRightHanded;
     Distance initial_radius           = part_sb->setting<Distance>(PS::Slicing::kCylinderInnerRadius);
     if (initial_radius < 0) { initial_radius = 0.0 * micron; }
@@ -524,20 +636,56 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
     Point center         = cylinderCenterForPart(part_sb, part, base_z);
     const Distance max_radius(maxRadiusForMeshes(meshes, center));
 
-    const Distance first_radius    = initial_radius + (layer_height / 2.0);
-    const Distance start_z         = base_z;
-    const Distance first_section_z = start_z + section_spacing < top_z ? start_z + section_spacing : start_z;
+    const Distance first_radius = initial_radius + (layer_height / 2.0);
+    const Distance start_z      = base_z;
     if (start_z >= top_z) {
         emit_pre_process_progress(part_index, 0.0);
         emit_compute_progress(part_index, 0.0);
         return false;
     }
 
+    HelicalRegionProfileParameters profile_params;
+    profile_params.start_z                     = start_z;
+    profile_params.top_z                       = top_z;
+    profile_params.bead_width                  = bead_width;
+    profile_params.perimeter_revolutions       = part_sb->setting<int>(PS::Helical::kHelicalPerimeterRevolutions);
+    profile_params.inset_revolutions           = part_sb->setting<int>(PS::Helical::kHelicalInsetRevolutions);
+    profile_params.perimeter_stepover          = part_sb->setting<Distance>(PS::Helical::kHelicalPerimeterStepover);
+    profile_params.inset_stepover              = part_sb->setting<Distance>(PS::Helical::kHelicalInsetStepover);
+    profile_params.infill_stepover             = part_sb->setting<Distance>(PS::Helical::kHelicalInfillStepover);
+    profile_params.infill_revolutions_rounding = static_cast<HelicalInfillRevolutionsRounding>(
+        part_sb->setting<int>(PS::Helical::kHelicalInfillRevolutionsRounding));
+
+    const HelicalRegionProfileResult profile_result = buildHelicalRegionProfile(profile_params);
+    if (!profile_result.valid()) {
+        const QString message = "Warning: Helical slicing generated no printable paths. " % profile_result.reason;
+        qWarning() << message;
+        emit statusMessage(message);
+        emit_pre_process_progress(part_index, 0.0);
+        emit_compute_progress(part_index, 0.0);
+        return false;
+    }
+
+    const HelicalRegionProfile& profile = profile_result.profile;
+    const Distance profile_clip_top_z   = profile.generatedTopZ() < top_z ? profile.generatedTopZ() : top_z;
+    if (profile_clip_top_z <= start_z) {
+        emit_pre_process_progress(part_index, 0.0);
+        emit_compute_progress(part_index, 0.0);
+        return false;
+    }
+
+    const Distance profile_min_pitch = positiveOrFallback(profile.minPitch(), bead_width);
+    const Distance section_spacing =
+        profile_min_pitch / 2.0 > kMinSectionSpacing ? profile_min_pitch / 2.0 : kMinSectionSpacing;
+    const Distance first_section_z =
+        start_z + section_spacing < profile_clip_top_z ? start_z + section_spacing : start_z;
+    const double available_revolutions = profile.revolutionsAtZ(profile_clip_top_z);
+
     QVector<HelicalCrossSection> cross_sections;
     bool has_geometry                 = false;
-    const int estimated_section_count = estimateInclusiveCount(first_section_z, top_z, section_spacing);
+    const int estimated_section_count = estimateInclusiveCount(first_section_z, profile_clip_top_z, section_spacing);
     int sections_processed            = 0;
-    for (Distance z = first_section_z; z <= top_z; z += section_spacing) {
+    for (Distance z = first_section_z; z <= profile_clip_top_z; z += section_spacing) {
         Plane slicing_plane(Point(center.x(), center.y(), z()), QVector3D(0, 0, 1));
         PolygonList combined_geometry;
 
@@ -558,8 +706,8 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
             part_index, static_cast<double>(sections_processed) / static_cast<double>(estimated_section_count));
     }
 
-    if (cross_sections.isEmpty() || cross_sections.last().z < top_z) {
-        Plane slicing_plane(Point(center.x(), center.y(), top_z()), QVector3D(0, 0, 1));
+    if (cross_sections.isEmpty() || cross_sections.last().z < profile_clip_top_z) {
+        Plane slicing_plane(Point(center.x(), center.y(), profile_clip_top_z()), QVector3D(0, 0, 1));
         PolygonList combined_geometry;
         for (const QSharedPointer<MeshBase>& mesh : meshes) {
             Point shift;
@@ -572,7 +720,7 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
         }
 
         has_geometry = has_geometry || !combined_geometry.isEmpty();
-        cross_sections.push_back(HelicalCrossSection {top_z, combined_geometry});
+        cross_sections.push_back(HelicalCrossSection {profile_clip_top_z, combined_geometry});
     }
     emit_pre_process_progress(part_index, 1.0);
 
@@ -595,25 +743,38 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
             helical_layer_number + 1, layer_settings, CylindricalPathPattern::kHelical);
 
         const Angle helical_start_angle = layer_settings->setting<Angle>(PS::Helical::kHelicalPathStartAngle);
-        Polyline helix = createHelix(center, radius, start_z, top_z, bead_width, handedness, helical_start_angle);
+        const QVector<HelicalRegionPolylineRun> available_runs =
+            createHelicalRegionRuns(profile, center, radius, handedness, helical_start_angle, available_revolutions);
+        const Polyline helix = flattenHelicalRegionRuns(available_runs);
         const HelixClipResult clip_result =
             clipHelixToSections(helix, cross_sections, first_section_z, section_spacing);
-        QVector<Polyline> clipped_lines = HelicalPathRounding::clipAtHighestIntersection(
-            helix, clip_result.intersections, clip_result.has_inside_points, clip_result.has_outside_points, center,
-            radius, start_z, bead_width, handedness, helical_start_angle, z_clip_rounding, kMinPathSegmentLength);
+        const std::optional<double> retained_revolutions =
+            retainedProfileRevolutions(profile, clip_result, z_clip_rounding);
 
-        for (const Polyline& line : clipped_lines) {
-            if (line.size() < 2) { continue; }
+        if (retained_revolutions.has_value()) {
+            const QVector<HelicalRegionPolylineRun> retained_runs = createHelicalRegionRuns(
+                profile, center, radius, handedness, helical_start_angle, retained_revolutions.value());
+            Path path;
+            Point path_current_location = current_location;
 
-            Path path = createPath(line, layer_settings, center, radius, helix_counterclockwise, current_location);
+            for (const HelicalRegionPolylineRun& run : retained_runs) {
+                if (run.polyline.size() < 2) { continue; }
+
+                path.append(createPath(run.polyline, layer_settings, center, radius, helix_counterclockwise,
+                                       path_current_location, run.region_type));
+            }
 
             if (path.size() > 0) {
+                current_location = path_current_location;
                 helical_layer->addPath(path);
-                for (const Point& point : line) {
-                    const Distance point_z(point.z());
-                    if (!m_has_generated_path_max_z || point_z > m_generated_path_max_z) {
-                        m_generated_path_max_z     = point_z;
-                        m_has_generated_path_max_z = true;
+
+                for (const HelicalRegionPolylineRun& run : retained_runs) {
+                    for (const Point& point : run.polyline) {
+                        const Distance point_z(point.z());
+                        if (!m_has_generated_path_max_z || point_z > m_generated_path_max_z) {
+                            m_generated_path_max_z     = point_z;
+                            m_has_generated_path_max_z = true;
+                        }
                     }
                 }
             }
@@ -711,14 +872,6 @@ double CylindricalSlicer::maxRadiusForMeshes(const QVector<QSharedPointer<MeshBa
     return max_radius;
 }
 
-Polyline CylindricalSlicer::createHelix(const Point& center, Distance radius, Distance start_z, Distance top_z,
-                                        Distance bead_width, HelicalPathHandedness handedness, Angle start_angle) {
-    if (top_z <= start_z || bead_width <= 0) { return {}; }
-
-    return HelicalPathRounding::createHelixForRevolutions(center, radius, start_z, bead_width, handedness, start_angle,
-                                                          (top_z() - start_z()) / bead_width());
-}
-
 Polyline CylindricalSlicer::createCircle(const Point& center, Distance radius, Distance z, Distance bead_width,
                                          Angle start_angle) {
     const double circumference = 2.0 * M_PI * radius();
@@ -737,12 +890,13 @@ Polyline CylindricalSlicer::createCircle(const Point& center, Distance radius, D
 }
 
 QSharedPointer<SettingsBase> CylindricalSlicer::createSegmentSettings(
-    const QSharedPointer<SettingsBase>& layer_settings, const Point& center, bool region_start) {
+    const QSharedPointer<SettingsBase>& layer_settings, const Point& center, bool region_start,
+    RegionType region_type) {
     QSharedPointer<SettingsBase> segment_settings = QSharedPointer<SettingsBase>::create(*layer_settings);
     segment_settings->setSetting(SS::kWidth, layer_settings->setting<Distance>(PS::Layer::kBeadWidth));
     segment_settings->setSetting(SS::kHeight, layer_settings->setting<Distance>(PS::Layer::kLayerHeight));
     segment_settings->setSetting(SS::kSpeed, layer_settings->setting<Velocity>(PS::Layer::kSpeed));
-    segment_settings->setSetting(SS::kRegionType, RegionType::kPerimeter);
+    segment_settings->setSetting(SS::kRegionType, region_type);
     segment_settings->setSetting(SS::kPathModifiers, PathModifiers::kNone);
     segment_settings->setSetting(SS::kMaterialNumber, 0);
     segment_settings->setSetting(SS::kRecipe, 0);
@@ -754,8 +908,8 @@ QSharedPointer<SettingsBase> CylindricalSlicer::createSegmentSettings(
 }
 
 Path CylindricalSlicer::createPath(const Polyline& polyline, const QSharedPointer<SettingsBase>& layer_settings,
-                                   const Point& center, Distance radius, bool counterclockwise,
-                                   Point& current_location) {
+                                   const Point& center, Distance radius, bool counterclockwise, Point& current_location,
+                                   RegionType region_type) {
     Path path;
     if (polyline.size() < 2) { return path; }
 
@@ -767,9 +921,10 @@ Path CylindricalSlicer::createPath(const Polyline& polyline, const QSharedPointe
     const Point path_start          = arc_points.size() > 1 ? arc_points.first() : polyline.first();
     const Point path_end            = arc_points.size() > 1 ? arc_points.last() : polyline.last();
 
-    QSharedPointer<SettingsBase> region_start_settings = createSegmentSettings(layer_settings, center, true);
-    QSharedPointer<SettingsBase> print_settings        = createSegmentSettings(layer_settings, center, false);
-    QSharedPointer<TravelSegment> travel = QSharedPointer<TravelSegment>::create(current_location, path_start);
+    QSharedPointer<SettingsBase> region_start_settings =
+        createSegmentSettings(layer_settings, center, true, region_type);
+    QSharedPointer<SettingsBase> print_settings = createSegmentSettings(layer_settings, center, false, region_type);
+    QSharedPointer<TravelSegment> travel        = QSharedPointer<TravelSegment>::create(current_location, path_start);
     travel->setSb(region_start_settings);
 
     if (current_location.distance(path_start) > kMinPathSegmentLength) { path.add(travel); }

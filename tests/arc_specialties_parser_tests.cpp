@@ -124,6 +124,75 @@ bool writesCompactCylindricalPrintComments() {
            !helical_line.contains("AXIS_Y");
 }
 
+QSharedPointer<ORNL::SettingsBase> helicalWriterSettings(bool support_arcs) {
+    QSharedPointer<ORNL::SettingsBase> settings = QSharedPointer<ORNL::SettingsBase>::create();
+    settings->setSetting(ORNL::PS::Slicing::kSlicingMode, static_cast<int>(ORNL::SlicingMode::kCylindrical));
+    settings->setSetting(ORNL::PS::Slicing::kCylindricalPathPattern,
+                         static_cast<int>(ORNL::CylindricalPathPattern::kHelical));
+    settings->setSetting(ORNL::PRS::MachineSetup::kSupportG3, support_arcs);
+    settings->setSetting(ORNL::PRS::MachineSetup::kG2G3CenterPointInterpretation, 1);
+    settings->setSetting(ORNL::PRS::MachineSetup::kAxisA, 0.0 * ORNL::degree);
+    settings->setSetting(ORNL::PRS::MachineSetup::kAxisC, 0.0 * ORNL::degree);
+    return settings;
+}
+
+QSharedPointer<ORNL::SettingsBase> helicalSegmentSettings(std::optional<ORNL::RegionType> region_type) {
+    QSharedPointer<ORNL::SettingsBase> segment_settings = QSharedPointer<ORNL::SettingsBase>::create();
+    segment_settings->setSetting(ORNL::SS::kSpeed, 600.0 * ORNL::mm / ORNL::minute);
+    segment_settings->setSetting(QStringLiteral("radial_center_x"), 0.0 * ORNL::mm);
+    segment_settings->setSetting(QStringLiteral("radial_center_y"), 0.0 * ORNL::mm);
+    segment_settings->setSetting(ORNL::PS::Helical::kHelicalPathHandedness,
+                                 static_cast<int>(ORNL::HelicalPathHandedness::kRightHanded));
+    segment_settings->setSetting(ORNL::PS::Helical::kHelicalPathStartAngle, 0.0 * ORNL::degree);
+    if (region_type.has_value()) { segment_settings->setSetting(ORNL::SS::kRegionType, region_type.value()); }
+    return segment_settings;
+}
+
+bool writesHelicalRegionLineComments() {
+    QSharedPointer<ORNL::SettingsBase> settings = helicalWriterSettings(false);
+    ORNL::ArcSpecialtiesWriter writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+
+    const ORNL::Point start(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm);
+    const ORNL::Point end(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm);
+    const QString block = writer.writeLine(start, end, helicalSegmentSettings(ORNL::RegionType::kPerimeter)) %
+                          writer.writeLine(start, end, helicalSegmentSettings(ORNL::RegionType::kInset)) %
+                          writer.writeLine(start, end, helicalSegmentSettings(ORNL::RegionType::kInfill));
+
+    return block.contains(";HELICAL PERIMETER\n") && block.contains(";HELICAL INSET\n") &&
+           block.contains(";HELICAL INFILL\n");
+}
+
+bool writesHelicalRegionArcComments() {
+    QSharedPointer<ORNL::SettingsBase> settings = helicalWriterSettings(true);
+    ORNL::ArcSpecialtiesWriter writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+
+    const ORNL::Point start(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm);
+    const ORNL::Point end(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm);
+    const ORNL::Point center(0.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm);
+    const QString block = writer.writeArc(start, end, center, 90.0 * ORNL::degree, true,
+                                          helicalSegmentSettings(ORNL::RegionType::kPerimeter)) %
+                          writer.writeArc(start, end, center, 90.0 * ORNL::degree, true,
+                                          helicalSegmentSettings(ORNL::RegionType::kInset)) %
+                          writer.writeArc(start, end, center, 90.0 * ORNL::degree, true,
+                                          helicalSegmentSettings(ORNL::RegionType::kInfill));
+
+    return block.contains("G03") && block.contains(";HELICAL PERIMETER\n") && block.contains(";HELICAL INSET\n") &&
+           block.contains(";HELICAL INFILL\n");
+}
+
+bool writesGenericHelicalCommentForMissingOrUnknownRegion() {
+    QSharedPointer<ORNL::SettingsBase> settings = helicalWriterSettings(false);
+    ORNL::ArcSpecialtiesWriter writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+
+    const ORNL::Point start(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm);
+    const ORNL::Point end(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm);
+    const QString missing_region = writer.writeLine(start, end, helicalSegmentSettings(std::nullopt));
+    const QString unknown_region = writer.writeLine(start, end, helicalSegmentSettings(ORNL::RegionType::kUnknown));
+
+    return missing_region.contains(";HELICAL\n") && unknown_region.contains(";HELICAL\n") &&
+           !missing_region.contains(";HELICAL PERIMETER") && !unknown_region.contains(";HELICAL INFILL");
+}
+
 QString lineContaining(const QString& block, const QString& marker) {
     for (const QString& line : block.split('\n', Qt::SkipEmptyParts)) {
         if (line.contains(marker)) { return line; }
@@ -231,7 +300,8 @@ bool writesHelicalZClipRoundingHeader() {
     const QString header = writer.writeSettingsHeader(ORNL::GcodeSyntax::kArcSpecialties);
     const QString removed_boundary_policy_header =
         QStringLiteral(";Helical Path") % QStringLiteral(" Boundary Policy:");
-    return !header.contains(removed_boundary_policy_header) &&
+    return !header.contains(removed_boundary_policy_header) && !header.contains(";Helical Rise Per Revolution:") &&
+           header.contains(";Helical Region Pitch Fallback: 4.0000mm when a region stepover is 0") &&
            header.contains(";Helical Z Clip Rounding: Complete Revolution");
 }
 
@@ -292,6 +362,12 @@ int main(int argc, char* argv[]) {
     passed &= expect(writesInlineArcOptionalStop(), "Arc Specialties writer did not emit inline G81 on G02/G03.");
     passed &= expect(writesCompactCylindricalPrintComments(),
                      "Arc Specialties writer did not emit compact cylindrical comments.");
+    passed &=
+        expect(writesHelicalRegionLineComments(), "Arc Specialties writer did not emit helical line region comments.");
+    passed &=
+        expect(writesHelicalRegionArcComments(), "Arc Specialties writer did not emit helical arc region comments.");
+    passed &= expect(writesGenericHelicalCommentForMissingOrUnknownRegion(),
+                     "Arc Specialties writer did not fall back to generic helical comments.");
     passed &= expect(writesFirstTravelWithWorkObjectToolFrame(), "Arc Specialties first travel did not use ZR=-135.");
     passed &= expect(writesStartupWorldApproachAbovePartOrCylinderHeight(),
                      "Arc Specialties startup world approach did not use part/cylinder safe Z.");
