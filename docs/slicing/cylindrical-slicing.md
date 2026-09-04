@@ -16,8 +16,8 @@ This slicer currently requires the `Arc Specialties` G-code syntax, but this pag
 8. Set `Cylinder Inner Radius` if the first cylinder or helix should begin away from the axis.
 9. Set `Cylinder Height` to limit generated cylindrical paths above the part base. Leave it at `0` to use the part height.
 10. Set `Cylindrical Path Order Optimization` to choose `Next Closest` or `Next Farthest` ordering between retained cylindrical paths.
-11. Set the path boundary policy for the selected `Cylindrical Path Pattern`.
-12. For `Helical` with `Clip Z`, set `Helical Z Clip Rounding` to choose whether the path stops at the model intersection or rounds to a full revolution.
+11. For `Radial`, set the path boundary policy.
+12. For `Helical`, set `Helical Z Clip Rounding` to choose whether the path stops at the model intersection or rounds to a full revolution.
 13. Set the radial or helical path start angle if the first point should begin somewhere other than the default.
 14. For `Helical`, set `Helical Path Handedness` if the helix should sweep clockwise rather than the default counter-clockwise direction as Z rises.
 15. Confirm the printer `Syntax` is `Arc Specialties`. Selecting `Cylindrical` defaults to `Arc Specialties` when the current syntax is not cylindrical-capable.
@@ -56,15 +56,15 @@ The first radius is half a `Layer Height` outward from `Cylinder Inner Radius`, 
 | `Cylindrical Path Order Optimization` | Profile > Optimizations | Selects `Next Closest` or `Next Farthest` ordering between retained radial or helical paths. Closed radial paths may rotate to the selected segment start. |
 | `Radial Path Start Angle` | Profile > Slicing | For `Radial`, angular start position around the cylinder axis. |
 | `Helical Path Start Angle` | Profile > Slicing | For `Helical`, angular start position around the cylinder axis. Defaults to `90 deg` for a +Y start. |
-| `Helical Z Clip Rounding` | Profile > Slicing | For `Helical` with `Clip Z`, controls whether the path ends at the model intersection, the next complete revolution, or the previous complete revolution. |
+| `Helical Z Clip Rounding` | Profile > Slicing | For `Helical`, controls whether the z-clipped path ends at the model intersection, the next complete revolution, or the previous complete revolution. |
 | `Helical Path Handedness` | Profile > Slicing | For `Helical`, selects `Right Handed` counter-clockwise rise or `Left Handed` clockwise rise. |
 | `Arcs per Revolution` | Profile > Slicing | Sets how many G2/G3 moves represent one complete revolution when `Supports G2/G3` is enabled. |
 
-Only relevant settings are shown for the selected path pattern. `Radial` shows `Radial Path Boundary Policy` with `Clip`, `Keep`, and `Discard`, plus `Radial Path Start Angle`. `Helical` shows `Helical Path Boundary Policy` with `Clip` and `Clip Z`, plus helical-only controls such as `Helical Path Start Angle` and `Helical Path Handedness`. `Helical Z Clip Rounding` is shown only when `Helical Path Boundary Policy` is `Clip Z`.
+Only relevant settings are shown for the selected path pattern. `Radial` shows `Radial Path Boundary Policy` with `Clip`, `Keep`, and `Discard`, plus `Radial Path Start Angle`. `Helical` shows `Helical Z Clip Rounding` plus helical-only controls such as `Helical Path Start Angle` and `Helical Path Handedness`.
 
 Planar-only path settings, including Perimeter, Inset, Skeleton, Skin, Infill, Support, Ordering, Platform Adhesion, and their region-specific material modifiers, are hidden or disabled while `Slicing Mode` is `Cylindrical`. Cylindrical mode shows the two-option `Cylindrical Path Order Optimization` setting instead of the planar path-order controls.
 
-## Boundary Policies
+## Boundary Handling
 
 For `Radial`, model clipping can split a path into one or more retained arcs:
 
@@ -74,20 +74,13 @@ For `Radial`, model clipping can split a path into one or more retained arcs:
 | `Keep` | Outputs the original boundary-crossing path when any portion is inside the model cross section. |
 | `Discard` | Omits paths when clipping removes a meaningful portion of the path. Paths fully inside the model cross section are still kept. |
 
-For `Helical`, model clipping retains helix portions according to the selected mode:
+For `Helical`, model clipping outputs one continuous prefix of the original helix, from its generated start through the boundary intersection with the greatest Z value. `Helical Z Clip Rounding` controls the endpoint: `Exact Intersection` stops at the highest-Z model intersection, `Complete Revolution` continues to the next complete revolution and may extend above the model or configured `Cylinder Height`, and `Last Full Revolution` stops at the previous complete revolution. If the intersection occurs before the first complete revolution, that radius is omitted.
 
-| Option | Behavior |
-| --- | --- |
-| `Clip` | Outputs every contiguous helix portion that lies inside the model. |
-| `Clip Z` | Outputs one continuous prefix of the original helix, from its generated start through the boundary intersection with the greatest Z value. |
-
-`Helical Z Clip Rounding` refines `Clip Z`. `Exact Intersection` stops at the highest-Z model intersection. `Complete Revolution` continues to the next complete revolution and may extend above the model or configured `Cylinder Height`. `Last Full Revolution` stops at the previous complete revolution; if the intersection occurs before the first complete revolution, that radius is omitted.
-
-When `Clip Z` finds no boundary crossing, a helix that is wholly inside the model is kept in full and a helix that is wholly outside is omitted.
+When helical z clipping finds no boundary crossing, a helix that is wholly inside the model is kept in full and a helix that is wholly outside is omitted.
 
 ## G-code Output Handoff
 
-Cylindrical slicing hands radial and helical paths to the Arc Specialties writer. The generated header reports the cylindrical geometry, selected path pattern, cylindrical path order, path start angle, helical handedness, boundary policy, Clip Z rounding when applicable, and travel lift distance. Print moves are marked with `RADIAL` or `HELICAL` comments so the preview path can classify cylindrical bead motion.
+Cylindrical slicing hands radial and helical paths to the Arc Specialties writer. The generated header reports the cylindrical geometry, selected path pattern, cylindrical path order, path start angle, helical handedness, z clip rounding for helical paths, and travel lift distance. Print moves are marked with `RADIAL` or `HELICAL` comments so the preview path can classify cylindrical bead motion.
 
 When `Supports G2/G3` is disabled, cylindrical print paths are written as sampled G1 segments. When `Supports G2/G3` is enabled, complete rings or helical revolutions are divided according to `Arcs per Revolution`; clipped or partial paths may include a shorter final arc. The exact G00/G01/G02/G03 syntax, positioner fields, center modes, and startup commands are described in [Arc Specialties](../gcode/arc-specialties.md).
 
@@ -107,7 +100,7 @@ After slicing, verify that:
 - The G-code header identifies the selected `Cylindrical Path Pattern` and selected path start angle.
 - The G-code header identifies the selected `Cylindrical Path Order Optimization`.
 - For `Helical`, the G-code header identifies the selected `Helical Path Handedness`.
-- For `Helical` with `Clip Z`, the G-code header identifies the selected `Helical Z Clip Rounding`.
+- For `Helical`, the G-code header identifies the selected `Helical Z Clip Rounding`.
 - A complete radial ring or helical revolution contains the configured `Arcs per Revolution`; clipped or partial paths may include a shorter final arc.
 - Printed paths lie on the part rather than above or below it.
 - Travel moves and configured travel lift stay clear of the printed cylindrical paths.

@@ -879,7 +879,6 @@ class Constants {
             static const QString kCylinderAxisY;
             static const QString kRadialPathBoundaryPolicy;
             static const QString kRadialPathStartAngle;
-            static const QString kHelicalPathBoundaryPolicy;
             static const QString kHelicalPathZClipRounding;
             static const QString kHelicalPathHandedness;
             static const QString kHelicalPathStartAngle;

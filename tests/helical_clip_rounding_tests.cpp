@@ -63,6 +63,20 @@ QVector<ORNL::Polyline> roundedAt(double intersection_revolutions, ORNL::Helical
         true, true, center, radius, start_z, bead_width, handedness, start_angle, rounding, 10.0 * ORNL::micron);
 }
 
+QVector<ORNL::Polyline> roundedWhollyInsideAt(double top_revolutions, ORNL::HelicalPathZClipRounding rounding) {
+    const ORNL::Point center(0.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm);
+    const ORNL::Distance radius     = 10.0 * ORNL::mm;
+    const ORNL::Distance start_z    = 0.0 * ORNL::mm;
+    const ORNL::Distance bead_width = 4.0 * ORNL::mm;
+    const ORNL::Polyline helix      = ORNL::HelicalPathRounding::createHelixForRevolutions(
+        center, radius, start_z, bead_width, ORNL::HelicalPathHandedness::kRightHanded, 0.0 * ORNL::degree,
+        top_revolutions);
+
+    return ORNL::HelicalPathRounding::clipAtHighestIntersection(helix, {}, true, false, center, radius, start_z,
+                                                                bead_width, ORNL::HelicalPathHandedness::kRightHanded,
+                                                                0.0 * ORNL::degree, rounding, 10.0 * ORNL::micron);
+}
+
 bool exactRoundingKeepsIntersection() {
     const QVector<ORNL::Polyline> result = roundedAt(2.25, ORNL::HelicalPathZClipRounding::kExactIntersection);
     if (result.size() != 1 || result.first().isEmpty()) { return false; }
@@ -112,6 +126,26 @@ bool fullRevolutionEndpointPreservesStartAngleForBothHandednesses() {
            nearDistance(left_end.x(), 0.0 * ORNL::mm) && nearDistance(left_end.y(), 10.0 * ORNL::mm) &&
            nearDistance(right_end.z(), 12.0 * ORNL::mm) && nearDistance(left_end.z(), 12.0 * ORNL::mm);
 }
+
+bool whollyInsideCompleteRoundsGeneratedTopToNextRevolution() {
+    const QVector<ORNL::Polyline> result =
+        roundedWhollyInsideAt(2.25, ORNL::HelicalPathZClipRounding::kCompleteRevolution);
+    if (result.size() != 1 || result.first().isEmpty()) { return false; }
+
+    const ORNL::Point end = result.first().last();
+    return nearDistance(end.x(), 10.0 * ORNL::mm) && nearDistance(end.y(), 0.0 * ORNL::mm) &&
+           nearDistance(end.z(), 12.0 * ORNL::mm);
+}
+
+bool whollyInsideLastFullRoundsGeneratedTopToPreviousRevolution() {
+    const QVector<ORNL::Polyline> result =
+        roundedWhollyInsideAt(2.25, ORNL::HelicalPathZClipRounding::kLastFullRevolution);
+    if (result.size() != 1 || result.first().isEmpty()) { return false; }
+
+    const ORNL::Point end = result.first().last();
+    return nearDistance(end.x(), 10.0 * ORNL::mm) && nearDistance(end.y(), 0.0 * ORNL::mm) &&
+           nearDistance(end.z(), 8.0 * ORNL::mm);
+}
 }  // namespace
 
 int main() {
@@ -126,6 +160,10 @@ int main() {
                      "Expected last-full rounding before one revolution to omit the path.");
     passed &= expect(fullRevolutionEndpointPreservesStartAngleForBothHandednesses(),
                      "Expected full-revolution endpoints to preserve start angle for both handednesses.");
+    passed &= expect(whollyInsideCompleteRoundsGeneratedTopToNextRevolution(),
+                     "Expected complete rounding to round a wholly inside helix top to the next full revolution.");
+    passed &= expect(whollyInsideLastFullRoundsGeneratedTopToPreviousRevolution(),
+                     "Expected last-full rounding to round a wholly inside helix top to the previous full revolution.");
 
     return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 }

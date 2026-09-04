@@ -88,7 +88,22 @@ QVector<Polyline> HelicalPathRounding::clipAtHighestIntersection(
     if (helix.size() < 2) { return {}; }
 
     if (intersections.isEmpty()) {
-        return has_inside_points && !has_outside_points ? QVector<Polyline> {helix} : QVector<Polyline>();
+        if (!has_inside_points || has_outside_points) { return {}; }
+
+        if (rounding == HelicalPathZClipRounding::kExactIntersection) {
+            return filteredResult(helix, min_path_segment_length);
+        }
+
+        const double raw_revolutions     = revolutionsAtZ(Distance(helix.last().z()), start_z, bead_width);
+        const double rounded_revolutions = rounding == HelicalPathZClipRounding::kCompleteRevolution
+                                               ? std::ceil(raw_revolutions - kRevolutionTolerance)
+                                               : std::floor(raw_revolutions + kRevolutionTolerance);
+
+        if (rounded_revolutions <= kRevolutionTolerance) { return {}; }
+
+        return filteredResult(createHelixForRevolutions(center, radius, start_z, bead_width, handedness, start_angle,
+                                                        rounded_revolutions),
+                              min_path_segment_length);
     }
 
     const auto highest_intersection =

@@ -119,11 +119,6 @@ QString cylindricalPathOrderText(PathOrderOptimization path_order) {
 ArcSpecialtiesWriter::ArcSpecialtiesWriter(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb)
     : WriterBase(meta, sb) {}
 
-void ArcSpecialtiesWriter::setHelicalPathBoundaryPolicy(
-    const QVector<QPair<QString, HelicalPathBoundaryPolicy>>& methods) {
-    m_helical_path_boundary_policy = methods;
-}
-
 void ArcSpecialtiesWriter::setHelicalPathZClipRounding(
     const QVector<QPair<QString, HelicalPathZClipRounding>>& rounding) {
     m_helical_path_z_clip_rounding = rounding;
@@ -204,23 +199,6 @@ QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
             text += commentLine("Vertical Bead Spacing: " % formatDistance(bead_width, m_meta.m_distance_unit));
         }
         if (helical_mode) {
-            if (m_helical_path_boundary_policy.size() == 1) {
-                text += commentLine("Helical Path Boundary Policy: " %
-                                    toString(m_helical_path_boundary_policy.first().second));
-            }
-            else if (m_helical_path_boundary_policy.size() > 1) {
-                for (const QPair<QString, HelicalPathBoundaryPolicy>& part_method : m_helical_path_boundary_policy) {
-                    const QString part_name = part_method.first.isEmpty() ? "Unnamed Part" : part_method.first;
-                    text += commentLine("Helical Path Boundary Policy (" % part_name % "): " %
-                                        toString(part_method.second));
-                }
-            }
-            else {
-                text += commentLine("Helical Path Boundary Policy: " %
-                                    toString(static_cast<HelicalPathBoundaryPolicy>(
-                                        m_sb->setting<int>(PS::Slicing::kHelicalPathBoundaryPolicy))));
-            }
-
             if (m_helical_path_z_clip_rounding.size() == 1) {
                 text +=
                     commentLine("Helical Z Clip Rounding: " % toString(m_helical_path_z_clip_rounding.first().second));
@@ -232,8 +210,7 @@ QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
                         commentLine("Helical Z Clip Rounding (" % part_name % "): " % toString(part_rounding.second));
                 }
             }
-            else if (static_cast<HelicalPathBoundaryPolicy>(m_sb->setting<int>(
-                         PS::Slicing::kHelicalPathBoundaryPolicy)) == HelicalPathBoundaryPolicy::kClipZ) {
+            else {
                 text += commentLine("Helical Z Clip Rounding: " %
                                     toString(static_cast<HelicalPathZClipRounding>(
                                         m_sb->setting<int>(PS::Slicing::kHelicalPathZClipRounding))));

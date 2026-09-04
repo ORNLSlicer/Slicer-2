@@ -115,7 +115,6 @@ struct HelicalCrossSection {
 
 //! @brief Model-clipping result for one sampled helix.
 struct HelixClipResult {
-    QVector<Polyline> fragments;
     QVector<HelicalPathBoundaryIntersection> intersections;
     bool has_inside_points  = false;
     bool has_outside_points = false;
@@ -191,7 +190,7 @@ Point findBoundaryPoint(const Point& start, const Point& end, bool start_inside,
     return start_inside ? low : high;
 }
 
-//! @brief Clips a sampled helix into contiguous fragments and records model-boundary crossings.
+//! @brief Records sampled-helix model-boundary crossings used for z clipping.
 HelixClipResult clipHelixToSections(const Polyline& helix, const QVector<HelicalCrossSection>& sections,
                                     Distance first_z, Distance section_spacing) {
     HelixClipResult result;
@@ -202,43 +201,24 @@ HelixClipResult clipHelixToSections(const Polyline& helix, const QVector<Helical
     result.has_inside_points  = previous_inside;
     result.has_outside_points = !previous_inside;
 
-    Polyline current_line;
-    if (previous_inside) { current_line.push_back(previous); }
-
     for (int i = 1, end = helix.size(); i < end; ++i) {
         const Point current       = helix[i];
         const bool current_inside = pointInsideModel(sections, current, first_z, section_spacing);
         result.has_inside_points  = result.has_inside_points || current_inside;
         result.has_outside_points = result.has_outside_points || !current_inside;
 
-        if (previous_inside && current_inside) {
-            if (current_line.isEmpty()) { current_line.push_back(previous); }
-            current_line.push_back(current);
-        }
-        else if (previous_inside && !current_inside) {
+        if (previous_inside && !current_inside) {
             const Point boundary_point = findBoundaryPoint(previous, current, true, sections, first_z, section_spacing);
             result.intersections.push_back(HelicalPathBoundaryIntersection {boundary_point, i});
-            current_line.push_back(boundary_point);
-            if (current_line.size() > 1 && current_line.length() > kMinPathSegmentLength) {
-                result.fragments.push_back(current_line);
-            }
-            current_line.clear();
         }
         else if (!previous_inside && current_inside) {
             const Point boundary_point =
                 findBoundaryPoint(previous, current, false, sections, first_z, section_spacing);
             result.intersections.push_back(HelicalPathBoundaryIntersection {boundary_point, i});
-            current_line.clear();
-            current_line.push_back(boundary_point);
-            current_line.push_back(current);
         }
 
         previous        = current;
         previous_inside = current_inside;
-    }
-
-    if (current_line.size() > 1 && current_line.length() > kMinPathSegmentLength) {
-        result.fragments.push_back(current_line);
     }
 
     return result;
@@ -316,7 +296,6 @@ void CylindricalSlicer::preProcess(nlohmann::json opt_data) {
     QVector<QSharedPointer<Part>> build_parts = SlicingUtilities::GetPartsByType(CSM->parts(), MeshType::kBuild);
     QVector<QSharedPointer<MeshBase>> clipping_meshes =
         SlicingUtilities::GetMeshesByType(CSM->parts(), MeshType::kClipping);
-    QVector<QPair<QString, HelicalPathBoundaryPolicy>> effective_boundary_policy;
     QVector<QPair<QString, HelicalPathZClipRounding>> effective_z_clip_rounding;
     QVector<QPair<QString, HelicalPathHandedness>> effective_handedness;
 
@@ -378,23 +357,17 @@ void CylindricalSlicer::preProcess(nlohmann::json opt_data) {
         bool part_generated_paths = false;
 
         if (path_pattern == CylindricalPathPattern::kHelical) {
-            const HelicalPathBoundaryPolicy boundary_policy =
-                static_cast<HelicalPathBoundaryPolicy>(part_sb->setting<int>(PS::Slicing::kHelicalPathBoundaryPolicy));
             const HelicalPathZClipRounding z_clip_rounding =
                 static_cast<HelicalPathZClipRounding>(part_sb->setting<int>(PS::Slicing::kHelicalPathZClipRounding));
             const HelicalPathHandedness handedness =
                 static_cast<HelicalPathHandedness>(part_sb->setting<int>(PS::Slicing::kHelicalPathHandedness));
 
             part_generated_paths =
-                generateHelicalLayers(part, part_sb, meshes, mesh_min, mesh_max, boundary_policy, z_clip_rounding,
-                                      handedness, parts_processed, emitPreProcessProgress, emitComputeProgress);
+                generateHelicalLayers(part, part_sb, meshes, mesh_min, mesh_max, z_clip_rounding, handedness,
+                                      parts_processed, emitPreProcessProgress, emitComputeProgress);
             if (part_generated_paths) {
-                effective_boundary_policy.push_back(
-                    QPair<QString, HelicalPathBoundaryPolicy> {part->name(), boundary_policy});
-                if (boundary_policy == HelicalPathBoundaryPolicy::kClipZ) {
-                    effective_z_clip_rounding.push_back(
-                        QPair<QString, HelicalPathZClipRounding> {part->name(), z_clip_rounding});
-                }
+                effective_z_clip_rounding.push_back(
+                    QPair<QString, HelicalPathZClipRounding> {part->name(), z_clip_rounding});
                 effective_handedness.push_back(QPair<QString, HelicalPathHandedness> {part->name(), handedness});
             }
         }
@@ -412,14 +385,13 @@ void CylindricalSlicer::preProcess(nlohmann::json opt_data) {
 
     QSharedPointer<ArcSpecialtiesWriter> arc_specialties_writer = m_base.dynamicCast<ArcSpecialtiesWriter>();
     if (!arc_specialties_writer.isNull()) {
-        arc_specialties_writer->setHelicalPathBoundaryPolicy(effective_boundary_policy);
         arc_specialties_writer->setHelicalPathZClipRounding(effective_z_clip_rounding);
         arc_specialties_writer->setHelicalPathHandedness(effective_handedness);
     }
 
     if (m_cylindrical_layers.isEmpty()) {
         const QString boundary_setting = selected_path_pattern == CylindricalPathPattern::kHelical
-                                             ? "Helical Path Boundary Policy"
+                                             ? "Helical Z Clip Rounding"
                                              : "Radial Path Boundary Policy";
         const QString message          = QString(
                                              "Warning: %1 slicing generated no printable paths. Check Cylinder "
@@ -535,8 +507,7 @@ bool CylindricalSlicer::generateRadialLayers(const QSharedPointer<Part>& part,
 bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
                                               const QSharedPointer<SettingsBase>& part_sb,
                                               const QVector<QSharedPointer<MeshBase>>& meshes, const Point& mesh_min,
-                                              const Point& mesh_max, HelicalPathBoundaryPolicy boundary_policy,
-                                              HelicalPathZClipRounding z_clip_rounding,
+                                              const Point& mesh_max, HelicalPathZClipRounding z_clip_rounding,
                                               HelicalPathHandedness handedness, int part_index,
                                               const ProgressCallback& emit_pre_process_progress,
                                               const ProgressCallback& emit_compute_progress) {
@@ -627,12 +598,9 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
         Polyline helix = createHelix(center, radius, start_z, top_z, bead_width, handedness, helical_start_angle);
         const HelixClipResult clip_result =
             clipHelixToSections(helix, cross_sections, first_section_z, section_spacing);
-        QVector<Polyline> clipped_lines = clip_result.fragments;
-        if (boundary_policy == HelicalPathBoundaryPolicy::kClipZ) {
-            clipped_lines = HelicalPathRounding::clipAtHighestIntersection(
-                helix, clip_result.intersections, clip_result.has_inside_points, clip_result.has_outside_points, center,
-                radius, start_z, bead_width, handedness, helical_start_angle, z_clip_rounding, kMinPathSegmentLength);
-        }
+        QVector<Polyline> clipped_lines = HelicalPathRounding::clipAtHighestIntersection(
+            helix, clip_result.intersections, clip_result.has_inside_points, clip_result.has_outside_points, center,
+            radius, start_z, bead_width, handedness, helical_start_angle, z_clip_rounding, kMinPathSegmentLength);
 
         for (const Polyline& line : clipped_lines) {
             if (line.size() < 2) { continue; }

@@ -115,30 +115,8 @@ inline QString toString(RadialPathBoundaryPolicy handling) {
 }
 
 /*!
- * @enum HelicalPathBoundaryPolicy
- * @brief Selects how a helical path is clipped to the model boundary.
- */
-enum class HelicalPathBoundaryPolicy : uint8_t {
-    //! @brief Keep every portion of the helix that lies inside the model.
-    kClip = 0,
-
-    //! @brief Keep the helix through the model intersection with the greatest Z value.
-    kClipZ = 1
-};
-
-inline QString toString(HelicalPathBoundaryPolicy handling) {
-    switch (handling) {
-        case HelicalPathBoundaryPolicy::kClipZ:
-            return "Clip Z";
-        case HelicalPathBoundaryPolicy::kClip:
-        default:
-            return "Clip";
-    }
-}
-
-/*!
  * @enum HelicalPathZClipRounding
- * @brief Controls where Clip Z helical paths end relative to full revolutions.
+ * @brief Controls where Z-clipped helical paths end relative to full revolutions.
  */
 enum class HelicalPathZClipRounding : uint8_t {
     //! @brief End exactly at the highest-Z model intersection.
