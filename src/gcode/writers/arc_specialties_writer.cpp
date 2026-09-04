@@ -115,6 +115,25 @@ QString formatAngle(Angle value, Angle unit) {
 QString cylindricalPathOrderText(PathOrderOptimization path_order) {
     return path_order == PathOrderOptimization::kNextFarthest ? "Next Farthest" : "Next Closest";
 }
+
+//! @brief Resolves a zero helical region stepover to the default bead-width pitch.
+Distance helicalRegionPitch(Distance stepover, Distance bead_width) {
+    return stepover() == 0.0 ? bead_width : stepover;
+}
+
+//! @brief Returns a helical region comment, or generic HELICAL when region metadata is not usable.
+QString helicalRegionComment(RegionType region_type) {
+    switch (region_type) {
+        case RegionType::kPerimeter:
+            return Constants::RegionTypeStrings::kHelical % " " % Constants::RegionTypeStrings::kPerimeter;
+        case RegionType::kInset:
+            return Constants::RegionTypeStrings::kHelical % " " % Constants::RegionTypeStrings::kInset;
+        case RegionType::kInfill:
+            return Constants::RegionTypeStrings::kHelical % " " % Constants::RegionTypeStrings::kInfill;
+        default:
+            return Constants::RegionTypeStrings::kHelical;
+    }
+}
 }  // namespace
 
 ArcSpecialtiesWriter::ArcSpecialtiesWriter(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb)
@@ -189,9 +208,30 @@ QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
             text += commentLine(
                 "Helical Path Start Angle: " %
                 formatAngle(m_sb->setting<Angle>(PS::Helical::kHelicalPathStartAngle), m_meta.m_angle_unit));
-            text += commentLine("Helical Rise Per Revolution: " % formatDistance(bead_width, m_meta.m_distance_unit));
-            text += commentLine("Helical Rise Per Radian: " %
-                                formatDistance(bead_width / (2.0 * M_PI), m_meta.m_distance_unit));
+            text += commentLine("Helical Region Pitch Fallback: " % formatDistance(bead_width, m_meta.m_distance_unit) %
+                                " when a region stepover is 0");
+            text += commentLine("Helical Perimeter Revolutions: " %
+                                QString::number(m_sb->setting<int>(PS::Helical::kHelicalPerimeterRevolutions)));
+            text += commentLine(
+                "Helical Perimeter Pitch: " %
+                formatDistance(
+                    helicalRegionPitch(m_sb->setting<Distance>(PS::Helical::kHelicalPerimeterStepover), bead_width),
+                    m_meta.m_distance_unit));
+            text += commentLine("Helical Inset Revolutions: " %
+                                QString::number(m_sb->setting<int>(PS::Helical::kHelicalInsetRevolutions)));
+            text +=
+                commentLine("Helical Inset Pitch: " %
+                            formatDistance(helicalRegionPitch(
+                                               m_sb->setting<Distance>(PS::Helical::kHelicalInsetStepover), bead_width),
+                                           m_meta.m_distance_unit));
+            text += commentLine(
+                "Helical Infill Pitch: " %
+                formatDistance(
+                    helicalRegionPitch(m_sb->setting<Distance>(PS::Helical::kHelicalInfillStepover), bead_width),
+                    m_meta.m_distance_unit));
+            text += commentLine("Helical Infill Revolutions Rounding: " %
+                                toString(static_cast<HelicalInfillRevolutionsRounding>(
+                                    m_sb->setting<int>(PS::Helical::kHelicalInfillRevolutionsRounding))));
         }
         else {
             text +=
@@ -857,7 +897,11 @@ bool ArcSpecialtiesWriter::isHelicalPathPattern() const {
 
 QString ArcSpecialtiesWriter::printMoveComment(const QSharedPointer<SettingsBase>& params) const {
     if (isCylindricalSlicingMode()) {
-        return isHelicalPathPattern() ? Constants::RegionTypeStrings::kHelical : Constants::RegionTypeStrings::kRadial;
+        if (!isHelicalPathPattern()) { return Constants::RegionTypeStrings::kRadial; }
+
+        if (params == nullptr || !params->contains(SS::kRegionType)) { return Constants::RegionTypeStrings::kHelical; }
+
+        return helicalRegionComment(params->setting<RegionType>(SS::kRegionType));
     }
 
     PathModifiers path_modifiers = PathModifiers::kNone;
