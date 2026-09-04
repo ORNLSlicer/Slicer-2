@@ -16,9 +16,9 @@ This slicer currently requires the `Arc Specialties` G-code syntax, but this pag
 8. Set `Cylinder Inner Radius` if the first cylinder or helix should begin away from the axis.
 9. Set `Cylinder Height` to limit generated cylindrical paths above the part base. Leave it at `0` to use the part height.
 10. Set `Cylindrical Path Order Optimization` to choose `Next Closest` or `Next Farthest` ordering between retained cylindrical paths.
-11. For `Radial`, set the path boundary policy.
+11. For `Radial`, set `Radial Path Boundary Policy` in `Profile > Radial`.
 12. For `Helical`, set `Helical Z Clip Rounding` in `Profile > Helical` to choose whether the path stops at the model intersection or rounds to a full revolution.
-13. Set the radial or helical path start angle if the first point should begin somewhere other than the default.
+13. Set the radial path start angle in `Profile > Radial` or the helical path start angle in `Profile > Helical` if the first point should begin somewhere other than the default.
 14. For `Helical`, set `Helical Path Handedness` in `Profile > Helical` if the helix should sweep clockwise rather than the default counter-clockwise direction as Z rises.
 15. Confirm the printer `Syntax` is `Arc Specialties`. Selecting `Cylindrical` defaults to `Arc Specialties` when the current syntax is not cylindrical-capable.
 16. Configure the required Arc Specialties machine output settings, including positioner axes, frame rotation, `TRAFO`, and G2/G3 center mode, using the [Arc Specialties](../gcode/arc-specialties.md) syntax documentation.
@@ -54,15 +54,24 @@ The first radius is half a `Layer Height` outward from `Cylinder Inner Radius`, 
 | `Cylinder Inner Radius` | Profile > Slicing | Inner radial boundary before the half-layer offset is applied. |
 | `Cylinder Height` | Profile > Slicing | Upper height limit for generated cylindrical paths above the part base. Values less than or equal to `0` use the retained part height. |
 | `Cylindrical Path Order Optimization` | Profile > Optimizations | Selects `Next Closest` or `Next Farthest` ordering between retained radial or helical paths. Closed radial paths may rotate to the selected segment start. |
-| `Radial Path Start Angle` | Profile > Slicing | For `Radial`, angular start position around the cylinder axis. |
+| `Radial Path Start Angle` | Profile > Radial | For `Radial`, angular start position around the cylinder axis. |
 | `Helical Path Start Angle` | Profile > Helical | For `Helical`, angular start position around the cylinder axis. Defaults to `90 deg` for a +Y start. |
 | `Helical Z Clip Rounding` | Profile > Helical | For `Helical`, controls whether the z-clipped path ends at the model intersection, the next complete revolution, or the previous complete revolution. |
 | `Helical Path Handedness` | Profile > Helical | For `Helical`, selects `Right Handed` counter-clockwise rise or `Left Handed` clockwise rise. |
 | `Arcs per Revolution` | Profile > Slicing | Sets how many G2/G3 moves represent one complete revolution when `Supports G2/G3` is enabled. |
 
-Only relevant settings are shown for the selected path pattern. `Radial` shows `Radial Path Boundary Policy` with `Clip`, `Keep`, and `Discard`, plus `Radial Path Start Angle`. `Helical` shows its helical-only controls in `Profile > Helical`, including `Helical Path Start Angle`, `Helical Path Handedness`, and `Helical Z Clip Rounding`.
+Only relevant settings are shown for the selected path pattern. `Radial` shows its radial-only controls in `Profile > Radial`, including `Radial Path Boundary Policy` with `Clip`, `Keep`, and `Discard`, plus `Radial Path Start Angle`. `Helical` shows its helical-only controls in `Profile > Helical`, including `Helical Path Start Angle`, `Helical Path Handedness`, and `Helical Z Clip Rounding`.
 
 Planar-only path settings, including Perimeter, Inset, Skeleton, Skin, Infill, Support, Ordering, Platform Adhesion, and their region-specific material modifiers, are hidden or disabled while `Slicing Mode` is `Cylindrical`. Cylindrical mode shows the two-option `Cylindrical Path Order Optimization` setting instead of the planar path-order controls.
+
+## Radial Profile Settings
+
+When `Slicing Mode` is `Cylindrical` and `Cylindrical Path Pattern` is `Radial`, ORNLSlicer shows a dedicated `Profile > Radial` group for radial path controls:
+
+| Setting | Effect |
+| --- | --- |
+| `Radial Path Boundary Policy` | Selects whether boundary-crossing radial paths are clipped, kept, or discarded. |
+| `Radial Path Start Angle` | Sets the first angular position around each generated radial ring or arc. |
 
 ## Helical Profile Settings
 
