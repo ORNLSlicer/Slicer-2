@@ -553,9 +553,10 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
     Point center         = cylinderCenterForPart(part_sb, part, base_z);
     const Distance max_radius(maxRadiusForMeshes(meshes, center));
 
-    const Distance first_radius = initial_radius + (layer_height / 2.0);
-    const Distance first_bead_z = base_z + (bead_width / 2.0);
-    if (first_bead_z >= top_z) {
+    const Distance first_radius    = initial_radius + (layer_height / 2.0);
+    const Distance start_z         = base_z;
+    const Distance first_section_z = start_z + section_spacing < top_z ? start_z + section_spacing : start_z;
+    if (start_z >= top_z) {
         emit_pre_process_progress(part_index, 0.0);
         emit_compute_progress(part_index, 0.0);
         return false;
@@ -563,9 +564,9 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
 
     QVector<HelicalCrossSection> cross_sections;
     bool has_geometry                 = false;
-    const int estimated_section_count = estimateInclusiveCount(first_bead_z, top_z, section_spacing);
+    const int estimated_section_count = estimateInclusiveCount(first_section_z, top_z, section_spacing);
     int sections_processed            = 0;
-    for (Distance z = first_bead_z; z <= top_z; z += section_spacing) {
+    for (Distance z = first_section_z; z <= top_z; z += section_spacing) {
         Plane slicing_plane(Point(center.x(), center.y(), z()), QVector3D(0, 0, 1));
         PolygonList combined_geometry;
 
@@ -611,7 +612,7 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
 
     bool part_generated_paths = false;
     emit_compute_progress(part_index, 0.0);
-    Point current_location(center.x(), center.y(), first_bead_z());
+    Point current_location(center.x(), center.y(), start_z());
     int helical_layer_number         = 0;
     const int estimated_radius_count = estimateInclusiveCount(first_radius, max_radius, layer_height);
     int radii_processed              = 0;
@@ -623,14 +624,14 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
             helical_layer_number + 1, layer_settings, CylindricalPathPattern::kHelical);
 
         const Angle helical_start_angle = layer_settings->setting<Angle>(PS::Slicing::kHelicalPathStartAngle);
-        Polyline helix = createHelix(center, radius, first_bead_z, top_z, bead_width, handedness, helical_start_angle);
-        const HelixClipResult clip_result = clipHelixToSections(helix, cross_sections, first_bead_z, section_spacing);
-        QVector<Polyline> clipped_lines   = clip_result.fragments;
+        Polyline helix = createHelix(center, radius, start_z, top_z, bead_width, handedness, helical_start_angle);
+        const HelixClipResult clip_result =
+            clipHelixToSections(helix, cross_sections, first_section_z, section_spacing);
+        QVector<Polyline> clipped_lines = clip_result.fragments;
         if (boundary_policy == HelicalPathBoundaryPolicy::kClipZ) {
             clipped_lines = HelicalPathRounding::clipAtHighestIntersection(
                 helix, clip_result.intersections, clip_result.has_inside_points, clip_result.has_outside_points, center,
-                radius, first_bead_z, bead_width, handedness, helical_start_angle, z_clip_rounding,
-                kMinPathSegmentLength);
+                radius, start_z, bead_width, handedness, helical_start_angle, z_clip_rounding, kMinPathSegmentLength);
         }
 
         for (const Polyline& line : clipped_lines) {
