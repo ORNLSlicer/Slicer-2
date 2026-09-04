@@ -877,11 +877,15 @@ class Constants {
             static const QString kCylinderAxisSource;
             static const QString kCylinderAxisX;
             static const QString kCylinderAxisY;
-            static const QString kRadialPathBoundaryPolicy;
-            static const QString kRadialPathStartAngle;
             static const QString kArcsPerRevolution;
             static const QString kImagePixelSizeX;
             static const QString kImagePixelSizeY;
+        };
+
+        class Radial {
+           public:
+            static const QString kRadialPathBoundaryPolicy;
+            static const QString kRadialPathStartAngle;
         };
 
         class Helical {

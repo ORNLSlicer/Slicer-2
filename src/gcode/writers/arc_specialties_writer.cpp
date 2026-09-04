@@ -196,7 +196,7 @@ QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
         else {
             text +=
                 commentLine("Radial Path Start Angle: " %
-                            formatAngle(m_sb->setting<Angle>(PS::Slicing::kRadialPathStartAngle), m_meta.m_angle_unit));
+                            formatAngle(m_sb->setting<Angle>(PS::Radial::kRadialPathStartAngle), m_meta.m_angle_unit));
             text += commentLine("Vertical Bead Spacing: " % formatDistance(bead_width, m_meta.m_distance_unit));
         }
         if (helical_mode) {
@@ -236,7 +236,7 @@ QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
         else {
             text += commentLine("Radial Path Boundary Policy: " %
                                 toString(static_cast<RadialPathBoundaryPolicy>(
-                                    m_sb->setting<int>(PS::Slicing::kRadialPathBoundaryPolicy))));
+                                    m_sb->setting<int>(PS::Radial::kRadialPathBoundaryPolicy))));
         }
         text += commentLine("Travel Lift Distance: " %
                             formatDistance(m_sb->setting<Distance>(PS::Travel::kLiftHeight), m_meta.m_distance_unit));
