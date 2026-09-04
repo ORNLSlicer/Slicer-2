@@ -112,9 +112,9 @@ bool writesCompactCylindricalPrintComments() {
 
     settings->setSetting(ORNL::PS::Slicing::kCylindricalPathPattern,
                          static_cast<int>(ORNL::CylindricalPathPattern::kHelical));
-    segment_settings->setSetting(ORNL::PS::Slicing::kHelicalPathHandedness,
+    segment_settings->setSetting(ORNL::PS::Helical::kHelicalPathHandedness,
                                  static_cast<int>(ORNL::HelicalPathHandedness::kRightHanded));
-    segment_settings->setSetting(ORNL::PS::Slicing::kHelicalPathStartAngle, 0.0 * ORNL::degree);
+    segment_settings->setSetting(ORNL::PS::Helical::kHelicalPathStartAngle, 0.0 * ORNL::degree);
     ORNL::ArcSpecialtiesWriter helical_writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
     const QString helical_line = helical_writer.writeLine(
         ORNL::Point(1.0 * ORNL::mm, 0.0 * ORNL::mm), ORNL::Point(0.0 * ORNL::mm, 1.0 * ORNL::mm), segment_settings);
@@ -218,11 +218,11 @@ bool writesHelicalZClipRoundingHeader() {
     settings->setSetting(ORNL::PS::Slicing::kSlicingMode, static_cast<int>(ORNL::SlicingMode::kCylindrical));
     settings->setSetting(ORNL::PS::Slicing::kCylindricalPathPattern,
                          static_cast<int>(ORNL::CylindricalPathPattern::kHelical));
-    settings->setSetting(ORNL::PS::Slicing::kHelicalPathZClipRounding,
+    settings->setSetting(ORNL::PS::Helical::kHelicalPathZClipRounding,
                          static_cast<int>(ORNL::HelicalPathZClipRounding::kCompleteRevolution));
-    settings->setSetting(ORNL::PS::Slicing::kHelicalPathHandedness,
+    settings->setSetting(ORNL::PS::Helical::kHelicalPathHandedness,
                          static_cast<int>(ORNL::HelicalPathHandedness::kRightHanded));
-    settings->setSetting(ORNL::PS::Slicing::kHelicalPathStartAngle, 90.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalPathStartAngle, 90.0 * ORNL::degree);
     settings->setSetting(ORNL::PS::Layer::kLayerHeight, 1.0 * ORNL::mm);
     settings->setSetting(ORNL::PS::Layer::kBeadWidth, 4.0 * ORNL::mm);
     settings->setSetting(ORNL::PS::Travel::kLiftHeight, 0.0 * ORNL::mm);

@@ -358,9 +358,9 @@ void CylindricalSlicer::preProcess(nlohmann::json opt_data) {
 
         if (path_pattern == CylindricalPathPattern::kHelical) {
             const HelicalPathZClipRounding z_clip_rounding =
-                static_cast<HelicalPathZClipRounding>(part_sb->setting<int>(PS::Slicing::kHelicalPathZClipRounding));
+                static_cast<HelicalPathZClipRounding>(part_sb->setting<int>(PS::Helical::kHelicalPathZClipRounding));
             const HelicalPathHandedness handedness =
-                static_cast<HelicalPathHandedness>(part_sb->setting<int>(PS::Slicing::kHelicalPathHandedness));
+                static_cast<HelicalPathHandedness>(part_sb->setting<int>(PS::Helical::kHelicalPathHandedness));
 
             part_generated_paths =
                 generateHelicalLayers(part, part_sb, meshes, mesh_min, mesh_max, z_clip_rounding, handedness,
@@ -594,7 +594,7 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
         QSharedPointer<CylindricalLayer> helical_layer = QSharedPointer<CylindricalLayer>::create(
             helical_layer_number + 1, layer_settings, CylindricalPathPattern::kHelical);
 
-        const Angle helical_start_angle = layer_settings->setting<Angle>(PS::Slicing::kHelicalPathStartAngle);
+        const Angle helical_start_angle = layer_settings->setting<Angle>(PS::Helical::kHelicalPathStartAngle);
         Polyline helix = createHelix(center, radius, start_z, top_z, bead_width, handedness, helical_start_angle);
         const HelixClipResult clip_result =
             clipHelixToSections(helix, cross_sections, first_section_z, section_spacing);
