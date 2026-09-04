@@ -844,14 +844,14 @@ const QString Constants::ProfileSettings::Slicing::kCylinderAxisX            = "
 const QString Constants::ProfileSettings::Slicing::kCylinderAxisY            = "cylinder_axis_y";
 const QString Constants::ProfileSettings::Slicing::kRadialPathBoundaryPolicy = "radial_path_boundary_policy";
 const QString Constants::ProfileSettings::Slicing::kRadialPathStartAngle     = "radial_path_start_angle";
-const QString Constants::ProfileSettings::Slicing::kHelicalPathZClipRounding = "helical_path_z_clip_rounding";
-const QString Constants::ProfileSettings::Slicing::kHelicalPathHandedness    = "helical_path_handedness";
-const QString Constants::ProfileSettings::Slicing::kHelicalPathStartAngle    = "helical_path_start_angle";
 const QString Constants::ProfileSettings::Slicing::kArcsPerRevolution        = "arcs_per_revolution";
 const QString Constants::ProfileSettings::Slicing::kImagePixelSizeX          = "image_pixel_size_x";
 const QString Constants::ProfileSettings::Slicing::kImagePixelSizeY          = "image_pixel_size_y";
 
 // Helical
+const QString Constants::ProfileSettings::Helical::kHelicalPathHandedness       = "helical_path_handedness";
+const QString Constants::ProfileSettings::Helical::kHelicalPathStartAngle       = "helical_path_start_angle";
+const QString Constants::ProfileSettings::Helical::kHelicalPathZClipRounding    = "helical_path_z_clip_rounding";
 const QString Constants::ProfileSettings::Helical::kHelicalPerimeterRevolutions = "helical_perimeter_revolutions";
 const QString Constants::ProfileSettings::Helical::kHelicalInsetRevolutions     = "helical_inset_revolutions";
 const QString Constants::ProfileSettings::Helical::kHelicalPerimeterStepover    = "helical_perimeter_stepover";

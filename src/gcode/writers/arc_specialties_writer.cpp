@@ -1,6 +1,7 @@
 #include "gcode/writers/arc_specialties_writer.h"
 
 #include <math.h>
+#include <sys/types.h>
 
 #include <QStringBuilder>
 #include <algorithm>
@@ -187,7 +188,7 @@ QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
         if (helical_mode) {
             text += commentLine(
                 "Helical Path Start Angle: " %
-                formatAngle(m_sb->setting<Angle>(PS::Slicing::kHelicalPathStartAngle), m_meta.m_angle_unit));
+                formatAngle(m_sb->setting<Angle>(PS::Helical::kHelicalPathStartAngle), m_meta.m_angle_unit));
             text += commentLine("Helical Rise Per Revolution: " % formatDistance(bead_width, m_meta.m_distance_unit));
             text += commentLine("Helical Rise Per Radian: " %
                                 formatDistance(bead_width / (2.0 * M_PI), m_meta.m_distance_unit));
@@ -213,7 +214,7 @@ QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
             else {
                 text += commentLine("Helical Z Clip Rounding: " %
                                     toString(static_cast<HelicalPathZClipRounding>(
-                                        m_sb->setting<int>(PS::Slicing::kHelicalPathZClipRounding))));
+                                        m_sb->setting<int>(PS::Helical::kHelicalPathZClipRounding))));
             }
 
             if (m_helical_path_handedness.size() == 1) {
@@ -229,7 +230,7 @@ QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
             else {
                 text += commentLine("Helical Path Handedness: " %
                                     toString(static_cast<HelicalPathHandedness>(
-                                        m_sb->setting<int>(PS::Slicing::kHelicalPathHandedness))));
+                                        m_sb->setting<int>(PS::Helical::kHelicalPathHandedness))));
             }
         }
         else {
@@ -825,7 +826,7 @@ double ArcSpecialtiesWriter::cpAxisForPoint(const Point& destination, const QSha
 
     if (isHelicalPathPattern()) {
         const HelicalPathHandedness handedness =
-            static_cast<HelicalPathHandedness>(params->setting<int>(PS::Slicing::kHelicalPathHandedness));
+            static_cast<HelicalPathHandedness>(params->setting<int>(PS::Helical::kHelicalPathHandedness));
         const double start_angle = helicalStartAngle(params);
         cp_degrees =
             handedness == HelicalPathHandedness::kLeftHanded ? start_angle - cp_degrees : cp_degrees - start_angle;
@@ -837,7 +838,7 @@ double ArcSpecialtiesWriter::cpAxisForPoint(const Point& destination, const QSha
 }
 
 double ArcSpecialtiesWriter::helicalStartAngle(const QSharedPointer<SettingsBase>& params) const {
-    const Angle start_angle = params->setting<Angle>(PS::Slicing::kHelicalPathStartAngle);
+    const Angle start_angle = params->setting<Angle>(PS::Helical::kHelicalPathStartAngle);
     const Point start_direction(std::cos(start_angle()), std::sin(start_angle()), 0.0);
     const Point transformed_start_direction = rotateGCodeCoordinateFrameDelta(start_direction);
     if (std::hypot(transformed_start_direction.x(), transformed_start_direction.y()) <=

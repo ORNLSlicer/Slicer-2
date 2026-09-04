@@ -1106,7 +1106,7 @@ QVector<QSharedPointer<SegmentBase>> GCodeLoader::generateVisualSegment(
                         : std::nullopt;
                 const bool reverse_cp_delta =
                     comment.contains(Constants::RegionTypeStrings::kHelical, Qt::CaseInsensitive) &&
-                    static_cast<HelicalPathHandedness>(m_sb->setting<int>(PS::Slicing::kHelicalPathHandedness)) ==
+                    static_cast<HelicalPathHandedness>(m_sb->setting<int>(PS::Helical::kHelicalPathHandedness)) ==
                         HelicalPathHandedness::kLeftHanded;
                 has_cylindrical_axis = ArcSpecialtiesAxisInference::cylindricalAxisFromCpDelta(
                     m_start_pos, end_pos, m_previous_arc_specialties_cp, current_cp, reverse_cp_delta, reference_axis,
