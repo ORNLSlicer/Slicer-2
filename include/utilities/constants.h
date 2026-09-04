@@ -891,10 +891,10 @@ class Constants {
             static const QString kHelicalPathZClipRounding;
             static const QString kHelicalPerimeterRevolutions;
             static const QString kHelicalInsetRevolutions;
+            static const QString kHelicalInfillRevolutionsRounding;
             static const QString kHelicalPerimeterStepover;
             static const QString kHelicalInsetStepover;
             static const QString kHelicalInfillStepover;
-            static const QString kHelicalInfillRevolutionsRounding;
         };
     };
 
