@@ -28,6 +28,20 @@ QSharedPointer<SegmentBase> firstPrintSegment(const Path& path) {
     return nullptr;
 }
 
+//! @brief Returns whether a segment is a travel move.
+bool isTravelSegment(const QSharedPointer<SegmentBase>& segment) {
+    return dynamic_cast<TravelSegment*>(segment.data()) != nullptr;
+}
+
+//! @brief Returns a segment's print region metadata, or Unknown when absent.
+RegionType segmentRegionType(const QSharedPointer<SegmentBase>& segment) {
+    if (segment == nullptr || segment->getSb() == nullptr || !segment->getSb()->contains(SS::kRegionType)) {
+        return RegionType::kUnknown;
+    }
+
+    return segment->getSb()->setting<RegionType>(SS::kRegionType);
+}
+
 //! @brief Returns segment settings from the first printable segment in a path.
 QSharedPointer<SettingsBase> firstPrintSettings(const Path& path, const QSharedPointer<SettingsBase>& fallback) {
     QSharedPointer<SegmentBase> print_segment = firstPrintSegment(path);
@@ -36,20 +50,90 @@ QSharedPointer<SettingsBase> firstPrintSettings(const Path& path, const QSharedP
     return fallback;
 }
 
+//! @brief Returns the first print region at or after a path index.
+RegionType nextPrintRegionType(const Path& path, int start_index) {
+    for (int i = start_index, end = path.size(); i < end; ++i) {
+        if (!isTravelSegment(path[i])) { return segmentRegionType(path[i]); }
+    }
+
+    return RegionType::kUnknown;
+}
+
+//! @brief Recomputes region-start flags after optimizer ordering or reversal.
+void recomputeRegionStartFlags(Path& path) {
+    bool has_previous_print_region = false;
+    RegionType previous_region     = RegionType::kUnknown;
+
+    for (const QSharedPointer<SegmentBase>& segment : path) {
+        if (isTravelSegment(segment)) { continue; }
+
+        QSharedPointer<SettingsBase> settings = segment->getSb();
+        if (settings == nullptr) { continue; }
+
+        const RegionType current_region = segmentRegionType(segment);
+        settings->setSetting(SS::kIsRegionStartSegment,
+                             !has_previous_print_region || current_region != previous_region);
+        previous_region           = current_region;
+        has_previous_print_region = true;
+    }
+}
+
 //! @brief Restores cylindrical print metadata and gives optimizer-created travels center settings.
 void restoreCylindricalPathSettings(Path& path, const QSharedPointer<SettingsBase>& layer_settings) {
     QSharedPointer<SettingsBase> print_settings = firstPrintSettings(path, layer_settings);
+    if (print_settings == nullptr) { print_settings = layer_settings; }
 
     for (const QSharedPointer<SegmentBase>& segment : path) {
-        if (dynamic_cast<TravelSegment*>(segment.data()) != nullptr) {
+        if (isTravelSegment(segment)) {
             QSharedPointer<SettingsBase> travel_settings = QSharedPointer<SettingsBase>::create(*print_settings);
             travel_settings->setSetting(SS::kSpeed, layer_settings->setting<Velocity>(PS::Travel::kSpeed));
             travel_settings->setSetting(SS::kIsRegionStartSegment, true);
-            travel_settings->setSetting(SS::kRegionType, RegionType::kPerimeter);
             segment->setSb(travel_settings);
         }
-        else { segment->getSb()->setSetting(SS::kRegionType, RegionType::kPerimeter); }
+        else if (segment->getSb() == nullptr) { segment->setSb(QSharedPointer<SettingsBase>::create(*print_settings)); }
     }
+
+    recomputeRegionStartFlags(path);
+}
+
+//! @brief Writes a helical path as contiguous print-region runs without injecting region-boundary travel.
+QString writeHelicalPathByRegionRuns(Path& path, const QSharedPointer<WriterBase>& writer) {
+    QString gcode;
+    bool path_open           = false;
+    RegionType active_region = RegionType::kUnknown;
+
+    for (int i = 0, end = path.size(); i < end; ++i) {
+        const QSharedPointer<SegmentBase>& segment = path[i];
+
+        if (isTravelSegment(segment)) {
+            if (!path_open) {
+                active_region = nextPrintRegionType(path, i + 1);
+                gcode += writer->writeBeforePath(active_region);
+                path_open = true;
+            }
+
+            gcode += segment->writeGCode(writer);
+            continue;
+        }
+
+        const RegionType segment_region = segmentRegionType(segment);
+        if (!path_open) {
+            active_region = segment_region;
+            gcode += writer->writeBeforePath(active_region);
+            path_open = true;
+        }
+        else if (segment_region != active_region) {
+            gcode += writer->writeAfterPath(active_region);
+            active_region = segment_region;
+            gcode += writer->writeBeforePath(active_region);
+        }
+
+        gcode += segment->writeGCode(writer);
+    }
+
+    if (path_open) { gcode += writer->writeAfterPath(active_region); }
+
+    return gcode;
 }
 }  // namespace
 
@@ -69,9 +153,12 @@ QString CylindricalLayer::writeGCode(QSharedPointer<WriterBase> writer) {
     for (Path& path : m_paths) {
         if (path.size() == 0) { continue; }
 
-        gcode += writer->writeBeforePath(RegionType::kPerimeter);
-        for (const QSharedPointer<SegmentBase>& segment : path) { gcode += segment->writeGCode(writer); }
-        gcode += writer->writeAfterPath(RegionType::kPerimeter);
+        if (m_path_pattern == CylindricalPathPattern::kHelical) { gcode += writeHelicalPathByRegionRuns(path, writer); }
+        else {
+            gcode += writer->writeBeforePath(RegionType::kPerimeter);
+            for (const QSharedPointer<SegmentBase>& segment : path) { gcode += segment->writeGCode(writer); }
+            gcode += writer->writeAfterPath(RegionType::kPerimeter);
+        }
     }
     gcode += writer->writeAfterRegion(RegionType::kPerimeter);
 

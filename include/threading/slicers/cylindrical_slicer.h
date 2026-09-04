@@ -115,20 +115,6 @@ class CylindricalSlicer : public TraditionalAST {
                                const ProgressCallback& emit_compute_progress);
 
     /*!
-     * @brief Creates an open polyline approximation of a helix at one radius.
-     * @param center XY center of the cylinder axis.
-     * @param radius Radius of the candidate helical path.
-     * @param start_z First bead centerline Z.
-     * @param top_z Retained mesh maximum Z.
-     * @param bead_width Vertical rise per full revolution and sampling scale.
-     * @param handedness Angular handedness of the generated helix.
-     * @param start_angle Angular start position around the cylinder axis.
-     * @return Open polyline approximation of the candidate bead.
-     */
-    Polyline createHelix(const Point& center, Distance radius, Distance start_z, Distance top_z, Distance bead_width,
-                         HelicalPathHandedness handedness, Angle start_angle);
-
-    /*!
      * @brief Creates a closed polyline approximation of a horizontal circle.
      * @param center XY center of the circle.
      * @param radius Radius of the candidate cylindrical layer.
@@ -144,10 +130,12 @@ class CylindricalSlicer : public TraditionalAST {
      * @param layer_settings Layer-level settings to copy.
      * @param center Cylinder center stored for C-axis calculation.
      * @param region_start Whether the segment begins a new path region.
+     * @param region_type Print region metadata to assign to the segment.
      * @return Segment-local settings used by travel and line segments.
      */
     QSharedPointer<SettingsBase> createSegmentSettings(const QSharedPointer<SettingsBase>& layer_settings,
-                                                       const Point& center, bool region_start);
+                                                       const Point& center, bool region_start,
+                                                       RegionType region_type = RegionType::kPerimeter);
 
     /*!
      * @brief Converts a clipped cylindrical polyline into a path with an optional travel followed by line segments.
@@ -157,10 +145,12 @@ class CylindricalSlicer : public TraditionalAST {
      * @param radius Exact radius of the generated cylindrical path.
      * @param counterclockwise True when this path should be emitted as counter-clockwise arcs.
      * @param current_location Last emitted endpoint, updated when a path is generated.
+     * @param region_type Print region metadata to assign to generated segments.
      * @return Path containing travel and print segments for this clipped fragment.
      */
     Path createPath(const Polyline& polyline, const QSharedPointer<SettingsBase>& layer_settings, const Point& center,
-                    Distance radius, bool counterclockwise, Point& current_location);
+                    Distance radius, bool counterclockwise, Point& current_location,
+                    RegionType region_type = RegionType::kPerimeter);
 
     //! @brief Ordered cylindrical layers generated during cylindrical path computation.
     QList<QSharedPointer<CylindricalLayer>> m_cylindrical_layers;

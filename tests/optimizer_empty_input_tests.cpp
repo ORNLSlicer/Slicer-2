@@ -11,10 +11,13 @@
 #include "geometry/polygon_list.h"
 #include "geometry/polyline.h"
 #include "geometry/segments/line.h"
+#include "geometry/segments/travel.h"
 #include "optimizers/island_order_optimizer.h"
 #include "optimizers/path_order_optimizer.h"
 #include "optimizers/polyline_order_optimizer.h"
+#define private public
 #include "step/layer/cylindrical_layer.h"
+#undef private
 #include "step/layer/island/island_base.h"
 #include "utilities/constants.h"
 #include "utilities/enums.h"
@@ -27,9 +30,12 @@ bool expect(bool condition, const std::string& message) {
     return false;
 }
 
-QSharedPointer<ORNL::LineSegment> lineSegment(const ORNL::Point& start, const ORNL::Point& end) {
+QSharedPointer<ORNL::LineSegment> lineSegment(const ORNL::Point& start, const ORNL::Point& end,
+                                              ORNL::RegionType region_type = ORNL::RegionType::kPerimeter,
+                                              bool region_start            = false) {
     QSharedPointer<ORNL::LineSegment> segment = QSharedPointer<ORNL::LineSegment>::create(start, end);
-    segment->getSb()->setSetting(ORNL::SS::kRegionType, ORNL::RegionType::kPerimeter);
+    segment->getSb()->setSetting(ORNL::SS::kRegionType, region_type);
+    segment->getSb()->setSetting(ORNL::SS::kIsRegionStartSegment, region_start);
     return segment;
 }
 
@@ -55,7 +61,66 @@ QSharedPointer<ORNL::SettingsBase> cylindricalSettings(ORNL::PathOrderOptimizati
                          static_cast<int>(ORNL::PointOrderOptimization::kNextClosest));
     settings->setSetting(ORNL::PS::Optimizations::kMinDistanceEnabled, false);
     settings->setSetting(ORNL::PS::Optimizations::kLocalRandomnessEnable, false);
+    settings->setSetting(ORNL::PS::Travel::kSpeed, 100.0 * ORNL::mm / ORNL::s);
     return settings;
+}
+
+bool isTravelSegment(const QSharedPointer<ORNL::SegmentBase>& segment) {
+    return dynamic_cast<ORNL::TravelSegment*>(segment.data()) != nullptr;
+}
+
+ORNL::Path mixedRegionPath(const QVector<ORNL::RegionType>& regions) {
+    ORNL::Path path;
+    for (int i = 0, end = regions.size(); i < end; ++i) {
+        path.append(lineSegment(ORNL::Point(10.0f + i, 0.0f, 0.0f), ORNL::Point(11.0f + i, 0.0f, 0.0f), regions[i]));
+    }
+
+    return path;
+}
+
+bool helicalLayerReversalPreservesRegionsAndTransitions() {
+    QSharedPointer<ORNL::SettingsBase> settings =
+        cylindricalSettings(ORNL::PathOrderOptimization::kNextClosest, ORNL::PathOrderOptimization::kNextFarthest);
+    ORNL::CylindricalLayer layer(0, settings, ORNL::CylindricalPathPattern::kHelical);
+    layer.addPath(
+        mixedRegionPath({ORNL::RegionType::kPerimeter, ORNL::RegionType::kInfill, ORNL::RegionType::kPerimeter}));
+
+    ORNL::Point current_location(13.2f, 0.0f, 0.0f);
+    layer.calculateModifiers(current_location);
+
+    if (layer.m_paths.size() != 1) { return false; }
+
+    const ORNL::Path& result = layer.m_paths.first();
+    if (result.size() != 4 || !isTravelSegment(result[0]) || isTravelSegment(result[1]) || isTravelSegment(result[2]) ||
+        isTravelSegment(result[3])) {
+        return false;
+    }
+
+    return result[1]->getSb()->setting<ORNL::RegionType>(ORNL::SS::kRegionType) == ORNL::RegionType::kPerimeter &&
+           result[2]->getSb()->setting<ORNL::RegionType>(ORNL::SS::kRegionType) == ORNL::RegionType::kInfill &&
+           result[3]->getSb()->setting<ORNL::RegionType>(ORNL::SS::kRegionType) == ORNL::RegionType::kPerimeter &&
+           result[1]->getSb()->setting<bool>(ORNL::SS::kIsRegionStartSegment) &&
+           result[2]->getSb()->setting<bool>(ORNL::SS::kIsRegionStartSegment) &&
+           result[3]->getSb()->setting<bool>(ORNL::SS::kIsRegionStartSegment) &&
+           result[1]->end() == result[2]->start() && result[2]->end() == result[3]->start();
+}
+
+bool helicalLayerRecomputesSameRegionStartFlags() {
+    QSharedPointer<ORNL::SettingsBase> settings =
+        cylindricalSettings(ORNL::PathOrderOptimization::kNextClosest, ORNL::PathOrderOptimization::kNextFarthest);
+    ORNL::CylindricalLayer layer(0, settings, ORNL::CylindricalPathPattern::kHelical);
+    layer.addPath(mixedRegionPath({ORNL::RegionType::kPerimeter, ORNL::RegionType::kPerimeter}));
+
+    ORNL::Point current_location(12.2f, 0.0f, 0.0f);
+    layer.calculateModifiers(current_location);
+
+    if (layer.m_paths.size() != 1) { return false; }
+
+    const ORNL::Path& result = layer.m_paths.first();
+    if (result.size() != 3 || !isTravelSegment(result[0])) { return false; }
+
+    return result[1]->getSb()->setting<bool>(ORNL::SS::kIsRegionStartSegment) &&
+           !result[2]->getSb()->setting<bool>(ORNL::SS::kIsRegionStartSegment);
 }
 }  // namespace
 
@@ -217,6 +282,10 @@ int main() {
     radial_layer.calculateModifiers(radial_layer_current_location);
     passed &= expect(radial_layer_current_location == ORNL::Point(100.0f, 10.0f, 0.0f),
                      "Expected radial layer ordering to choose across all paths instead of same-Z groups.");
+    passed &= expect(helicalLayerReversalPreservesRegionsAndTransitions(),
+                     "Expected helical layer reversal to preserve print regions and transition starts.");
+    passed &= expect(helicalLayerRecomputesSameRegionStartFlags(),
+                     "Expected helical layer reversal to recompute same-region start flags.");
 
     ORNL::Point helical_closest_start(0.0f, 0.0f, 0.0f);
     ORNL::PathOrderOptimizer helical_closest_optimizer(

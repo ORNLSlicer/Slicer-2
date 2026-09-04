@@ -11,7 +11,7 @@ This slicer currently requires the `Arc Specialties` G-code syntax, but this pag
 3. Set `Cylindrical Path Pattern` to `Radial` or `Helical`.
 4. Set radial spacing with `Layer Height`.
 5. For `Radial`, set vertical bead spacing with `Default Bead Width`.
-6. For `Helical`, set helical rise per full revolution with `Default Bead Width`.
+6. For `Helical`, set helical region revolutions and stepovers in `Profile > Helical`. A region stepover of `0` uses `Default Bead Width` as that region's pitch.
 7. Set `Cylinder Axis Source` if the cylinder axis should use a custom XY coordinate instead of the part centroid.
 8. Set `Cylinder Inner Radius` if the first cylinder or helix should begin away from the axis.
 9. Set `Cylinder Height` to limit generated cylindrical paths above the part base. Leave it at `0` to use the part height.
@@ -28,17 +28,35 @@ This slicer currently requires the `Arc Specialties` G-code syntax, but this pag
 
 `Radial` expands cylindrical layers outward from the cylinder axis. The first radial layer centerline is offset by half of `Layer Height`, then later radial layers advance by the full `Layer Height`. On each radius, bead Z positions advance by `Default Bead Width`. `Radial Path Start Angle` selects the first sampled point around each generated ring. It defaults to `0 deg`, which starts on +X.
 
-`Helical` samples a rising helix at each radius:
+`Helical` samples a rising region profile at each radius. The angular position is still a continuous helix:
 
-`x(t) = r cos(start_angle +/- t)`, `y(t) = r sin(start_angle +/- t)`, `z(t) = base_z + (bead_width / (2 * pi)) * t`
+`x(t) = r cos(start_angle +/- t)`, `y(t) = r sin(start_angle +/- t)`
 
-The first radius is half a `Layer Height` outward from `Cylinder Inner Radius`, and later radii advance by `Layer Height`. Each helix starts at the retained part base Z. `Default Bead Width` is the rise per full revolution.
+The first radius is half a `Layer Height` outward from `Cylinder Inner Radius`, and later radii advance by `Layer Height`. Each helix starts at the retained part base Z. Z is defined by the ordered helical region profile rather than one global rise-per-revolution value.
+
+The helical profile order is:
+
+1. Perimeter
+2. Inset
+3. Infill
+4. Inset
+5. Perimeter
+
+`Perimeter Revolutions` and `Inset Revolutions` reserve matching shell bands at both ends of the profile. `Perimeter Stepover`, `Inset Stepover`, and `Infill Stepover` are vertical pitch per revolution for their regions. A stepover of exactly `0` falls back to `Default Bead Width`; a negative nonzero stepover is invalid. Zero-revolution perimeter or inset bands are skipped.
+
+Infill revolutions are derived from the remaining available height after both perimeter and inset shell bands are accounted for:
+
+`remaining_height = available_height - 2 * perimeter_revolutions * perimeter_stepover - 2 * inset_revolutions * inset_stepover`
+
+`infill_revolutions = remaining_height / infill_stepover`
+
+`Infill Revolutions Rounding Policy` rounds that derived value with `Round`, `Floor`, or `Ceil`. If the rounded value is not positive, no infill band is generated. `Round` and `Ceil` can make the generated rounded profile extend above the retained model top or configured `Cylinder Height`; this is allowed when model clipping finds no exit within the available-height prefix.
 
 `Helical Path Start Angle` selects the first sampled point around each generated helix. It defaults to `90 deg`, which starts on +Y. `Helical Path Handedness` selects the angular sweep while Z rises. `Right Handed` is the default and uses the existing counter-clockwise XY sweep. `Left Handed` mirrors the helix to a clockwise XY sweep without changing the first point, Z rise, or radius spacing.
 
 `Cylinder Height` limits radial and helical candidate paths above the retained part base. Values of `0` or smaller use the retained part height, preserving the default model-bounded behavior.
 
-`Cylindrical Path Order Optimization` controls how retained radial arcs or helical fragments are selected after clipping. `Next Closest` minimizes travel from the current machine location to the next path. `Next Farthest` selects the farthest available path first. Closed radial paths can be rotated so travel enters at the selected segment start. Open radial arcs stay endpoint-only so they are not split. Helical fragments are selected by start or end endpoint and may be reordered or reversed.
+`Cylindrical Path Order Optimization` controls how retained radial arcs or helical paths are selected after clipping. `Next Closest` minimizes travel from the current machine location to the next path. `Next Farthest` selects the farthest available path first. Closed radial paths can be rotated so travel enters at the selected segment start. Open radial arcs stay endpoint-only so they are not split. A retained helical radius is one continuous multi-region path, so it may be selected from either endpoint and reversed as a single unit, but perimeter/inset/infill boundaries do not add travel.
 
 ## Required Settings
 
@@ -48,7 +66,7 @@ The first radius is half a `Layer Height` outward from `Cylinder Inner Radius`, 
 | `Cylindrical Path Pattern` | Profile > Slicing | Selects `Radial` rings/arcs or `Helical` rising paths. |
 | `Syntax` | Printer > Machine Setup | Select `Arc Specialties` so the cylindrical writer and parser are used. |
 | `Layer Height` | Profile > Layer | Radial distance between successive cylindrical radii. Values less than or equal to zero fall back to a physical `1 mm` default. |
-| `Default Bead Width` | Profile > Layer | For `Radial`, vertical bead spacing. For `Helical`, rise per revolution. |
+| `Default Bead Width` | Profile > Layer | For `Radial`, vertical bead spacing. For `Helical`, fallback pitch for any region stepover set to exactly `0`. |
 | `Cylinder Axis Source` | Profile > Slicing | Selects whether the cylinder axis is centered on each part's centroid or on a custom XY coordinate. |
 | `Cylinder Axis - X` / `Cylinder Axis - Y` | Profile > Slicing | Custom cylinder axis coordinates when `Cylinder Axis Source` is `Custom XY`. |
 | `Cylinder Inner Radius` | Profile > Slicing | Inner radial boundary before the half-layer offset is applied. |
@@ -58,6 +76,9 @@ The first radius is half a `Layer Height` outward from `Cylinder Inner Radius`, 
 | `Helical Path Start Angle` | Profile > Helical | For `Helical`, angular start position around the cylinder axis. Defaults to `90 deg` for a +Y start. |
 | `Helical Z Clip Rounding` | Profile > Helical | For `Helical`, controls whether the z-clipped path ends at the model intersection, the next complete revolution, or the previous complete revolution. |
 | `Helical Path Handedness` | Profile > Helical | For `Helical`, selects `Right Handed` counter-clockwise rise or `Left Handed` clockwise rise. |
+| `Perimeter Revolutions` / `Inset Revolutions` | Profile > Helical | Reserve matching shell revolutions at the beginning and end of each helical profile. |
+| `Perimeter Stepover` / `Inset Stepover` / `Infill Stepover` | Profile > Helical | Set vertical pitch per revolution for helical regions. `0` falls back to `Default Bead Width`. |
+| `Infill Revolutions Rounding Policy` | Profile > Helical | Rounds derived infill revolutions with `Round`, `Floor`, or `Ceil`. |
 | `Arcs per Revolution` | Profile > Slicing | Sets how many G2/G3 moves represent one complete revolution when `Supports G2/G3` is enabled. |
 
 Only relevant settings are shown for the selected path pattern. `Radial` shows its radial-only controls in `Profile > Radial`, including `Radial Path Boundary Policy` with `Clip`, `Keep`, and `Discard`, plus `Radial Path Start Angle`. `Helical` shows its helical-only controls in `Profile > Helical`, including `Helical Path Start Angle`, `Helical Path Handedness`, and `Helical Z Clip Rounding`.
@@ -81,7 +102,7 @@ When `Slicing Mode` is `Cylindrical` and `Cylindrical Path Pattern` is `Helical`
 | --- | --- |
 | `Helical Path Handedness` | Selects `Right Handed` counter-clockwise rise or `Left Handed` clockwise rise. |
 | `Helical Path Start Angle` | Sets the first angular position around the cylinder axis. |
-| `Helical Z Clip Rounding` | Selects exact, next-full-revolution, or previous-full-revolution z clipping. |
+| `Helical Z Clip Rounding` | Selects exact, next-full-revolution, or previous-full-revolution z clipping in cumulative profile-revolution coordinates. |
 | `Perimeter Revolutions` | Number of perimeter revolutions reserved for helical region planning. |
 | `Inset Revolutions` | Number of inset revolutions reserved for helical region planning. |
 | `Perimeter Stepover` | Pitch used by perimeter revolutions. This is shown only when perimeter revolutions are nonzero. |
@@ -99,20 +120,31 @@ For `Radial`, model clipping can split a path into one or more retained arcs:
 | `Keep` | Outputs the original boundary-crossing path when any portion is inside the model cross section. |
 | `Discard` | Omits paths when clipping removes a meaningful portion of the path. Paths fully inside the model cross section are still kept. |
 
-For `Helical`, model clipping outputs one continuous prefix of the original helix, from its generated start through the boundary intersection with the greatest Z value. `Helical Z Clip Rounding` controls the endpoint: `Exact Intersection` stops at the highest-Z model intersection, `Complete Revolution` continues to the next complete revolution and may extend above the model or configured `Cylinder Height`, and `Last Full Revolution` stops at the previous complete revolution. If the intersection occurs before the first complete revolution, that radius is omitted.
+For `Helical`, model clipping checks only the available-height prefix of the generated region profile, from its generated start through the retained model top or configured `Cylinder Height`. If that checked prefix exits the model, the retained output is one continuous prefix through the boundary intersection with the greatest Z value. `Helical Z Clip Rounding` controls the endpoint in cumulative profile-revolution coordinates: `Exact Intersection` stops at the highest-Z model intersection, `Complete Revolution` continues to the next complete profile revolution, and `Last Full Revolution` stops at the previous complete profile revolution. If the rounded endpoint is not positive, that radius is omitted.
 
-When helical z clipping finds no boundary crossing, a helix that is wholly inside the model is kept in full and a helix that is wholly outside is omitted.
+When helical z clipping finds no boundary crossing, a checked prefix that is wholly inside the model keeps the full generated rounded profile, including any `Round` or `Ceil` height overrun. A checked prefix that is wholly outside, or partly outside without a detected crossing, is omitted.
 
 ## G-code Output Handoff
 
-Cylindrical slicing hands radial and helical paths to the Arc Specialties writer. The generated header reports the cylindrical geometry, selected path pattern, cylindrical path order, path start angle, helical handedness, z clip rounding for helical paths, and travel lift distance. Print moves are marked with `RADIAL` or `HELICAL` comments so the preview path can classify cylindrical bead motion.
+Cylindrical slicing hands radial and helical paths to the Arc Specialties writer. The generated header reports the cylindrical geometry, selected path pattern, cylindrical path order, path start angle, helical handedness, z clip rounding for helical paths, helical region revolutions, helical region pitches, infill rounding policy, and travel lift distance.
+
+Radial cylindrical print moves continue to use generic `RADIAL` comments. Helical print moves use generated region metadata when available:
+
+| Segment metadata | Comment |
+| --- | --- |
+| `Perimeter` | `HELICAL PERIMETER` |
+| `Inset` | `HELICAL INSET` |
+| `Infill` | `HELICAL INFILL` |
+| Missing or unknown | `HELICAL` |
+
+The G-code preview colors these comments through the existing `GCodeLoader` visualization mappings. `HELICAL PERIMETER`, `HELICAL INSET`, and `HELICAL INFILL` use their helical-specific colors, and generic `HELICAL` remains the fallback.
 
 When `Supports G2/G3` is disabled, cylindrical print paths are written as sampled G1 segments. When `Supports G2/G3` is enabled, complete rings or helical revolutions are divided according to `Arcs per Revolution`; clipped or partial paths may include a shorter final arc. The exact G00/G01/G02/G03 syntax, positioner fields, center modes, and startup commands are described in [Arc Specialties](../gcode/arc-specialties.md).
 
 ## Current Limitations
 
 - Cylindrical slicing generates direct radial or helical paths only.
-- Standard polymer regions are not generated.
+- Standard planar polymer island regions are not generated. Helical perimeter, inset, and infill are direct-path segment annotations on one retained path per radius.
 - The cylinder axis is vertical Z through each part's XY centroid or the configured custom XY coordinate.
 - Candidate paths are sampled for model clipping. Output uses sampled G1 segments when arc support is disabled, or G2/G3 moves controlled by `Arcs per Revolution` when it is enabled.
 - Clipping meshes are applied before cylindrical path generation, but `Slice Plane Normal` settings are not used by cylindrical slicing.
@@ -126,6 +158,7 @@ After slicing, verify that:
 - The G-code header identifies the selected `Cylindrical Path Order Optimization`.
 - For `Helical`, the G-code header identifies the selected `Helical Path Handedness`.
 - For `Helical`, the G-code header identifies the selected `Helical Z Clip Rounding`.
+- For `Helical`, print comments transition between `HELICAL PERIMETER`, `HELICAL INSET`, and `HELICAL INFILL` without travel moves at touching region boundaries.
 - A complete radial ring or helical revolution contains the configured `Arcs per Revolution`; clipped or partial paths may include a shorter final arc.
 - Printed paths lie on the part rather than above or below it.
 - Travel moves and configured travel lift stay clear of the printed cylindrical paths.
