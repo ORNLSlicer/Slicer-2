@@ -109,9 +109,9 @@ class CylindricalSlicer : public TraditionalAST {
      */
     bool generateHelicalLayers(const QSharedPointer<Part>& part, const QSharedPointer<SettingsBase>& part_sb,
                                const QVector<QSharedPointer<MeshBase>>& meshes, const Point& mesh_min,
-                               const Point& mesh_max, HelicalPathBoundaryPolicy boundary_policy,
-                               HelicalPathZClipRounding z_clip_rounding, HelicalPathHandedness handedness,
-                               int part_index, const ProgressCallback& emit_pre_process_progress,
+                               const Point& mesh_max, HelicalPathZClipRounding z_clip_rounding,
+                               HelicalPathHandedness handedness, int part_index,
+                               const ProgressCallback& emit_pre_process_progress,
                                const ProgressCallback& emit_compute_progress);
 
     /*!
@@ -168,7 +168,7 @@ class CylindricalSlicer : public TraditionalAST {
     //! @brief Whether generated helical paths exceeded or confirmed the mesh-derived build maximum.
     bool m_has_generated_path_max_z = false;
 
-    //! @brief Maximum Z reached by generated helical paths, including rounded Clip Z extensions.
+    //! @brief Maximum Z reached by generated helical paths, including rounded z clip extensions.
     Distance m_generated_path_max_z = 0;
 };
 }  // namespace ORNL

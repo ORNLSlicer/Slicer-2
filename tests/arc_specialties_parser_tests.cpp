@@ -218,8 +218,6 @@ bool writesHelicalZClipRoundingHeader() {
     settings->setSetting(ORNL::PS::Slicing::kSlicingMode, static_cast<int>(ORNL::SlicingMode::kCylindrical));
     settings->setSetting(ORNL::PS::Slicing::kCylindricalPathPattern,
                          static_cast<int>(ORNL::CylindricalPathPattern::kHelical));
-    settings->setSetting(ORNL::PS::Slicing::kHelicalPathBoundaryPolicy,
-                         static_cast<int>(ORNL::HelicalPathBoundaryPolicy::kClipZ));
     settings->setSetting(ORNL::PS::Slicing::kHelicalPathZClipRounding,
                          static_cast<int>(ORNL::HelicalPathZClipRounding::kCompleteRevolution));
     settings->setSetting(ORNL::PS::Slicing::kHelicalPathHandedness,
@@ -231,7 +229,9 @@ bool writesHelicalZClipRoundingHeader() {
 
     ORNL::ArcSpecialtiesWriter writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
     const QString header = writer.writeSettingsHeader(ORNL::GcodeSyntax::kArcSpecialties);
-    return header.contains(";Helical Path Boundary Policy: Clip Z") &&
+    const QString removed_boundary_policy_header =
+        QStringLiteral(";Helical Path") % QStringLiteral(" Boundary Policy:");
+    return !header.contains(removed_boundary_policy_header) &&
            header.contains(";Helical Z Clip Rounding: Complete Revolution");
 }
 

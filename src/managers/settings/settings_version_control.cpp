@@ -13,40 +13,37 @@
 #include "utilities/qt_json_conversion.h"
 
 namespace {
-constexpr int kCincinnatiSyntax                = 1;
-constexpr int kMarlinSyntax                    = 10;
-constexpr int kThermwoodSyntax                 = 16;
-constexpr int kRemovedGcodeSyntax              = 28;
-constexpr int kRemovedRadialSyntax             = 31;
-constexpr int kArcSpecialtiesSyntax            = 31;
-constexpr int kLegacyArcSpecialtiesSyntax      = 32;
-constexpr int kPlanarSlicingMode               = 0;
-constexpr int kV4ImageSlicingMode              = 1;
-constexpr int kLegacyRadialSlicingMode         = 2;
-constexpr int kLegacyHelicalSlicingMode        = 3;
-constexpr int kV8CylindricalSlicingMode        = 2;
-constexpr int kV9CylindricalSlicingMode        = 1;
-constexpr int kV9ImageSlicingMode              = 2;
-constexpr int kRadialPathType                  = 0;
-constexpr int kHelicalPathType                 = 1;
-constexpr int kClipBoundaryHandling            = 0;
-constexpr int kV3LegacySlicingMode2            = 2;
-constexpr int kV3ImageSlicingMode              = 3;
-constexpr int kAllPerimeterBoundaries          = 0;
-const std::string kLegacyHelicalClippingMethod = "helical_clipping_method";
-const QString kLegacySlicingMode               = "slicer_type";
-const QString kLegacySlicePlaneNormalX         = "slicing_vector_x";
-const QString kLegacySlicePlaneNormalY         = "slicing_vector_y";
-const QString kLegacySlicePlaneNormalZ         = "slicing_vector_z";
-const QString kLegacyCylinderAxisSource        = "radial_axis_mode";
-const QString kLegacyCylinderAxisX             = "radial_axis_x";
-const QString kLegacyCylinderAxisY             = "radial_axis_y";
-const QString kLegacyCylinderInnerRadius       = "radial_initial_radius";
-const QString kLegacyCylindricalPathPattern    = "cylindrical_path_type";
-const QString kLegacyRadialPathBoundaryPolicy  = "radial_boundary_handling";
-const QString kLegacyHelicalPathBoundaryPolicy = "helical_boundary_handling";
-const QString kLegacyImagePixelSizeX           = "image_resolution_x";
-const QString kLegacyImagePixelSizeY           = "image_resolution_y";
+constexpr int kCincinnatiSyntax               = 1;
+constexpr int kMarlinSyntax                   = 10;
+constexpr int kThermwoodSyntax                = 16;
+constexpr int kRemovedGcodeSyntax             = 28;
+constexpr int kRemovedRadialSyntax            = 31;
+constexpr int kArcSpecialtiesSyntax           = 31;
+constexpr int kLegacyArcSpecialtiesSyntax     = 32;
+constexpr int kPlanarSlicingMode              = 0;
+constexpr int kV4ImageSlicingMode             = 1;
+constexpr int kLegacyRadialSlicingMode        = 2;
+constexpr int kLegacyHelicalSlicingMode       = 3;
+constexpr int kV8CylindricalSlicingMode       = 2;
+constexpr int kV9CylindricalSlicingMode       = 1;
+constexpr int kV9ImageSlicingMode             = 2;
+constexpr int kRadialPathType                 = 0;
+constexpr int kHelicalPathType                = 1;
+constexpr int kV3LegacySlicingMode2           = 2;
+constexpr int kV3ImageSlicingMode             = 3;
+constexpr int kAllPerimeterBoundaries         = 0;
+const QString kLegacySlicingMode              = "slicer_type";
+const QString kLegacySlicePlaneNormalX        = "slicing_vector_x";
+const QString kLegacySlicePlaneNormalY        = "slicing_vector_y";
+const QString kLegacySlicePlaneNormalZ        = "slicing_vector_z";
+const QString kLegacyCylinderAxisSource       = "radial_axis_mode";
+const QString kLegacyCylinderAxisX            = "radial_axis_x";
+const QString kLegacyCylinderAxisY            = "radial_axis_y";
+const QString kLegacyCylinderInnerRadius      = "radial_initial_radius";
+const QString kLegacyCylindricalPathPattern   = "cylindrical_path_type";
+const QString kLegacyRadialPathBoundaryPolicy = "radial_boundary_handling";
+const QString kLegacyImagePixelSizeX          = "image_resolution_x";
+const QString kLegacyImagePixelSizeY          = "image_resolution_y";
 
 constexpr std::array<int, 35> kSyntaxV2ToV3 = {
     0,                  // Beam
@@ -225,10 +222,9 @@ void renameSettingKey(fifojson& settings_group, const QString& old_key, const QS
 void migrateCylindricalSlicingSettings(fifojson& settings_group) {
     if (!settings_group.is_object()) return;
 
-    const std::string slicing_mode_key     = kLegacySlicingMode.toStdString();
-    const std::string path_pattern_key     = kLegacyCylindricalPathPattern.toStdString();
-    const std::string radial_boundary_key  = kLegacyRadialPathBoundaryPolicy.toStdString();
-    const std::string helical_boundary_key = kLegacyHelicalPathBoundaryPolicy.toStdString();
+    const std::string slicing_mode_key    = kLegacySlicingMode.toStdString();
+    const std::string path_pattern_key    = kLegacyCylindricalPathPattern.toStdString();
+    const std::string radial_boundary_key = kLegacyRadialPathBoundaryPolicy.toStdString();
 
     auto slicing_mode           = settings_group.find(slicing_mode_key);
     const bool has_slicing_mode = slicing_mode != settings_group.end() && slicing_mode.value().is_number_integer();
@@ -241,26 +237,7 @@ void migrateCylindricalSlicingSettings(fifojson& settings_group) {
     else if (old_slicing_mode == kLegacyHelicalSlicingMode) {
         slicing_mode.value()             = kV8CylindricalSlicingMode;
         settings_group[path_pattern_key] = kHelicalPathType;
-
-        int helical_boundary             = kClipBoundaryHandling;
-        auto radial_boundary             = settings_group.find(radial_boundary_key);
-        const bool old_boundary_was_clip = radial_boundary == settings_group.end() ||
-                                           !radial_boundary.value().is_number_integer() ||
-                                           radial_boundary.value().get<int>() == kClipBoundaryHandling;
-        auto legacy_helical_boundary     = settings_group.find(kLegacyHelicalClippingMethod);
-        if (old_boundary_was_clip && legacy_helical_boundary != settings_group.end() &&
-            legacy_helical_boundary.value().is_number_integer()) {
-            helical_boundary = legacy_helical_boundary.value().get<int>();
-        }
-        settings_group[helical_boundary_key] = helical_boundary;
     }
-    else if (settings_group.find(path_pattern_key) == settings_group.end()) {
-        auto legacy_helical_boundary = settings_group.find(kLegacyHelicalClippingMethod);
-        if (legacy_helical_boundary != settings_group.end() && legacy_helical_boundary.value().is_number_integer())
-            settings_group[helical_boundary_key] = legacy_helical_boundary.value();
-    }
-
-    settings_group.erase(kLegacyHelicalClippingMethod);
 }
 
 void migrateSlicingSettingKeys(fifojson& settings_group) {
@@ -276,7 +253,6 @@ void migrateSlicingSettingKeys(fifojson& settings_group) {
     renameSettingKey(settings_group, kLegacyCylinderInnerRadius, Slicing::kCylinderInnerRadius);
     renameSettingKey(settings_group, kLegacyCylindricalPathPattern, Slicing::kCylindricalPathPattern);
     renameSettingKey(settings_group, kLegacyRadialPathBoundaryPolicy, Slicing::kRadialPathBoundaryPolicy);
-    renameSettingKey(settings_group, kLegacyHelicalPathBoundaryPolicy, Slicing::kHelicalPathBoundaryPolicy);
     renameSettingKey(settings_group, kLegacyImagePixelSizeX, Slicing::kImagePixelSizeX);
     renameSettingKey(settings_group, kLegacyImagePixelSizeY, Slicing::kImagePixelSizeY);
 }
