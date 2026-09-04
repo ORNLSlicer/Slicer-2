@@ -222,9 +222,8 @@ void renameSettingKey(fifojson& settings_group, const QString& old_key, const QS
 void migrateCylindricalSlicingSettings(fifojson& settings_group) {
     if (!settings_group.is_object()) return;
 
-    const std::string slicing_mode_key    = kLegacySlicingMode.toStdString();
-    const std::string path_pattern_key    = kLegacyCylindricalPathPattern.toStdString();
-    const std::string radial_boundary_key = kLegacyRadialPathBoundaryPolicy.toStdString();
+    const std::string slicing_mode_key = kLegacySlicingMode.toStdString();
+    const std::string path_pattern_key = kLegacyCylindricalPathPattern.toStdString();
 
     auto slicing_mode           = settings_group.find(slicing_mode_key);
     const bool has_slicing_mode = slicing_mode != settings_group.end() && slicing_mode.value().is_number_integer();
@@ -242,6 +241,7 @@ void migrateCylindricalSlicingSettings(fifojson& settings_group) {
 
 void migrateSlicingSettingKeys(fifojson& settings_group) {
     using Slicing = ORNL::Constants::ProfileSettings::Slicing;
+    using Radial  = ORNL::Constants::ProfileSettings::Radial;
 
     renameSettingKey(settings_group, kLegacySlicingMode, Slicing::kSlicingMode);
     renameSettingKey(settings_group, kLegacySlicePlaneNormalX, Slicing::kSlicePlaneNormalX);
@@ -252,7 +252,7 @@ void migrateSlicingSettingKeys(fifojson& settings_group) {
     renameSettingKey(settings_group, kLegacyCylinderAxisY, Slicing::kCylinderAxisY);
     renameSettingKey(settings_group, kLegacyCylinderInnerRadius, Slicing::kCylinderInnerRadius);
     renameSettingKey(settings_group, kLegacyCylindricalPathPattern, Slicing::kCylindricalPathPattern);
-    renameSettingKey(settings_group, kLegacyRadialPathBoundaryPolicy, Slicing::kRadialPathBoundaryPolicy);
+    renameSettingKey(settings_group, kLegacyRadialPathBoundaryPolicy, Radial::kRadialPathBoundaryPolicy);
     renameSettingKey(settings_group, kLegacyImagePixelSizeX, Slicing::kImagePixelSizeX);
     renameSettingKey(settings_group, kLegacyImagePixelSizeY, Slicing::kImagePixelSizeY);
 }

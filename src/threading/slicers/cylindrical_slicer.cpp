@@ -373,7 +373,7 @@ void CylindricalSlicer::preProcess(nlohmann::json opt_data) {
         }
         else {
             const RadialPathBoundaryPolicy boundary_policy =
-                static_cast<RadialPathBoundaryPolicy>(part_sb->setting<int>(PS::Slicing::kRadialPathBoundaryPolicy));
+                static_cast<RadialPathBoundaryPolicy>(part_sb->setting<int>(PS::Radial::kRadialPathBoundaryPolicy));
             part_generated_paths = generateRadialLayers(part, part_sb, meshes, mesh_min, mesh_max, boundary_policy,
                                                         parts_processed, emitPreProcessProgress, emitComputeProgress);
         }
@@ -473,7 +473,7 @@ bool CylindricalSlicer::generateRadialLayers(const QSharedPointer<Part>& part,
 
         for (RadialCrossSection& section : cross_sections) {
             Polyline circle = createCircle(center, radius, section.z, bead_width,
-                                           layer_settings->setting<Angle>(PS::Slicing::kRadialPathStartAngle));
+                                           layer_settings->setting<Angle>(PS::Radial::kRadialPathStartAngle));
 
             QVector<Polyline> clipped_lines   = clipCircleToSection(section.geometry, circle);
             QVector<Polyline> candidate_lines = applyBoundaryPolicy(circle, clipped_lines, boundary_policy);

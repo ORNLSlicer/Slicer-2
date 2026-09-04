@@ -128,33 +128,6 @@ settings:
     namespace: "Profile::Slicing"
     symbol: "kCylindricalPathPattern"
     local: false
-  - name: "radial_path_boundary_policy"
-    display: "Radial Path Boundary Policy"
-    type: "enumeration"
-    tooltip: "Controls radial paths that intersect the model boundary. Clip keeps only the portions inside the model. Keep outputs the original path if any portion is inside. Discard omits paths that are cut by the boundary."
-    depends: {"AND":[{"slicing_mode":1},{"cylindrical_path_pattern":0}]}
-    options:
-      - "Clip"
-      - "Keep"
-      - "Discard"
-    default: 0
-    minor: "Slicing"
-    major: "Profile"
-    namespace: "Profile::Slicing"
-    symbol: "kRadialPathBoundaryPolicy"
-    local: true
-  - name: "radial_path_start_angle"
-    display: "Radial Path Start Angle"
-    type: "angle"
-    tooltip: "Sets the angular start position for generated radial paths around the cylinder axis. 0 degrees starts on +X and 90 degrees starts on +Y."
-    depends: {"AND":[{"slicing_mode":1},{"cylindrical_path_pattern":0}]}
-    options: []
-    default: 0
-    minor: "Slicing"
-    major: "Profile"
-    namespace: "Profile::Slicing"
-    symbol: "kRadialPathStartAngle"
-    local: true
   - name: "arcs_per_revolution"
     display: "Arcs per Revolution"
     type: "positive_int"
