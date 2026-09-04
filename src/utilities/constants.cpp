@@ -854,11 +854,11 @@ const QString Constants::ProfileSettings::Helical::kHelicalPathStartAngle       
 const QString Constants::ProfileSettings::Helical::kHelicalPathZClipRounding    = "helical_path_z_clip_rounding";
 const QString Constants::ProfileSettings::Helical::kHelicalPerimeterRevolutions = "helical_perimeter_revolutions";
 const QString Constants::ProfileSettings::Helical::kHelicalInsetRevolutions     = "helical_inset_revolutions";
-const QString Constants::ProfileSettings::Helical::kHelicalPerimeterStepover    = "helical_perimeter_stepover";
-const QString Constants::ProfileSettings::Helical::kHelicalInsetStepover        = "helical_inset_stepover";
-const QString Constants::ProfileSettings::Helical::kHelicalInfillStepover       = "helical_infill_stepover";
 const QString Constants::ProfileSettings::Helical::kHelicalInfillRevolutionsRounding =
     "helical_infill_revolutions_rounding";
+const QString Constants::ProfileSettings::Helical::kHelicalPerimeterStepover = "helical_perimeter_stepover";
+const QString Constants::ProfileSettings::Helical::kHelicalInsetStepover     = "helical_inset_stepover";
+const QString Constants::ProfileSettings::Helical::kHelicalInfillStepover    = "helical_infill_stepover";
 
 //================================================================================
 // Experimental Settings
