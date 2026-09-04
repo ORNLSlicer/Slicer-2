@@ -66,6 +66,21 @@ settings:
     namespace: "Profile::Helical"
     symbol: "kHelicalInsetRevolutions"
     local: false
+  - name: "helical_infill_revolutions_rounding"
+    display: "Infill Revolutions Rounding Policy"
+    type: "enumeration"
+    tooltip: "Rounding policy for the number of revolutions for helical infill region. This is used to ensure that the number of revolutions is an integer value."
+    depends: {"AND":[{"slicing_mode":1},{"cylindrical_path_pattern":1}]}
+    options:
+      - "Round"
+      - "Floor"
+      - "Ceil"
+    default: 0
+    minor: "Helical"
+    major: "Profile"
+    namespace: "Profile::Helical"
+    symbol: "kHelicalInfillRevolutionsRounding"
+    local: false
   - name: "helical_perimeter_stepover"
     display: "Perimeter Stepover"
     type: "distance"
@@ -101,19 +116,4 @@ settings:
     major: "Profile"
     namespace: "Profile::Helical"
     symbol: "kHelicalInfillStepover"
-    local: false
-  - name: "helical_infill_revolutions_rounding"
-    display: "Infill Revolutions Rounding Policy"
-    type: "enumeration"
-    tooltip: "Rounding policy for the number of revolutions for helical infill region. This is used to ensure that the number of revolutions is an integer value."
-    depends: {"AND":[{"slicing_mode":1},{"cylindrical_path_pattern":1}]}
-    options:
-      - "Round"
-      - "Floor"
-      - "Ceil"
-    default: 0
-    minor: "Helical"
-    major: "Profile"
-    namespace: "Profile::Helical"
-    symbol: "kHelicalInfillRevolutionsRounding"
     local: false
