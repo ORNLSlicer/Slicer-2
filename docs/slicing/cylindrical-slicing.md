@@ -30,9 +30,9 @@ This slicer currently requires the `Arc Specialties` G-code syntax, but this pag
 
 `Helical` samples a rising helix at each radius:
 
-`x(t) = r cos(start_angle +/- t)`, `y(t) = r sin(start_angle +/- t)`, `z(t) = z0 + (bead_width / (2 * pi)) * t`
+`x(t) = r cos(start_angle +/- t)`, `y(t) = r sin(start_angle +/- t)`, `z(t) = base_z + (bead_width / (2 * pi)) * t`
 
-The first radius is half a `Layer Height` outward from `Cylinder Inner Radius`, and later radii advance by `Layer Height`. `Default Bead Width` is the rise per full revolution.
+The first radius is half a `Layer Height` outward from `Cylinder Inner Radius`, and later radii advance by `Layer Height`. Each helix starts at the retained part base Z. `Default Bead Width` is the rise per full revolution.
 
 `Helical Path Start Angle` selects the first sampled point around each generated helix. It defaults to `90 deg`, which starts on +Y. `Helical Path Handedness` selects the angular sweep while Z rises. `Right Handed` is the default and uses the existing counter-clockwise XY sweep. `Left Handed` mirrors the helix to a clockwise XY sweep without changing the first point, Z rise, or radius spacing.
 
