@@ -364,7 +364,6 @@
             "helical_path_z_clip_rounding": 0,
             "helical_path_handedness": 0,
             "helical_path_start_angle": 2.035402957908809,
-            "max_helical_path_length": 0,
             "arcs_per_revolution": 1,
             "image_pixel_size_x": 0,
             "image_pixel_size_y": 0,

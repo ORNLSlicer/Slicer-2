@@ -45,7 +45,6 @@ const QString kLegacyCylinderInnerRadius       = "radial_initial_radius";
 const QString kLegacyCylindricalPathPattern    = "cylindrical_path_type";
 const QString kLegacyRadialPathBoundaryPolicy  = "radial_boundary_handling";
 const QString kLegacyHelicalPathBoundaryPolicy = "helical_boundary_handling";
-const QString kLegacyMaxHelicalPathLength      = "helical_path_length";
 const QString kLegacyImagePixelSizeX           = "image_resolution_x";
 const QString kLegacyImagePixelSizeY           = "image_resolution_y";
 
@@ -278,7 +277,6 @@ void migrateSlicingSettingKeys(fifojson& settings_group) {
     renameSettingKey(settings_group, kLegacyCylindricalPathPattern, Slicing::kCylindricalPathPattern);
     renameSettingKey(settings_group, kLegacyRadialPathBoundaryPolicy, Slicing::kRadialPathBoundaryPolicy);
     renameSettingKey(settings_group, kLegacyHelicalPathBoundaryPolicy, Slicing::kHelicalPathBoundaryPolicy);
-    renameSettingKey(settings_group, kLegacyMaxHelicalPathLength, Slicing::kMaxHelicalPathLength);
     renameSettingKey(settings_group, kLegacyImagePixelSizeX, Slicing::kImagePixelSizeX);
     renameSettingKey(settings_group, kLegacyImagePixelSizeY, Slicing::kImagePixelSizeY);
 }

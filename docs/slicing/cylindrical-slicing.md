@@ -20,10 +20,9 @@ This slicer currently requires the `Arc Specialties` G-code syntax, but this pag
 12. For `Helical` with `Clip Z`, set `Helical Z Clip Rounding` to choose whether the path stops at the model intersection or rounds to a full revolution.
 13. Set the radial or helical path start angle if the first point should begin somewhere other than the default.
 14. For `Helical`, set `Helical Path Handedness` if the helix should sweep clockwise rather than the default counter-clockwise direction as Z rises.
-15. For `Helical`, set `Max Helical Path Length` when long generated helices should be split into shorter paths. Leave it at `0` to keep each clipped helix fragment as one path.
-16. Confirm the printer `Syntax` is `Arc Specialties`. Selecting `Cylindrical` defaults to `Arc Specialties` when the current syntax is not cylindrical-capable.
-17. Configure the required Arc Specialties machine output settings, including positioner axes, frame rotation, `TRAFO`, and G2/G3 center mode, using the [Arc Specialties](../gcode/arc-specialties.md) syntax documentation.
-18. Slice and inspect the generated G-code preview before running the machine.
+15. Confirm the printer `Syntax` is `Arc Specialties`. Selecting `Cylindrical` defaults to `Arc Specialties` when the current syntax is not cylindrical-capable.
+16. Configure the required Arc Specialties machine output settings, including positioner axes, frame rotation, `TRAFO`, and G2/G3 center mode, using the [Arc Specialties](../gcode/arc-specialties.md) syntax documentation.
+17. Slice and inspect the generated G-code preview before running the machine.
 
 ## Path Patterns
 
@@ -36,8 +35,6 @@ This slicer currently requires the `Arc Specialties` G-code syntax, but this pag
 The first radius is half a `Layer Height` outward from `Cylinder Inner Radius`, and later radii advance by `Layer Height`. `Default Bead Width` is the rise per full revolution.
 
 `Helical Path Start Angle` selects the first sampled point around each generated helix. It defaults to `90 deg`, which starts on +Y. `Helical Path Handedness` selects the angular sweep while Z rises. `Right Handed` is the default and uses the existing counter-clockwise XY sweep. `Left Handed` mirrors the helix to a clockwise XY sweep without changing the first point, Z rise, or radius spacing.
-
-If `Max Helical Path Length` is greater than `0`, each generated helical fragment is split into shorter paths before print segments are emitted. Split paths stay contiguous, so no travel move is inserted between adjacent split points. Values of `0` or smaller leave the generated helical fragments unbroken.
 
 `Cylinder Height` limits radial and helical candidate paths above the retained part base. Values of `0` or smaller use the retained part height, preserving the default model-bounded behavior.
 
@@ -61,7 +58,6 @@ If `Max Helical Path Length` is greater than `0`, each generated helical fragmen
 | `Helical Path Start Angle` | Profile > Slicing | For `Helical`, angular start position around the cylinder axis. Defaults to `90 deg` for a +Y start. |
 | `Helical Z Clip Rounding` | Profile > Slicing | For `Helical` with `Clip Z`, controls whether the path ends at the model intersection, the next complete revolution, or the previous complete revolution. |
 | `Helical Path Handedness` | Profile > Slicing | For `Helical`, selects `Right Handed` counter-clockwise rise or `Left Handed` clockwise rise. |
-| `Max Helical Path Length` | Profile > Slicing | For `Helical`, maximum length of each generated helical path segment before it is split. |
 | `Arcs per Revolution` | Profile > Slicing | Sets how many G2/G3 moves represent one complete revolution when `Supports G2/G3` is enabled. |
 
 Only relevant settings are shown for the selected path pattern. `Radial` shows `Radial Path Boundary Policy` with `Clip`, `Keep`, and `Discard`, plus `Radial Path Start Angle`. `Helical` shows `Helical Path Boundary Policy` with `Clip` and `Clip Z`, plus helical-only controls such as `Helical Path Start Angle` and `Helical Path Handedness`. `Helical Z Clip Rounding` is shown only when `Helical Path Boundary Policy` is `Clip Z`.
