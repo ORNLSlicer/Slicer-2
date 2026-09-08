@@ -137,7 +137,9 @@ QString helicalRegionComment(RegionType region_type) {
 }  // namespace
 
 ArcSpecialtiesWriter::ArcSpecialtiesWriter(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb)
-    : WriterBase(meta, sb) {}
+    : WriterBase(meta, sb) {
+    m_spiral_layer = sb->setting<bool>(PS::SpecialModes::kEnableSpiralize);
+}
 
 void ArcSpecialtiesWriter::setHelicalPathZClipRounding(
     const QVector<QPair<QString, HelicalPathZClipRounding>>& rounding) {

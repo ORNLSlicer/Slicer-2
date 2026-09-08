@@ -122,11 +122,7 @@ QString writeHelicalPathByRegionRuns(Path& path, const QSharedPointer<WriterBase
             gcode += writer->writeBeforePath(active_region);
             path_open = true;
         }
-        else if (segment_region != active_region) {
-            gcode += writer->writeAfterPath(active_region);
-            active_region = segment_region;
-            gcode += writer->writeBeforePath(active_region);
-        }
+        else if (segment_region != active_region) { active_region = segment_region; }
 
         gcode += segment->writeGCode(writer);
     }
