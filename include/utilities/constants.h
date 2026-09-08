@@ -899,6 +899,18 @@ class Constants {
             static const QString kHelicalPerimeterStepover;
             static const QString kHelicalInsetStepover;
             static const QString kHelicalInfillStepover;
+            static const QString kHelicalPerimeterToolFrameXRotation;
+            static const QString kHelicalPerimeterToolFrameYRotation;
+            static const QString kHelicalPerimeterToolFrameZRotation;
+            static const QString kHelicalInsetToolFrameXRotation;
+            static const QString kHelicalInsetToolFrameYRotation;
+            static const QString kHelicalInsetToolFrameZRotation;
+            static const QString kHelicalInfillToolFrameXRotation;
+            static const QString kHelicalInfillToolFrameYRotation;
+            static const QString kHelicalInfillToolFrameZRotation;
+            static const QString kHelicalTravelToolFrameXRotation;
+            static const QString kHelicalTravelToolFrameYRotation;
+            static const QString kHelicalTravelToolFrameZRotation;
         };
     };
 

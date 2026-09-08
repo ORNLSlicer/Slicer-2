@@ -861,6 +861,30 @@ const QString Constants::ProfileSettings::Helical::kHelicalInfillRevolutionsRoun
 const QString Constants::ProfileSettings::Helical::kHelicalPerimeterStepover = "helical_perimeter_stepover";
 const QString Constants::ProfileSettings::Helical::kHelicalInsetStepover     = "helical_inset_stepover";
 const QString Constants::ProfileSettings::Helical::kHelicalInfillStepover    = "helical_infill_stepover";
+const QString Constants::ProfileSettings::Helical::kHelicalPerimeterToolFrameXRotation =
+    "helical_perimeter_tool_frame_x_rotation";
+const QString Constants::ProfileSettings::Helical::kHelicalPerimeterToolFrameYRotation =
+    "helical_perimeter_tool_frame_y_rotation";
+const QString Constants::ProfileSettings::Helical::kHelicalPerimeterToolFrameZRotation =
+    "helical_perimeter_tool_frame_z_rotation";
+const QString Constants::ProfileSettings::Helical::kHelicalInsetToolFrameXRotation =
+    "helical_inset_tool_frame_x_rotation";
+const QString Constants::ProfileSettings::Helical::kHelicalInsetToolFrameYRotation =
+    "helical_inset_tool_frame_y_rotation";
+const QString Constants::ProfileSettings::Helical::kHelicalInsetToolFrameZRotation =
+    "helical_inset_tool_frame_z_rotation";
+const QString Constants::ProfileSettings::Helical::kHelicalInfillToolFrameXRotation =
+    "helical_infill_tool_frame_x_rotation";
+const QString Constants::ProfileSettings::Helical::kHelicalInfillToolFrameYRotation =
+    "helical_infill_tool_frame_y_rotation";
+const QString Constants::ProfileSettings::Helical::kHelicalInfillToolFrameZRotation =
+    "helical_infill_tool_frame_z_rotation";
+const QString Constants::ProfileSettings::Helical::kHelicalTravelToolFrameXRotation =
+    "helical_travel_tool_frame_x_rotation";
+const QString Constants::ProfileSettings::Helical::kHelicalTravelToolFrameYRotation =
+    "helical_travel_tool_frame_y_rotation";
+const QString Constants::ProfileSettings::Helical::kHelicalTravelToolFrameZRotation =
+    "helical_travel_tool_frame_z_rotation";
 
 //================================================================================
 // Experimental Settings
