@@ -147,6 +147,48 @@ bool rejectsInvalidInputsWithReason() {
     return !negative_revolutions.valid() && !negative_revolutions.reason.isEmpty() && !negative_stepover.valid() &&
            !negative_stepover.reason.isEmpty();
 }
+
+double infillRevolutions(const ORNL::HelicalRegionProfile& profile) {
+    for (const ORNL::HelicalRegionProfileBand& band : profile.bands) {
+        if (band.region_type == ORNL::RegionType::kInfill) { return band.revolutions; }
+    }
+
+    return 0.0;
+}
+
+bool retainedProfileAnchorsBottomShellsToClippedStart() {
+    const ORNL::HelicalRegionProfileResult result =
+        ORNL::buildRetainedHelicalRegionProfile(defaultParams(), 10.0 * ORNL::mm, 42.0 * ORNL::mm);
+    if (!result.valid() || result.profile.bands.size() != 5) { return false; }
+
+    return result.profile.bands[0].region_type == ORNL::RegionType::kPerimeter &&
+           near(result.profile.bands[0].start_revolutions, 0.0) &&
+           nearDistance(result.profile.bands[0].start_z, 10.0 * ORNL::mm) &&
+           result.profile.bands[1].region_type == ORNL::RegionType::kInset &&
+           nearDistance(result.profile.bands[1].start_z, 12.0 * ORNL::mm);
+}
+
+bool retainedProfileRespectsInfillRevolutionsRounding() {
+    ORNL::HelicalRegionProfileParameters params = defaultParams();
+    params.infill_revolutions_rounding          = ORNL::HelicalInfillRevolutionsRounding::kRound;
+    const ORNL::HelicalRegionProfileResult round_result =
+        ORNL::buildRetainedHelicalRegionProfile(params, 10.0 * ORNL::mm, 42.0 * ORNL::mm);
+
+    params.infill_revolutions_rounding = ORNL::HelicalInfillRevolutionsRounding::kFloor;
+    const ORNL::HelicalRegionProfileResult floor_result =
+        ORNL::buildRetainedHelicalRegionProfile(params, 10.0 * ORNL::mm, 42.0 * ORNL::mm);
+
+    params.infill_revolutions_rounding = ORNL::HelicalInfillRevolutionsRounding::kCeil;
+    const ORNL::HelicalRegionProfileResult ceil_result =
+        ORNL::buildRetainedHelicalRegionProfile(params, 10.0 * ORNL::mm, 42.0 * ORNL::mm);
+
+    return round_result.valid() && floor_result.valid() && ceil_result.valid() &&
+           near(infillRevolutions(round_result.profile), 6.0) && near(infillRevolutions(floor_result.profile), 5.0) &&
+           near(infillRevolutions(ceil_result.profile), 6.0) &&
+           nearDistance(round_result.profile.generatedTopZ(), 44.0 * ORNL::mm) &&
+           nearDistance(floor_result.profile.generatedTopZ(), 40.0 * ORNL::mm) &&
+           nearDistance(ceil_result.profile.generatedTopZ(), 44.0 * ORNL::mm);
+}
 }  // namespace
 
 int main() {
@@ -162,6 +204,10 @@ int main() {
     passed &= expect(clampsNonpositiveDerivedInfillToNoInfill(),
                      "Expected nonpositive derived infill revolutions to remove only the infill band.");
     passed &= expect(rejectsInvalidInputsWithReason(), "Expected invalid helical profile inputs to include a reason.");
+    passed &= expect(retainedProfileAnchorsBottomShellsToClippedStart(),
+                     "Expected retained clipped starts to rebuild lower shell bands from the retained start.");
+    passed &= expect(retainedProfileRespectsInfillRevolutionsRounding(),
+                     "Expected retained clipped profiles to respect infill revolutions rounding.");
 
     return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 }
