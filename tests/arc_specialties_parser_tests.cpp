@@ -16,6 +16,7 @@
 #include "geometry/path.h"
 #include "geometry/point.h"
 #include "geometry/segments/line.h"
+#include "geometry/segments/travel.h"
 #include "step/layer/cylindrical_layer.h"
 #include "units/unit.h"
 #include "utilities/constants.h"
@@ -96,6 +97,17 @@ bool writesInlineArcOptionalStop() {
 
     return first_arc.contains("F600.0000 G81 ;") && second_arc.contains("F600.0000 G81 ;") &&
            !first_arc.contains("G81 ;OPTIONAL STOP ROUTINE") && !second_arc.contains("G81 ;OPTIONAL STOP ROUTINE");
+}
+
+bool writesConfiguredG80WeldScheduleFile() {
+    QSharedPointer<ORNL::SettingsBase> settings = QSharedPointer<ORNL::SettingsBase>::create();
+    settings->setSetting(ORNL::PRS::GCode::kArcSpecialtiesG80WeldScheduleFile, QString("D:\\Schedules\\custom_sch.nc"));
+
+    ORNL::ArcSpecialtiesWriter writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+    const QString setup = writer.writeInitialSetup(0.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm, 1);
+
+    return setup.contains("#FILE NAME[ G80=\"D:\\Schedules\\custom_sch.nc\" ]\n") &&
+           !setup.contains("#FILE NAME[ G80=\"\" ]\n");
 }
 
 bool writesCompactCylindricalPrintComments() {
@@ -219,8 +231,22 @@ bool helicalLayerFinalizesOnlyAtPhysicalPathEnd() {
     settings->setSetting(ORNL::PS::GCode::kPerimeterEnd, QStringLiteral("PERIMETER_END_SENTINEL"));
     settings->setSetting(ORNL::PS::GCode::kInsetEnd, QStringLiteral("INSET_END_SENTINEL"));
     settings->setSetting(ORNL::PS::GCode::kInfillEnd, QStringLiteral("INFILL_END_SENTINEL"));
+    settings->setSetting(ORNL::PS::Travel::kSpeed, 482.6 * ORNL::mm / ORNL::minute);
+    settings->setSetting(ORNL::PRS::MachineSpeed::kMaxXYSpeed, 600.0 * ORNL::mm / ORNL::minute);
+    settings->setSetting(ORNL::PRS::MachineSpeed::kZSpeed, 600.0 * ORNL::mm / ORNL::minute);
+    settings->setSetting(ORNL::PS::Travel::kLiftHeight, 0.0 * ORNL::mm);
+    settings->setSetting(ORNL::PS::Travel::kMinTravelLength, 0.0 * ORNL::mm);
+    settings->setSetting(ORNL::PS::Travel::kMinTravelForLift, 0.0 * ORNL::mm);
 
     ORNL::Path path;
+    QSharedPointer<ORNL::TravelSegment> travel = QSharedPointer<ORNL::TravelSegment>::create(
+        ORNL::Point(1.0 * ORNL::mm, -1.0 * ORNL::mm, 0.0 * ORNL::mm),
+        ORNL::Point(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm), ORNL::TravelLiftType::kNoLift);
+    QSharedPointer<ORNL::SettingsBase> travel_settings = helicalSegmentSettings(ORNL::RegionType::kPerimeter);
+    travel_settings->populate(settings);
+    travel->setSb(travel_settings);
+    path.append(travel);
+
     const auto append_segment = [&path](const ORNL::Point& start, const ORNL::Point& end,
                                         ORNL::RegionType region_type) {
         QSharedPointer<ORNL::LineSegment> segment = QSharedPointer<ORNL::LineSegment>::create(start, end);
@@ -240,11 +266,20 @@ bool helicalLayerFinalizesOnlyAtPhysicalPathEnd() {
 
     QSharedPointer<ORNL::ArcSpecialtiesWriter> writer =
         QSharedPointer<ORNL::ArcSpecialtiesWriter>::create(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
-    const QString block = layer.writeGCode(writer);
+    const QString block          = layer.writeGCode(writer);
+    const int perimeter_schedule = block.indexOf("G80 [1] ;Perimeter Schedule\n");
+    const int inset_schedule     = block.indexOf("G80 [2] ;Inset Schedule\n");
+    const int infill_schedule    = block.indexOf("G80 [0] ;Infill Schedule\n");
+    const int beginning_bead     = block.indexOf(";BEGINNING BEAD:");
+    const int first_print        = block.indexOf(";HELICAL PERIMETER\n");
 
     return block.contains(";HELICAL PERIMETER\n") && block.contains(";HELICAL INSET\n") &&
-           block.contains(";HELICAL INFILL\n") && !block.contains("PERIMETER_END_SENTINEL") &&
-           !block.contains("INSET_END_SENTINEL") && block.count("INFILL_END_SENTINEL") == 1;
+           block.contains(";HELICAL INFILL\n") && beginning_bead >= 0 && perimeter_schedule > beginning_bead &&
+           first_print > perimeter_schedule && inset_schedule > perimeter_schedule &&
+           infill_schedule > inset_schedule && block.count("G80 [1] ;Perimeter Schedule\n") == 1 &&
+           block.count("G80 [2] ;Inset Schedule\n") == 1 && block.count("G80 [0] ;Infill Schedule\n") == 1 &&
+           !block.contains("PERIMETER_END_SENTINEL") && !block.contains("INSET_END_SENTINEL") &&
+           block.count("INFILL_END_SENTINEL") == 1;
 }
 
 bool writesHelicalRegionToolFrameRotations() {
@@ -498,6 +533,8 @@ int main(int argc, char* argv[]) {
     passed &= expect(rightHandedCpDeltaDoesNotMirrorAxis(),
                      "Arc Specialties loader unexpectedly reversed right-handed CP delta.");
     passed &= expect(writesInlineArcOptionalStop(), "Arc Specialties writer did not emit inline G81 on G02/G03.");
+    passed &= expect(writesConfiguredG80WeldScheduleFile(),
+                     "Arc Specialties writer did not emit the configured G80 weld schedule file.");
     passed &= expect(writesCompactCylindricalPrintComments(),
                      "Arc Specialties writer did not emit compact cylindrical comments.");
     passed &=

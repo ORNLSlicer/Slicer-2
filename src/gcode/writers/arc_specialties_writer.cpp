@@ -32,6 +32,9 @@ const QString kRadialCenterY = "radial_center_y";
 //! @brief First TRAFO-off move comment used to keep the approach orientation distinct from work-object motion.
 const QString kWorldApproachTravelComment = "WORLD APPROACH TRAVEL";
 
+//! @brief Default Arc Specialties G80 weld schedule file path.
+const QString kDefaultG80WeldScheduleFile = "";
+
 //! @brief Fixed tool-frame XR.
 constexpr double kToolFrameXR = 180.0;
 
@@ -390,27 +393,33 @@ QString ArcSpecialtiesWriter::writeInitialSetup(Distance minimum_x, Distance min
 
     QString rv;
 
-    rv += "V.E.Sch.Preflow = 3  ;Preflow Time in Seconds" % m_newline;
-    rv += "V.E.Sch.TravelDelay = 0  ;Travel Start Delay in Seconds" % m_newline;
-    rv += "V.E.Sch.Postflow = 10   ;Stationary Postflow Time" % m_newline;
-    rv += "V.E.Sch.PostPurge = 0   ;Postflow Time after moving away (can reduce preflow delay)" % m_newline;
-    rv += "V.E.Sch.Weld.Program = 4   ;Program/Mode in Main Weld" % m_newline;
-    rv += "V.E.Sch.Weld.WFS = 250   ;IPM Wire Feed Speed in Main Weld" % m_newline;
-    rv += "V.E.Sch.Weld.Volts = 65   ;Trim or Volts in Main Weld" % m_newline;
-    rv += "V.E.Sch.Weld.Control = 25   ;Arc Control in Main Weld" % m_newline;
-    rv += "V.E.Sch.Crater.Program = 4   ;Program/Mode in Crater Fill" % m_newline;
-    rv += "V.E.Sch.Crater.WFS = 250   ;IPM Wire Feed Speed in Crater Fill" % m_newline;
-    rv += "V.E.Sch.Crater.Volts = 70   ;Trim or Volts in Crater Fill" % m_newline;
-    rv += "V.E.Sch.Crater.Control = 25   ;Arc Control in Crater Fill" % m_newline;
-    rv += "V.E.Sch.Crater.Time = .5   ;Crater Fill Time in Seconds" % m_newline;
+    QString g80_schedule_file = m_sb->setting<QString>(PRS::GCode::kArcSpecialtiesG80WeldScheduleFile);
+    if (g80_schedule_file.isEmpty()) { g80_schedule_file = kDefaultG80WeldScheduleFile; }
+    g80_schedule_file.remove('"');
+
+    rv += commentLine("DEFINE G80 WELD SCHEDULES");
+    rv += "#FILE NAME[ G80=\"" % g80_schedule_file % "\" ]" % m_newline;
+    rv += "#DELETE V.S.LASTBLOCK" % m_newline;
+    rv += "$IF EXIST[V.S.SPEED]==FALSE" % m_newline;
+    rv += "M00" % m_newline;
+    rv += "#DELETE V.S.SPEED" % m_newline;
+    rv += "#VAR" % m_newline;
+    rv += "V.S.SPEED" % m_newline;
+    rv += "#ENDVAR" % m_newline;
+    rv += "M00" % m_newline;
+    rv += "$ENDIF" % m_newline;
+    rv += m_newline;
+
+    rv += "G80 [0] ;Default Schedule (Infill)" % m_newline;
     rv += "#CONTOUR MODE [DEV PATH_DEV=2 CONST_VEL=1]" % m_newline;
     /// TODO: M06 command does not work as of 2026-08-07 and is disabled for now. Must be re-enabled when the M06
     /// command is fixed in the Arc Specialties controller or be replaced with a different command that achieves the
     /// same effect.
-    rv += ";M06 T1   ;Select Tool 1" % m_newline;
+    rv += ";M06 T1 ;Select Tool 1" % m_newline;
     rv += "M49 ;Send Robot Home" % m_newline;
     rv += "#CHANNEL INIT [CMDPOS]" % m_newline;
-    rv += "" % m_newline;
+    rv += m_newline;
+
     rv += "G90" % m_newline;
     rv += "#TRAFO OFF" % m_newline;
     rv += "#FLUSH WAIT" % m_newline;
@@ -457,7 +466,11 @@ QString ArcSpecialtiesWriter::writeBeforeIsland() {
 }
 
 QString ArcSpecialtiesWriter::writeBeforeRegion(RegionType type, int pathSize) {
-    return QString();
+    QString rv;
+    if (type == RegionType::kPerimeter) { rv += "G80 [1] ;Perimeter Schedule" % m_newline; }
+    else if (type == RegionType::kInset) { rv += "G80 [2] ;Inset Schedule" % m_newline; }
+    else if (type == RegionType::kInfill) { rv += "G80 [0] ;Infill Schedule" % m_newline; }
+    return rv;
 }
 
 QString ArcSpecialtiesWriter::writeBeforePath(RegionType type) {

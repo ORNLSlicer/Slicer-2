@@ -50,15 +50,6 @@ QSharedPointer<SettingsBase> firstPrintSettings(const Path& path, const QSharedP
     return fallback;
 }
 
-//! @brief Returns the first print region at or after a path index.
-RegionType nextPrintRegionType(const Path& path, int start_index) {
-    for (int i = start_index, end = path.size(); i < end; ++i) {
-        if (!isTravelSegment(path[i])) { return segmentRegionType(path[i]); }
-    }
-
-    return RegionType::kUnknown;
-}
-
 //! @brief Recomputes region-start flags after optimizer ordering or reversal.
 void recomputeRegionStartFlags(Path& path) {
     bool has_previous_print_region = false;
@@ -100,34 +91,39 @@ void restoreCylindricalPathSettings(Path& path, const QSharedPointer<SettingsBas
 QString writeHelicalPathByRegionRuns(Path& path, const QSharedPointer<WriterBase>& writer) {
     QString gcode;
     bool path_open           = false;
+    bool region_open         = false;
     RegionType active_region = RegionType::kUnknown;
+
+    auto openRegion = [&gcode, &region_open, &active_region, &writer](RegionType region_type) {
+        active_region = region_type;
+        gcode += writer->writeBeforeRegion(active_region, 1);
+        region_open = true;
+    };
 
     for (int i = 0, end = path.size(); i < end; ++i) {
         const QSharedPointer<SegmentBase>& segment = path[i];
 
         if (isTravelSegment(segment)) {
-            if (!path_open) {
-                active_region = nextPrintRegionType(path, i + 1);
-                gcode += writer->writeBeforePath(active_region);
-                path_open = true;
-            }
-
             gcode += segment->writeGCode(writer);
             continue;
         }
 
         const RegionType segment_region = segmentRegionType(segment);
         if (!path_open) {
-            active_region = segment_region;
+            openRegion(segment_region);
             gcode += writer->writeBeforePath(active_region);
             path_open = true;
         }
-        else if (segment_region != active_region) { active_region = segment_region; }
+        else if (segment_region != active_region) {
+            if (region_open) { gcode += writer->writeAfterRegion(active_region); }
+            openRegion(segment_region);
+        }
 
         gcode += segment->writeGCode(writer);
     }
 
     if (path_open) { gcode += writer->writeAfterPath(active_region); }
+    if (region_open) { gcode += writer->writeAfterRegion(active_region); }
 
     return gcode;
 }
@@ -145,7 +141,9 @@ QString CylindricalLayer::writeGCode(QSharedPointer<WriterBase> writer) {
     if (m_paths.isEmpty()) { return writer->writeEmptyStep(); }
 
     QString gcode;
-    gcode += writer->writeBeforeRegion(RegionType::kPerimeter, m_paths.size());
+    if (m_path_pattern != CylindricalPathPattern::kHelical) {
+        gcode += writer->writeBeforeRegion(RegionType::kPerimeter, m_paths.size());
+    }
     for (Path& path : m_paths) {
         if (path.size() == 0) { continue; }
 
@@ -156,7 +154,9 @@ QString CylindricalLayer::writeGCode(QSharedPointer<WriterBase> writer) {
             gcode += writer->writeAfterPath(RegionType::kPerimeter);
         }
     }
-    gcode += writer->writeAfterRegion(RegionType::kPerimeter);
+    if (m_path_pattern != CylindricalPathPattern::kHelical) {
+        gcode += writer->writeAfterRegion(RegionType::kPerimeter);
+    }
 
     return gcode;
 }
