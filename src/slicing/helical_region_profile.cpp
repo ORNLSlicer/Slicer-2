@@ -46,6 +46,7 @@ void appendBand(HelicalRegionProfile& profile, RegionType region_type, int revol
     profile.bands.push_back(
         HelicalRegionProfileBand {region_type, start_revolutions, static_cast<double>(revolutions), start_z, pitch});
 }
+
 }  // namespace
 
 double HelicalRegionProfileBand::endRevolutions() const {
@@ -180,5 +181,12 @@ HelicalRegionProfileResult buildHelicalRegionProfile(const HelicalRegionProfileP
     if (result.profile.isEmpty()) { result.reason = "Helical region profile contains no positive-revolution bands."; }
 
     return result;
+}
+
+HelicalRegionProfileResult buildRetainedHelicalRegionProfile(HelicalRegionProfileParameters params, Distance start_z,
+                                                             Distance top_z) {
+    params.start_z = start_z;
+    params.top_z   = top_z;
+    return buildHelicalRegionProfile(params);
 }
 }  // namespace ORNL
