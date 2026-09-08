@@ -20,7 +20,7 @@
 namespace ORNL {
 class SettingTab;
 
-//! \brief Composite row that edits three unitless vector components on one settings line.
+//! \brief Composite row that edits three vector components on one settings line.
 class Vector3InputWidget : public QWidget, public SettingRowBase {
     Q_OBJECT
 
@@ -68,8 +68,12 @@ class Vector3InputWidget : public QWidget, public SettingRowBase {
     };
 
     void configureSpinBox(QDoubleSpinBox* spin_box);
+    bool isAngleVector() const;
+    QString unitText() const;
+    double displayValue(double base_value) const;
+    double baseValue(double display_value) const;
     void ensureSetting(const QString& key, double default_value);
-    void updateSetting(const QString& key, double value);
+    void updateSetting(const QString& key, double displayed_value);
     double reloadDoubleValue(const QString& key, double default_value, bool& consistent);
     bool hasConsistentEffectiveValues(const QString& key, double default_value);
     bool hasAnyInconsistentValue();

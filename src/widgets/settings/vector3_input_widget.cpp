@@ -12,6 +12,8 @@
 #include <qnamespace.h>
 #include <qoverload.h>
 
+#include "managers/preferences_manager.h"
+#include "units/unit.h"
 #include "utilities/constants.h"
 #include "widgets/settings/setting_tab.h"
 
@@ -70,7 +72,7 @@ Vector3InputWidget::Vector3InputWidget(SettingTab* parent, QSharedPointer<Settin
 
         configureSpinBox(component.spin_box);
         component.spin_box->installEventFilter(this);
-        component.spin_box->setValue(m_sb->setting<double>(component.key));
+        component.spin_box->setValue(displayValue(m_sb->setting<double>(component.key)));
 
         const QString component_key = component.key;
         connect(component.spin_box, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
@@ -82,7 +84,7 @@ Vector3InputWidget::Vector3InputWidget(SettingTab* parent, QSharedPointer<Settin
 
     layout->addWidget(this, index, 1, Qt::AlignRight | Qt::AlignVCenter);
 
-    m_unit_label.reset(new QLabel(""));
+    m_unit_label.reset(new QLabel(unitText()));
     layout->addWidget(m_unit_label.get(), index, 2, Qt::AlignLeft);
     registerRowWidget(this);
 }
@@ -108,6 +110,8 @@ void Vector3InputWidget::valueChanged(QVariant val) {
 
 void Vector3InputWidget::reloadValue() {
     for (Component& component : m_components) component.spin_box->blockSignals(true);
+
+    m_unit_label->setText(unitText());
 
     bool all_consistent = true;
     for (Component& component : m_components) {
@@ -164,18 +168,51 @@ void Vector3InputWidget::clearNotification() {
 void Vector3InputWidget::configureSpinBox(QDoubleSpinBox* spin_box) {
     spin_box->setFocusPolicy(Qt::StrongFocus);
     spin_box->setAlignment(Qt::AlignRight);
-    spin_box->setMinimum(Constants::Limits::Minimums::kMinUnitlessFloat);
-    spin_box->setMaximum(Constants::Limits::Maximums::kMaxUnitlessFloat);
+    if (isAngleVector()) {
+        const Angle unit = PreferencesManager::getInstance()->getAngleUnit();
+        spin_box->setMinimum(Constants::Limits::Minimums::kMinAngle.to(unit));
+        spin_box->setMaximum(Constants::Limits::Maximums::kMaxAngle.to(unit));
+    }
+    else {
+        spin_box->setMinimum(Constants::Limits::Minimums::kMinUnitlessFloat);
+        spin_box->setMaximum(Constants::Limits::Maximums::kMaxUnitlessFloat);
+    }
     spin_box->setDecimals(m_precision);
     spin_box->setFixedWidth(kSpinBoxWidth);
     spin_box->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+}
+
+bool Vector3InputWidget::isAngleVector() const {
+    return m_json.at(Constants::Settings::Master::kType).get<std::string>() == "angle";
+}
+
+QString Vector3InputWidget::unitText() const {
+    if (isAngleVector()) return PreferencesManager::getInstance()->getAngleUnitText();
+
+    return "";
+}
+
+double Vector3InputWidget::displayValue(double base_value) const {
+    if (isAngleVector()) return Angle(base_value).to(PreferencesManager::getInstance()->getAngleUnit());
+
+    return base_value;
+}
+
+double Vector3InputWidget::baseValue(double display_value) const {
+    if (!isAngleVector()) return display_value;
+
+    Angle base_value;
+    base_value.from(display_value, PreferencesManager::getInstance()->getAngleUnit());
+    return base_value();
 }
 
 void Vector3InputWidget::ensureSetting(const QString& key, double default_value) {
     if (!m_sb->contains(key)) m_sb->setSetting(key, default_value);
 }
 
-void Vector3InputWidget::updateSetting(const QString& key, double value) {
+void Vector3InputWidget::updateSetting(const QString& key, double displayed_value) {
+    const double value = baseValue(displayed_value);
+
     notifyValueAboutToChange(key);
 
     if (m_settings_bases.size() != 0) {
@@ -253,6 +290,6 @@ void Vector3InputWidget::setSpinBoxValue(QDoubleSpinBox* spin_box, const QString
     double value            = reloadDoubleValue(key, default_value, setting_consistent);
     consistent              = setting_consistent;
 
-    if (!only_if_consistent || setting_consistent) spin_box->setValue(value);
+    if (!only_if_consistent || setting_consistent) spin_box->setValue(displayValue(value));
 }
 }  // namespace ORNL
