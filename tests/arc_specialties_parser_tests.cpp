@@ -75,6 +75,8 @@ bool parsedLineKeepsCpForVisualization() {
     }
 }
 
+QString lineContaining(const QString& block, const QString& marker);
+
 bool writesInlineArcOptionalStop() {
     QSharedPointer<ORNL::SettingsBase> settings = QSharedPointer<ORNL::SettingsBase>::create();
     settings->setSetting(ORNL::PRS::MachineSetup::kSupportG3, true);
@@ -149,6 +151,21 @@ QSharedPointer<ORNL::SettingsBase> helicalSegmentSettings(std::optional<ORNL::Re
     segment_settings->setSetting(ORNL::PS::Helical::kHelicalPathStartAngle, 0.0 * ORNL::degree);
     if (region_type.has_value()) { segment_settings->setSetting(ORNL::SS::kRegionType, region_type.value()); }
     return segment_settings;
+}
+
+void setHelicalToolFrameSettings(const QSharedPointer<ORNL::SettingsBase>& settings) {
+    settings->setSetting(ORNL::PS::Helical::kHelicalPerimeterToolFrameXRotation, 11.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalPerimeterToolFrameYRotation, 12.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalPerimeterToolFrameZRotation, 13.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalInsetToolFrameXRotation, 21.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalInsetToolFrameYRotation, 22.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalInsetToolFrameZRotation, 23.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalInfillToolFrameXRotation, 31.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalInfillToolFrameYRotation, 32.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalInfillToolFrameZRotation, 33.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalTravelToolFrameXRotation, 41.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalTravelToolFrameYRotation, 42.0 * ORNL::degree);
+    settings->setSetting(ORNL::PS::Helical::kHelicalTravelToolFrameZRotation, 43.0 * ORNL::degree);
 }
 
 bool writesHelicalRegionLineComments() {
@@ -228,6 +245,90 @@ bool helicalLayerFinalizesOnlyAtPhysicalPathEnd() {
     return block.contains(";HELICAL PERIMETER\n") && block.contains(";HELICAL INSET\n") &&
            block.contains(";HELICAL INFILL\n") && !block.contains("PERIMETER_END_SENTINEL") &&
            !block.contains("INSET_END_SENTINEL") && block.count("INFILL_END_SENTINEL") == 1;
+}
+
+bool writesHelicalRegionToolFrameRotations() {
+    QSharedPointer<ORNL::SettingsBase> settings = helicalWriterSettings(false);
+    setHelicalToolFrameSettings(settings);
+    ORNL::ArcSpecialtiesWriter writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+
+    const ORNL::Point start(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm);
+    const ORNL::Point end(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm);
+    const QString block = writer.writeLine(start, end, helicalSegmentSettings(ORNL::RegionType::kPerimeter)) %
+                          writer.writeLine(start, end, helicalSegmentSettings(ORNL::RegionType::kInset)) %
+                          writer.writeLine(start, end, helicalSegmentSettings(ORNL::RegionType::kInfill)) %
+                          writer.writeLine(start, end, helicalSegmentSettings(ORNL::RegionType::kUnknown));
+
+    const QString perimeter_line = lineContaining(block, ";HELICAL PERIMETER");
+    const QString inset_line     = lineContaining(block, ";HELICAL INSET");
+    const QString infill_line    = lineContaining(block, ";HELICAL INFILL");
+    QString fallback_line;
+    for (const QString& line : block.split('\n', Qt::SkipEmptyParts)) {
+        if (line.contains(";HELICAL") && !line.contains("PERIMETER") && !line.contains("INSET") &&
+            !line.contains("INFILL")) {
+            fallback_line = line;
+            break;
+        }
+    }
+
+    return perimeter_line.contains("XR=11.0000 YR=12.0000 ZR=13.0000") &&
+           inset_line.contains("XR=21.0000 YR=22.0000 ZR=23.0000") &&
+           infill_line.contains("XR=31.0000 YR=32.0000 ZR=33.0000") &&
+           fallback_line.contains("XR=180.0000 YR=0.0000 ZR=-135.0000");
+}
+
+bool writesHelicalTravelToolFrameRotation() {
+    QSharedPointer<ORNL::SettingsBase> settings = helicalWriterSettings(false);
+    setHelicalToolFrameSettings(settings);
+    settings->setSetting(ORNL::PS::Travel::kSpeed, 600.0 * ORNL::mm / ORNL::minute);
+    settings->setSetting(ORNL::PRS::MachineSpeed::kMaxXYSpeed, 600.0 * ORNL::mm / ORNL::minute);
+    settings->setSetting(ORNL::PRS::MachineSpeed::kZSpeed, 600.0 * ORNL::mm / ORNL::minute);
+    settings->setSetting(ORNL::PS::Travel::kLiftHeight, 0.0 * ORNL::mm);
+    settings->setSetting(ORNL::PS::Travel::kMinTravelLength, 0.0 * ORNL::mm);
+    settings->setSetting(ORNL::PS::Travel::kMinTravelForLift, 0.0 * ORNL::mm);
+
+    QSharedPointer<ORNL::SettingsBase> segment_settings = helicalSegmentSettings(ORNL::RegionType::kPerimeter);
+    segment_settings->populate(settings);
+
+    ORNL::ArcSpecialtiesWriter writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+    const QString travel_block = writer.writeTravel(ORNL::Point(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm),
+                                                    ORNL::Point(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm),
+                                                    ORNL::TravelLiftType::kNoLift, segment_settings);
+
+    const QString world_approach_line = lineContaining(travel_block, ";WORLD APPROACH TRAVEL");
+    const QString first_travel_line   = lineContaining(travel_block, ";TRAVEL");
+
+    return world_approach_line.contains("XR=180.0000 YR=0.0000 ZR=-90.0000") &&
+           first_travel_line.contains("XR=41.0000 YR=42.0000 ZR=43.0000");
+}
+
+bool writesHelicalToolFrameHeader() {
+    QSharedPointer<ORNL::SettingsBase> settings = helicalWriterSettings(false);
+    setHelicalToolFrameSettings(settings);
+    settings->setSetting(ORNL::PS::Layer::kLayerHeight, 1.0 * ORNL::mm);
+    settings->setSetting(ORNL::PS::Layer::kBeadWidth, 4.0 * ORNL::mm);
+    settings->setSetting(ORNL::PS::Slicing::kCylinderInnerRadius, 5.0 * ORNL::mm);
+    settings->setSetting(ORNL::PS::Slicing::kCylinderHeight, 10.0 * ORNL::mm);
+    settings->setSetting(ORNL::PS::Slicing::kCylinderAxisSource,
+                         static_cast<int>(ORNL::CylinderAxisSource::kPartCentroid));
+    settings->setSetting(ORNL::PS::Slicing::kArcsPerRevolution, 8);
+    settings->setSetting(ORNL::PS::Optimizations::kCylindricalPathOrder,
+                         static_cast<int>(ORNL::PathOrderOptimization::kNextClosest));
+    settings->setSetting(ORNL::PS::Helical::kHelicalPathZClipRounding,
+                         static_cast<int>(ORNL::HelicalPathZClipRounding::kExactIntersection));
+    settings->setSetting(ORNL::PS::Helical::kHelicalPerimeterRevolutions, 1);
+    settings->setSetting(ORNL::PS::Helical::kHelicalInsetRevolutions, 1);
+    settings->setSetting(ORNL::PS::Helical::kHelicalInfillRevolutionsRounding,
+                         static_cast<int>(ORNL::HelicalInfillRevolutionsRounding::kCeil));
+    settings->setSetting(ORNL::PS::Travel::kLiftHeight, 0.0 * ORNL::mm);
+
+    ORNL::ArcSpecialtiesWriter writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+    const QString header = writer.writeSettingsHeader(ORNL::GcodeSyntax::kArcSpecialties);
+
+    return header.contains(";Helical Perimeter Tool Frame Rotation: XR=11.0000deg YR=12.0000deg ZR=13.0000deg") &&
+           header.contains(";Helical Inset Tool Frame Rotation: XR=21.0000deg YR=22.0000deg ZR=23.0000deg") &&
+           header.contains(";Helical Infill Tool Frame Rotation: XR=31.0000deg YR=32.0000deg ZR=33.0000deg") &&
+           header.contains(";Helical Travel Tool Frame Rotation: XR=41.0000deg YR=42.0000deg ZR=43.0000deg");
 }
 
 QString lineContaining(const QString& block, const QString& marker) {
@@ -407,6 +508,12 @@ int main(int argc, char* argv[]) {
                      "Arc Specialties writer did not fall back to generic helical comments.");
     passed &= expect(helicalLayerFinalizesOnlyAtPhysicalPathEnd(),
                      "Helical layer emitted region end G-code at internal region transitions.");
+    passed &= expect(writesHelicalRegionToolFrameRotations(),
+                     "Arc Specialties writer did not emit helical region tool-frame rotations.");
+    passed &= expect(writesHelicalTravelToolFrameRotation(),
+                     "Arc Specialties writer did not emit the helical travel tool-frame rotation.");
+    passed &= expect(writesHelicalToolFrameHeader(),
+                     "Arc Specialties writer did not report helical tool-frame rotations in the header.");
     passed &= expect(writesFirstTravelWithWorkObjectToolFrame(), "Arc Specialties first travel did not use ZR=-135.");
     passed &= expect(writesStartupWorldApproachAbovePartOrCylinderHeight(),
                      "Arc Specialties startup world approach did not use part/cylinder safe Z.");
