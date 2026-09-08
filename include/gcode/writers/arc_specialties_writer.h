@@ -160,6 +160,13 @@ class ArcSpecialtiesWriter : public WriterBase {
     QString writeDwell(Time time) override;
 
    private:
+    //! @brief Arc Specialties tool-frame rotation fields.
+    struct ToolFrameRotation {
+        double xr;
+        double yr;
+        double zr;
+    };
+
     //! \brief Writes G-Code to enable the welder
     QString writeWelderOn();
     /*!
@@ -211,22 +218,31 @@ class ArcSpecialtiesWriter : public WriterBase {
      * @brief Formats X/Y/Z/XR/YR/ZR/AP/CP coordinate fields for a point.
      * @param destination Point being written.
      * @param params Segment settings containing, for cylindrical paths, radial center metadata.
-     * @param tool_frame_zr ZR orientation value to emit.
+     * @param tool_frame_rotation Tool-frame orientation value to emit.
      * @return Coordinate parameter string.
      */
     QString writeCoordinates(const Point& destination, const QSharedPointer<SettingsBase>& params,
-                             double tool_frame_zr);
+                             const ToolFrameRotation& tool_frame_rotation);
 
     /*!
      * @brief Formats X/Y/Z/XR/YR/ZR/AP/CP coordinate fields with CP computed from a reference point.
      * @param destination Point being written.
      * @param params Segment settings containing, for cylindrical paths, radial center metadata.
-     * @param tool_frame_zr ZR orientation value to emit.
+     * @param tool_frame_rotation Tool-frame orientation value to emit.
      * @param cp_reference Point used to compute the CP orientation field.
      * @return Coordinate parameter string.
      */
-    QString writeCoordinates(const Point& destination, const QSharedPointer<SettingsBase>& params, double tool_frame_zr,
-                             const Point& cp_reference);
+    QString writeCoordinates(const Point& destination, const QSharedPointer<SettingsBase>& params,
+                             const ToolFrameRotation& tool_frame_rotation, const Point& cp_reference);
+
+    /*!
+     * @brief Returns the tool frame for a motion comment and segment settings.
+     * @param comment Motion comment being emitted.
+     * @param params Segment settings used to identify the helical region.
+     * @return Tool-frame rotation for the motion.
+     */
+    ToolFrameRotation toolFrameRotationForMotion(const QString& comment,
+                                                 const QSharedPointer<SettingsBase>& params) const;
 
     /*!
      * @brief Returns the first post-kinematics travel point above the first-layer lower point.

@@ -152,6 +152,11 @@ void ArcSpecialtiesWriter::setHelicalPathHandedness(const QVector<QPair<QString,
 
 QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
     QString text;
+    auto formatToolFrameRotation = [](const ToolFrameRotation& rotation) {
+        return QString("XR=") % QString::number(rotation.xr, 'f', 4) % "deg YR=" %
+               QString::number(rotation.yr, 'f', 4) % "deg ZR=" % QString::number(rotation.zr, 'f', 4) % "deg";
+    };
+
     const SlicingMode slicing_mode = static_cast<SlicingMode>(m_sb->setting<int>(PS::Slicing::kSlicingMode));
     const CylindricalPathPattern path_pattern =
         static_cast<CylindricalPathPattern>(m_sb->setting<int>(PS::Slicing::kCylindricalPathPattern));
@@ -176,9 +181,27 @@ QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
             formatAngle(m_sb->setting<Angle>(PRS::MachineSetup::kGCodeCoordinateFrameRotationZ), m_meta.m_angle_unit));
         text += commentLine("Arc Specialties partner frame: set G-Code Frame Rotation Z to -90deg");
         text += commentLine("Work Offset Setup: manual and probe setup commands are not emitted by this first pass");
-        text += commentLine(QString("Tool Frame Rotation: XR=") % QString::number(kToolFrameXR, 'f', 4) % "deg YR=" %
-                            QString::number(kToolFrameYR, 'f', 4) % "deg ZR=" % QString::number(kToolFrameZR, 'f', 4) %
-                            "deg");
+        if (helical_mode) {
+            text += commentLine(
+                "Helical Perimeter Tool Frame Rotation: " %
+                formatToolFrameRotation(toolFrameRotationForMotion(
+                    Constants::RegionTypeStrings::kHelical % " " % Constants::RegionTypeStrings::kPerimeter, m_sb)));
+            text += commentLine(
+                "Helical Inset Tool Frame Rotation: " %
+                formatToolFrameRotation(toolFrameRotationForMotion(
+                    Constants::RegionTypeStrings::kHelical % " " % Constants::RegionTypeStrings::kInset, m_sb)));
+            text += commentLine(
+                "Helical Infill Tool Frame Rotation: " %
+                formatToolFrameRotation(toolFrameRotationForMotion(
+                    Constants::RegionTypeStrings::kHelical % " " % Constants::RegionTypeStrings::kInfill, m_sb)));
+            text += commentLine("Helical Travel Tool Frame Rotation: " %
+                                formatToolFrameRotation(toolFrameRotationForMotion("TRAVEL", m_sb)));
+        }
+        else {
+            text += commentLine(QString("Tool Frame Rotation: XR=") % QString::number(kToolFrameXR, 'f', 4) %
+                                "deg YR=" % QString::number(kToolFrameYR, 'f', 4) % "deg ZR=" %
+                                QString::number(kToolFrameZR, 'f', 4) % "deg");
+        }
         text += commentLine(QString("Initial World Approach Tool Frame Rotation: XR=") %
                             QString::number(kToolFrameXR, 'f', 4) % "deg YR=" % QString::number(kToolFrameYR, 'f', 4) %
                             "deg ZR=" % QString::number(kRapidTravelToolFrameZR, 'f', 4) % "deg");
@@ -616,17 +639,18 @@ QString ArcSpecialtiesWriter::writeArc(const Point& start_point, const Point& en
 
     const QString inline_optional_stop = m_sb->setting<bool>(PRS::GCode::kArcSpecialtiesG2G3OptionalStop) ? " G81" : "";
 
-    rv += QString(ccw ? "G03" : "G02") % writeCoordinates(end_point, params, kToolFrameZR) %
+    const QString print_comment = printMoveComment(params);
+    rv += QString(ccw ? "G03" : "G02") %
+          writeCoordinates(end_point, params, toolFrameRotationForMotion(print_comment, params)) %
           writeArcCenterParameters(start_point, center_point) % m_f %
           QString::number(speed.to(m_meta.m_velocity_unit), 'f', 4) % inline_optional_stop %
-          commentSpaceLine(printMoveComment(params));
+          commentSpaceLine(print_comment);
     return rv;
 }
 
 QString ArcSpecialtiesWriter::writeAfterPath(RegionType type) {
     QString rv;
     if (!m_spiral_layer) {
-        // rv += writeWelderOff(); // update to turn off the welder
         if (type == RegionType::kPerimeter) {
             if (!m_sb->setting<QString>(PS::GCode::kPerimeterEnd).isEmpty()) {
                 rv += m_sb->setting<QString>(PS::GCode::kPerimeterEnd) % m_newline;
@@ -730,12 +754,13 @@ QString ArcSpecialtiesWriter::writeMotion(const QString& command, const Point& d
                                           const QSharedPointer<SettingsBase>& params, const QString& comment,
                                           const Point& cp_reference) {
     setFeedrate(speed);
+    const ToolFrameRotation tool_frame_rotation = toolFrameRotationForMotion(comment, params);
     if (command == "G00") {
-        const double tool_frame_zr = comment == kWorldApproachTravelComment ? kRapidTravelToolFrameZR : kToolFrameZR;
-        return command % writeCoordinates(destination, params, tool_frame_zr, cp_reference) % commentSpaceLine(comment);
+        return command % writeCoordinates(destination, params, tool_frame_rotation, cp_reference) %
+               commentSpaceLine(comment);
     }
     else {
-        return command % writeCoordinates(destination, params, kToolFrameZR, cp_reference) % m_f %
+        return command % writeCoordinates(destination, params, tool_frame_rotation, cp_reference) % m_f %
                QString::number(speed.to(m_meta.m_velocity_unit), 'f', 4) % commentSpaceLine(comment);
     }
 }
@@ -775,12 +800,13 @@ QString ArcSpecialtiesWriter::writePendingLayerChange() {
 }
 
 QString ArcSpecialtiesWriter::writeCoordinates(const Point& destination, const QSharedPointer<SettingsBase>& params,
-                                               double tool_frame_zr) {
-    return writeCoordinates(destination, params, tool_frame_zr, destination);
+                                               const ToolFrameRotation& tool_frame_rotation) {
+    return writeCoordinates(destination, params, tool_frame_rotation, destination);
 }
 
 QString ArcSpecialtiesWriter::writeCoordinates(const Point& destination, const QSharedPointer<SettingsBase>& params,
-                                               double tool_frame_zr, const Point& cp_reference) {
+                                               const ToolFrameRotation& tool_frame_rotation,
+                                               const Point& cp_reference) {
     const double ap_output         = m_sb->setting<Angle>(PRS::MachineSetup::kAxisA).to(m_meta.m_angle_unit);
     const double cp_output         = Angle(cpAxisForPoint(cp_reference, params) * degree).to(m_meta.m_angle_unit);
     const Point output_destination = rotateGCodeCoordinateFramePoint(destination);
@@ -788,9 +814,75 @@ QString ArcSpecialtiesWriter::writeCoordinates(const Point& destination, const Q
     return QString(" X=") % QString::number(Distance(output_destination.x()).to(m_meta.m_distance_unit), 'f', 4) %
            " Y=" % QString::number(Distance(output_destination.y()).to(m_meta.m_distance_unit), 'f', 4) % " Z=" %
            QString::number(Distance(output_destination.z()).to(m_meta.m_distance_unit), 'f', 4) % " XR=" %
-           QString::number(kToolFrameXR, 'f', 4) % " YR=" % QString::number(kToolFrameYR, 'f', 4) % " ZR=" %
-           QString::number(tool_frame_zr, 'f', 4) % " AP=" % QString::number(ap_output, 'f', 4) % " CP=" %
-           QString::number(cp_output, 'f', 4);
+           QString::number(tool_frame_rotation.xr, 'f', 4) % " YR=" % QString::number(tool_frame_rotation.yr, 'f', 4) %
+           " ZR=" % QString::number(tool_frame_rotation.zr, 'f', 4) % " AP=" % QString::number(ap_output, 'f', 4) %
+           " CP=" % QString::number(cp_output, 'f', 4);
+}
+
+ArcSpecialtiesWriter::ToolFrameRotation ArcSpecialtiesWriter::toolFrameRotationForMotion(
+    const QString& comment, const QSharedPointer<SettingsBase>& params) const {
+    auto settingAngleOrDefault = [this, &params](const QString& key, double fallback) {
+        if (params != nullptr && params->contains(key)) { return params->setting<Angle>(key).to(m_meta.m_angle_unit); }
+        if (m_sb != nullptr && m_sb->contains(key)) { return m_sb->setting<Angle>(key).to(m_meta.m_angle_unit); }
+
+        return fallback;
+    };
+
+    auto helicalToolFrameRotation = [&settingAngleOrDefault](const QString& x_key, const QString& y_key,
+                                                             const QString& z_key) {
+        return ToolFrameRotation {settingAngleOrDefault(x_key, kToolFrameXR),
+                                  settingAngleOrDefault(y_key, kToolFrameYR),
+                                  settingAngleOrDefault(z_key, kToolFrameZR)};
+    };
+
+    if (comment == kWorldApproachTravelComment) {
+        return ToolFrameRotation {kToolFrameXR, kToolFrameYR, kRapidTravelToolFrameZR};
+    }
+
+    if (!isHelicalPathPattern()) { return ToolFrameRotation {kToolFrameXR, kToolFrameYR, kToolFrameZR}; }
+
+    if (comment.startsWith("TRAVEL")) {
+        return helicalToolFrameRotation(PS::Helical::kHelicalTravelToolFrameXRotation,
+                                        PS::Helical::kHelicalTravelToolFrameYRotation,
+                                        PS::Helical::kHelicalTravelToolFrameZRotation);
+    }
+
+    if (comment == Constants::RegionTypeStrings::kHelical % " " % Constants::RegionTypeStrings::kPerimeter) {
+        return helicalToolFrameRotation(PS::Helical::kHelicalPerimeterToolFrameXRotation,
+                                        PS::Helical::kHelicalPerimeterToolFrameYRotation,
+                                        PS::Helical::kHelicalPerimeterToolFrameZRotation);
+    }
+    if (comment == Constants::RegionTypeStrings::kHelical % " " % Constants::RegionTypeStrings::kInset) {
+        return helicalToolFrameRotation(PS::Helical::kHelicalInsetToolFrameXRotation,
+                                        PS::Helical::kHelicalInsetToolFrameYRotation,
+                                        PS::Helical::kHelicalInsetToolFrameZRotation);
+    }
+    if (comment == Constants::RegionTypeStrings::kHelical % " " % Constants::RegionTypeStrings::kInfill) {
+        return helicalToolFrameRotation(PS::Helical::kHelicalInfillToolFrameXRotation,
+                                        PS::Helical::kHelicalInfillToolFrameYRotation,
+                                        PS::Helical::kHelicalInfillToolFrameZRotation);
+    }
+
+    if (params != nullptr && params->contains(SS::kRegionType)) {
+        switch (params->setting<RegionType>(SS::kRegionType)) {
+            case RegionType::kPerimeter:
+                return helicalToolFrameRotation(PS::Helical::kHelicalPerimeterToolFrameXRotation,
+                                                PS::Helical::kHelicalPerimeterToolFrameYRotation,
+                                                PS::Helical::kHelicalPerimeterToolFrameZRotation);
+            case RegionType::kInset:
+                return helicalToolFrameRotation(PS::Helical::kHelicalInsetToolFrameXRotation,
+                                                PS::Helical::kHelicalInsetToolFrameYRotation,
+                                                PS::Helical::kHelicalInsetToolFrameZRotation);
+            case RegionType::kInfill:
+                return helicalToolFrameRotation(PS::Helical::kHelicalInfillToolFrameXRotation,
+                                                PS::Helical::kHelicalInfillToolFrameYRotation,
+                                                PS::Helical::kHelicalInfillToolFrameZRotation);
+            default:
+                break;
+        }
+    }
+
+    return ToolFrameRotation {kToolFrameXR, kToolFrameYR, kToolFrameZR};
 }
 
 Point ArcSpecialtiesWriter::firstTravelPointAboveTravelLowerDestination(const Point& travel_destination,
