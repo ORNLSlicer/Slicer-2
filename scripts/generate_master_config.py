@@ -366,8 +366,10 @@ def validate_input(setting_input: OrderedDict[str, Any], settings_by_name: Order
             raise ValueError(f"{name}: vector2 components must be distance or location settings")
         if len(set(component_types)) != 1:
             raise ValueError(f"{name}: vector2 components must share the same setting type")
-    elif any(component_type != "unitless_float" for component_type in component_types):
-        raise ValueError(f"{name}: vector3 components must be unitless_float settings")
+    elif any(component_type not in {"angle", "unitless_float"} for component_type in component_types):
+        raise ValueError(f"{name}: vector3 components must be angle or unitless_float settings")
+    elif len(set(component_types)) != 1:
+        raise ValueError(f"{name}: vector3 components must share the same setting type")
 
 
 def normalize_for_master(setting: OrderedDict[str, Any]) -> OrderedDict[str, Any]:
