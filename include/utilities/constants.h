@@ -253,6 +253,7 @@ class Constants {
             static const QString kEnableSettingsFooter;
             static const QString kLayerTimeComments;
             static const QString kArcSpecialtiesG2G3OptionalStop;
+            static const QString kArcSpecialtiesG80WeldScheduleFile;
             static const QString kStartCode;
             static const QString kLayerCodeChange;
             static const QString kEndCode;
