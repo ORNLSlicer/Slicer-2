@@ -176,7 +176,7 @@ bool parseRawValue(const QString& key, const fifojson& master_entry, const QStri
         return true;
     } catch (const std::exception& e) {
         const QString type = settingType(master_entry);
-        if (type == "string" || type == "multiline_text") {
+        if (type == "string" || type == "multiline_text" || type == "file_path") {
             parsed_value = raw_value.toStdString();
             return true;
         }
@@ -737,7 +737,7 @@ bool GcodeSettingsImporter::validateValue(const QString& key, const fifojson& ma
         return true;
     }
 
-    if (type == "string" || type == "multiline_text") {
+    if (type == "string" || type == "multiline_text" || type == "file_path") {
         if (!value.is_string()) {
             error = key + " must be a string value.";
             return false;

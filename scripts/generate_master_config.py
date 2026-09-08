@@ -59,6 +59,7 @@ VALID_TYPES = {
     "density",
     "distance",
     "enumeration",
+    "file_path",
     "location",
     "multiline_text",
     "number",

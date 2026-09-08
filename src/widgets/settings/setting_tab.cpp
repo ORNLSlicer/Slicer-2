@@ -28,6 +28,7 @@
 #include "widgets/settings/setting_check_box.h"
 #include "widgets/settings/setting_combo_box.h"
 #include "widgets/settings/setting_double_spin_box.h"
+#include "widgets/settings/setting_file_path.h"
 #include "widgets/settings/setting_header.h"
 #include "widgets/settings/setting_line_edit.h"
 #include "widgets/settings/setting_numbered_list.h"
@@ -82,6 +83,7 @@ SettingTab::SettingTab(QWidget* parent, QString name, QIcon icon, int index, boo
                           {"speed", &SettingSpeedSpinBox::createInstance},
                           {"rpm", &SettingDoubleSpinBox::createInstance},
                           {"accel", &SettingAccelSpinBox::createInstance},
+                          {"file_path", &SettingFilePath::createInstance},
                           {"string", &SettingLineEdit::createInstance},
                           {"multiline_text", &SettingPlainTextEdit::createInstance},
                           {"density", &SettingDoubleSpinBox::createInstance},
