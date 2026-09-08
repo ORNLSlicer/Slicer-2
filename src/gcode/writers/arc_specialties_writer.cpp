@@ -649,7 +649,6 @@ QString ArcSpecialtiesWriter::writeArc(const Point& start_point, const Point& en
 QString ArcSpecialtiesWriter::writeAfterPath(RegionType type) {
     QString rv;
     if (!m_spiral_layer) {
-        // rv += writeWelderOff(); // update to turn off the welder
         if (type == RegionType::kPerimeter) {
             if (!m_sb->setting<QString>(PS::GCode::kPerimeterEnd).isEmpty()) {
                 rv += m_sb->setting<QString>(PS::GCode::kPerimeterEnd) % m_newline;
