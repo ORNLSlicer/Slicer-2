@@ -13,7 +13,10 @@
 #include "gcode/gcode_meta.h"
 #include "gcode/parsers/arc_specialties_parser.h"
 #include "gcode/writers/arc_specialties_writer.h"
+#include "geometry/path.h"
 #include "geometry/point.h"
+#include "geometry/segments/line.h"
+#include "step/layer/cylindrical_layer.h"
 #include "units/unit.h"
 #include "utilities/constants.h"
 
@@ -193,6 +196,40 @@ bool writesGenericHelicalCommentForMissingOrUnknownRegion() {
            !missing_region.contains(";HELICAL PERIMETER") && !unknown_region.contains(";HELICAL INFILL");
 }
 
+bool helicalLayerFinalizesOnlyAtPhysicalPathEnd() {
+    QSharedPointer<ORNL::SettingsBase> settings = helicalWriterSettings(false);
+    settings->setSetting(ORNL::PS::SpecialModes::kEnableSpiralize, false);
+    settings->setSetting(ORNL::PS::GCode::kPerimeterEnd, QStringLiteral("PERIMETER_END_SENTINEL"));
+    settings->setSetting(ORNL::PS::GCode::kInsetEnd, QStringLiteral("INSET_END_SENTINEL"));
+    settings->setSetting(ORNL::PS::GCode::kInfillEnd, QStringLiteral("INFILL_END_SENTINEL"));
+
+    ORNL::Path path;
+    const auto append_segment = [&path](const ORNL::Point& start, const ORNL::Point& end,
+                                        ORNL::RegionType region_type) {
+        QSharedPointer<ORNL::LineSegment> segment = QSharedPointer<ORNL::LineSegment>::create(start, end);
+        segment->setSb(helicalSegmentSettings(region_type));
+        path.append(segment);
+    };
+
+    append_segment(ORNL::Point(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm),
+                   ORNL::Point(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm), ORNL::RegionType::kPerimeter);
+    append_segment(ORNL::Point(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm),
+                   ORNL::Point(-1.0 * ORNL::mm, 0.0 * ORNL::mm, 2.0 * ORNL::mm), ORNL::RegionType::kInset);
+    append_segment(ORNL::Point(-1.0 * ORNL::mm, 0.0 * ORNL::mm, 2.0 * ORNL::mm),
+                   ORNL::Point(0.0 * ORNL::mm, -1.0 * ORNL::mm, 3.0 * ORNL::mm), ORNL::RegionType::kInfill);
+
+    ORNL::CylindricalLayer layer(1, settings, ORNL::CylindricalPathPattern::kHelical);
+    layer.addPath(path);
+
+    QSharedPointer<ORNL::ArcSpecialtiesWriter> writer =
+        QSharedPointer<ORNL::ArcSpecialtiesWriter>::create(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+    const QString block = layer.writeGCode(writer);
+
+    return block.contains(";HELICAL PERIMETER\n") && block.contains(";HELICAL INSET\n") &&
+           block.contains(";HELICAL INFILL\n") && !block.contains("PERIMETER_END_SENTINEL") &&
+           !block.contains("INSET_END_SENTINEL") && block.count("INFILL_END_SENTINEL") == 1;
+}
+
 QString lineContaining(const QString& block, const QString& marker) {
     for (const QString& line : block.split('\n', Qt::SkipEmptyParts)) {
         if (line.contains(marker)) { return line; }
@@ -368,6 +405,8 @@ int main(int argc, char* argv[]) {
         expect(writesHelicalRegionArcComments(), "Arc Specialties writer did not emit helical arc region comments.");
     passed &= expect(writesGenericHelicalCommentForMissingOrUnknownRegion(),
                      "Arc Specialties writer did not fall back to generic helical comments.");
+    passed &= expect(helicalLayerFinalizesOnlyAtPhysicalPathEnd(),
+                     "Helical layer emitted region end G-code at internal region transitions.");
     passed &= expect(writesFirstTravelWithWorkObjectToolFrame(), "Arc Specialties first travel did not use ZR=-135.");
     passed &= expect(writesStartupWorldApproachAbovePartOrCylinderHeight(),
                      "Arc Specialties startup world approach did not use part/cylinder safe Z.");
