@@ -19,7 +19,7 @@ class SettingTab;
 
 //! \brief Widget to provide custom spin box.
 //! Based on QSpinBox with overridden wheelEvent functionality.
-//! Supports three setting types: int, positive_int, and power
+//! Supports integer setting types: number, non_negative_int, positive_int, and power
 class SettingSpinBox : public QSpinBox, public SettingRowBase {
     Q_OBJECT
 

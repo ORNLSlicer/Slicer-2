@@ -22,10 +22,43 @@ bool expect(bool condition, const char* message) {
     if (!condition) std::cerr << message << '\n';
     return condition;
 }
+
+bool validatesNonNegativeIntegerSettings() {
+    fifojson master_entry                                  = fifojson::object();
+    master_entry[ORNL::Constants::Settings::Master::kType] = "non_negative_int";
+
+    fifojson normalized;
+    QString error;
+    if (!expect(ORNL::GcodeSettingsImporter::validateValue("non_negative", master_entry, 0, normalized, error),
+                qPrintable(error)))
+        return false;
+    if (!expect(normalized.get<int>() == 0, "Non-negative integer settings should accept zero.")) return false;
+
+    normalized = nullptr;
+    error.clear();
+    if (!expect(ORNL::GcodeSettingsImporter::validateValue("non_negative", master_entry, 3, normalized, error),
+                qPrintable(error)))
+        return false;
+    if (!expect(normalized.get<int>() == 3, "Non-negative integer settings should preserve positive integers."))
+        return false;
+
+    normalized = nullptr;
+    error.clear();
+    if (!expect(!ORNL::GcodeSettingsImporter::validateValue("non_negative", master_entry, -1, normalized, error),
+                "Non-negative integer settings should reject negative values."))
+        return false;
+
+    normalized = nullptr;
+    error.clear();
+    return expect(!ORNL::GcodeSettingsImporter::validateValue("non_negative", master_entry, 1.5, normalized, error),
+                  "Non-negative integer settings should reject fractional values.");
+}
 }  // namespace
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
+
+    if (!validatesNonNegativeIntegerSettings()) return EXIT_FAILURE;
 
     QTemporaryDir temp_dir;
     if (!expect(temp_dir.isValid(), "Could not create temporary directory.")) return EXIT_FAILURE;

@@ -20,6 +20,7 @@ Each setting entry has these fields:
   - enumeration
   - location
   - multiline_text
+  - non_negative_int
   - number
   - numbered_list
   - percentage
