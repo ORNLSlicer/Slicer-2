@@ -227,6 +227,11 @@ class ArcSpecialtiesWriter : public WriterBase {
     void startLayerBlockNumbering();
 
     /*!
+     * @brief Initializes the per-layer Beckhoff block number counter without activating numbering.
+     */
+    void initializeLayerBlockNumbering();
+
+    /*!
      * @brief Stops per-layer block numbering for layer transition and shutdown lines.
      */
     void stopLayerBlockNumbering();
@@ -240,9 +245,10 @@ class ArcSpecialtiesWriter : public WriterBase {
     /*!
      * @brief Adds the next per-layer block number to each executable line in a block.
      * @param block G-Code block to format.
-     * @return Block with Beckhoff-style N numbers when enabled and active.
+     * @param force True to number schedule/setup lines before bead-body numbering is active.
+     * @return Block with Beckhoff-style N numbers when enabled and active or forced.
      */
-    QString writeNumberedBlock(const QString& block);
+    QString writeNumberedBlock(const QString& block, bool force = false);
 
     /*!
      * @brief Writes the Arc Specialties kinematics and TRAFO setup block once.

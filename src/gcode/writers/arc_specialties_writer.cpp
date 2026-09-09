@@ -159,11 +159,15 @@ void ArcSpecialtiesWriter::setHelicalPathHandedness(const QVector<QPair<QString,
 void ArcSpecialtiesWriter::startLayerBlockNumbering() {
     if (!shouldEmitBlockNumbers()) { return; }
 
+    initializeLayerBlockNumbering();
+    m_layer_block_numbering_active = true;
+}
+
+void ArcSpecialtiesWriter::initializeLayerBlockNumbering() {
     if (!m_layer_block_numbering_started) {
         m_next_block_number             = std::max(1, m_current_layer) * 10000;
         m_layer_block_numbering_started = true;
     }
-    m_layer_block_numbering_active = true;
 }
 
 void ArcSpecialtiesWriter::stopLayerBlockNumbering() {
@@ -175,8 +179,10 @@ bool ArcSpecialtiesWriter::shouldEmitBlockNumbers() const {
            m_sb->setting<bool>(PRS::GCode::kArcSpecialtiesEmitBlockNumbers);
 }
 
-QString ArcSpecialtiesWriter::writeNumberedBlock(const QString& block) {
-    if (!shouldEmitBlockNumbers() || !m_layer_block_numbering_active || block.isEmpty()) { return block; }
+QString ArcSpecialtiesWriter::writeNumberedBlock(const QString& block, bool force) {
+    if (!shouldEmitBlockNumbers() || (!m_layer_block_numbering_active && !force) || block.isEmpty()) { return block; }
+
+    initializeLayerBlockNumbering();
 
     QString rv;
     int line_start = 0;
@@ -527,7 +533,7 @@ QString ArcSpecialtiesWriter::writeBeforeRegion(RegionType type, int pathSize) {
     if (type == RegionType::kPerimeter) { rv += "G80 [1] ;Perimeter Schedule" % m_newline; }
     else if (type == RegionType::kInset) { rv += "G80 [2] ;Inset Schedule" % m_newline; }
     else if (type == RegionType::kInfill) { rv += "G80 [0] ;Infill Schedule" % m_newline; }
-    return writeNumberedBlock(rv);
+    return writeNumberedBlock(rv, true);
 }
 
 QString ArcSpecialtiesWriter::writeBeforePath(RegionType type) {
