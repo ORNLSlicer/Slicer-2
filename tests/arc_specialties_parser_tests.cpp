@@ -260,10 +260,10 @@ bool writesLayerScopedBlockNumbersWhenEnabled() {
     QString first_layer;
     first_layer += writer.writeLayerChange(0);
     first_layer += writer.writeBeforeLayer(0.0f, settings);
+    first_layer += writer.writeBeforeRegion(ORNL::RegionType::kInfill, 1);
     first_layer += writer.writeTravel(ORNL::Point(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm),
                                       ORNL::Point(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm),
                                       ORNL::TravelLiftType::kLiftLowerOnly, segment_settings);
-    first_layer += writer.writeBeforeRegion(ORNL::RegionType::kInfill, 1);
     first_layer += writer.writeLine(ORNL::Point(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm),
                                     ORNL::Point(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm), segment_settings);
     first_layer += writer.writeAfterLayer();
@@ -271,21 +271,23 @@ bool writesLayerScopedBlockNumbersWhenEnabled() {
     QString second_layer;
     second_layer += writer.writeLayerChange(1);
     second_layer += writer.writeBeforeLayer(1.0f, settings);
+    second_layer += writer.writeBeforeRegion(ORNL::RegionType::kInfill, 1);
     second_layer += writer.writeTravel(ORNL::Point(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm),
                                        ORNL::Point(1.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm),
                                        ORNL::TravelLiftType::kLiftLowerOnly, segment_settings);
 
     return lineContaining(first_layer, ";BEGINNING LAYER: 1").startsWith(";") &&
            !lineContaining(first_layer, ";WORLD APPROACH TRAVEL").startsWith("N") &&
-           lineContaining(first_layer, ";OPTIONAL STOP ROUTINE").startsWith("N10000 G81") &&
-           lineContaining(first_layer, ";TRAVEL LOWER").startsWith("N10001 G01") &&
-           lineContaining(first_layer, "G80 [0] ;Infill Schedule").startsWith("N10002 G80") &&
+           lineContaining(first_layer, "G80 [0] ;Infill Schedule").startsWith("N10000 G80") &&
+           lineContaining(first_layer, ";OPTIONAL STOP ROUTINE").startsWith("N10001 G81") &&
+           lineContaining(first_layer, ";TRAVEL LOWER").startsWith("N10002 G01") &&
            lineContaining(first_layer, ";WIRE ARC WELDER ON").startsWith("N10003 G82") &&
            lineContaining(first_layer, ";BLENDING ON").startsWith("N10004 G261") &&
            lineContaining(first_layer, ";HELICAL INFILL").startsWith("N10005 G01") &&
            lineContaining(second_layer, ";WIRE ARC WELDER OFF").startsWith("G83 [0]") &&
-           lineContaining(second_layer, ";OPTIONAL STOP ROUTINE").startsWith("N20000 G81") &&
-           lineContaining(second_layer, ";TRAVEL LOWER").startsWith("N20001 G01");
+           lineContaining(second_layer, "G80 [0] ;Infill Schedule").startsWith("N20000 G80") &&
+           lineContaining(second_layer, ";OPTIONAL STOP ROUTINE").startsWith("N20001 G81") &&
+           lineContaining(second_layer, ";TRAVEL LOWER").startsWith("N20002 G01");
 }
 
 void setHelicalToolFrameSettings(const QSharedPointer<ORNL::SettingsBase>& settings) {
