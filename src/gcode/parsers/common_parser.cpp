@@ -637,7 +637,8 @@ void CommonParser::preallocateVisualCommands() {
     QStringMatcher layerDelimiter(m_layer_delimiter);
     int commandsInLayer = 0;
     QRegExp digitExpression("\\d+");
-    QRegularExpression gMotionCommand("^G0|^G1|^G2|^G3|^G5");
+    QRegularExpression gMotionCommand(
+        "^(?:N(?:\\[[^\\]]+\\]|[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+))(?=\\s|[A-Z#$;/()\"]|$)\\s*)?G[01235]");
     m_current_layer = 0;
     for (int i = m_current_line; i < m_current_end_line; ++i) {
         // find layer total, only executed once

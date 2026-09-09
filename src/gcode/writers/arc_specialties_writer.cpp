@@ -156,6 +156,54 @@ void ArcSpecialtiesWriter::setHelicalPathHandedness(const QVector<QPair<QString,
     m_helical_path_handedness = handedness;
 }
 
+void ArcSpecialtiesWriter::startLayerBlockNumbering() {
+    if (!shouldEmitBlockNumbers()) { return; }
+
+    if (!m_layer_block_numbering_started) {
+        m_next_block_number             = std::max(1, m_current_layer) * 10000;
+        m_layer_block_numbering_started = true;
+    }
+    m_layer_block_numbering_active = true;
+}
+
+void ArcSpecialtiesWriter::stopLayerBlockNumbering() {
+    m_layer_block_numbering_active = false;
+}
+
+bool ArcSpecialtiesWriter::shouldEmitBlockNumbers() const {
+    return m_sb != nullptr && m_sb->contains(PRS::GCode::kArcSpecialtiesEmitBlockNumbers) &&
+           m_sb->setting<bool>(PRS::GCode::kArcSpecialtiesEmitBlockNumbers);
+}
+
+QString ArcSpecialtiesWriter::writeNumberedBlock(const QString& block) {
+    if (!shouldEmitBlockNumbers() || !m_layer_block_numbering_active || block.isEmpty()) { return block; }
+
+    QString rv;
+    int line_start = 0;
+    while (line_start < block.size()) {
+        const int newline_index = block.indexOf(m_newline, line_start);
+        const bool has_newline  = newline_index >= 0;
+        const QString line = has_newline ? block.mid(line_start, newline_index - line_start) : block.mid(line_start);
+        const QString trimmed_line = line.trimmed();
+
+        if (trimmed_line.isEmpty() || (!m_meta.m_comment_starting_delimiter.isEmpty() &&
+                                       trimmed_line.startsWith(m_meta.m_comment_starting_delimiter))) {
+            rv += line;
+        }
+        else {
+            rv += "N" % QString::number(m_next_block_number) % " " % line;
+            ++m_next_block_number;
+        }
+
+        if (!has_newline) { break; }
+
+        rv += m_newline;
+        line_start = newline_index + 1;
+    }
+
+    return rv;
+}
+
 QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
     QString text;
     auto formatToolFrameRotation = [](const ToolFrameRotation& rotation) {
@@ -392,6 +440,11 @@ QString ArcSpecialtiesWriter::writeInitialSetup(Distance minimum_x, Distance min
     m_absolute_arc_center_mode_enabled = usesAbsoluteArcCenters();
     m_startup_kinematics_written       = false;
     m_pending_layer_change.clear();
+    m_current_bead                  = 0;
+    m_current_layer                 = 0;
+    m_next_block_number             = 0;
+    m_layer_block_numbering_started = false;
+    m_layer_block_numbering_active  = false;
     setFeedrate(0.0);
 
     QString rv;
@@ -455,6 +508,9 @@ QString ArcSpecialtiesWriter::writeBeforeLayer(float min_z, QSharedPointer<Setti
     m_layer_start  = true;
     m_current_bead = 1;
     m_current_layer++;
+    m_next_block_number             = std::max(1, m_current_layer) * 10000;
+    m_layer_block_numbering_started = false;
+    m_layer_block_numbering_active  = false;
     return rv;
 }
 
@@ -471,7 +527,7 @@ QString ArcSpecialtiesWriter::writeBeforeRegion(RegionType type, int pathSize) {
     if (type == RegionType::kPerimeter) { rv += "G80 [1] ;Perimeter Schedule" % m_newline; }
     else if (type == RegionType::kInset) { rv += "G80 [2] ;Inset Schedule" % m_newline; }
     else if (type == RegionType::kInfill) { rv += "G80 [0] ;Infill Schedule" % m_newline; }
-    return rv;
+    return writeNumberedBlock(rv);
 }
 
 QString ArcSpecialtiesWriter::writeBeforePath(RegionType type) {
@@ -510,6 +566,7 @@ QString ArcSpecialtiesWriter::writeTravel(Point start_location, Point target_loc
         rv += commentLine(QString("BEGINNING BEAD: ") % QString::number(m_current_layer) % "." %
                           QString::number(m_current_bead));
         m_current_bead++;
+        startLayerBlockNumbering();
         return rv;
     };
 
@@ -608,7 +665,7 @@ QString ArcSpecialtiesWriter::writeTravel(Point start_location, Point target_loc
     }
 
     if (travel_lower_required) {
-        rv += "G81" % commentSpaceLine("OPTIONAL STOP ROUTINE");
+        rv += writeNumberedBlock("G81" % commentSpaceLine("OPTIONAL STOP ROUTINE"));
         rv += writeMotion("G01", target_location, lift_speed, params, "TRAVEL LOWER");
     }
 
@@ -622,6 +679,7 @@ QString ArcSpecialtiesWriter::writeLine(const Point&, const Point& target_point,
 
     rv += writeStartupKinematics();
     rv += writePendingLayerChange();
+    startLayerBlockNumbering();
 
     Velocity speed = params->setting<Velocity>(SS::kSpeed);
 
@@ -642,6 +700,7 @@ QString ArcSpecialtiesWriter::writeArc(const Point& start_point, const Point& en
     QString rv;
     rv += writeStartupKinematics();
     rv += writePendingLayerChange();
+    startLayerBlockNumbering();
 
     if (!m_deposition_active) { rv += writeWelderOn(); }
 
@@ -654,10 +713,10 @@ QString ArcSpecialtiesWriter::writeArc(const Point& start_point, const Point& en
     const QString inline_optional_stop = m_sb->setting<bool>(PRS::GCode::kArcSpecialtiesG2G3OptionalStop) ? " G81" : "";
 
     const QString print_comment = printMoveComment(params);
-    rv += QString(ccw ? "G03" : "G02") %
-          writeCoordinates(end_point, params, toolFrameRotationForMotion(print_comment, params)) %
-          writeArcCenterParameters(start_point, center_point) % writeMotionFeedrate(speed) % inline_optional_stop %
-          commentSpaceLine(print_comment);
+    rv += writeNumberedBlock(QString(ccw ? "G03" : "G02") %
+                             writeCoordinates(end_point, params, toolFrameRotationForMotion(print_comment, params)) %
+                             writeArcCenterParameters(start_point, center_point) % writeMotionFeedrate(speed) %
+                             inline_optional_stop % commentSpaceLine(print_comment));
     return rv;
 }
 
@@ -695,7 +754,7 @@ QString ArcSpecialtiesWriter::writeAfterPath(RegionType type) {
             }
         }
     }
-    return rv;
+    return writeNumberedBlock(rv);
 }
 
 QString ArcSpecialtiesWriter::writeAfterRegion(RegionType type) {
@@ -712,10 +771,13 @@ QString ArcSpecialtiesWriter::writeAfterPart() {
 
 QString ArcSpecialtiesWriter::writeAfterLayer() {
     QString layer_code = m_sb->setting<QString>(PRS::GCode::kLayerCodeChange);
+    stopLayerBlockNumbering();
     return layer_code.isEmpty() ? QString() : layer_code % m_newline;
 }
 
 QString ArcSpecialtiesWriter::writeShutdown() {
+    stopLayerBlockNumbering();
+
     QString rv;
     rv += writeWelderOff();
     if (!m_sb->setting<QString>(PRS::GCode::kEndCode).isEmpty()) {
@@ -730,7 +792,8 @@ QString ArcSpecialtiesWriter::writeShutdown() {
 
 QString ArcSpecialtiesWriter::writeDwell(Time time) {
     if (time > 0) {
-        return m_G4 % m_p % QString::number(time.to(m_meta.m_time_unit), 'f', 4) % commentSpaceLine("DWELL");
+        return writeNumberedBlock(m_G4 % m_p % QString::number(time.to(m_meta.m_time_unit), 'f', 4) %
+                                  commentSpaceLine("DWELL"));
     }
     return QString();
 }
@@ -741,7 +804,7 @@ QString ArcSpecialtiesWriter::writeWelderOn() {
         rv += "G82" % commentSpaceLine("WIRE ARC WELDER ON");
         rv += "G261" % commentSpaceLine("BLENDING ON");
         m_deposition_active = true;
-        return rv;
+        return writeNumberedBlock(rv);
     }
     else { return QString(); }
 }
@@ -753,7 +816,7 @@ QString ArcSpecialtiesWriter::writeWelderOff(int mode) {
         rv += "G260" % commentSpaceLine("BLENDING OFF");
         rv += "G83 [" % QString::number(g83_mode) % "]" % commentSpaceLine("WIRE ARC WELDER OFF");
         m_deposition_active = false;
-        return rv;
+        return writeNumberedBlock(rv);
     }
     else { return QString(); }
 }
@@ -788,12 +851,12 @@ QString ArcSpecialtiesWriter::writeMotion(const QString& command, const Point& d
     setFeedrate(speed);
     const ToolFrameRotation tool_frame_rotation = toolFrameRotationForMotion(comment, params);
     if (command == "G00") {
-        return command % writeCoordinates(destination, params, tool_frame_rotation, cp_reference) %
-               commentSpaceLine(comment);
+        return writeNumberedBlock(command % writeCoordinates(destination, params, tool_frame_rotation, cp_reference) %
+                                  commentSpaceLine(comment));
     }
     else {
-        return command % writeCoordinates(destination, params, tool_frame_rotation, cp_reference) %
-               writeMotionFeedrate(speed) % commentSpaceLine(comment);
+        return writeNumberedBlock(command % writeCoordinates(destination, params, tool_frame_rotation, cp_reference) %
+                                  writeMotionFeedrate(speed) % commentSpaceLine(comment));
     }
 }
 

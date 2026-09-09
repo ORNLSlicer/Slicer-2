@@ -18,6 +18,8 @@ const QRegularExpression kG00CommandPattern("(^\\s*)G00(?=\\s|;|\\(|$)");
 const QRegularExpression kG01CommandPattern("(^\\s*)G01(?=\\s|;|\\(|$)");
 const QRegularExpression kG02CommandPattern("(^\\s*)G02(?=\\s|;|\\(|$)");
 const QRegularExpression kG03CommandPattern("(^\\s*)G03(?=\\s|;|\\(|$)");
+const QRegularExpression kLeadingBlockNumberPattern(
+    "^\\s*N(?:\\[[^\\]]+\\]|[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+))(?=\\s|[A-Z#$;/()\"]|$)\\s*");
 const QString kG80ScheduleSpeedVariable = "V.S.SPEED";
 constexpr char kCpOptionalParameter     = 'C';
 
@@ -33,6 +35,7 @@ ArcSpecialtiesParser::ArcSpecialtiesParser(GcodeMeta meta, bool allowLayerAlter,
 }
 
 GcodeCommand ArcSpecialtiesParser::parseCommand(QString command_string, int line_number) {
+    command_string.remove(kLeadingBlockNumberPattern);
     command_string.replace(kG00CommandPattern, "\\1G0");
     command_string.replace(kG01CommandPattern, "\\1G1");
     command_string.replace(kG02CommandPattern, "\\1G2");
