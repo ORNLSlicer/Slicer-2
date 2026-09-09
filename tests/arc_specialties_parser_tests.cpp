@@ -93,6 +93,15 @@ bool parsedLineWithScheduleSpeedKeepsCpForVisualization() {
                false);
 }
 
+bool parsesNumberedArcSpecialtiesMotion() {
+    return parsedLineKeepsCpForVisualization(
+               "N20002 G01 X=0.0000 Y=1.0000 Z=0.0000 XR=180.0000 YR=0.0000 ZR=-135.0000 "
+               "AP=0.0000 CP=90.0000 F600.0000 ;RADIAL") &&
+           parsedArcKeepsCpForVisualization(
+               "N10005 G02 X=1.0000 Y=0.0000 Z=0.0000 XR=180.0000 YR=0.0000 ZR=-135.0000 "
+               "AP=0.0000 CP=0.0000 I=0.5000 J=0.0000 F600.0000 G81 ;PERIMETER");
+}
+
 bool rejectsDuplicateScheduleSpeedFeedrate() {
     QStringList original_lines {
         "G01 X=0.0000 Y=1.0000 Z=0.0000 XR=180.0000 YR=0.0000 ZR=-135.0000 AP=0.0000 CP=90.0000 "
@@ -232,6 +241,51 @@ bool writesG80ScheduleSpeedVariableForLineAndArc() {
         "I=-1.0000 J=0.0000 FV.S.SPEED G81 ;HELICAL PERIMETER";
 
     return line.contains(" FV.S.SPEED ;HELICAL PERIMETER") && !line.contains("F600.0000") && arc == expected_arc;
+}
+
+bool writesLayerScopedBlockNumbersWhenEnabled() {
+    QSharedPointer<ORNL::SettingsBase> settings = helicalWriterSettings(false);
+    settings->setSetting(ORNL::PRS::GCode::kArcSpecialtiesEmitBlockNumbers, true);
+    settings->setSetting(ORNL::PS::Travel::kSpeed, 600.0 * ORNL::mm / ORNL::minute);
+    settings->setSetting(ORNL::PRS::MachineSpeed::kMaxXYSpeed, 600.0 * ORNL::mm / ORNL::minute);
+    settings->setSetting(ORNL::PRS::MachineSpeed::kZSpeed, 600.0 * ORNL::mm / ORNL::minute);
+    settings->setSetting(ORNL::PS::Travel::kLiftHeight, 20.0 * ORNL::mm);
+    settings->setSetting(ORNL::PS::Travel::kMinTravelLength, 0.0 * ORNL::mm);
+    settings->setSetting(ORNL::PS::Travel::kMinTravelForLift, 0.0 * ORNL::mm);
+
+    QSharedPointer<ORNL::SettingsBase> segment_settings = helicalSegmentSettings(ORNL::RegionType::kInfill);
+    segment_settings->populate(settings);
+
+    ORNL::ArcSpecialtiesWriter writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+    QString first_layer;
+    first_layer += writer.writeLayerChange(0);
+    first_layer += writer.writeBeforeLayer(0.0f, settings);
+    first_layer += writer.writeTravel(ORNL::Point(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm),
+                                      ORNL::Point(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm),
+                                      ORNL::TravelLiftType::kLiftLowerOnly, segment_settings);
+    first_layer += writer.writeBeforeRegion(ORNL::RegionType::kInfill, 1);
+    first_layer += writer.writeLine(ORNL::Point(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm),
+                                    ORNL::Point(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm), segment_settings);
+    first_layer += writer.writeAfterLayer();
+
+    QString second_layer;
+    second_layer += writer.writeLayerChange(1);
+    second_layer += writer.writeBeforeLayer(1.0f, settings);
+    second_layer += writer.writeTravel(ORNL::Point(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm),
+                                       ORNL::Point(1.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm),
+                                       ORNL::TravelLiftType::kLiftLowerOnly, segment_settings);
+
+    return lineContaining(first_layer, ";BEGINNING LAYER: 1").startsWith(";") &&
+           !lineContaining(first_layer, ";WORLD APPROACH TRAVEL").startsWith("N") &&
+           lineContaining(first_layer, ";OPTIONAL STOP ROUTINE").startsWith("N10000 G81") &&
+           lineContaining(first_layer, ";TRAVEL LOWER").startsWith("N10001 G01") &&
+           lineContaining(first_layer, "G80 [0] ;Infill Schedule").startsWith("N10002 G80") &&
+           lineContaining(first_layer, ";WIRE ARC WELDER ON").startsWith("N10003 G82") &&
+           lineContaining(first_layer, ";BLENDING ON").startsWith("N10004 G261") &&
+           lineContaining(first_layer, ";HELICAL INFILL").startsWith("N10005 G01") &&
+           lineContaining(second_layer, ";WIRE ARC WELDER OFF").startsWith("G83 [0]") &&
+           lineContaining(second_layer, ";OPTIONAL STOP ROUTINE").startsWith("N20000 G81") &&
+           lineContaining(second_layer, ";TRAVEL LOWER").startsWith("N20001 G01");
 }
 
 void setHelicalToolFrameSettings(const QSharedPointer<ORNL::SettingsBase>& settings) {
@@ -611,6 +665,8 @@ int main(int argc, char* argv[]) {
                      "Arc Specialties parser did not retain linear CP for visualization.");
     passed &= expect(parsedLineWithScheduleSpeedKeepsCpForVisualization(),
                      "Arc Specialties parser did not retain linear CP with the G80 schedule speed variable.");
+    passed &=
+        expect(parsesNumberedArcSpecialtiesMotion(), "Arc Specialties parser did not accept Beckhoff block numbers.");
     passed &= expect(rejectsDuplicateScheduleSpeedFeedrate(),
                      "Arc Specialties parser did not reject duplicate schedule speed feedrates.");
     passed &= expect(infersLeftHandedHelicalAxisFromReversedCpDelta(),
@@ -624,6 +680,8 @@ int main(int argc, char* argv[]) {
                      "Arc Specialties writer did not emit numeric speed without a G80 weld schedule file.");
     passed &= expect(writesG80ScheduleSpeedVariableForLineAndArc(),
                      "Arc Specialties writer did not emit the G80 schedule speed variable for print motion.");
+    passed &= expect(writesLayerScopedBlockNumbersWhenEnabled(),
+                     "Arc Specialties writer did not emit layer-scoped block numbers.");
     passed &= expect(writesCompactCylindricalPrintComments(),
                      "Arc Specialties writer did not emit compact cylindrical comments.");
     passed &=

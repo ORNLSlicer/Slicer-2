@@ -222,6 +222,29 @@ class ArcSpecialtiesWriter : public WriterBase {
                         const QSharedPointer<SettingsBase>& params, const QString& comment, const Point& cp_reference);
 
     /*!
+     * @brief Starts per-layer Beckhoff block numbering for executable bead-body lines.
+     */
+    void startLayerBlockNumbering();
+
+    /*!
+     * @brief Stops per-layer block numbering for layer transition and shutdown lines.
+     */
+    void stopLayerBlockNumbering();
+
+    /*!
+     * @brief Returns whether Arc Specialties block numbers should be emitted.
+     * @return True when the setting is enabled.
+     */
+    bool shouldEmitBlockNumbers() const;
+
+    /*!
+     * @brief Adds the next per-layer block number to each executable line in a block.
+     * @param block G-Code block to format.
+     * @return Block with Beckhoff-style N numbers when enabled and active.
+     */
+    QString writeNumberedBlock(const QString& block);
+
+    /*!
      * @brief Writes the Arc Specialties kinematics and TRAFO setup block once.
      * @return Startup kinematics block, or an empty string after it has already been emitted.
      */
@@ -354,6 +377,15 @@ class ArcSpecialtiesWriter : public WriterBase {
 
     //! @brief Tracks layer number.
     int m_current_layer = 0;
+
+    //! @brief Tracks the next Beckhoff block number for the active layer.
+    int m_next_block_number = 0;
+
+    //! @brief Tracks whether per-layer block numbering has been initialized for this layer.
+    bool m_layer_block_numbering_started = false;
+
+    //! @brief Tracks whether executable lines should currently receive block numbers.
+    bool m_layer_block_numbering_active = false;
 
     //! @brief Effective part-local Z clip rounding values reported in helical G-code headers.
     QVector<QPair<QString, HelicalPathZClipRounding>> m_helical_path_z_clip_rounding;
