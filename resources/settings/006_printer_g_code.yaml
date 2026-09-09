@@ -97,6 +97,18 @@ settings:
     namespace: "Printer::GCode"
     symbol: "kArcSpecialtiesG80WeldScheduleFile"
     local: false
+  - name: "arc_specialties_emit_block_numbers"
+    display: "Arc Specialties Emit Block Numbers"
+    type: "boolean"
+    tooltip: "If enabled, Arc Specialties G-Code lines are prefixed with controller block numbers."
+    depends: {"syntax":31}
+    options: []
+    default: false
+    minor: "G-Code"
+    major: "Printer"
+    namespace: "Printer::GCode"
+    symbol: "kArcSpecialtiesEmitBlockNumbers"
+    local: false
   - name: "start_code"
     display: "Start Code"
     type: "multiline_text"

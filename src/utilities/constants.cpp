@@ -318,9 +318,10 @@ const QString Constants::PrinterSettings::GCode::kArcSpecialtiesG2G3OptionalStop
     "arc_specialties_g2_g3_optional_stop";
 const QString Constants::PrinterSettings::GCode::kArcSpecialtiesG80WeldScheduleFile =
     "arc_specialties_g80_weld_schedule_file";
-const QString Constants::PrinterSettings::GCode::kStartCode       = "start_code";
-const QString Constants::PrinterSettings::GCode::kLayerCodeChange = "layer_change_code";
-const QString Constants::PrinterSettings::GCode::kEndCode         = "end_code";
+const QString Constants::PrinterSettings::GCode::kArcSpecialtiesEmitBlockNumbers = "arc_specialties_emit_block_numbers";
+const QString Constants::PrinterSettings::GCode::kStartCode                      = "start_code";
+const QString Constants::PrinterSettings::GCode::kLayerCodeChange                = "layer_change_code";
+const QString Constants::PrinterSettings::GCode::kEndCode                        = "end_code";
 
 //================================================================================
 // Material Settings
