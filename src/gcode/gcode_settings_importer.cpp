@@ -703,7 +703,7 @@ bool GcodeSettingsImporter::validateValue(const QString& key, const fifojson& ma
         return true;
     }
 
-    if (type == "number" || type == "positive_int" || type == "power") {
+    if (type == "number" || type == "non_negative_int" || type == "positive_int" || type == "power") {
         int result = 0;
         if (!integerValue(value, result)) {
             error = key + " must be an integer value.";
@@ -715,7 +715,7 @@ bool GcodeSettingsImporter::validateValue(const QString& key, const fifojson& ma
             return false;
         }
 
-        if (enforce_ranges && type == "number" && result < 0) {
+        if (enforce_ranges && (type == "number" || type == "non_negative_int") && result < 0) {
             error = key + " must be zero or greater.";
             return false;
         }

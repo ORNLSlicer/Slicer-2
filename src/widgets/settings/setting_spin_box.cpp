@@ -36,7 +36,10 @@ SettingSpinBox::SettingSpinBox(SettingTab* parent, QSharedPointer<SettingsBase> 
     }
 
     QString type = json[Constants::Settings::Master::kType];
-    if (type == "positive_int" || type == "power") this->setMinimum(1);
+    if (type == "positive_int" || type == "power")
+        this->setMinimum(1);
+    else if (type == "non_negative_int")
+        this->setMinimum(0);
 
     this->setMaximum(INT_MAX);
     this->setAlignment(Qt::AlignRight);

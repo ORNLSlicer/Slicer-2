@@ -64,6 +64,7 @@ VALID_TYPES = {
     "multiline_text",
     "number",
     "numbered_list",
+    "non_negative_int",
     "percentage",
     "percentage100",
     "positive_int",
@@ -297,6 +298,12 @@ def validate_setting(setting: OrderedDict[str, Any], setting_names: set[str]) ->
 
     if setting["type"] == "boolean" and not isinstance(setting["default"], bool):
         raise ValueError(f"{name}: boolean default must be true or false")
+
+    if setting["type"] == "non_negative_int":
+        if not isinstance(setting["default"], int) or isinstance(setting["default"], bool):
+            raise ValueError(f"{name}: non_negative_int default must be an integer")
+        if setting["default"] < 0:
+            raise ValueError(f"{name}: non_negative_int default must be zero or greater")
 
     validate_dependency(setting["depends"], setting_names, name)
 

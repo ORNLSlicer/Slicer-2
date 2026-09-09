@@ -73,6 +73,7 @@ SettingTab::SettingTab(QWidget* parent, QString name, QIcon icon, int index, boo
     m_warning_count = 0;
 
     m_creation_mapping = {{"number", &SettingSpinBox::createInstance},
+                          {"non_negative_int", &SettingSpinBox::createInstance},
                           {"positive_int", &SettingSpinBox::createInstance},
                           {"location", &SettingDistanceSpinBox::createInstance},
                           {"distance", &SettingDistanceSpinBox::createInstance},
