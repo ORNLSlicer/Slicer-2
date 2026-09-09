@@ -129,7 +129,7 @@ void ParserBase::extractComments(QString& command) {
         m_current_gcode_command.setComment(comment.trimmed());
 
         if (start_index > 0)
-            command = command.left(start_index - 1);
+            command = command.left(start_index).trimmed();
         else
             command = QString();
     }
