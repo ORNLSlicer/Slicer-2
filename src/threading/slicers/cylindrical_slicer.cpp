@@ -262,20 +262,6 @@ QVector<HelicalRegionPolylineRun> createHelicalRegionRuns(const HelicalRegionPro
     return runs;
 }
 
-double roundedProfileRevolutions(double raw_revolutions, double max_revolutions, HelicalPathZClipRounding rounding) {
-    constexpr double revolution_tolerance = 1.0e-9;
-
-    double revolutions = raw_revolutions;
-    if (rounding == HelicalPathZClipRounding::kCompleteRevolution) {
-        revolutions = std::ceil(raw_revolutions - revolution_tolerance);
-    }
-    else if (rounding == HelicalPathZClipRounding::kLastFullRevolution) {
-        revolutions = std::floor(raw_revolutions + revolution_tolerance);
-    }
-
-    return std::clamp(revolutions, 0.0, max_revolutions);
-}
-
 //! @brief Flattens adjacent region runs into one polyline used only for model-intersection testing.
 Polyline flattenHelicalRegionRuns(const QVector<HelicalRegionPolylineRun>& runs) {
     Polyline polyline;
@@ -817,7 +803,10 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
             const Distance retained_start_z = profile.zAtRevolutions(retained_bounds->start_revolutions);
             const Distance retained_top_z   = profile.zAtRevolutions(retained_bounds->end_revolutions);
             const HelicalRegionProfileResult retained_profile_result =
-                buildRetainedHelicalRegionProfile(profile_params, retained_start_z, retained_top_z);
+                retained_bounds->ends_at_model_exit
+                    ? buildRetainedHelicalRegionProfile(profile_params, retained_start_z, retained_top_z,
+                                                        z_clip_rounding)
+                    : buildRetainedHelicalRegionProfile(profile_params, retained_start_z, retained_top_z);
             if (!retained_profile_result.valid()) {
                 ++helical_layer_number;
                 ++radii_processed;
@@ -828,10 +817,9 @@ bool CylindricalSlicer::generateHelicalLayers(const QSharedPointer<Part>& part,
 
             const HelicalRegionProfile& retained_profile = retained_profile_result.profile;
             double retained_end_revolutions              = retained_profile.totalRevolutions();
-            if (retained_bounds->ends_at_model_exit) {
-                const double raw_exit_revolutions = retained_profile.revolutionsAtZ(retained_top_z);
-                retained_end_revolutions          = roundedProfileRevolutions(
-                    raw_exit_revolutions, retained_profile.totalRevolutions(), z_clip_rounding);
+            if (retained_bounds->ends_at_model_exit &&
+                z_clip_rounding == HelicalPathZClipRounding::kExactIntersection) {
+                retained_end_revolutions = retained_profile.revolutionsAtZ(retained_top_z);
             }
 
             const QVector<HelicalRegionPolylineRun> retained_runs = createHelicalRegionRuns(

@@ -54,4 +54,6 @@ struct HelicalRegionProfileResult {
 HelicalRegionProfileResult buildHelicalRegionProfile(const HelicalRegionProfileParameters& params);
 HelicalRegionProfileResult buildRetainedHelicalRegionProfile(HelicalRegionProfileParameters params, Distance start_z,
                                                              Distance top_z);
+HelicalRegionProfileResult buildRetainedHelicalRegionProfile(HelicalRegionProfileParameters params, Distance start_z,
+                                                             Distance top_z, HelicalPathZClipRounding z_clip_rounding);
 }  // namespace ORNL
