@@ -369,6 +369,13 @@ void CommonParser::recordModalFeedrateForCommand(const GcodeCommand& command) {
     if (m_has_modal_feedrate) m_command_modal_feedrates.insert(command.getLineNumber(), m_modal_feedrate);
 }
 
+void CommonParser::clearModalFeedrate() {
+    m_modal_feedrate     = 0.0;
+    m_has_modal_feedrate = false;
+    m_with_F_value       = false;
+    setSpeed(0.0);
+}
+
 void CommonParser::setCommandFeedrate(QString& line, double feedrate) {
     static const QRegularExpression feedrate_token(
         "(^|[\\s,/*()])(F(?:[-+]?\\d*\\.?\\d+(?:[Ee][-+]?\\d+)?|#[A-Za-z0-9_]+))",

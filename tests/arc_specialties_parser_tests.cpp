@@ -42,7 +42,7 @@ bool parsesArcLine(const QString& line) {
     }
 }
 
-bool parsedArcKeepsCpForVisualization(const QString& line) {
+bool parsedArcKeepsCpForVisualization(const QString& line, bool expect_feedrate_parameter = true) {
     QStringList original_lines {line};
     QStringList upper_lines {line.toUpper()};
     ORNL::ArcSpecialtiesParser parser(ORNL::GcodeMetaList::ArcSpecialtiesMeta, false, original_lines, upper_lines);
@@ -51,7 +51,25 @@ bool parsedArcKeepsCpForVisualization(const QString& line) {
         const QList<QList<ORNL::GcodeCommand>> commands = parser.parseLines();
         return commands.size() == 1 && commands.first().size() == 1 &&
                commands.first().first().getOptionalParameters().contains('C') &&
-               commands.first().first().getOptionalParameters().value('C') == 0.0;
+               commands.first().first().getOptionalParameters().value('C') == 0.0 &&
+               commands.first().first().getParameters().contains('F') == expect_feedrate_parameter;
+    } catch (const std::exception& ex) {
+        std::cerr << ex.what() << '\n';
+        return false;
+    }
+}
+
+bool parsedLineKeepsCpForVisualization(const QString& line, bool expect_feedrate_parameter = true) {
+    QStringList original_lines {line};
+    QStringList upper_lines {line.toUpper()};
+    ORNL::ArcSpecialtiesParser parser(ORNL::GcodeMetaList::ArcSpecialtiesMeta, false, original_lines, upper_lines);
+
+    try {
+        const QList<QList<ORNL::GcodeCommand>> commands = parser.parseLines();
+        return commands.size() == 1 && commands.first().size() == 1 &&
+               commands.first().first().getOptionalParameters().contains('C') &&
+               commands.first().first().getOptionalParameters().value('C') == 90.0 &&
+               commands.first().first().getParameters().contains('F') == expect_feedrate_parameter;
     } catch (const std::exception& ex) {
         std::cerr << ex.what() << '\n';
         return false;
@@ -59,21 +77,34 @@ bool parsedArcKeepsCpForVisualization(const QString& line) {
 }
 
 bool parsedLineKeepsCpForVisualization() {
+    return parsedLineKeepsCpForVisualization(
+        "G01 X=0.0000 Y=1.0000 Z=0.0000 XR=180.0000 YR=0.0000 ZR=-135.0000 AP=0.0000 CP=90.0000 "
+        "F600.0000 ;RADIAL");
+}
+
+bool parsedLineWithScheduleSpeedKeepsCpForVisualization() {
+    return parsedLineKeepsCpForVisualization(
+               "G01 X=0.0000 Y=1.0000 Z=0.0000 XR=180.0000 YR=0.0000 ZR=-135.0000 AP=0.0000 "
+               "CP=90.0000 FV.S.SPEED ;RADIAL",
+               false) &&
+           parsedLineKeepsCpForVisualization(
+               "G01 X=0.0000 Y=1.0000 Z=0.0000 XR=180.0000 YR=0.0000 ZR=-135.0000 AP=0.0000 "
+               "CP=90.0000 F=V.S.SPEED ;RADIAL",
+               false);
+}
+
+bool rejectsDuplicateScheduleSpeedFeedrate() {
     QStringList original_lines {
         "G01 X=0.0000 Y=1.0000 Z=0.0000 XR=180.0000 YR=0.0000 ZR=-135.0000 AP=0.0000 CP=90.0000 "
-        "F600.0000 ;RADIAL"};
+        "F600.0000 FV.S.SPEED ;RADIAL"};
     QStringList upper_lines {original_lines.first().toUpper()};
     ORNL::ArcSpecialtiesParser parser(ORNL::GcodeMetaList::ArcSpecialtiesMeta, false, original_lines, upper_lines);
 
     try {
-        const QList<QList<ORNL::GcodeCommand>> commands = parser.parseLines();
-        return commands.size() == 1 && commands.first().size() == 1 &&
-               commands.first().first().getOptionalParameters().contains('C') &&
-               commands.first().first().getOptionalParameters().value('C') == 90.0;
-    } catch (const std::exception& ex) {
-        std::cerr << ex.what() << '\n';
-        return false;
-    }
+        parser.parseLines();
+    } catch (const std::exception&) { return true; }
+
+    return false;
 }
 
 QString lineContaining(const QString& block, const QString& marker);
@@ -163,6 +194,44 @@ QSharedPointer<ORNL::SettingsBase> helicalSegmentSettings(std::optional<ORNL::Re
     segment_settings->setSetting(ORNL::PS::Helical::kHelicalPathStartAngle, 0.0 * ORNL::degree);
     if (region_type.has_value()) { segment_settings->setSetting(ORNL::SS::kRegionType, region_type.value()); }
     return segment_settings;
+}
+
+bool writesNumericSpeedWhenG80ScheduleFileIsEmpty() {
+    QSharedPointer<ORNL::SettingsBase> settings = helicalWriterSettings(false);
+    settings->setSetting(ORNL::PRS::GCode::kArcSpecialtiesG80WeldScheduleFile, QString());
+
+    ORNL::ArcSpecialtiesWriter writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+    const QString block = writer.writeLine(ORNL::Point(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm),
+                                           ORNL::Point(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm),
+                                           helicalSegmentSettings(ORNL::RegionType::kPerimeter));
+    const QString line  = lineContaining(block, ";HELICAL PERIMETER");
+
+    return line.contains(" F600.0000 ;HELICAL PERIMETER") && !line.contains("FV.S.SPEED");
+}
+
+bool writesG80ScheduleSpeedVariableForLineAndArc() {
+    QSharedPointer<ORNL::SettingsBase> settings = helicalWriterSettings(true);
+    settings->setSetting(ORNL::PRS::GCode::kArcSpecialtiesG80WeldScheduleFile, QString("D:\\Schedules\\custom_sch.nc"));
+    settings->setSetting(ORNL::PRS::GCode::kArcSpecialtiesG2G3OptionalStop, true);
+
+    const ORNL::Point start(1.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm);
+    const ORNL::Point end(0.0 * ORNL::mm, 1.0 * ORNL::mm, 1.0 * ORNL::mm);
+    const ORNL::Point center(0.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm);
+    QSharedPointer<ORNL::SettingsBase> segment_settings = helicalSegmentSettings(ORNL::RegionType::kPerimeter);
+
+    ORNL::ArcSpecialtiesWriter line_writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+    const QString line_block = line_writer.writeLine(start, end, segment_settings);
+    const QString line       = lineContaining(line_block, ";HELICAL PERIMETER");
+
+    ORNL::ArcSpecialtiesWriter arc_writer(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+    const QString arc_block = arc_writer.writeArc(start, end, center, 90.0 * ORNL::degree, false, segment_settings);
+    const QString arc       = lineContaining(arc_block, ";HELICAL PERIMETER");
+
+    const QString expected_arc =
+        "G02 X=0.0000 Y=1.0000 Z=1.0000 XR=180.0000 YR=0.0000 ZR=-135.0000 AP=0.0000 CP=90.0000 "
+        "I=-1.0000 J=0.0000 FV.S.SPEED G81 ;HELICAL PERIMETER";
+
+    return line.contains(" FV.S.SPEED ;HELICAL PERIMETER") && !line.contains("F600.0000") && arc == expected_arc;
 }
 
 void setHelicalToolFrameSettings(const QSharedPointer<ORNL::SettingsBase>& settings) {
@@ -520,14 +589,30 @@ int main(int argc, char* argv[]) {
     const QString counter_clockwise_arc =
         "G03 X=1.0000 Y=0.0000 Z=0.0000 XR=180.0000 YR=0.0000 ZR=-135.0000 AP=0.0000 CP=0.0000 "
         "I=0.5000 J=0.0000 F600.0000 G81 ;PERIMETER";
+    const QString clockwise_schedule_speed_arc =
+        "G02 X=1.0000 Y=0.0000 Z=0.0000 XR=180.0000 YR=0.0000 ZR=-135.0000 AP=0.0000 CP=0.0000 "
+        "I=0.5000 J=0.0000 FV.S.SPEED G81 ;PERIMETER";
+    const QString counter_clockwise_schedule_speed_arc =
+        "G03 X=1.0000 Y=0.0000 Z=0.0000 XR=180.0000 YR=0.0000 ZR=-135.0000 AP=0.0000 CP=0.0000 "
+        "I=0.5000 J=0.0000 FV.S.SPEED G81 ;PERIMETER";
 
     bool passed = true;
     passed &= expect(parsesArcLine(clockwise_arc), "Arc Specialties G02 did not ignore inline G81.");
     passed &= expect(parsesArcLine(counter_clockwise_arc), "Arc Specialties G03 did not ignore inline G81.");
+    passed &= expect(parsesArcLine(clockwise_schedule_speed_arc),
+                     "Arc Specialties G02 did not accept the G80 schedule speed variable.");
+    passed &= expect(parsesArcLine(counter_clockwise_schedule_speed_arc),
+                     "Arc Specialties G03 did not accept the G80 schedule speed variable.");
     passed &= expect(parsedArcKeepsCpForVisualization(clockwise_arc),
                      "Arc Specialties parser did not retain CP for visualization.");
+    passed &= expect(parsedArcKeepsCpForVisualization(clockwise_schedule_speed_arc, false),
+                     "Arc Specialties parser did not retain CP with the G80 schedule speed variable.");
     passed &= expect(parsedLineKeepsCpForVisualization(),
                      "Arc Specialties parser did not retain linear CP for visualization.");
+    passed &= expect(parsedLineWithScheduleSpeedKeepsCpForVisualization(),
+                     "Arc Specialties parser did not retain linear CP with the G80 schedule speed variable.");
+    passed &= expect(rejectsDuplicateScheduleSpeedFeedrate(),
+                     "Arc Specialties parser did not reject duplicate schedule speed feedrates.");
     passed &= expect(infersLeftHandedHelicalAxisFromReversedCpDelta(),
                      "Arc Specialties loader did not reverse left-handed helical CP delta.");
     passed &= expect(rightHandedCpDeltaDoesNotMirrorAxis(),
@@ -535,6 +620,10 @@ int main(int argc, char* argv[]) {
     passed &= expect(writesInlineArcOptionalStop(), "Arc Specialties writer did not emit inline G81 on G02/G03.");
     passed &= expect(writesConfiguredG80WeldScheduleFile(),
                      "Arc Specialties writer did not emit the configured G80 weld schedule file.");
+    passed &= expect(writesNumericSpeedWhenG80ScheduleFileIsEmpty(),
+                     "Arc Specialties writer did not emit numeric speed without a G80 weld schedule file.");
+    passed &= expect(writesG80ScheduleSpeedVariableForLineAndArc(),
+                     "Arc Specialties writer did not emit the G80 schedule speed variable for print motion.");
     passed &= expect(writesCompactCylindricalPrintComments(),
                      "Arc Specialties writer did not emit compact cylindrical comments.");
     passed &=

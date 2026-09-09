@@ -294,6 +294,9 @@ class CommonParser : public ParserBase {
     //! \note This value will be set using the defined unit type.
     void setSpeed(NT value);
 
+    //! \brief Clears the active modal feedrate when a syntax-specific feedrate macro has no numeric preview value.
+    void clearModalFeedrate();
+
     //! \brief Sets the spindle speed of the extruder.
     //! \param value Value to set the spindle speed to.
     //! \note This value will be set using the defined unit type.

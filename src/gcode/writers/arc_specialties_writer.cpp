@@ -35,6 +35,9 @@ const QString kWorldApproachTravelComment = "WORLD APPROACH TRAVEL";
 //! @brief Default Arc Specialties G80 weld schedule file path.
 const QString kDefaultG80WeldScheduleFile = "";
 
+//! @brief Arc Specialties schedule-selected speed variable.
+const QString kG80ScheduleSpeedVariable = "V.S.SPEED";
+
 //! @brief Fixed tool-frame XR.
 constexpr double kToolFrameXR = 180.0;
 
@@ -393,9 +396,7 @@ QString ArcSpecialtiesWriter::writeInitialSetup(Distance minimum_x, Distance min
 
     QString rv;
 
-    QString g80_schedule_file = m_sb->setting<QString>(PRS::GCode::kArcSpecialtiesG80WeldScheduleFile);
-    if (g80_schedule_file.isEmpty()) { g80_schedule_file = kDefaultG80WeldScheduleFile; }
-    g80_schedule_file.remove('"');
+    const QString g80_schedule_file = g80WeldScheduleFile();
 
     rv += commentLine("DEFINE G80 WELD SCHEDULES");
     rv += "#FILE NAME[ G80=\"" % g80_schedule_file % "\" ]" % m_newline;
@@ -655,8 +656,7 @@ QString ArcSpecialtiesWriter::writeArc(const Point& start_point, const Point& en
     const QString print_comment = printMoveComment(params);
     rv += QString(ccw ? "G03" : "G02") %
           writeCoordinates(end_point, params, toolFrameRotationForMotion(print_comment, params)) %
-          writeArcCenterParameters(start_point, center_point) % m_f %
-          QString::number(speed.to(m_meta.m_velocity_unit), 'f', 4) % inline_optional_stop %
+          writeArcCenterParameters(start_point, center_point) % writeMotionFeedrate(speed) % inline_optional_stop %
           commentSpaceLine(print_comment);
     return rv;
 }
@@ -758,6 +758,25 @@ QString ArcSpecialtiesWriter::writeWelderOff(int mode) {
     else { return QString(); }
 }
 
+QString ArcSpecialtiesWriter::g80WeldScheduleFile() const {
+    QString g80_schedule_file = m_sb->contains(PRS::GCode::kArcSpecialtiesG80WeldScheduleFile)
+                                    ? m_sb->setting<QString>(PRS::GCode::kArcSpecialtiesG80WeldScheduleFile)
+                                    : kDefaultG80WeldScheduleFile;
+    if (g80_schedule_file.isEmpty()) { g80_schedule_file = kDefaultG80WeldScheduleFile; }
+    g80_schedule_file.remove('"');
+    return g80_schedule_file;
+}
+
+bool ArcSpecialtiesWriter::usesG80ScheduleSpeedVariable() const {
+    return !g80WeldScheduleFile().isEmpty();
+}
+
+QString ArcSpecialtiesWriter::writeMotionFeedrate(Velocity speed) const {
+    if (usesG80ScheduleSpeedVariable()) { return m_f % kG80ScheduleSpeedVariable; }
+
+    return m_f % QString::number(speed.to(m_meta.m_velocity_unit), 'f', 4);
+}
+
 QString ArcSpecialtiesWriter::writeMotion(const QString& command, const Point& destination, Velocity speed,
                                           const QSharedPointer<SettingsBase>& params, const QString& comment) {
     return writeMotion(command, destination, speed, params, comment, destination);
@@ -773,8 +792,8 @@ QString ArcSpecialtiesWriter::writeMotion(const QString& command, const Point& d
                commentSpaceLine(comment);
     }
     else {
-        return command % writeCoordinates(destination, params, tool_frame_rotation, cp_reference) % m_f %
-               QString::number(speed.to(m_meta.m_velocity_unit), 'f', 4) % commentSpaceLine(comment);
+        return command % writeCoordinates(destination, params, tool_frame_rotation, cp_reference) %
+               writeMotionFeedrate(speed) % commentSpaceLine(comment);
     }
 }
 

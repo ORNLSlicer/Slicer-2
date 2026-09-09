@@ -13,7 +13,8 @@ namespace ORNL {
  *
  * The visualization path only models XYZ. This parser accepts Arc Specialties `KEY=value` motion fields, validates and
  * strips the orientation-only fields, normalizes X/Y/Z/I/J/K/R/F into the shared parser's single-letter parameter
- * format, and delegates motion estimation and visualization command creation to CommonParser.
+ * format, accepts known schedule-speed feedrate macros, and delegates motion estimation and visualization command
+ * creation to CommonParser.
  */
 class ArcSpecialtiesParser : public CommonParser {
    public:
@@ -98,7 +99,7 @@ class ArcSpecialtiesParser : public CommonParser {
     /*!
      * @brief Checks whether a parameter key is a preview-relevant linear or feedrate field.
      * @param key Parameter key.
-     * @return True for X, Y, Z, or F.
+     * @return True for X, Y, Z, I, J, K, R, or F.
      */
     bool isCommonMotionKey(const QString& key) const;
 

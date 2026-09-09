@@ -18,7 +18,12 @@ const QRegularExpression kG00CommandPattern("(^\\s*)G00(?=\\s|;|\\(|$)");
 const QRegularExpression kG01CommandPattern("(^\\s*)G01(?=\\s|;|\\(|$)");
 const QRegularExpression kG02CommandPattern("(^\\s*)G02(?=\\s|;|\\(|$)");
 const QRegularExpression kG03CommandPattern("(^\\s*)G03(?=\\s|;|\\(|$)");
-constexpr char kCpOptionalParameter = 'C';
+const QString kG80ScheduleSpeedVariable = "V.S.SPEED";
+constexpr char kCpOptionalParameter     = 'C';
+
+bool isG80ScheduleSpeedVariable(const QString& value) {
+    return value.trimmed().compare(kG80ScheduleSpeedVariable, Qt::CaseInsensitive) == 0;
+}
 }  // namespace
 
 ArcSpecialtiesParser::ArcSpecialtiesParser(GcodeMeta meta, bool allowLayerAlter, QStringList& lines,
@@ -112,6 +117,11 @@ QVector<QString> ArcSpecialtiesParser::normalizeAndStripOrientationAxes(QVector<
 
         if (isCommonMotionKey(key)) {
             validateUniqueKey(key, used_keys);
+            if (key == "F" && isG80ScheduleSpeedVariable(value)) {
+                clearModalFeedrate();
+                continue;
+            }
+
             validateNumericValue(value);
             filtered_params.push_back(key % value);
             continue;

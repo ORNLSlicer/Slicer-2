@@ -178,6 +178,25 @@ class ArcSpecialtiesWriter : public WriterBase {
     QString writeWelderOff(int mode = 0);
 
     /*!
+     * @brief Returns the quote-stripped G80 weld schedule file configured for output.
+     * @return Sanitized schedule file path, or an empty string when unset.
+     */
+    QString g80WeldScheduleFile() const;
+
+    /*!
+     * @brief Returns whether print motion feedrates should reference the G80 schedule speed variable.
+     * @return True when a sanitized G80 weld schedule file is configured.
+     */
+    bool usesG80ScheduleSpeedVariable() const;
+
+    /*!
+     * @brief Formats the Arc Specialties motion feedrate field.
+     * @param speed Numeric feedrate used when schedule speed output is inactive.
+     * @return Either a numeric F field or the G80 schedule speed variable field.
+     */
+    QString writeMotionFeedrate(Velocity speed) const;
+
+    /*!
      * @brief Writes a single Arc Specialties motion command.
      * @param command G-code command string.
      * @param destination Endpoint being written.
