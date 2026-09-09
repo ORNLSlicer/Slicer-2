@@ -44,7 +44,7 @@ settings:
     local: true
   - name: "helical_perimeter_revolutions"
     display: "Perimeter Revolutions"
-    type: "positive_int"
+    type: "non_negative_int"
     tooltip: "Number of revolutions for perimeter region"
     depends: {"AND":[{"slicing_mode":1},{"cylindrical_path_pattern":1}]}
     options: []
@@ -56,7 +56,7 @@ settings:
     local: false
   - name: "helical_inset_revolutions"
     display: "Inset Revolutions"
-    type: "positive_int"
+    type: "non_negative_int"
     tooltip: "Number of revolutions for inset region"
     depends: {"AND":[{"slicing_mode":1},{"cylindrical_path_pattern":1}]}
     options: []
