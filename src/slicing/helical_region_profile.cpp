@@ -35,6 +35,18 @@ double roundedInfillRevolutions(double revolutions, HelicalInfillRevolutionsRoun
     }
 }
 
+double roundedProfileRevolutions(double raw_revolutions, double max_revolutions, HelicalPathZClipRounding rounding) {
+    double revolutions = raw_revolutions;
+    if (rounding == HelicalPathZClipRounding::kCompleteRevolution) {
+        revolutions = std::ceil(raw_revolutions - kRevolutionTolerance);
+    }
+    else if (rounding == HelicalPathZClipRounding::kLastFullRevolution) {
+        revolutions = std::floor(raw_revolutions + kRevolutionTolerance);
+    }
+
+    return std::clamp(revolutions, 0.0, max_revolutions);
+}
+
 void appendBand(HelicalRegionProfile& profile, RegionType region_type, int revolutions, Distance pitch) {
     if (revolutions <= 0) { return; }
 
@@ -188,5 +200,22 @@ HelicalRegionProfileResult buildRetainedHelicalRegionProfile(HelicalRegionProfil
     params.start_z = start_z;
     params.top_z   = top_z;
     return buildHelicalRegionProfile(params);
+}
+
+HelicalRegionProfileResult buildRetainedHelicalRegionProfile(HelicalRegionProfileParameters params, Distance start_z,
+                                                             Distance top_z, HelicalPathZClipRounding z_clip_rounding) {
+    HelicalRegionProfileResult result = buildRetainedHelicalRegionProfile(params, start_z, top_z);
+    if (!result.valid() || z_clip_rounding == HelicalPathZClipRounding::kExactIntersection) { return result; }
+
+    const double raw_top_revolutions = result.profile.revolutionsAtZ(top_z);
+    const double rounded_top_revolutions =
+        roundedProfileRevolutions(raw_top_revolutions, result.profile.totalRevolutions(), z_clip_rounding);
+    if (rounded_top_revolutions <= kRevolutionTolerance) {
+        result.reason = "Helical retained profile contains no positive full revolutions after z clipping.";
+        return result;
+    }
+
+    const Distance rounded_top_z = result.profile.zAtRevolutions(rounded_top_revolutions);
+    return buildRetainedHelicalRegionProfile(params, start_z, rounded_top_z);
 }
 }  // namespace ORNL
