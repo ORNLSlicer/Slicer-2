@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include <QMessageBox>
+#include <QPainter>
 #include <QStack>
 #include <QToolTip>
 #include <algorithm>
@@ -39,7 +40,6 @@
 #include "graphics/objects/printer/printer_object.h"
 #include "graphics/objects/sphere/seam_object.h"
 #include "graphics/objects/sphere_object.h"
-#include "graphics/objects/text_object.h"
 #include "graphics/support/part_picker.h"
 #include "managers/preferences_manager.h"
 #include "managers/session_manager.h"
@@ -57,8 +57,6 @@ namespace {
 constexpr float kMinimumLayerSettingsRangeThickness = 0.01f;
 constexpr float kMinimumSlicingCylinderHeight       = 0.01f;
 constexpr float kMeasurementMarkerRadius            = 0.025f;
-constexpr float kMeasurementLabelLift               = 0.08f;
-constexpr float kMeasurementLabelScale              = 0.08f;
 
 QString asciiDistanceUnitText(QString unit_text) {
     unit_text.replace(Constants::Units::kMicron, "um");
@@ -112,11 +110,43 @@ QList<QSharedPointer<Part>> PartView::externalParts() {
 }
 
 void PartView::showLabels(bool show) {
-    for (auto& gop : m_part_objects) { gop->label()->setHidden(!show); }
-
     m_state.names_shown = show;
 
     this->update();
+}
+
+void PartView::paintOverlay(QPainter& painter) {
+    const QFontMetrics metrics(painter.font());
+    const QMatrix4x4 view       = this->viewMatrix();
+    const QMatrix4x4 projection = this->projectionMatrix();
+    const QRect viewport        = painter.viewport();
+
+    const QString theme = PreferencesManager::getInstance()->getThemeText();
+    const QColor color  = theme == Constants::UI::Themes::kDarkMode ? Qt::darkGreen : Qt::black;
+    painter.setPen(color);
+
+    for (const auto& gop : m_part_objects) {
+        if (gop->hidden()) { continue; }
+
+        QVector3D anchor_point = gop->center();
+        const float height     = gop->maximum().z() - gop->minimum().z();
+        const float z_offset   = std::max(0.1f, height / 5.0f);
+        anchor_point.setZ(gop->maximum().z() + z_offset);
+        const QVector3D projected = anchor_point.project(view, projection, viewport);
+
+        // Projected y is in OpenGL orientation when Qt is needed.
+        const float screen_y = viewport.height() - projected.y();
+
+        const QString name      = gop->name();
+        const QRect text_bounds = metrics.boundingRect(name);
+        const QPointF text_origin(projected.x() - text_bounds.width() * 0.5f, screen_y);
+
+        painter.drawText(text_origin, name);
+    }
+}
+
+bool PartView::hasOverlay() const {
+    return m_state.names_shown;
 }
 
 void PartView::showSlicingPlanes(bool show) {
@@ -943,7 +973,6 @@ void PartView::modelAdditionUpdate(QSharedPointer<PartMetaItem> pm) {
     gop->plane()->setLockedRotationQuaternion(slicingPlaneRotation());
     if (m_state.overhangs_shown) gop->showOverhang(true);
     updateSlicingGeometryPreview(gop);
-    if (m_state.names_shown) gop->label()->show();
     updateLayerSettingsRangePlane();
 
     this->blockModel();
@@ -1232,11 +1261,9 @@ bool PartView::handleMeasurementClick(QPointF mouse_ndc_pos) {
 
     m_state.measurement_end_marker = createMeasurementMarker(picked_point);
     m_state.measurement_line       = createMeasurementLine(m_state.measurement_start, picked_point);
-    m_state.measurement_label      = createMeasurementLabel(m_state.measurement_start, picked_point);
 
     addObject(m_state.measurement_line);
     addObject(m_state.measurement_end_marker);
-    addObject(m_state.measurement_label);
 
     const double distance_microns =
         m_state.measurement_start.distanceToPoint(picked_point) * Constants::OpenGL::kViewToObject;
@@ -1264,10 +1291,8 @@ void PartView::updateMeasurementPreview(QPointF mouse_ndc_pos) {
 
     clearMeasurementPreview();
 
-    m_state.measurement_preview_line  = createMeasurementLine(m_state.measurement_start, picked_point);
-    m_state.measurement_preview_label = createMeasurementLabel(m_state.measurement_start, picked_point);
+    m_state.measurement_preview_line = createMeasurementLine(m_state.measurement_start, picked_point);
     addObject(m_state.measurement_preview_line);
-    addObject(m_state.measurement_preview_label);
 
     const double distance_microns =
         m_state.measurement_start.distanceToPoint(picked_point) * Constants::OpenGL::kViewToObject;
@@ -1276,9 +1301,7 @@ void PartView::updateMeasurementPreview(QPointF mouse_ndc_pos) {
 }
 
 bool PartView::clearMeasurementPreview() {
-    bool removed = removeMeasurementObject(m_state.measurement_preview_line);
-    removed      = removeMeasurementObject(m_state.measurement_preview_label) || removed;
-    return removed;
+    return removeMeasurementObject(m_state.measurement_preview_line);
 }
 
 bool PartView::pickMeasurementPoint(const QPointF& mouse_ndc_pos, QVector3D& point) {
@@ -1309,7 +1332,6 @@ void PartView::clearMeasurement() {
     removed      = removeMeasurementObject(m_state.measurement_start_marker) || removed;
     removed      = removeMeasurementObject(m_state.measurement_end_marker) || removed;
     removed      = removeMeasurementObject(m_state.measurement_line) || removed;
-    removed      = removeMeasurementObject(m_state.measurement_label) || removed;
 
     m_state.has_measurement_start = false;
     m_state.measurement_start     = QVector3D();
@@ -1344,17 +1366,6 @@ QSharedPointer<GraphicsObject> PartView::createMeasurementLine(const QVector3D& 
     auto line = QSharedPointer<GraphicsObject>::create(this, vertices, normals, colors, GL_LINES);
     line->setOnTop(true);
     return line;
-}
-
-QSharedPointer<GraphicsObject> PartView::createMeasurementLabel(const QVector3D& start, const QVector3D& end) {
-    const QVector3D midpoint      = (start + end) / 2.0f + QVector3D(0.0f, 0.0f, kMeasurementLabelLift);
-    const double distance_microns = start.distanceToPoint(end) * Constants::OpenGL::kViewToObject;
-
-    auto label = QSharedPointer<TextObject>::create(this, formatMeasurementDistance(distance_microns, true),
-                                                    kMeasurementLabelScale, true);
-    label->translateAbsolute(midpoint);
-    label->setOnTop(true);
-    return label;
 }
 
 QString PartView::formatMeasurementDistance(double microns, bool ascii_units) const {
