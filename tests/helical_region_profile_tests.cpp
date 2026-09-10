@@ -238,6 +238,21 @@ bool retainedLastFullKeepsTopInsetAndPerimeter() {
            nearDistance(result.profile.generatedTopZ(), 20.0 * ORNL::mm) &&
            near(result.profile.totalRevolutions(), 5.0);
 }
+
+bool retainedLastFullDoesNotGrowPastNonUniformRoundedTop() {
+    const ORNL::HelicalRegionProfileResult result = ORNL::buildRetainedHelicalRegionProfile(
+        defaultParams(), 0.0 * ORNL::mm, 21.2 * ORNL::mm, ORNL::HelicalPathZClipRounding::kLastFullRevolution);
+    if (!result.valid()) { return false; }
+
+    return matchesRegionSequence(result.profile,
+                                 QVector<ORNL::RegionType> {ORNL::RegionType::kPerimeter, ORNL::RegionType::kInset,
+                                                            ORNL::RegionType::kInfill, ORNL::RegionType::kInset,
+                                                            ORNL::RegionType::kPerimeter}) &&
+           near(result.profile.bands[3].start_revolutions, 4.0) &&
+           near(result.profile.bands[4].start_revolutions, 5.0) &&
+           nearDistance(result.profile.generatedTopZ(), 20.0 * ORNL::mm) &&
+           near(result.profile.totalRevolutions(), 6.0);
+}
 }  // namespace
 
 int main() {
@@ -261,6 +276,8 @@ int main() {
                      "Expected last-full retained clipping to keep the final revolution as perimeter.");
     passed &= expect(retainedLastFullKeepsTopInsetAndPerimeter(),
                      "Expected last-full retained clipping to keep the second-last inset and final perimeter.");
+    passed &= expect(retainedLastFullDoesNotGrowPastNonUniformRoundedTop(),
+                     "Expected last-full retained clipping to keep non-uniform profiles at the rounded top.");
 
     return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 }
