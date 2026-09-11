@@ -12,6 +12,8 @@
 
 #include <zip/zip.h>
 
+#include "geometry/mesh/closed_mesh.h"
+#include "geometry/mesh/mesh_factory.h"
 #include "managers/session_manager.h"
 #include "managers/settings/settings_manager.h"
 #include "threading/session_loader.h"
@@ -180,6 +182,98 @@ int main(int argc, char* argv[]) {
         ORNL::GSM->getGlobal()->setting<double>(ORNL::Constants::ProfileSettings::Slicing::kSlicePlaneNormalX);
     if (!expect(loaded_slice_normal_x == 0.25,
                 "CLI-style session load did not use migrated global settings in memory."))
+        return EXIT_FAILURE;
+
+    // Test part renaming and project saving/loading
+    session->clearParts();
+    auto mesh1 = QSharedPointer<ORNL::ClosedMesh>::create(
+        ORNL::MeshFactory::CreateBoxMesh(ORNL::Distance(10), ORNL::Distance(10), ORNL::Distance(10)));
+    mesh1->setName("part_alpha");
+    session->addPart(mesh1);
+
+    auto mesh2 = QSharedPointer<ORNL::ClosedMesh>::create(
+        ORNL::MeshFactory::CreateBoxMesh(ORNL::Distance(10), ORNL::Distance(10), ORNL::Distance(10)));
+    mesh2->setName("part_beta");
+    session->addPart(mesh2);
+
+    if (!expect(session->parts().size() == 2, "Session should have exactly two parts.")) return EXIT_FAILURE;
+
+    QSharedPointer<ORNL::Part> part1 = session->getPart("part_alpha");
+    QSharedPointer<ORNL::Part> part2 = session->getPart("part_beta");
+    if (!expect(!part1.isNull() && !part2.isNull(), "Added parts should be accessible by name.")) return EXIT_FAILURE;
+
+    // Availability checks
+    if (!expect(!session->isPartNameAvailable("part_beta", part1), "part_beta should not be available for part1."))
+        return EXIT_FAILURE;
+    if (!expect(session->isPartNameAvailable("part_alpha", part1), "Current name should be reported available for self."))
+        return EXIT_FAILURE;
+    if (!expect(session->isPartNameAvailable("part_renamed", part1), "Unused name should be available."))
+        return EXIT_FAILURE;
+
+    // Reject rename to duplicate name
+    if (!expect(!session->renamePart(part1, "part_beta"), "Renaming to existing part name must fail."))
+        return EXIT_FAILURE;
+    if (!expect(part1->name() == "part_alpha", "Part name should remain unchanged after failed rename."))
+        return EXIT_FAILURE;
+
+    // Successful rename
+    if (!expect(session->renamePart(part1, "part_renamed"), "Renaming to available name should succeed."))
+        return EXIT_FAILURE;
+    if (!expect(part1->name() == "part_renamed", "Part internal name should be updated.")) return EXIT_FAILURE;
+    if (!expect(!part1->rootMesh().isNull() && part1->rootMesh()->name() == "part_renamed",
+                "Root mesh name should be updated."))
+        return EXIT_FAILURE;
+    if (!expect(session->getPart("part_alpha").isNull(), "Old name lookup should return null.")) return EXIT_FAILURE;
+    if (!expect(session->getPart("part_renamed") == part1, "New name lookup should return the renamed part."))
+        return EXIT_FAILURE;
+    if (!expect(session->parts().contains("part_renamed"), "parts() map should contain new name.")) return EXIT_FAILURE;
+    if (!expect(!session->parts().contains("part_alpha"), "parts() map should not contain old name."))
+        return EXIT_FAILURE;
+
+    // Save session with renamed part and reload to verify persistence
+    QString renamed_project_path = temp_dir.path() + "/renamed-part-project.s2p";
+    ORNL::SessionLoader* save_loader = session->saveSession(renamed_project_path, false);
+    if (!expect(save_loader != nullptr, "Save session loader could not be created.")) return EXIT_FAILURE;
+
+    QEventLoop save_loop;
+    bool save_finished  = false;
+    bool save_succeeded = false;
+    QObject::connect(save_loader, &ORNL::SessionLoader::saveSucceeded, &save_loop,
+                     [&save_succeeded]() { save_succeeded = true; });
+    QObject::connect(save_loader, &ORNL::SessionLoader::finished, &save_loop, [&save_finished, &save_loop]() {
+        save_finished = true;
+        save_loop.quit();
+    });
+    QTimer::singleShot(5000, &save_loop, [&save_loop]() { save_loop.quit(); });
+    save_loop.exec();
+
+    if (!expect(save_finished, "Timed out waiting for session save to finish.")) return EXIT_FAILURE;
+    if (!expect(save_succeeded, "Session save did not complete successfully.")) return EXIT_FAILURE;
+
+    // Reload project
+    ORNL::SessionLoader* load_loader = session->loadSession(true, renamed_project_path, false);
+    if (!expect(load_loader != nullptr, "Load session loader could not be created.")) return EXIT_FAILURE;
+
+    QEventLoop load_loop;
+    bool load_finished  = false;
+    bool load_succeeded = false;
+    QObject::connect(load_loader, &ORNL::SessionLoader::loadSucceeded, &load_loop,
+                     [&load_succeeded]() { load_succeeded = true; });
+    QObject::connect(load_loader, &ORNL::SessionLoader::finished, &load_loop, [&load_finished, &load_loop]() {
+        load_finished = true;
+        load_loop.quit();
+    });
+    QTimer::singleShot(5000, &load_loop, [&load_loop]() { load_loop.quit(); });
+    load_loop.exec();
+
+    if (!expect(load_finished, "Timed out waiting for reloaded session to finish.")) return EXIT_FAILURE;
+    if (!expect(load_succeeded, "Session load did not complete successfully.")) return EXIT_FAILURE;
+
+    if (!expect(!session->getPart("part_renamed").isNull(), "Renamed part should exist after project reload."))
+        return EXIT_FAILURE;
+    if (!expect(!session->getPart("part_beta").isNull(), "Unchanged part should exist after project reload."))
+        return EXIT_FAILURE;
+    if (!expect(session->getPart("part_alpha").isNull(), "Old part name should not exist after project reload."))
         return EXIT_FAILURE;
 
     return EXIT_SUCCESS;

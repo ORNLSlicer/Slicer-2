@@ -75,6 +75,9 @@ class Part : public QEnableSharedFromThis<Part> {
     //! \brief Set name of this part.
     inline void setName(QString name) {
         m_name = name;
+        if (!m_root_mesh.isNull()) {
+            m_root_mesh->setName(name);
+        }
     }
 
     //! \brief Get the SettingsBase.

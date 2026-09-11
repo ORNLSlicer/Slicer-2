@@ -56,6 +56,7 @@ class RightClickMenu : public QMenu {
     QAction* m_wireframe_action;
     QAction* m_solidwireframe_action;
     QAction* m_lock_part_action;
+    QAction* m_rename_part_action;
     QAction* m_set_instances_action;
 
     //! \brief Menu to hold transparency

@@ -12,6 +12,7 @@
 #include <qtypes.h>
 #include <qvectornd.h>
 
+#include "managers/session_manager.h"
 #include "utilities/constants.h"
 #include "utilities/enums.h"
 #include "utilities/mathutils.h"
@@ -55,6 +56,25 @@ PartMetaItem::PartMetaItem(QSharedPointer<Part> p) {
     std::tie(m_translation, m_rotation, m_scale) = MathUtils::decomposeTransformMatrix(m_transformation);
 
     emit modified(PartMetaUpdateType::kAddUpdate);
+}
+
+void PartMetaItem::setName(QString name) {
+    if (m_part.isNull()) return;
+    QString trimmed = name.trimmed();
+    if (trimmed.isEmpty() || m_part->name() == trimmed) return;
+
+    if (!CSM->renamePart(m_part, trimmed)) return;
+
+    if (!m_graphics_part.isNull()) {
+        m_graphics_part->setName(trimmed);
+    }
+
+    emit modified(PartMetaUpdateType::kNameUpdate);
+}
+
+QString PartMetaItem::name() {
+    if (m_part.isNull()) return QString();
+    return m_part->name();
 }
 
 void PartMetaItem::replaceInModel(QString filename) {

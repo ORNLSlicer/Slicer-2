@@ -534,6 +534,16 @@ void PartObject::setOverhangAngle(Angle a) {
         this->paint(m_color);
 }
 
+void PartObject::setName(QString name) {
+    m_part->setName(name);
+    if (!m_label_object.isNull()) {
+        m_label_object->setText(name);
+    }
+    if (this->view()) {
+        this->view()->update();
+    }
+}
+
 QString PartObject::name() {
     return m_part->name();
 }

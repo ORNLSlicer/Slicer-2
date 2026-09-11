@@ -137,6 +137,7 @@ void RightClickMenu::setupActions() {
     m_reload_part_action          = new QAction("Reload Part Model(s)", this);
     m_delete_part_action          = new QAction("Delete Part(s)", this);
     m_lock_part_action            = new QAction("Toggle Part Lock(s)", this);
+    m_rename_part_action          = new QAction("Rename Part", this);
     m_set_instances_action        = new QAction("Set Number of Instances", this);
 
     m_info_action->setIcon(QIcon(":/icons/info.png"));
@@ -148,6 +149,7 @@ void RightClickMenu::setupActions() {
     m_reload_part_action->setIcon(QIcon(":/icons/file_refresh_black.png"));
     m_delete_part_action->setIcon(QIcon(":/icons/delete_black.png"));
     m_lock_part_action->setIcon(QIcon(":/icons/lock.png"));
+    m_rename_part_action->setIcon(QIcon(":/icons/rename.png"));
     m_set_instances_action->setIcon(QIcon(":/icons/copy_black.png"));
 
     this->addAction(m_info_action);
@@ -156,6 +158,7 @@ void RightClickMenu::setupActions() {
     this->addAction(m_switch_to_clipper_action);
     this->addAction(m_switch_to_setting_action);
     this->addSeparator();
+    this->addAction(m_rename_part_action);
     this->addAction(m_lock_part_action);
     this->addAction(m_set_instances_action);
     this->addAction(m_reset_transformation_action);
@@ -269,6 +272,35 @@ void RightClickMenu::setupEvents() {
 
         if (accepted) item->setInstanceCount(instance_count);
     });
+    connect(m_rename_part_action, &QAction::triggered, this, [this]() {
+        if (m_selected_items.size() != 1) return;
+
+        QSharedPointer<PartMetaItem> item = m_selected_items.first();
+        if (item.isNull() || item->part().isNull()) return;
+
+        bool accepted = false;
+        const QString current_name = item->part()->name();
+        const QString new_name = QInputDialog::getText(
+            this,
+            tr("Rename Part"),
+            tr("Enter new part name:"),
+            QLineEdit::Normal,
+            current_name,
+            &accepted);
+
+        if (!accepted) return;
+
+        QString trimmed_name = new_name.trimmed();
+        if (trimmed_name.isEmpty() || trimmed_name == current_name) return;
+
+        if (!CSM->isPartNameAvailable(trimmed_name, item->part())) {
+            QMessageBox::warning(this, tr("Rename Part"),
+                                 tr("A part named \"%1\" already exists.").arg(trimmed_name));
+            return;
+        }
+
+        item->setName(trimmed_name);
+    });
     connect(m_solidwireframe_action, &QAction::triggered, this, [this]() {
         for (auto item : m_selected_items) {
             // Solid wireframe and wireframe cannot both be active, uncheck the other
@@ -375,10 +407,12 @@ void RightClickMenu::disableActions() {
         if (m_selected_items.size() == 1) {
             m_replace_part_action->setDisabled(false);
             m_set_instances_action->setDisabled(false);
+            m_rename_part_action->setDisabled(false);
         }
         else {
             m_replace_part_action->setDisabled(true);
             m_set_instances_action->setDisabled(true);
+            m_rename_part_action->setDisabled(true);
         }
     }
     else {
@@ -391,6 +425,7 @@ void RightClickMenu::disableActions() {
         m_reload_part_action->setDisabled(true);
         m_delete_part_action->setDisabled(true);
         m_set_instances_action->setDisabled(true);
+        m_rename_part_action->setDisabled(true);
         m_info_action->setDisabled(true);
         m_transparency_menu->setDisabled(true);
         m_wireframe_action->setDisabled(true);

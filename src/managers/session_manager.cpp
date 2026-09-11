@@ -395,6 +395,34 @@ void SessionManager::addCopiedPart(QSharedPointer<Part> new_part) {
     m_parts.insert(name, new_part);
 }
 
+bool SessionManager::isPartNameAvailable(const QString& name, QSharedPointer<Part> part) const {
+    QString trimmed = name.trimmed();
+    if (trimmed.isEmpty()) return false;
+    if (m_parts.contains(trimmed)) {
+        return !part.isNull() && m_parts[trimmed] == part;
+    }
+    return true;
+}
+
+bool SessionManager::renamePart(QSharedPointer<Part> part, const QString& new_name) {
+    if (part.isNull()) return false;
+    QString trimmed = new_name.trimmed();
+    if (trimmed.isEmpty()) return false;
+
+    QString old_name = part->name();
+    if (old_name == trimmed) return true;
+
+    if (!this->isPartNameAvailable(trimmed, part)) return false;
+
+    if (m_parts.contains(old_name)) {
+        m_parts.remove(old_name);
+    }
+
+    part->setName(trimmed);
+    m_parts.insert(trimmed, part);
+    return true;
+}
+
 bool SessionManager::removePart(QSharedPointer<Part> part) {
     if (!m_parts.contains(part->name())) return false;
 

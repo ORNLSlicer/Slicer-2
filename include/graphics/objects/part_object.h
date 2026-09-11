@@ -80,7 +80,8 @@ class PartObject : public GraphicsObject {
     void showOverhang(bool show);
     //! \brief Sets the overhang angle for calculations.
     void setOverhangAngle(Angle a);
-
+    //! \brief Sets the part name.
+    void setName(QString name);
     //! \brief Gets the part name.
     QString name();
     //! \brief Gets the mesh part pointer.

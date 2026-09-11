@@ -179,6 +179,12 @@ class SessionManager : public QObject {
 
     void replacePart(QSharedPointer<PartMetaItem> pm, QString filename);
 
+    //! \brief Renames a part in the session.
+    bool renamePart(QSharedPointer<Part> part, const QString& new_name);
+
+    //! \brief Checks whether a part name is available.
+    bool isPartNameAvailable(const QString& name, QSharedPointer<Part> part = nullptr) const;
+
     //! \brief Remove a part from the session by pointer.
     bool removePart(QSharedPointer<Part> part);
 
