@@ -15,17 +15,17 @@ settings:
     namespace: "Profile::Helical"
     symbol: "kHelicalPathHandedness"
     local: true
-  - name: "helical_path_start_angle"
-    display: "Helical Path Start Angle"
+  - name: "helical_tool_start_angle_offset"
+    display: "Helical Tool Start Angle Offset"
     type: "angle"
-    tooltip: "Sets the angular start position for generated helical paths around the cylinder axis. 0 degrees starts on +X and 90 degrees starts on +Y."
+    tooltip: "Signed Arc Specialties tool offset at the generated helical path start. 0 degrees leaves CP aligned with the +Y top-dead-center start; the emitted X/Y helix still starts at top dead center. XR and YR each receive half of the effective offset."
     depends: {"AND":[{"slicing_mode":1},{"cylindrical_path_pattern":1}]}
     options: []
-    default: 90
+    default: 0
     minor: "Helical"
     major: "Profile"
     namespace: "Profile::Helical"
-    symbol: "kHelicalPathStartAngle"
+    symbol: "kHelicalToolStartAngleOffset"
     local: true
   - name: "helical_path_z_clip_rounding"
     display: "Helical Z Clip Rounding"

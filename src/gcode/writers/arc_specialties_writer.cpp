@@ -50,6 +50,9 @@ constexpr double kToolFrameZR = -135.0;
 //! @brief Tool-frame ZR used for rapid travel moves.
 constexpr double kRapidTravelToolFrameZR = -90.0;
 
+//! @brief Arc Specialties helical tool-frame XR/YR compensation per degree of tool start-angle offset.
+constexpr double kHelicalToolStartAngleToolFrameScale = 0.5;
+
 //! @brief First-pass clearance above the highest point of the build parts for the startup world approach.
 static const Distance kStartupWorldApproachZBuffer = 100.0 * mm;
 
@@ -262,9 +265,8 @@ QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
                                 "deg YR=" % QString::number(kToolFrameYR, 'f', 4) % "deg ZR=" %
                                 QString::number(kToolFrameZR, 'f', 4) % "deg");
         }
-        text += commentLine(QString("Initial World Approach Tool Frame Rotation: XR=") %
-                            QString::number(kToolFrameXR, 'f', 4) % "deg YR=" % QString::number(kToolFrameYR, 'f', 4) %
-                            "deg ZR=" % QString::number(kRapidTravelToolFrameZR, 'f', 4) % "deg");
+        text += commentLine("Initial World Approach Tool Frame Rotation: " %
+                            formatToolFrameRotation(toolFrameRotationForMotion(kWorldApproachTravelComment, m_sb)));
         text += commentLine(
             "Initial Approach: TRAFO-off world approach uses cylinder center XY and the greater of "
             "part maximum Z and Cylinder Height plus " %
@@ -291,8 +293,8 @@ QString ArcSpecialtiesWriter::writeSettingsHeader(GcodeSyntax) {
         const Distance bead_width = m_sb->setting<Distance>(PS::Layer::kBeadWidth);
         if (helical_mode) {
             text += commentLine(
-                "Helical Path Start Angle: " %
-                formatAngle(m_sb->setting<Angle>(PS::Helical::kHelicalPathStartAngle), m_meta.m_angle_unit));
+                "Helical Tool Start Angle Offset: " %
+                formatAngle(m_sb->setting<Angle>(PS::Helical::kHelicalToolStartAngleOffset), m_meta.m_angle_unit));
             text += commentLine("Helical Region Pitch Fallback: " % formatDistance(bead_width, m_meta.m_distance_unit) %
                                 " when a region stepover is 0");
             text += commentLine("Helical Perimeter Revolutions: " %
@@ -501,7 +503,7 @@ QString ArcSpecialtiesWriter::writeInitialSetup(Distance minimum_x, Distance min
 
 QString ArcSpecialtiesWriter::writeLayerChange(uint layer_number) {
     const QString layer_change = WriterBase::writeLayerChange(layer_number);
-    if (!m_startup_kinematics_written) {
+    if (!m_startup_kinematics_written || isHelicalPathPattern()) {
         m_pending_layer_change += layer_change;
         return QString();
     }
@@ -517,6 +519,9 @@ QString ArcSpecialtiesWriter::writeBeforeLayer(float min_z, QSharedPointer<Setti
     m_next_block_number             = std::max(1, m_current_layer) * 10000;
     m_layer_block_numbering_started = false;
     m_layer_block_numbering_active  = false;
+    m_helical_opt_stop_mode_written = false;
+    m_pending_layer_prefix.clear();
+    m_pending_region_schedule.clear();
     return rv;
 }
 
@@ -533,6 +538,11 @@ QString ArcSpecialtiesWriter::writeBeforeRegion(RegionType type, int pathSize) {
     if (type == RegionType::kPerimeter) { rv += "G80 [1] ;Perimeter Schedule" % m_newline; }
     else if (type == RegionType::kInset) { rv += "G80 [2] ;Inset Schedule" % m_newline; }
     else if (type == RegionType::kInfill) { rv += "G80 [0] ;Infill Schedule" % m_newline; }
+    if (isHelicalPathPattern()) {
+        m_pending_region_schedule += rv;
+        return QString();
+    }
+
     return writeNumberedBlock(rv, true);
 }
 
@@ -544,6 +554,7 @@ QString ArcSpecialtiesWriter::writeBeforePath(RegionType type) {
 QString ArcSpecialtiesWriter::writeTravel(Point start_location, Point target_location, TravelLiftType lType,
                                           QSharedPointer<SettingsBase> params) {
     QString rv;
+    QString layer_rv;
     Velocity speed = params->setting<Velocity>(PS::Travel::kSpeed);
     if (speed <= 0) { speed = params->setting<Velocity>(PRS::MachineSpeed::kMaxXYSpeed); }
 
@@ -553,10 +564,10 @@ QString ArcSpecialtiesWriter::writeTravel(Point start_location, Point target_loc
     // Determine if travel length is short enough to keep welder on
     Distance travel_distance = start_location.distance(target_location);
     if (m_deposition_active && travel_distance > m_sb->setting<Distance>(PS::Travel::kMinTravelLength)) {
-        rv += writeWelderOff();
+        layer_rv += writeWelderOff();
     }
     else if (!m_first_travel && travel_distance < m_sb->setting<Distance>(PS::Travel::kMinTravelLength)) {
-        rv += writeWelderOn();
+        layer_rv += writeWelderOn();
     }
 
     const Distance lift_height = m_sb->setting<Distance>(PS::Travel::kLiftHeight);
@@ -639,7 +650,7 @@ QString ArcSpecialtiesWriter::writeTravel(Point start_location, Point target_loc
     if (travel_lift_required && !m_first_travel &&
         (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly)) {
         travel_start = liftPoint(start_location);
-        rv += writeMotion("G00", travel_start, lift_speed, params, "TRAVEL LIFT");
+        layer_rv += writeMotion("G00", travel_start, lift_speed, params, "TRAVEL LIFT");
     }
 
     Point travel_destination = target_location;
@@ -653,38 +664,46 @@ QString ArcSpecialtiesWriter::writeTravel(Point start_location, Point target_loc
             travel_lower_required
                 ? firstTravelPointAboveTravelLowerDestination(travel_destination, target_location, lift_height)
                 : travel_destination;
+        const Point first_travel_cp_reference =
+            isHelicalPathPattern(params) ? target_location : first_travel_destination;
         const Point startup_world_approach = safeStartupWorldApproachPoint(first_travel_destination, params);
         rv += commentLine("INITIAL WORLD APPROACH");
         rv += writeMotion("G00", startup_world_approach, speed, params, kWorldApproachTravelComment,
-                          first_travel_destination);
+                          first_travel_cp_reference);
         rv += "#FLUSH WAIT" % m_newline;
         rv += m_newline;
         rv += commentLine("ENABLE WORK-OBJECT KINEMATICS");
         rv += writeStartupKinematics();
-        rv += writePendingLayerChange();
-        rv += writeMotion("G00", first_travel_destination, speed, params, "TRAVEL");
-        rv += writeBeginningBead();
+        if (!shouldBufferHelicalLayerPrefix(params)) { layer_rv += writePendingLayerChange(); }
+        layer_rv += writeMotion("G00", first_travel_destination, speed, params, "TRAVEL", first_travel_cp_reference);
+        layer_rv += writeBeginningBead();
     }
     else {
-        rv += cylindrical_mode ? writeRadialArcTravel(travel_start, travel_destination, speed)
-                               : writeLinearTravel(travel_destination, speed);
+        layer_rv += cylindrical_mode ? writeRadialArcTravel(travel_start, travel_destination, speed)
+                                     : writeLinearTravel(travel_destination, speed);
     }
 
     if (travel_lower_required) {
-        rv += writeNumberedBlock("G81" % commentSpaceLine("OPTIONAL STOP ROUTINE"));
-        rv += writeMotion("G01", target_location, lift_speed, params, "TRAVEL LOWER");
+        layer_rv += writeNumberedBlock("G81" % commentSpaceLine("OPTIONAL STOP ROUTINE"));
+        layer_rv += writeMotion("G01", target_location, lift_speed, params, "TRAVEL LOWER");
     }
 
     m_first_travel = false;
-    return rv;
+    if (shouldBufferHelicalLayerPrefix(params)) {
+        m_pending_layer_prefix += layer_rv;
+        return rv;
+    }
+
+    return rv + layer_rv;
 }
 
-QString ArcSpecialtiesWriter::writeLine(const Point&, const Point& target_point,
+QString ArcSpecialtiesWriter::writeLine(const Point& start_point, const Point& target_point,
                                         const QSharedPointer<SettingsBase> params) {
     QString rv;
 
     rv += writeStartupKinematics();
-    rv += writePendingLayerChange();
+    rv += writeHelicalLayerStart(start_point, target_point, params);
+    rv += writePendingRegionSchedule();
     startLayerBlockNumbering();
 
     Velocity speed = params->setting<Velocity>(SS::kSpeed);
@@ -705,7 +724,8 @@ QString ArcSpecialtiesWriter::writeArc(const Point& start_point, const Point& en
 
     QString rv;
     rv += writeStartupKinematics();
-    rv += writePendingLayerChange();
+    rv += writeHelicalLayerStart(start_point, end_point, params);
+    rv += writePendingRegionSchedule();
     startLayerBlockNumbering();
 
     if (!m_deposition_active) { rv += writeWelderOn(); }
@@ -778,13 +798,20 @@ QString ArcSpecialtiesWriter::writeAfterPart() {
 QString ArcSpecialtiesWriter::writeAfterLayer() {
     QString layer_code = m_sb->setting<QString>(PRS::GCode::kLayerCodeChange);
     stopLayerBlockNumbering();
-    return layer_code.isEmpty() ? QString() : layer_code % m_newline;
+    QString rv;
+    rv += writePendingLayerChange();
+    rv += writePendingLayerPrefix();
+    m_pending_region_schedule.clear();
+    return layer_code.isEmpty() ? rv : rv % layer_code % m_newline;
 }
 
 QString ArcSpecialtiesWriter::writeShutdown() {
     stopLayerBlockNumbering();
-
     QString rv;
+    rv += writePendingLayerChange();
+    rv += writePendingLayerPrefix();
+    m_pending_region_schedule.clear();
+
     rv += writeWelderOff();
     if (!m_sb->setting<QString>(PRS::GCode::kEndCode).isEmpty()) {
         rv += m_sb->setting<QString>(PRS::GCode::kEndCode) % m_newline;
@@ -900,6 +927,22 @@ QString ArcSpecialtiesWriter::writePendingLayerChange() {
     return rv;
 }
 
+QString ArcSpecialtiesWriter::writePendingLayerPrefix() {
+    if (m_pending_layer_prefix.isEmpty()) { return QString(); }
+
+    const QString rv = m_pending_layer_prefix;
+    m_pending_layer_prefix.clear();
+    return rv;
+}
+
+QString ArcSpecialtiesWriter::writePendingRegionSchedule() {
+    if (m_pending_region_schedule.isEmpty()) { return QString(); }
+
+    const QString rv = writeNumberedBlock(m_pending_region_schedule, true);
+    m_pending_region_schedule.clear();
+    return rv;
+}
+
 QString ArcSpecialtiesWriter::writeCoordinates(const Point& destination, const QSharedPointer<SettingsBase>& params,
                                                const ToolFrameRotation& tool_frame_rotation) {
     return writeCoordinates(destination, params, tool_frame_rotation, destination);
@@ -929,18 +972,26 @@ ArcSpecialtiesWriter::ToolFrameRotation ArcSpecialtiesWriter::toolFrameRotationF
         return fallback;
     };
 
-    auto helicalToolFrameRotation = [&settingAngleOrDefault](const QString& x_key, const QString& y_key,
-                                                             const QString& z_key) {
-        return ToolFrameRotation {settingAngleOrDefault(x_key, kToolFrameXR),
-                                  settingAngleOrDefault(y_key, kToolFrameYR),
-                                  settingAngleOrDefault(z_key, kToolFrameZR)};
+    const bool helical_motion = isHelicalPathPattern(params);
+    const double helical_tool_start_angle_tool_frame_offset =
+        helical_motion ? settingAngleOrDefault(PS::Helical::kHelicalToolStartAngleOffset, 0.0) *
+                             kHelicalToolStartAngleToolFrameScale
+                       : 0.0;
+
+    auto helicalToolFrameRotation = [&settingAngleOrDefault, helical_tool_start_angle_tool_frame_offset](
+                                        const QString& x_key, const QString& y_key, const QString& z_key) {
+        return ToolFrameRotation {
+            settingAngleOrDefault(x_key, kToolFrameXR) + helical_tool_start_angle_tool_frame_offset,
+            settingAngleOrDefault(y_key, kToolFrameYR) + helical_tool_start_angle_tool_frame_offset,
+            settingAngleOrDefault(z_key, kToolFrameZR)};
     };
 
     if (comment == kWorldApproachTravelComment) {
-        return ToolFrameRotation {kToolFrameXR, kToolFrameYR, kRapidTravelToolFrameZR};
+        return ToolFrameRotation {kToolFrameXR + helical_tool_start_angle_tool_frame_offset,
+                                  kToolFrameYR + helical_tool_start_angle_tool_frame_offset, kRapidTravelToolFrameZR};
     }
 
-    if (!isHelicalPathPattern()) { return ToolFrameRotation {kToolFrameXR, kToolFrameYR, kToolFrameZR}; }
+    if (!helical_motion) { return ToolFrameRotation {kToolFrameXR, kToolFrameYR, kToolFrameZR}; }
 
     if (comment.startsWith("TRAVEL")) {
         return helicalToolFrameRotation(PS::Helical::kHelicalTravelToolFrameXRotation,
@@ -983,7 +1034,8 @@ ArcSpecialtiesWriter::ToolFrameRotation ArcSpecialtiesWriter::toolFrameRotationF
         }
     }
 
-    return ToolFrameRotation {kToolFrameXR, kToolFrameYR, kToolFrameZR};
+    return ToolFrameRotation {kToolFrameXR + helical_tool_start_angle_tool_frame_offset,
+                              kToolFrameYR + helical_tool_start_angle_tool_frame_offset, kToolFrameZR};
 }
 
 Point ArcSpecialtiesWriter::firstTravelPointAboveTravelLowerDestination(const Point& travel_destination,
@@ -1063,8 +1115,11 @@ double ArcSpecialtiesWriter::cpAxisForPoint(const Point& destination, const QSha
         const HelicalPathHandedness handedness =
             static_cast<HelicalPathHandedness>(params->setting<int>(PS::Helical::kHelicalPathHandedness));
         const double start_angle = helicalStartAngle(params);
-        cp_degrees =
+        const double sweep_degrees =
             handedness == HelicalPathHandedness::kLeftHanded ? start_angle - cp_degrees : cp_degrees - start_angle;
+        cp_degrees = params->setting<Angle>(PS::Helical::kHelicalToolStartAngleOffset).to(degree) + sweep_degrees +
+                     m_sb->setting<Angle>(PRS::MachineSetup::kAxisC).to(degree);
+        return cp_degrees;
     }
 
     cp_degrees += m_sb->setting<Angle>(PRS::MachineSetup::kAxisC).to(degree);
@@ -1073,7 +1128,8 @@ double ArcSpecialtiesWriter::cpAxisForPoint(const Point& destination, const QSha
 }
 
 double ArcSpecialtiesWriter::helicalStartAngle(const QSharedPointer<SettingsBase>& params) const {
-    const Angle start_angle = params->setting<Angle>(PS::Helical::kHelicalPathStartAngle);
+    Q_UNUSED(params)
+    const Angle start_angle = 90.0 * degree;
     const Point start_direction(std::cos(start_angle()), std::sin(start_angle()), 0.0);
     const Point transformed_start_direction = rotateGCodeCoordinateFrameDelta(start_direction);
     if (std::hypot(transformed_start_direction.x(), transformed_start_direction.y()) <=
@@ -1085,9 +1141,26 @@ double ArcSpecialtiesWriter::helicalStartAngle(const QSharedPointer<SettingsBase
 }
 
 bool ArcSpecialtiesWriter::isHelicalPathPattern() const {
-    const CylindricalPathPattern path_pattern =
-        static_cast<CylindricalPathPattern>(m_sb->setting<int>(PS::Slicing::kCylindricalPathPattern));
-    return isCylindricalSlicingMode() && path_pattern == CylindricalPathPattern::kHelical;
+    return isHelicalPathPattern(m_sb);
+}
+
+bool ArcSpecialtiesWriter::isHelicalPathPattern(const QSharedPointer<SettingsBase>& params) const {
+    auto settingOrDefault = [this, &params](const QString& key, int fallback) {
+        if (params != nullptr && params->contains(key)) { return params->setting<int>(key); }
+        if (m_sb != nullptr && m_sb->contains(key)) { return m_sb->setting<int>(key); }
+
+        return fallback;
+    };
+
+    const CylindricalPathPattern path_pattern = static_cast<CylindricalPathPattern>(
+        settingOrDefault(PS::Slicing::kCylindricalPathPattern, static_cast<int>(CylindricalPathPattern::kRadial)));
+    const SlicingMode slicing_mode =
+        static_cast<SlicingMode>(settingOrDefault(PS::Slicing::kSlicingMode, static_cast<int>(SlicingMode::kPlanar)));
+    return slicing_mode == SlicingMode::kCylindrical && path_pattern == CylindricalPathPattern::kHelical;
+}
+
+bool ArcSpecialtiesWriter::shouldBufferHelicalLayerPrefix(const QSharedPointer<SettingsBase>& params) const {
+    return !m_helical_opt_stop_mode_written && !m_pending_layer_change.isEmpty() && isHelicalPathPattern(params);
 }
 
 QString ArcSpecialtiesWriter::printMoveComment(const QSharedPointer<SettingsBase>& params) const {
@@ -1110,5 +1183,32 @@ QString ArcSpecialtiesWriter::printMoveComment(const QSharedPointer<SettingsBase
 bool ArcSpecialtiesWriter::isCylindricalSlicingMode() const {
     const SlicingMode slicing_mode = static_cast<SlicingMode>(m_sb->setting<int>(PS::Slicing::kSlicingMode));
     return slicing_mode == SlicingMode::kCylindrical;
+}
+
+QString ArcSpecialtiesWriter::writeHelicalOptStopMode(const Point& start_point, const Point& end_point,
+                                                      const QSharedPointer<SettingsBase>& params) {
+    if (m_helical_opt_stop_mode_written || !isHelicalPathPattern(params)) { return QString(); }
+
+    const double start_cp                  = cpAxisForPoint(start_point, params) * M_PI / 180.0;
+    const double end_cp                    = cpAxisForPoint(end_point, params) * M_PI / 180.0;
+    const bool positive_rotation_direction = shortestAngularDelta(start_cp, end_cp) >= 0.0;
+    const int opt_stop_mode                = positive_rotation_direction ? 1 : 2;
+    m_helical_opt_stop_mode_written        = true;
+    const QString opt_stop_mode_line       = "V.E.OptStopMode = " % QString::number(opt_stop_mode) % m_newline;
+    if (!m_startup_kinematics_written) {
+        m_pending_layer_change += opt_stop_mode_line;
+        return QString();
+    }
+
+    return opt_stop_mode_line;
+}
+
+QString ArcSpecialtiesWriter::writeHelicalLayerStart(const Point& start_point, const Point& end_point,
+                                                     const QSharedPointer<SettingsBase>& params) {
+    QString rv;
+    rv += writePendingLayerChange();
+    rv += writeHelicalOptStopMode(start_point, end_point, params);
+    rv += writePendingLayerPrefix();
+    return rv;
 }
 }  // namespace ORNL

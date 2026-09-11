@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <QRegularExpression>
 #include <array>
+#include <cmath>
 #include <list>
 #include <string>
 #include <utility>
@@ -42,6 +43,8 @@ const QString kLegacyCylinderAxisY            = "radial_axis_y";
 const QString kLegacyCylinderInnerRadius      = "radial_initial_radius";
 const QString kLegacyCylindricalPathPattern   = "cylindrical_path_type";
 const QString kLegacyRadialPathBoundaryPolicy = "radial_boundary_handling";
+const QString kLegacyHelicalPathStartAngle    = "helical_path_start_angle";
+const QString kLegacyHelicalStartAngleOffset  = "helical_start_angle_offset";
 const QString kLegacyImagePixelSizeX          = "image_resolution_x";
 const QString kLegacyImagePixelSizeY          = "image_resolution_y";
 
@@ -219,6 +222,57 @@ void renameSettingKey(fifojson& settings_group, const QString& old_key, const QS
     if (should_insert_new_key) settings_group[new_key_string] = old_value;
 }
 
+bool numberFromSettingValue(const fifojson& value, double& result) {
+    if (value.is_number()) {
+        result = value.get<double>();
+        return true;
+    }
+
+    if (value.is_string()) {
+        bool valid = false;
+        result     = QString::fromStdString(value.get<std::string>()).toDouble(&valid);
+        return valid;
+    }
+
+    return false;
+}
+
+fifojson legacyHelicalPathStartAngleToolOffsetValue(const fifojson& legacy_start_angle) {
+    double absolute_start_angle = 0.0;
+    if (!numberFromSettingValue(legacy_start_angle, absolute_start_angle)) { return legacy_start_angle; }
+
+    if (std::abs(absolute_start_angle) > ORNL::Constants::Limits::Maximums::kMaxAngle()) {
+        absolute_start_angle = (absolute_start_angle * ORNL::degree)();
+    }
+
+    const double tool_start_angle_offset = absolute_start_angle - (90.0 * ORNL::degree)();
+    if (legacy_start_angle.is_string()) { return QString::number(tool_start_angle_offset, 'g', 15).toStdString(); }
+
+    return tool_start_angle_offset;
+}
+
+void renameHelicalStartAngleOffsetToToolOffset(fifojson& settings_group) {
+    renameSettingKey(settings_group, kLegacyHelicalStartAngleOffset,
+                     ORNL::Constants::ProfileSettings::Helical::kHelicalToolStartAngleOffset);
+}
+
+void renameHelicalPathStartAngleToToolOffset(fifojson& settings_group) {
+    if (!settings_group.is_object()) return;
+
+    const std::string old_key_string = kLegacyHelicalPathStartAngle.toStdString();
+    const std::string new_key_string =
+        ORNL::Constants::ProfileSettings::Helical::kHelicalToolStartAngleOffset.toStdString();
+    auto old_setting = settings_group.find(old_key_string);
+    if (old_setting == settings_group.end()) return;
+
+    const bool should_insert_new_key = settings_group.find(new_key_string) == settings_group.end();
+    fifojson offset_value;
+    if (should_insert_new_key) { offset_value = legacyHelicalPathStartAngleToolOffsetValue(old_setting.value()); }
+
+    settings_group.erase(old_setting);
+    if (should_insert_new_key) settings_group[new_key_string] = offset_value;
+}
+
 void migrateCylindricalSlicingSettings(fifojson& settings_group) {
     if (!settings_group.is_object()) return;
 
@@ -256,6 +310,11 @@ void migrateSlicingSettingKeys(fifojson& settings_group) {
     renameSettingKey(settings_group, kLegacyImagePixelSizeX, Slicing::kImagePixelSizeX);
     renameSettingKey(settings_group, kLegacyImagePixelSizeY, Slicing::kImagePixelSizeY);
 }
+
+void migrateHelicalToolStartAngleOffset(fifojson& settings_group) {
+    renameHelicalStartAngleOffsetToToolOffset(settings_group);
+    renameHelicalPathStartAngleToToolOffset(settings_group);
+}
 }  // namespace
 
 namespace ORNL {
@@ -271,6 +330,8 @@ void SettingsVersionControl::rollSettingsForward(double& version, fifojson& sett
     if (version < 8) pre_8_0To8_0(version, settings);
     if (version < 9) pre_9_0To9_0(version, settings);
     if (version < 10) pre_10_0To10_0(version, settings);
+    if (version < 11) pre_11_0To11_0(version, settings);
+    if (version < 12) pre_12_0To12_0(version, settings);
 }
 
 void SettingsVersionControl::formatSettings(double version, fifojson& settings) {
@@ -288,6 +349,7 @@ void SettingsVersionControl::formatSettings(double version, fifojson& settings) 
 
 void SettingsVersionControl::migrateLegacySettingKeys(fifojson& settings_group) {
     migrateSlicingSettingKeys(settings_group);
+    migrateHelicalToolStartAngleOffset(settings_group);
 }
 
 void SettingsVersionControl::pre_1_0To1_0(double& version, fifojson& settings) {
@@ -481,6 +543,36 @@ void SettingsVersionControl::pre_10_0To10_0(double& version, fifojson& settings)
     }
 
     version  = 10.0;
+    settings = new_format;
+}
+
+void SettingsVersionControl::pre_11_0To11_0(double& version, fifojson& settings) {
+    QString dt          = QDateTime::currentDateTime().toString();
+    fifojson new_format = settings;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 11.0;
+
+    auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
+    if (settings_array != new_format.end() && settings_array.value().is_array()) {
+        for (auto& settings_group : settings_array.value()) migrateHelicalToolStartAngleOffset(settings_group);
+    }
+
+    version  = 11.0;
+    settings = new_format;
+}
+
+void SettingsVersionControl::pre_12_0To12_0(double& version, fifojson& settings) {
+    QString dt          = QDateTime::currentDateTime().toString();
+    fifojson new_format = settings;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 12.0;
+
+    auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
+    if (settings_array != new_format.end() && settings_array.value().is_array()) {
+        for (auto& settings_group : settings_array.value()) migrateHelicalToolStartAngleOffset(settings_group);
+    }
+
+    version  = 12.0;
     settings = new_format;
 }
 }  // namespace ORNL

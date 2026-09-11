@@ -855,7 +855,7 @@ const QString Constants::ProfileSettings::Radial::kRadialPathStartAngle     = "r
 
 // Helical
 const QString Constants::ProfileSettings::Helical::kHelicalPathHandedness       = "helical_path_handedness";
-const QString Constants::ProfileSettings::Helical::kHelicalPathStartAngle       = "helical_path_start_angle";
+const QString Constants::ProfileSettings::Helical::kHelicalToolStartAngleOffset = "helical_tool_start_angle_offset";
 const QString Constants::ProfileSettings::Helical::kHelicalPathZClipRounding    = "helical_path_z_clip_rounding";
 const QString Constants::ProfileSettings::Helical::kHelicalPerimeterRevolutions = "helical_perimeter_revolutions";
 const QString Constants::ProfileSettings::Helical::kHelicalInsetRevolutions     = "helical_inset_revolutions";
