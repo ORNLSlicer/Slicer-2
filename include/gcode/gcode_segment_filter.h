@@ -1,8 +1,9 @@
 #pragma once
 
-#include <QSet>
 #include <QSharedPointer>
 #include <QVector>
+
+#include <functional>
 
 namespace ORNL {
 class SegmentBase;
@@ -12,9 +13,9 @@ namespace ORNL::GCodeSegmentFilter {
 //! \brief Returns whether a segment is a non-build path modifier rather than deposited part material.
 bool isNonBuildModifierSegment(const QSharedPointer<SegmentBase>& segment);
 
-//! \brief Finds printable segments whose bead footprints contribute to an exposed surface.
-QSet<const SegmentBase*> externalSegments(const QVector<QVector<QSharedPointer<SegmentBase>>>& gcode);
-
 //! \brief Tags non-external printable and non-build modifier segments so the preview can hide them.
-void tagInternalSegments(QVector<QVector<QSharedPointer<SegmentBase>>>& gcode);
-} // namespace ORNL::GCodeSegmentFilter
+//! \param gcode The layers of G-code segments to analyze and tag.
+//! \param should_cancel Optional callback returning true if processing should be cancelled early.
+void tagInternalSegments(const QVector<QVector<QSharedPointer<SegmentBase>>>& gcode,
+                         const std::function<bool()>& should_cancel = nullptr);
+}  // namespace ORNL::GCodeSegmentFilter

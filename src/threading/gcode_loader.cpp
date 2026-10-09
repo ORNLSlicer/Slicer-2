@@ -505,7 +505,8 @@ void GCodeLoader::run() {
                 if (m_should_cancel) { return; }
             }
 
-            GCodeSegmentFilter::tagInternalSegments(layers);
+            GCodeSegmentFilter::tagInternalSegments(layers, [this]() { return m_should_cancel; });
+            if (m_should_cancel) { return; }
 
             // emit vector for visualization
             emit gcodeLoadedVisualization(layers);
