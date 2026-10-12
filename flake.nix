@@ -49,7 +49,22 @@
         version = "${major}.${minor}.${patch}";
       in if suffix == "" then version else "${version}+${suffix}";
 
-      mkPackages = { pkgs, stdenv ? pkgs.stdenv }: rec {
+      mkPackages = { pkgs, stdenv ? pkgs.stdenv }: let
+        source = pkgs.lib.fileset.toSource {
+          root = ./.;
+          fileset = pkgs.lib.fileset.unions [
+            ./CMakeLists.txt
+            ./cmake
+            ./docs/ornlslicer-user-guide.pdf
+            ./include
+            ./resources
+            ./src
+            ./templates
+            ./tests
+            ./version.json
+          ];
+        };
+      in rec {
         nixpkgs = pkgs;
 
         ornl = rec {
@@ -62,7 +77,7 @@
           };
 
           ornlslicer = pkgs.qt6.callPackage ./nix/ornlslicer {
-            src     = self;
+            src     = source;
             version = (lib.fetchVersion ./version.json);
 
             inherit (libraries) kuba-zip clipper psimpl;
