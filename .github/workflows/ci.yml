@@ -89,7 +89,7 @@ jobs:
           cachix pin ornl-slicer "ornlslicer-${RELEASE_TAG}-linux" "$package_path" --keep-forever
           cachix pin ornl-slicer "ornlslicer-${RELEASE_TAG}-appimage" "$appimage_path" --keep-forever
       - name: Upload Artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.artifact }}
           path: ${{ env.artifact }}
@@ -146,12 +146,12 @@ jobs:
           cachix pin ornl-slicer "ornlslicer-${RELEASE_TAG}-windows" "$package_path" --keep-forever
           cachix pin ornl-slicer "ornlslicer-${RELEASE_TAG}-windows-installer" "$installer_path" --keep-forever
       - name: Upload Portable Artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.package_artifact }}
           path: ${{ env.out_link }}
       - name: Upload Installer Artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.install_artifact }}
           path: ${{ env.install_artifact }}
