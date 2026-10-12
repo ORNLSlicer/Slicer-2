@@ -17,12 +17,13 @@
         inherit system;
         inherit (import ./nix/nixpkgs/config.nix {}) overlays config;
       };
+      upstreamPkgs = import inputs.llvmNixpkgs {
+        inherit system;
+      };
       llvmToolingPackages =
         if system == "x86_64-darwin"
         then pkgs.llvmPackages_18
-        else (import inputs.llvmNixpkgs {
-          inherit system;
-        }).llvmPackages_22;
+        else upstreamPkgs.llvmPackages_22;
 
       stdenv = llvm.stdenv;
 
@@ -140,7 +141,7 @@
           pkgs.git
           pkgs.jq
           pkgs.ccache
-          pkgs.pre-commit
+          upstreamPkgs.pre-commit
 
           pkgs.doxygen
           pkgs.graphviz
