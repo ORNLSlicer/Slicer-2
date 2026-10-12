@@ -1,6 +1,10 @@
 ---
 name: Nix CI
 on: push
+
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -14,8 +18,10 @@ jobs:
       run:
         working-directory: ./
     steps:
-      - uses: actions/checkout@v5
-      - uses: cachix/install-nix-action@v31
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
       - run: nix flake check --all-systems --accept-flake-config
 
   linux:
@@ -27,18 +33,19 @@ jobs:
       run:
         working-directory: ./
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           lfs: 'true'
-      - uses: cachix/install-nix-action@v31
+          persist-credentials: false
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
       - name: Publish Nix build results to Cachix
-        if: github.ref == 'refs/heads/develop'
-        uses: cachix/cachix-action@v17
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: ornl-slicer
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Realize Development Environment
-        if: github.ref == 'refs/heads/develop'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
         run: nix build -L --accept-flake-config --no-link .#devShells.x86_64-linux.ornlslicerDev
       - name: Setup Environment
         run: echo "artifact=$(nix eval --accept-flake-config --raw .#${{ env.ci_derivation }}.name).appimage" >> "$GITHUB_ENV"
@@ -58,7 +65,7 @@ jobs:
           test "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns)" = "1"
           timeout 30s ./${{ env.artifact }} --help
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: ${{ env.artifact }}
           path: ${{ env.artifact }}
@@ -74,13 +81,14 @@ jobs:
       run:
         working-directory: ./
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           lfs: 'true'
-      - uses: cachix/install-nix-action@v31
+          persist-credentials: false
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
       - name: Publish Nix build results to Cachix
-        if: github.ref == 'refs/heads/develop'
-        uses: cachix/cachix-action@v17
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: ornl-slicer
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
@@ -98,12 +106,12 @@ jobs:
           nix build -L .#${{ env.installer_derivation }} --accept-flake-config -o ${{ env.installer_out_link }}
           cp "${{ env.installer_out_link }}/${{ env.installer_file }}" "${{ env.install_artifact }}"
       - name: Upload Portable Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: ${{ env.package_artifact }}
           path: ${{ env.out_link }}
       - name: Upload Installer Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: ${{ env.install_artifact }}
           path: ${{ env.install_artifact }}
