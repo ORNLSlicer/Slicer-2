@@ -92,9 +92,16 @@
       windows = (lib.mkPackages { pkgs = pkgs.pkgsCross.mingwW64; });
     };
 
-    packages = rec {
-      default = ornlslicer;
+    packages = {
+      default = legacyPackages.ornl.ornlslicer;
       ornlslicer = legacyPackages.ornl.ornlslicer;
+    } // lib.optionalAttrs (system == "x86_64-linux") {
+      windowsInstaller = pkgs.callPackage ./nix/windows-installer {
+        windowsApplication = legacyPackages.windows.ornl.ornlslicer;
+        installerScript = ./scripts/installer.nsi;
+        licenseFile = ./LICENSE.md;
+        iconFile = ./resources/icons/ornlslicer_logo.ico;
+      };
     };
 
     bundlers = rec {
