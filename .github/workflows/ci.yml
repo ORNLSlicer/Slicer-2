@@ -38,7 +38,7 @@ jobs:
           name: ornl-slicer
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Setup Environment
-        run: echo "artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name).appimage" >> $GITHUB_ENV
+        run: echo "artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name).appimage" >> "$GITHUB_ENV"
       - name: Compile Linux Build
         run: nix build -L .#${{ env.ci_derivation }} --accept-flake-config
       - name: Bundle Output
@@ -63,8 +63,9 @@ jobs:
   windows:
     env:
       ci_derivation: windows.ornl.ornlslicer
+      installer_derivation: windowsInstaller
+      installer_out_link: ornlslicer-installer
       out_link: ornlslicer
-      nsis_script: scripts/installer.nsi
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -82,20 +83,17 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Setup Environment
         run: |
-          echo "install_artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name)-installer-${{ github.run_number }}.exe" >> $GITHUB_ENV
-          echo "package_artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name)-portable-${{ github.run_number }}" >> $GITHUB_ENV
-          echo "version=$(nix eval --raw .#${{ env.ci_derivation }}.version)" >> $GITHUB_ENV
+          {
+            echo "install_artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name)-installer-${{ github.run_number }}.exe"
+            echo "installer_file=$(nix eval --raw .#${{ env.installer_derivation }}.installerFileName)"
+            echo "package_artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name)-portable-${{ github.run_number }}"
+          } >> "$GITHUB_ENV"
       - name: Compile Windows Build
         run: nix build -L .#${{ env.ci_derivation }} --accept-flake-config -o ${{ env.out_link }}
       - name: Generate Installer
-        run: >
-          nix shell --accept-flake-config
-          .#legacyPackages.x86_64-linux.nixpkgs.nsis
-          --command makensis
-          -DOUTFILE=../${{ env.install_artifact }}
-          -DEXE_SOURCES=${{ env.out_link }}
-          -DVERSION=${{ env.version }}
-          ${{ env.nsis_script }}
+        run: |
+          nix build -L .#${{ env.installer_derivation }} --accept-flake-config -o ${{ env.installer_out_link }}
+          cp "${{ env.installer_out_link }}/${{ env.installer_file }}" "${{ env.install_artifact }}"
       - name: Upload Portable Artifacts
         uses: actions/upload-artifact@v6
         with:
