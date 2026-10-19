@@ -17,9 +17,10 @@ GCodeLayerSaver::GCodeLayerSaver(QString path, QString part_name, QString text, 
       m_suffix(suffix) {}
 
 void GCodeLayerSaver::run() {
-    const QVector<GcodeLayer> layers = splitGcodeIntoLayers(m_text, m_comment_starting_delimiter);
+    QString error;
+    const QVector<GcodeLayer> layers = splitGcodeIntoLayers(m_text, m_comment_starting_delimiter, &error);
     if (layers.isEmpty()) {
-        emit completed("Could not find any G-code layer markers to export.");
+        emit completed(error);
         return;
     }
 
