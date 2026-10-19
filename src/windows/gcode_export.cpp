@@ -382,6 +382,11 @@ void GcodeExport::exportGcode() {
 
                 QTextStream out(&outputFile);
                 out << layer.text;
+                out.flush();
+                if (out.status() != QTextStream::Ok || !outputFile.flush()) {
+                    QMessageBox::warning(this, "Layer Export", "Could not write layer file: " % layerFileName);
+                    return;
+                }
                 outputFile.close();
                 exportedLayerFileNames.insert(layerBaseName);
             }
