@@ -340,6 +340,10 @@ void GcodeExport::exportGcode() {
         }
 
         if (m_individual_layers_checkbox->isChecked()) {
+            if (m_most_recent_meta == GcodeMetaList::AdamantineMeta) {
+                QMessageBox::warning(this, "Layer Export", "Individual-layer export is not supported for Adamantine.");
+                return;
+            }
             const QVector<GcodeLayer> layers =
                 splitGcodeIntoLayers(text, m_most_recent_meta.m_comment_starting_delimiter);
             if (layers.isEmpty()) {
