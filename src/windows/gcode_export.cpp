@@ -351,6 +351,22 @@ void GcodeExport::exportGcode() {
                 return;
             }
 
+            QStringList existingLayerFiles;
+            const QStringList candidateFileNames = QDir(filepath).entryList(QDir::Files | QDir::NoDotAndDotDot);
+            for (const QString& candidateFileName : candidateFileNames) {
+                if (isGcodeLayerFileName(candidateFileName, partName, m_most_recent_meta.m_file_suffix)) {
+                    existingLayerFiles.append(candidateFileName);
+                }
+            }
+            if (!existingLayerFiles.isEmpty()) {
+                const auto reply =
+                    QMessageBox::question(this, "Layer Export",
+                                          "The following existing files will be overwritten or removed:\n" %
+                                              existingLayerFiles.join('\n') % "\nContinue?",
+                                          QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+                if (reply != QMessageBox::Yes) { return; }
+            }
+
             QSet<QString> exportedLayerFileNames;
             for (const GcodeLayer& layer : layers) {
                 const QString layerBaseName =
