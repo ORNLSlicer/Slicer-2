@@ -4,11 +4,19 @@
 #include <QVector>
 
 namespace ORNL {
-//! \brief Writer markers identifying reusable shutdown commands and final-position-only moves.
+struct GcodeMeta;
+//! \brief Writer markers identifying standalone programs and the continuous program shutdown.
+inline constexpr char kLayerHeaderEnd[]     = "END LAYER EXPORT HEADER";
+inline constexpr char kLayerProgramBegin[]  = "BEGIN LAYER EXPORT PROGRAM";
+inline constexpr char kLayerProgramEnd[]    = "END LAYER EXPORT PROGRAM";
+inline constexpr char kLayerProgramData[]   = "LAYER EXPORT DATA: ";
 inline constexpr char kLayerShutdownBegin[] = "BEGIN LAYER EXPORT SHUTDOWN";
 inline constexpr char kLayerShutdownEnd[]   = "END LAYER EXPORT SHUTDOWN";
 inline constexpr char kFinalPositionBegin[] = "BEGIN FINAL POSITION MOVES";
 inline constexpr char kFinalPositionEnd[]   = "END FINAL POSITION MOVES";
+
+//! \brief Encodes an independently generated layer as inert comments in the continuous program.
+QString layerExportProgram(const QString& program, const GcodeMeta& meta);
 
 //! \brief A single layer extracted from a generated G-code file.
 struct GcodeLayer {
@@ -20,9 +28,8 @@ struct GcodeLayer {
 //! \param text Complete G-code text, including its header.
 //! \param comment_starting_delimiter G-code comment delimiter used before layer markers.
 //! \param error Optional error output, cleared on success.
-//! \return One entry per layer, with the header and reusable shutdown commands. Returns no entries if
-//! shutdown markers are missing or malformed in a multi-layer input; re-slice legacy G-code before exporting it.
-//! The final layer retains its original shutdown, including final-position moves and settings footer.
+//! \return One entry per layer, with the shared header and independently generated entry/path/shutdown commands.
+//! Multi-layer input without standalone program metadata must be re-sliced; no output is returned on invalid metadata.
 QVector<GcodeLayer> splitGcodeIntoLayers(const QString& text, const QString& comment_starting_delimiter,
                                          QString* error = nullptr);
 

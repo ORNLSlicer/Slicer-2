@@ -140,6 +140,10 @@ QString MVPWriter::writeTravel(Point start_location, Point target_location, Trav
         travel_lift_required = false;
     }
 
+    // Startup can reset Z independently of the table. Always lower to the layer's entry point,
+    // even when no travel lift is configured or the approach is below the lift threshold.
+    if (isStandaloneEntryPending()) { travel_lift_required = true; }
+
     // travel_lift vector in direction normal to the layer
     // with length = lift height as defined in settings
     QVector3D travel_lift = getTravelLift();

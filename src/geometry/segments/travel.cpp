@@ -19,7 +19,7 @@ QSharedPointer<SegmentBase> TravelSegment::clone() const {
 }
 
 QString TravelSegment::writeGCode(QSharedPointer<WriterBase> writer) {
-    const QString gcode = writer->writeTravel(m_start, m_end, m_lift_type, this->getSb());
+    const QString gcode = writer->writeLayerTravel(m_start, m_end, m_lift_type, this->getSb());
     if (!gcode.isEmpty()) writer->setCurrentPosition(m_end);
     return gcode;
 }

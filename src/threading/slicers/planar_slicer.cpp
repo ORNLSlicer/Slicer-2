@@ -942,6 +942,14 @@ void PlanarSlicer::writeGCode() {
         g_layer->setDirtyBit(false);
         stream << m_base->writeAfterLayer();
 
+        if (m_syntax != GcodeSyntax::kAdamantine) {
+            auto layer_writer = m_layer_export_setup();
+            const QString standalone =
+                layer_writer->writeStandaloneLayer(current_layer, g_layer->getMinZ(), GSM->getGlobal(),
+                                                   [&]() { return g_layer->writeGCode(layer_writer); });
+            stream << m_base->writeLayerExportProgram(standalone);
+        }
+
         emit statusUpdate(StatusUpdateStepType::kGcodeGeneraton, (current_layer + 1) / num_layers * 100);
         ++current_layer;
     }

@@ -19,6 +19,7 @@
 #include <qtmetamacros.h>
 #include <qtypes.h>
 
+#include "gcode/gcode_layer_export.h"
 #include "gcode/gcode_meta.h"
 #include "gcode/parsers/adamantine_parser.h"
 #include "gcode/parsers/aerobasic_parser.h"
@@ -207,112 +208,81 @@ qint64 AbstractSlicingThread::getTimeElapsed() {
     return m_elapsed_time;
 }
 
+namespace {
+QSharedPointer<WriterBase> makeWriter(GcodeSyntax syntax, const QSharedPointer<SettingsBase>& settings) {
+    switch (syntax) {
+        case GcodeSyntax::kAML3D:
+            return QSharedPointer<AML3DWriter>(new AML3DWriter(GcodeMetaList::AML3DMeta, settings));
+        case GcodeSyntax::kCincinnati:
+            return QSharedPointer<CincinnatiWriter>(new CincinnatiWriter(GcodeMetaList::CincinnatiMeta, settings));
+        case GcodeSyntax::kDmgDmu:
+            return QSharedPointer<DMGDMUWriter>(new DMGDMUWriter(GcodeMetaList::DmgDmuAndBeamMeta, settings));
+        case GcodeSyntax::kGudel:
+            return QSharedPointer<GudelWriter>(new GudelWriter(GcodeMetaList::GudelMeta, settings));
+        case GcodeSyntax::kHaasInch:
+            return QSharedPointer<HaasWriter>(new HaasWriter(GcodeMetaList::HaasInchMeta, settings));
+        case GcodeSyntax::kHaasMetric:
+            return QSharedPointer<HaasWriter>(new HaasWriter(GcodeMetaList::HaasMetricMeta, settings));
+        case GcodeSyntax::kHaasMetricNoComments:
+            return QSharedPointer<HaasMetricNoCommentsWriter>(
+                new HaasMetricNoCommentsWriter(GcodeMetaList::HaasMetricMeta, settings));
+        case GcodeSyntax::kHurco:
+            return QSharedPointer<HurcoWriter>(new HurcoWriter(GcodeMetaList::HurcoMeta, settings));
+        case GcodeSyntax::kIngersoll:
+            return QSharedPointer<IngersollWriter>(new IngersollWriter(GcodeMetaList::IngersollMeta, settings));
+        case GcodeSyntax::kKraussMaffei:
+            return QSharedPointer<KraussMaffeiWriter>(
+                new KraussMaffeiWriter(GcodeMetaList::KraussMaffeiMeta, settings));
+        case GcodeSyntax::kMarlin:
+            return QSharedPointer<MarlinWriter>(new MarlinWriter(GcodeMetaList::MarlinMeta, settings));
+        case GcodeSyntax::kJuggerBot:
+            return QSharedPointer<JuggerBotWriter>(new JuggerBotWriter(GcodeMetaList::MarlinMeta, settings));
+        case GcodeSyntax::kMazak:
+            return QSharedPointer<MazakWriter>(new MazakWriter(GcodeMetaList::MazakMeta, settings));
+        case GcodeSyntax::kMeld:
+            return QSharedPointer<MeldWriter>(new MeldWriter(GcodeMetaList::MeldMeta, settings));
+        case GcodeSyntax::kMeltio:
+            return QSharedPointer<MeltioWriter>(new MeltioWriter(GcodeMetaList::MeltioMeta, settings));
+        case GcodeSyntax::kMVP:
+            return QSharedPointer<MVPWriter>(new MVPWriter(GcodeMetaList::MVPMeta, settings));
+        case GcodeSyntax::kOkuma:
+            return QSharedPointer<OkumaWriter>(new OkumaWriter(GcodeMetaList::HaasMetricMeta, settings));
+        case GcodeSyntax::kORNL:
+            return QSharedPointer<ORNLWriter>(new ORNLWriter(GcodeMetaList::ORNLMeta, settings));
+        case GcodeSyntax::kRomiFanuc:
+            return QSharedPointer<RomiFanucWriter>(new RomiFanucWriter(GcodeMetaList::RomiFanucMeta, settings));
+        case GcodeSyntax::kSandia:
+            return QSharedPointer<SandiaWriter>(new SandiaWriter(GcodeMetaList::SandiaMeta, settings));
+        case GcodeSyntax::kSiemens:
+            return QSharedPointer<SiemensWriter>(new SiemensWriter(GcodeMetaList::SiemensMeta, settings));
+        case GcodeSyntax::kThermwood:
+            return QSharedPointer<ThermwoodWriter>(new ThermwoodWriter(GcodeMetaList::CincinnatiMeta, settings));
+        case GcodeSyntax::kTormach:
+            return QSharedPointer<TormachWriter>(new TormachWriter(GcodeMetaList::TormachMeta, settings));
+        case GcodeSyntax::kWolf:
+            return QSharedPointer<WolfWriter>(new WolfWriter(GcodeMetaList::WolfMeta, settings));
+        case GcodeSyntax::kRepRap:
+            return QSharedPointer<RepRapWriter>(new RepRapWriter(GcodeMetaList::RepRapMeta, settings));
+        case GcodeSyntax::kMach4:
+            return QSharedPointer<Mach4Writer>(new Mach4Writer(GcodeMetaList::MarlinMeta, settings));
+        case GcodeSyntax::kAeroBasic:
+            return QSharedPointer<AeroBasicWriter>(new AeroBasicWriter(GcodeMetaList::AeroBasicMeta, settings));
+        case GcodeSyntax::kAdamantine:
+            return QSharedPointer<AdamantineWriter>(new AdamantineWriter(GcodeMetaList::AdamantineMeta, settings));
+        case GcodeSyntax::kORNLMetric:
+            return QSharedPointer<ORNLWriter>(new ORNLWriter(GcodeMetaList::ORNLMetricMeta, settings));
+        case GcodeSyntax::kArcSpecialties:
+            return QSharedPointer<ArcSpecialtiesWriter>(
+                new ArcSpecialtiesWriter(GcodeMetaList::ArcSpecialtiesMeta, settings));
+        default:
+            return QSharedPointer<CincinnatiWriter>(new CincinnatiWriter(GcodeMetaList::CincinnatiMeta, settings));
+    }
+}
+}  // namespace
+
 void AbstractSlicingThread::setGcodeOutput(QString output) {
     m_syntax = GSM->getGlobal()->setting<GcodeSyntax>(PRS::MachineSetup::kSyntax);
-    switch (m_syntax) {
-        case GcodeSyntax::kAML3D:
-            m_base = QSharedPointer<AML3DWriter>(new AML3DWriter(GcodeMetaList::AML3DMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kCincinnati:
-            m_base =
-                QSharedPointer<CincinnatiWriter>(new CincinnatiWriter(GcodeMetaList::CincinnatiMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kDmgDmu:
-            m_base = QSharedPointer<DMGDMUWriter>(new DMGDMUWriter(GcodeMetaList::DmgDmuAndBeamMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kGudel:
-            m_base = QSharedPointer<GudelWriter>(new GudelWriter(GcodeMetaList::GudelMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kHaasInch:
-            m_base = QSharedPointer<HaasWriter>(new HaasWriter(GcodeMetaList::HaasInchMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kHaasMetric:
-            m_base = QSharedPointer<HaasWriter>(new HaasWriter(GcodeMetaList::HaasMetricMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kHaasMetricNoComments:
-            m_base = QSharedPointer<HaasMetricNoCommentsWriter>(
-                new HaasMetricNoCommentsWriter(GcodeMetaList::HaasMetricMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kHurco:
-            m_base = QSharedPointer<HurcoWriter>(new HurcoWriter(GcodeMetaList::HurcoMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kIngersoll:
-            m_base =
-                QSharedPointer<IngersollWriter>(new IngersollWriter(GcodeMetaList::IngersollMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kKraussMaffei:
-            m_base = QSharedPointer<KraussMaffeiWriter>(
-                new KraussMaffeiWriter(GcodeMetaList::KraussMaffeiMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kMarlin:
-            m_base = QSharedPointer<MarlinWriter>(new MarlinWriter(GcodeMetaList::MarlinMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kJuggerBot:
-            m_base = QSharedPointer<JuggerBotWriter>(new JuggerBotWriter(GcodeMetaList::MarlinMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kMazak:
-            m_base = QSharedPointer<MazakWriter>(new MazakWriter(GcodeMetaList::MazakMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kMeld:
-            m_base = QSharedPointer<MeldWriter>(new MeldWriter(GcodeMetaList::MeldMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kMeltio:
-            m_base = QSharedPointer<MeltioWriter>(new MeltioWriter(GcodeMetaList::MeltioMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kMVP:
-            m_base = QSharedPointer<MVPWriter>(new MVPWriter(GcodeMetaList::MVPMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kOkuma:
-            m_base = QSharedPointer<OkumaWriter>(new OkumaWriter(GcodeMetaList::HaasMetricMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kORNL:
-            m_base = QSharedPointer<ORNLWriter>(new ORNLWriter(GcodeMetaList::ORNLMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kRomiFanuc:
-            m_base =
-                QSharedPointer<RomiFanucWriter>(new RomiFanucWriter(GcodeMetaList::RomiFanucMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kSandia:
-            m_base = QSharedPointer<SandiaWriter>(new SandiaWriter(GcodeMetaList::SandiaMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kSiemens:
-            m_base = QSharedPointer<SiemensWriter>(new SiemensWriter(GcodeMetaList::SiemensMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kThermwood:
-            m_base =
-                QSharedPointer<ThermwoodWriter>(new ThermwoodWriter(GcodeMetaList::CincinnatiMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kTormach:
-            m_base = QSharedPointer<TormachWriter>(new TormachWriter(GcodeMetaList::TormachMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kWolf:
-            m_base = QSharedPointer<WolfWriter>(new WolfWriter(GcodeMetaList::WolfMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kRepRap:
-            m_base = QSharedPointer<RepRapWriter>(new RepRapWriter(GcodeMetaList::RepRapMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kMach4:
-            m_base = QSharedPointer<Mach4Writer>(new Mach4Writer(GcodeMetaList::MarlinMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kAeroBasic:
-            m_base =
-                QSharedPointer<AeroBasicWriter>(new AeroBasicWriter(GcodeMetaList::AeroBasicMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kAdamantine:
-            m_base =
-                QSharedPointer<AdamantineWriter>(new AdamantineWriter(GcodeMetaList::AdamantineMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kORNLMetric:
-            m_base = QSharedPointer<ORNLWriter>(new ORNLWriter(GcodeMetaList::ORNLMetricMeta, GSM->getGlobal()));
-            break;
-        case GcodeSyntax::kArcSpecialties:
-            m_base = QSharedPointer<ArcSpecialtiesWriter>(
-                new ArcSpecialtiesWriter(GcodeMetaList::ArcSpecialtiesMeta, GSM->getGlobal()));
-            break;
-        default:
-            m_base =
-                QSharedPointer<CincinnatiWriter>(new CincinnatiWriter(GcodeMetaList::CincinnatiMeta, GSM->getGlobal()));
-    }
+    m_base   = makeWriter(m_syntax, GSM->getGlobal());
 
     if (!m_skip_gcode) {
         m_temp_gcode_output_file.setFileName(output);
@@ -375,6 +345,17 @@ void AbstractSlicingThread::writeGCodeSetup() {
     stream << m_base->writeSettingsHeader(m_syntax);
     stream << m_base->writeInitialSetup(Distance(minimum_x), Distance(minimum_y), Distance(maximum_x),
                                         Distance(maximum_y), m_max_steps);
+
+    if (m_syntax != GcodeSyntax::kAdamantine) { stream << m_base->writeCommentLine(kLayerHeaderEnd); }
+
+    // Reproduce the state established by the shared header, without inheriting any earlier layer.
+    m_layer_export_setup = [=, this]() {
+        auto writer = makeWriter(m_syntax, GSM->getGlobal());
+        if (has_part_bounds) { writer->setBuildMaximumZ(Distance(maximum_z)); }
+        writer->writeInitialSetup(Distance(minimum_x), Distance(minimum_y), Distance(maximum_x), Distance(maximum_y),
+                                  m_max_steps);
+        return writer;
+    };
 }
 
 void AbstractSlicingThread::writeGCodeShutdown() {

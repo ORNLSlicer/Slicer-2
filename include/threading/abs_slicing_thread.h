@@ -3,6 +3,7 @@
 #include <QElapsedTimer>
 #include <QQueue>
 #include <QThread>
+#include <functional>
 
 #include <nlohmann/json_fwd.hpp>
 #include <qdir.h>
@@ -129,6 +130,9 @@ class AbstractSlicingThread : public QObject {
 
     //! \brief the syntax in use by this slicer
     GcodeSyntax m_syntax;
+
+    //! \brief Creates a writer with the same startup state as the shared G-code header.
+    std::function<QSharedPointer<WriterBase>()> m_layer_export_setup;
 
     //! \brief Range of steps to compute
     int m_min, m_max;
