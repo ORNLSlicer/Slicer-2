@@ -70,6 +70,39 @@ QString WriterBase::commentSpaceLine(const QString& text) {
                    m_newline);
 }
 
+QString WriterBase::writeStandaloneLayer(uint layer_number, float min_z, const QSharedPointer<SettingsBase>& settings,
+                                         const std::function<QString()>& emit_layer) {
+    m_standalone_entry_pending = true;
+    QString result             = writeLayerChange(layer_number);
+    result += writeBeforeLayer(min_z, settings);
+    result += emit_layer();
+    m_standalone_entry_pending = false;
+    result += writeAfterLayer();
+    result += writeAfterPart();
+    result += writeShutdown();
+    if (!result.endsWith(m_newline)) { result += m_newline; }
+    return result;
+}
+
+QString WriterBase::writeStandaloneEntry(const Point& start, const QSharedPointer<SettingsBase>& params) {
+    if (!m_standalone_entry_pending) { return {}; }
+    const QString entry = writeLayerTravel(start, start, TravelLiftType::kBoth, params);
+    if (!entry.isEmpty()) { setCurrentPosition(start); }
+    return entry;
+}
+
+QString WriterBase::writeLayerTravel(Point start, Point target, TravelLiftType type,
+                                     const QSharedPointer<SettingsBase>& params) {
+    const QString result =
+        writeTravel(start, target, m_standalone_entry_pending ? TravelLiftType::kBoth : type, params);
+    m_standalone_entry_pending = false;
+    return result;
+}
+
+QString WriterBase::writeLayerExportProgram(const QString& program) {
+    return layerExportProgram(program, m_meta);
+}
+
 QString WriterBase::writeShutdownWithLayerMarkers() {
     QString shutdown = writeShutdown();
     if (!shutdown.isEmpty() && !shutdown.endsWith(m_newline)) { shutdown += m_newline; }

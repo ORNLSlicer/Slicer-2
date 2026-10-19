@@ -5,6 +5,7 @@
 #include <QStringBuilder>
 #include <QTextStream>
 #include <QVector3D>
+#include <functional>
 
 #include <qcontainerfwd.h>
 #include <qhashfunctions.h>
@@ -110,8 +111,23 @@ class WriterBase {
     //! \brief Writes G-Code for shutting down the machine
     virtual QString writeShutdown() = 0;
 
+    //! \brief Generates a standalone layer using this freshly initialized writer.
+    //! \param emit_layer Emits the layer's paths, without setup or shutdown.
+    QString writeStandaloneLayer(uint layer_number, float min_z, const QSharedPointer<SettingsBase>& settings,
+                                 const std::function<QString()>& emit_layer);
+
+    //! \brief Approaches the first standalone print/scan segment when the layer has no leading travel.
+    QString writeStandaloneEntry(const Point& start, const QSharedPointer<SettingsBase>& params);
+
+    //! \brief Emits a travel, making the first standalone travel a complete approach.
+    QString writeLayerTravel(Point start, Point target, TravelLiftType type,
+                             const QSharedPointer<SettingsBase>& params);
+
+    //! \brief Stores an independently generated layer as inert comments for later export.
+    QString writeLayerExportProgram(const QString& program);
+
     //! \brief Writes shutdown with markers used to terminate individually exported layers.
-    //! Final-position blocks remain in the full program and its last layer only.
+    //! Final-position blocks describe the continuous program; standalone layers generate their own shutdown.
     QString writeShutdownWithLayerMarkers();
 
     //! \brief Writes a list of all settings with the raw value to the footer as comments
@@ -156,6 +172,11 @@ class WriterBase {
     QString writeCommentLine(QString comment);
 
    protected:
+    //! \brief Whether this travel must establish the standalone layer's printing height.
+    bool isStandaloneEntryPending() const {
+        return m_standalone_entry_pending;
+    }
+
     //! \brief Marks moves calculated from the final writer state so layer export does not reuse them.
     QString finalPositionBlock(const QString& gcode);
 
@@ -244,5 +265,6 @@ class WriterBase {
     bool m_has_build_maximum_z;
 
    private:
+    bool m_standalone_entry_pending = false;
 };  // class WriterBase
 }  // namespace ORNL

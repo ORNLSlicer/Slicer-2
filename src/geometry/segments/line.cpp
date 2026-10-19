@@ -32,9 +32,10 @@ QSharedPointer<SegmentBase> LineSegment::clone() const {
 }
 
 QString LineSegment::writeGCode(QSharedPointer<WriterBase> writer) {
+    const QString entry = writer->writeStandaloneEntry(m_start, this->getSb());
     const QString gcode = writer->writeLine(m_start, m_end, this->getSb());
     if (!gcode.isEmpty()) writer->setCurrentPosition(m_end);
-    return gcode;
+    return entry + gcode;
 }
 
 float LineSegment::getMinZ() {

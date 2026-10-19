@@ -91,9 +91,10 @@ QString ArcSegment::writeGCode(QSharedPointer<WriterBase> writer) {
     int extruderSpeed       = this->getSb()->setting<int>(SS::kExtruderSpeed);
     RegionType regionType   = this->getSb()->setting<RegionType>(SS::kRegionType);
     PathModifiers modifiers = this->getSb()->setting<PathModifiers>(SS::kPathModifiers);
+    const QString entry     = writer->writeStandaloneEntry(m_start, this->getSb());
     const QString gcode     = writer->writeArc(m_start, m_end, m_center, m_angle, m_ccw, this->getSb());
     if (!gcode.isEmpty()) writer->setCurrentPosition(m_end);
-    return gcode;
+    return entry + gcode;
 }
 
 void ArcSegment::reverse() {
