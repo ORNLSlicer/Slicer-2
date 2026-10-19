@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
       - run: nix flake check --all-systems --accept-flake-config
 
   linux:
@@ -42,7 +42,7 @@ jobs:
         with:
           lfs: 'true'
           persist-credentials: false
-      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
       - name: Publish Nix build results to Cachix
         if: >-
           (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
@@ -109,7 +109,7 @@ jobs:
         with:
           lfs: 'true'
           persist-credentials: false
-      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
       - name: Publish Nix build results to Cachix
         if: >-
           (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
