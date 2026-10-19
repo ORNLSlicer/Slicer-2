@@ -8,6 +8,7 @@
 #include <qvectornd.h>
 
 #include "configs/settings_base.h"
+#include "gcode/gcode_layer_export.h"
 #include "gcode/gcode_meta.h"
 #include "geometry/point.h"
 #include "managers/settings/settings_manager.h"
@@ -67,6 +68,18 @@ QString WriterBase::commentLine(const QString& text) {
 QString WriterBase::commentSpaceLine(const QString& text) {
     return QString(m_space % m_meta.m_comment_starting_delimiter % text % m_meta.m_comment_ending_delimiter %
                    m_newline);
+}
+
+QString WriterBase::writeShutdownWithLayerMarkers() {
+    QString shutdown = writeShutdown();
+    if (!shutdown.isEmpty() && !shutdown.endsWith(m_newline)) { shutdown += m_newline; }
+    return commentLine(kLayerShutdownBegin) + shutdown + commentLine(kLayerShutdownEnd);
+}
+
+QString WriterBase::finalPositionBlock(const QString& gcode) {
+    if (gcode.isEmpty()) { return {}; }
+    return commentLine(kFinalPositionBegin) + gcode + (gcode.endsWith(m_newline) ? QString() : QString(m_newline)) +
+           commentLine(kFinalPositionEnd);
 }
 
 QString WriterBase::regionComment(RegionType region_type, PathModifiers path_modifiers,

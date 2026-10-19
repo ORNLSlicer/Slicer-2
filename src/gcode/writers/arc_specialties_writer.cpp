@@ -811,8 +811,8 @@ QString ArcSpecialtiesWriter::writeAfterLayer() {
 QString ArcSpecialtiesWriter::writeShutdown() {
     stopLayerBlockNumbering();
     QString rv;
-    rv += writePendingLayerChange();
-    rv += writePendingLayerPrefix();
+    rv += finalPositionBlock(writePendingLayerChange());
+    rv += finalPositionBlock(writePendingLayerPrefix());
     m_pending_region_schedule.clear();
 
     rv += writeWelderOff();

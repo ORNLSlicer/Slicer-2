@@ -380,7 +380,7 @@ void AbstractSlicingThread::writeGCodeSetup() {
 void AbstractSlicingThread::writeGCodeShutdown() {
     {
         QTextStream stream(&m_temp_gcode_output_file);
-        stream << m_base->writeShutdown();
+        stream << m_base->writeShutdownWithLayerMarkers();
         if (m_syntax != GcodeSyntax::kMVP) stream << m_base->writeSettingsFooter();
         stream.flush();
     }
