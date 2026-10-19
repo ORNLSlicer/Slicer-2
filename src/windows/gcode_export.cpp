@@ -8,7 +8,6 @@
 #include <QInputDialog>
 #include <QLabel>
 #include <QMessageBox>
-#include <QSet>
 #include <QStringBuilder>
 #include <algorithm>
 
@@ -32,6 +31,7 @@
 #include "threading/gcode_adamantine_saver.h"
 #include "threading/gcode_amcm_saver.h"
 #include "threading/gcode_aml3d_saver.h"
+#include "threading/gcode_layer_saver.h"
 #include "threading/gcode_marlin_saver.h"
 #include "threading/gcode_meld_saver.h"
 #include "threading/gcode_sandia_saver.h"
@@ -344,13 +344,6 @@ void GcodeExport::exportGcode() {
                 QMessageBox::warning(this, "Layer Export", "Individual-layer export is not supported for Adamantine.");
                 return;
             }
-            const QVector<GcodeLayer> layers =
-                splitGcodeIntoLayers(text, m_most_recent_meta.m_comment_starting_delimiter);
-            if (layers.isEmpty()) {
-                QMessageBox::warning(this, "Layer Export", "Could not find any G-code layer markers to export.");
-                return;
-            }
-
             QStringList existingLayerFiles;
             const QStringList candidateFileNames = QDir(filepath).entryList(QDir::Files | QDir::NoDotAndDotDot);
             for (const QString& candidateFileName : candidateFileNames) {
@@ -367,47 +360,18 @@ void GcodeExport::exportGcode() {
                 if (reply != QMessageBox::Yes) { return; }
             }
 
-            QSet<QString> exportedLayerFileNames;
-            for (const GcodeLayer& layer : layers) {
-                const QString layerBaseName =
-                    partName % "_layer_" % QString::number(layer.number) % m_most_recent_meta.m_file_suffix;
-                const QString layerFileName = filepath % '/' % layerBaseName;
-                if (QFile::exists(layerFileName)) QFile::remove(layerFileName);
-
-                QFile outputFile(layerFileName);
-                if (!outputFile.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
-                    QMessageBox::warning(this, "Layer Export", "Could not write layer file: " % layerFileName);
+            GCodeLayerSaver* saver =
+                new GCodeLayerSaver(filepath, partName, text, m_most_recent_meta.m_comment_starting_delimiter,
+                                    m_most_recent_meta.m_file_suffix);
+            connect(saver, &GCodeLayerSaver::finished, saver, &GCodeLayerSaver::deleteLater);
+            connect(saver, &GCodeLayerSaver::completed, this, [this, filepath, partName](const QString& error) {
+                if (!error.isEmpty()) {
+                    QMessageBox::warning(this, "Layer Export", error);
                     return;
                 }
-
-                QTextStream out(&outputFile);
-                out << layer.text;
-                out.flush();
-                if (out.status() != QTextStream::Ok || !outputFile.flush()) {
-                    QMessageBox::warning(this, "Layer Export", "Could not write layer file: " % layerFileName);
-                    return;
-                }
-                outputFile.close();
-                exportedLayerFileNames.insert(layerBaseName);
-            }
-
-            QDir outputDirectory(filepath);
-            const QStringList existingFileNames = outputDirectory.entryList(QDir::Files | QDir::NoDotAndDotDot);
-            for (const QString& existingFileName : existingFileNames) {
-                if (exportedLayerFileNames.contains(existingFileName) ||
-                    !isGcodeLayerFileName(existingFileName, partName, m_most_recent_meta.m_file_suffix)) {
-                    continue;
-                }
-
-                if (!outputDirectory.remove(existingFileName)) {
-                    QMessageBox::warning(
-                        this, "Layer Export",
-                        "Could not remove obsolete layer file: " % outputDirectory.filePath(existingFileName));
-                    return;
-                }
-            }
-
-            showComplete(filepath, partName % " layers");
+                showComplete(filepath, partName % " layers");
+            });
+            saver->start();
             return;
         }
 
