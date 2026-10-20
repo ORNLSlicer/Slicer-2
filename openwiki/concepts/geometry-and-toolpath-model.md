@@ -3,10 +3,9 @@ type: concept
 title: Geometry and Toolpath Data Model
 description: Ownership, coordinate frames, units, and invariants from imported meshes through parts, layers, islands, regions, paths, and motion segments.
 tags: [geometry, mesh, toolpath, transforms, ownership]
-verified:
-  - by: openwiki/0.7.0
-    at: 2026-10-06T20:25:27.555Z
 sources:
+  - id: openwiki-source-64a270853a980573ef55f133
+    resource: repo://include/geometry/connection.h
   - id: openwiki-source-8cb3f06f029677597f888cb5
     resource: repo://include/geometry/mesh/mesh_base.h
   - id: openwiki-source-e086f074a8c3472745b4505c
@@ -43,7 +42,10 @@ sources:
     resource: repo://tests/path_modifier_tests.cpp
   - id: openwiki-source-7c7eaa23810381aad20aac88
     resource: repo://tests/waam_layer_z_tests.cpp
-generated: { by: "codex", at: "2026-10-06T20:25:27.555Z" }
+generated: { by: "codex", at: "2026-10-20T18:20:49.849Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-20T18:20:49.849Z
 ---
 
 # Geometry and Toolpath Data Model
@@ -138,6 +140,12 @@ The main motion classes are `LineSegment`, `ArcSegment`, and `TravelSegment`, ea
 
 This predicate is used when computing deposition-only length, finding printable minima, and performing multi-material transitions. New segment classes must implement cloning, writer dispatch, minimum Z, and any extra geometry transforms such as an arc center or cylindrical bead axis.
 
+## Connection identity
+
+A connected-contour edge carries semantic identity independently of its display color and subsequent path modifier. `Connection::markStart` clones the outgoing point settings before marking the edge, avoiding mutation of settings shared with the original loop. `copySettings` preserves `is_connection` and the destination region through modifier-created fragments, including legacy modifier-only identity. Startup, slowdown, cutoff, and sharpened-corner tests verify that identity survives splits and replacement geometry. [source](repo://include/geometry/connection.h#L10-L37) [source](repo://tests/path_modifier_tests.cpp#L52-L85) [source](repo://tests/path_modifier_tests.cpp#L112-L135)
+
+Contour connection geometry is implemented by `ContourConnection` in `include/geometry/contour_connection.h`; the former `SpiralPath` header has been removed. See [Planar Path Generation](../slicing/planar-path-generation.md) for branch selection and region integration.
+
 ## Cross-part ordering and invariants
 
 `GlobalLayer::connectPaths()` is where per-part layers become one machine sequence. It installs each layer's optimization frame on its islands, orders scan layers and parts, applies skirt/raft/brim/support/polymer precedence, invokes island/region optimizers, and inserts travels while carrying the current point and previous regions forward. [source](repo://src/step/global_layer.cpp#L184-L228) [source](repo://src/step/global_layer.cpp#L285-L399)
@@ -146,7 +154,7 @@ Island-order settings follow a compatibility rule. If all orderable layers agree
 
 The focused global-layer tests pin down that behavior: common layer settings win, horizontally shifted frames with the same effective custom anchor remain compatible, differing raw custom coordinates can remain compatible after projection, and actual setting/frame conflicts use global fallback. [source](repo://tests/global_layer_tests.cpp#L88-L219)
 
-After ordering, modifiers can rewrite paths. Global-layer modifiers add lead-ins and spiral lifts and then fit circular arcs; region logic can split segments for exact multi-material transition distances. Modifier code resolves segment-local settings before broader fallback settings, and the sharp-corner tests verify both continuity after insertion and that local segment settings can enable a modifier disabled in the fallback base. [source](repo://src/step/global_layer.cpp#L130-L181) [source](repo://src/step/layer/regions/region_base.cpp#L205-L261) [source](repo://src/geometry/path_modifier.cpp#L77-L116) [source](repo://tests/path_modifier_tests.cpp#L30-L93)
+After ordering, modifiers can rewrite paths. Global-layer modifiers add lead-ins and spiral lifts and then fit circular arcs; region logic can split segments for exact multi-material transition distances. Modifier code resolves segment-local settings before broader fallback settings, and the sharp-corner tests verify both continuity after insertion and that local segment settings can enable a modifier disabled in the fallback base. [source](repo://src/step/global_layer.cpp#L130-L181) [source](repo://src/step/layer/regions/region_base.cpp#L205-L261) [source](repo://src/geometry/path_modifier.cpp#L77-L116) [source](repo://tests/path_modifier_tests.cpp#L30-L110)
 
 Optimizers must be total over degenerate inputs. Focused tests require an empty island set to return `-1`, empty paths and one-point polylines to be filtered, and zero-distance but structurally valid paths/polylines to be consumed so an optimization loop still makes progress. [source](repo://tests/optimizer_empty_input_tests.cpp#L139-L196)
 

@@ -3,9 +3,6 @@ type: architecture
 title: G-Code, Parsing, Visualization, and Export
 description: End-to-end guide to ORNLSlicer's generated and imported G-code pipeline, including parser selection, layer-time adjustment, visualization segments, statistics, and export artifacts.
 tags: [gcode, parsing, visualization, export, qt]
-verified:
-  - by: openwiki/0.7.0
-    at: 2026-10-06T20:25:27.555Z
 sources:
   - id: openwiki-source-a2768c251f812c51a0a8788f
     resource: repo://include/gcode/as_printed_model_exporter.h
@@ -13,21 +10,30 @@ sources:
     resource: repo://include/gcode/gcode_meta.h
   - id: openwiki-source-9130512ad0c7d187b1aad05c
     resource: repo://include/graphics/objects/gcode_object.h
+  - id: openwiki-source-36eb4862551029add4523e02
+    resource: repo://resources/shaders/shader.frag
   - id: openwiki-source-a68e0b041dc4b591977503bd
     resource: repo://src/gcode/as_printed_model_exporter.cpp
+  - id: openwiki-source-14795f95a626721fa6aeb014
+    resource: repo://src/gcode/gcode_layer_export.cpp
   - id: openwiki-source-94d7720f109e6629e985b28d
     resource: repo://src/gcode/parsers/common_parser.cpp
   - id: openwiki-source-ceebec80a0c2f9b8339a0fb0
     resource: repo://src/graphics/objects/gcode_object.cpp
   - id: openwiki-source-1c931b6d3c850e1860fde20c
     resource: repo://src/managers/session_manager.cpp
+  - id: openwiki-source-44e8b8b6f42cc6b6b15f2996
+    resource: repo://src/threading/gcode_layer_saver.cpp
   - id: openwiki-source-4c1d7b6308a78ba9c493ce8a
     resource: repo://src/threading/gcode_loader.cpp
   - id: openwiki-source-23afc284fcae4cee2de94dcb
     resource: repo://src/windows/gcode_export.cpp
   - id: openwiki-source-403d1cb683b233c4f42460d0
     resource: repo://src/windows/main_window.cpp
-generated: { by: "codex", at: "2026-10-06T20:25:27.555Z" }
+generated: { by: "codex", at: "2026-10-20T18:20:49.849Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-20T18:20:49.849Z
 ---
 
 # G-Code, Parsing, Visualization, and Export
@@ -102,6 +108,8 @@ Each parsed motion command becomes zero or more `SegmentBase` instances:
 
 Coordinates are converted from the dialect's units into view space. The loader applies X/Y/Z offsets and table motion, and has additional Arc Specialties handling for cylindrical-axis and optional current-position information. Cancellation is checked while commands and layers are converted so large previews can stop without publishing a partial segment graph.
 
+Connection comments take color priority and use the dedicated Connection preference. Modifier enlargement is selected from comment semantics rather than matching RGB values, so an ordinary region with the same color is not enlarged. [source](repo://src/threading/gcode_loader.cpp#L724-L730) [source](repo://src/threading/gcode_loader.cpp#L835-L871)
+
 ## Independent consumers
 
 `MainWindow::importGCodeHelper()` deliberately fans out loader signals rather than passing a monolithic result:
@@ -125,6 +133,8 @@ Printable moves may be rendered as true-width bead triangles or as lightweight l
 
 The G-code bar and view remain bidirectionally linked: range controls change visible geometry, while picked segments update selected source lines. A segment stores the one-based G-code line used by the view; text widgets account for their own zero-based indexing at the boundary.
 
+G-code drawing enables the shader's `preserveColorHue` uniform, fits the configured hue into the original lighting luminance without clipping individual channels, then resets the shared uniform for other scene objects. This retains brightness and surface lift while preserving path hues. [source](repo://src/graphics/objects/gcode_object.cpp#L578-L594) [source](repo://resources/shaders/shader.frag#L31-L68)
+
 ## Export contracts
 
 `GcodeExport` receives two pieces of state at different times: the temporary G-code path/dialect metadata and the parsed visualization graph. As-printed export stays disabled until at least one visualization segment has arrived, preventing an empty or stale STL.
@@ -138,6 +148,12 @@ An export can produce:
 - syntax-specific companion/simulation files through dedicated `GCode*Saver` workers.
 
 The ordinary path reads the temporary file, prepends operator notes using the dialect's comment delimiters, and renames a newly written temporary file to the requested destination. Several metadata/setting combinations instead dispatch threaded companion exporters. Adamantine also uses a special `_scan_path` basename.
+
+### Individual-layer programs
+
+The export checkbox dispatches `GCodeLayerSaver` on a worker thread. Adamantine is rejected; existing matching layer filenames require confirmation. Each result uses `<part>_layer_<number><suffix>`. The slicer embeds compressed standalone programs created with fresh writers rather than relying on modal state from earlier layers. `splitGcodeIntoLayers` validates program metadata and marker ordering before writes, requires correspondence with source layer numbers, prepends the common header, and appends trailing footer content only to the last layer. A genuinely single-layer program without embedded programs is accepted as-is. Missing or invalid multi-layer metadata requires re-slicing. [source](repo://src/windows/gcode_export.cpp#L342-L376) [source](repo://src/threading/abs_slicing_thread.cpp#L349-L358) [source](repo://src/gcode/gcode_layer_export.cpp#L22-L137)
+
+The saver reports open, flush, and obsolete-file removal errors through `completed(error)`. It removes obsolete matching layer files only after all new layer writes succeed. Writes are sequential rather than transactional, so a later write failure can leave earlier output files replaced. [source](repo://src/threading/gcode_layer_saver.cpp#L19-L64)
 
 ### As-printed STL
 

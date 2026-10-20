@@ -1,6 +1,6 @@
 {
     "schemaVersion": 1,
-    "pageVersion": "sha256:2ce5deffa45612924fdecac2c9dc591804b998faf75ed79a3e023ef86ad9a418",
+    "pageVersion": "sha256:9f25ab08b8065001b66d2841dfccb2b7d264cc9a6a4add8bf028e426c1427170",
     "claims": [
         {
             "id": "claim_7c402a4970d54e9688a38f5363e0cd0c",
@@ -13,9 +13,9 @@
                         "repo-lines-v1:sha256:2a7a49a5d10ca6bcce70520598000a5b20b1d0c2a6b9265ad66e07b1e354597a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmZDY0ZWZlNjA0Zjc5YzM2NTI5MGE2M2U3NzBlNGRjOWI3ZjU3ZDk5OGZmNjgzMGQ2YWVlYTM2NjZlNjFmM2RmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1NmVhY2YyMDNiYjUwNGMyNmFiYzk0MzBiMTI0NjFlNzc5MDVjYWFmN2YyY2VkZmNkYjg3OWM3NTdlNGU1ODNlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwNzRjNzhlOTZmMWQwMWVjYmU3ZjZhZTFkNDZiYzU3Nzk4NTEzYzQxY2RlYjhjNmJjMzJlZjgzODhmZjc4M2VkIn0"
                 },
                 {
-                    "resource": "repo://src/threading/slicers/planar_slicer.cpp#L870-L950",
+                    "resource": "repo://src/threading/slicers/planar_slicer.cpp#L870-L955",
                     "version":
-                        "repo-lines-v1:sha256:136f14f2f3da5702184582cb32d485c1e2cc8d018eff57c7b2aab66597aaa46b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyZTY3YzBlMjMyZjI2YmJiZDI1OWY2ZDBkYzdjNGI1MThmYmQ2MzkxYjkzODY3YTRhY2MwOGQ0YWY0MDAxY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1NTQyOWNiZWZhM2I4OGMxNDU3NmU3NGRlN2I3NDE0NjMzY2RlYzBlNzEwMTVkMThjMmZiZDc2NmY3NWViNWIifQ"
+                        "repo-lines-v1:sha256:8fc3725bbd0c7574f2ffdf0d8676717ba8fe417f7afd230ce6f9b407855cdc12:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyZTY3YzBlMjMyZjI2YmJiZDI1OWY2ZDBkYzdjNGI1MThmYmQ2MzkxYjkzODY3YTRhY2MwOGQ0YWY0MDAxY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwZGNmZGEyMDFmZWJmYWJiYjZhNDUzYmM0NjIyZTk2MmQ5N2ZmY2Q4YTg1ZTExZWQwNmVkZTcwMDg0YThjYmEifQ"
                 },
                 {
                     "resource": "repo://src/threading/traditional_ast.cpp#L42-L109",
@@ -152,14 +152,9 @@
                         "repo-lines-v1:sha256:de11c0d27aaf63966869aa278abd2a08caa3865319bf70499861725e920ea5be:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhZjYzNWEyYWU1NDYzMGVhOWUxNzI0ZWYxZDMwMzk4ZDA2ZmIxMDhmNjlmMzA5MGU0YTdhNTc2ODc0ZmY5NDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzNjkwYTM2MDAwNjFlODc3ZWE4Y2ZiNDZkOTlmMDljNGZlOTMzOTg1NWM0ZDczOTY3MjZkODY2YmI0ZGViOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4MmU5ZDhhMjY4NDRmOGU4NzJmMjA5ZWVjZTNiOTQyYjBmZjcxZDI0NzMyNTYyMzY2NDg2ZTY5MjJjMDNlYWQifQ"
                 },
                 {
-                    "resource": "repo://src/step/layer/regions/perimeter.cpp#L676-L698",
+                    "resource": "repo://src/step/layer/regions/perimeter.cpp#L1582-L1627",
                     "version":
-                        "repo-lines-v1:sha256:9d26a308d8c987d7fa95d56cc7c0d3d76fac5f13f90e8e6a206b5182b990d37f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMGNiNTRmMDYzMWNjOTdjYmFmN2RkYzhmZDRmZjI4ZjA1YWVkZjI1OGM2ZGM4YTVjNDAzZTM5NWYwOTdlYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5NWIyYTRlOGRlNTFiZmNkODY2MTljOTI3MjFhOTAxM2I0NDU1ZTgwY2M3NTE1ZTgyYWQ5ZmE5MmQ1MGYwYzQifQ"
-                },
-                {
-                    "resource": "repo://src/step/layer/regions/perimeter.cpp#L797-L865",
-                    "version":
-                        "repo-lines-v1:sha256:b05ab3569977d16ebf90088341a35727d9ac363abd396c6ed00115ff31daa6a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ZWJkODg5NjU4N2U5M2RjMTFkOTAxMTRjNzMyY2Q3ZGYzMDAwZTRmYTg5MzY4ZGFjOTEyMjFjNjQyOGQ3NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlZWIxMTFjOWRjOTE3Njg4YTBlYzYxYzM4MGUyNjRlOTY0MTlhZmM0YzY3OGQ2NDY2Mjk2N2FjM2IyMGEwMmEifQ"
+                        "repo-lines-v1:sha256:552be8d6589132fcc85e038bb65f87e5b7e859783b06180e9e3ff2b64506ee13:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDhjZTM4MDEyMzRhM2JlNjgzZmFlY2M5NTBlMWI4YWVkMGVmMGVjMWNjY2YxYjA5YmVjMzA5YzNhYzFkNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNzI5MzZlNTI4MWEzYjU5NmIwZDI1NTM2Y2IxMWY3YzUzZDYyZGYwOTdhMDNhM2FjYjY2MmRmYmMzMDdmY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkZmRjZmJlMWI3NTg2NjE4OTliYWY0ODY2MGIwN2RlMzFjNjM4MzhlMGNmMWVkZTI3YzhlMTE4MzliZDM1NjQifQ"
                 }
             ]
         },
@@ -201,7 +196,7 @@
                         "repo-lines-v1:sha256:ce58f22a8297562d39d2ec116bae23e661effcb443f1c02e91ec262d4baf7398:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWMzODUxZjAzMGUwNWI3ODM2Y2IxMjljNjgzOTVhZWI2NjI0OTIyZTk3NTllYTkxZmExODU4NzlhNzIxOTliNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDI2ZjEzZTg3ZjJiNTQ3MmRlODdkODQ1OTQ0ZTc4ZDdjNjkwMGU2NjQ1MmI1ZTVjNWJkMjY1ZDM4YTg5MzliNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWUxNjI0NmVmNDUxNmU2Y2NjZDE4NDczNDQxOGRhMTk5ZGNlMzU4OTliY2RhMTdlM2Y2YmFkODQ3MzZmMjkwNSJ9"
                 },
                 {
-                    "resource": "repo://src/step/layer/island/polymer_island.cpp#L26-L63",
+                    "resource": "repo://src/step/layer/island/polymer_island.cpp#L57-L94",
                     "version":
                         "repo-lines-v1:sha256:fb62a32eb6645cdf12c31bcce54afd2795e2838838cc7535d7a688c25ee9f4c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzYzI5ODc0NzY1ODNmOWFhMDJjODJiYTI5NGVkOTExN2MwZmUyMWRmMGU1NzgwYjBjZDg1MDA1OTg2YjUwN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhNDFiZTc2MDExZjAwNTMyNmZjZDNmYTZkYzVhZTE4ZTRiM2EwMWQyZjVhOTZmMDMzZjM3MzliODI3NDFkZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3YTQ0YTZhOGY3ZDY0ZWFjNzE3OTg0ZGY0YTM3MmMxYWUzYWVjNjM1YzU3MzlhZmE5ODYxNDUxMTA3YjFkNjEifQ"
                 },
@@ -310,22 +305,22 @@
         {
             "id": "claim_9ec3f458275c430f9e3d48109cac1f82",
             "statement":
-                "Spiral loop grouping joins only nested loops with a sufficiently short connector and splits unrelated or non-adjacent loops into separate groups that require travel.",
+                "Connected contour grouping joins eligible nested loops within a width-based connector limit and splits unrelated or non-adjacent loops into separate groups that require travel.",
             "evidence": [
                 {
-                    "resource": "repo://include/geometry/spiral_path.h#L201-L208",
+                    "resource": "repo://include/geometry/contour_connection.h#L275-L330",
                     "version":
-                        "repo-lines-v1:sha256:fdddcb231e5ffdcbaf138beb2f244fcf41614cb4d6c193368eac8919cae7e318:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTY5NzM1NDkxNGZhMGQwOTIzNDdkZDg0MDc5ZDgxYWQwYzBiMmU0MGIyNGZkYzQyYTY0ZWFjZGRlNDllNDhlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjBiZDBmYmFmNjdjOTVmMTNkYWVkMzFlZWI5MmY5ZjBkNDA2OTc0NDhjMGZlZDlhZDAxMjc2N2UxYzEyYzQ3MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGYwOTMxMzUyYWYxYzkxZjdkY2IxYzk0NjFhZDQyNWM4ZDBmMWM1N2ZjYmU0NGVkN2ZiZGQ5NzJhZjdhYzAxZSJ9"
+                        "repo-lines-v1:sha256:1ccdc9c68d1b4d199a22ab4599fbd6b5b8f6f7dfb30c17b5d7435521d2bf2ebd:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNzE3Y2E4ODZkNzU3MWNkYWJjNzFlZTQyNjg1MGU5YjliYTA5NTQ2ODRmYjg0NGMzNGU1YmFjZmRiNjhlOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwZWI5YjJkZTE4OGZhYjg3M2MxZjRiM2Q0NTY4MzE0YTBlNmRhMGU0NDRlZmY0NmIxMjU5MmI1OWJiMmI0ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3MzA2MzU3ZGViZTNmNzg4NGYwNDA2MzNlNWFjMWM5ZjY4NzliNGIwZjA0ZWFhNWVjYThmYmZiYTFiNGU3YzAifQ"
                 },
                 {
-                    "resource": "repo://include/geometry/spiral_path.h#L228-L307",
+                    "resource": "repo://include/geometry/contour_connection.h#L780-L878",
                     "version":
-                        "repo-lines-v1:sha256:8f30f975ac5f0ad37fcff1c82baac037c5240c1d474821b075e0564a5b444c6a:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2MjI5NTQ4ZTYxMWJhNTc4YTMzNmNiNWFhNDA2MWY2OWJjNTg4ZTg1ODY3ZjgwNjI1ZmE3MDQyYjcyMjBiNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxYjJiZWE0N2NkOTE4MjM0MzRkOTFhNTlmZGM5NDcxMGI1Y2ZkYTM3YTRlNWEwODNjMWRkYzM4ZWFmMzdkMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhNDhkYWIwYzM4Y2ZjYmJjMjZhYzBiNTBlYjJiYjBjNDQ3MzU2ZjQyMGZhYzc3NjliZDk3NWNkNmYyMmNjODQifQ"
+                        "repo-lines-v1:sha256:1f21346b1111e8323014e843fd93dba90d2e819d54f19e60e1e577893dafa31c:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNzliNjJiMjBlMGZlMDE3YzNhM2IzY2QxNzk2ZGNiMTUxMjRmNWU2OTMyMzAwYWRlNDZmODc5NGM2ZmIwN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhYTJhOWYwYzNmODU5YzIzMjExNzBkYjE3YzliOWQ5OTE0ZWFhZGQ0ZGYyMDY2ZDU3YjA2MTAwZTAwMjJmN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1MDU4MDM2MzA0OTY3OTM3ZTI4NmFhOGY0MmY0MTlkN2I5YmYyMDcxMzk1NTkwNzExNjFiMGIyNjdlNGE3NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1MTU1ZDc3M2ZkMmUwYzI4MDgwYmE4YmY2MDJmYzEwZDFhMjUyYTRmY2IxMDU3ZjY1NDU5OThiOGM5NzYxYjQifQ"
                 },
                 {
-                    "resource": "repo://tests/spiral_path_tests.cpp#L32-L103",
+                    "resource": "repo://tests/contour_connection_tests.cpp#L32-L103",
                     "version":
-                        "repo-lines-v1:sha256:f3f1a31a70f6dbfd524cca46ff5d7577ee3ce2f7ba794c2a11377e28125ec036:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiODUzNDFkMmExYzg4YzQ5NzEwYWZhOWMyZTdiZWE4OTdjMzk1ZTRkYWQ2YzZhNzkwMmEwNGYxMDJkZWQ1MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNTQ0ZDljODM4Y2Q0ZDYwMDFjMmRiMTc1NmVkZWRiODk3YTgyMjE5ZmVjZDJiMzg2YWQwZDY0N2YwM2YzYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5YWJhMjkyZGE5MGZlNWUzNjY5YzlhMTA2ODU2ODc0Njg2ZTMxNjljYzFiNGQ2Mzc2MjlhNjQxNTBlNzFiZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+                        "repo-lines-v1:sha256:2ef831671abb65f9320c1f9e58448191cde4c7078c625d6714ed31fae555e431:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkYmY2NGIxZjFjYTM2ZDU3ZDZjOTFkOWRlNzQzMjZkMTcxNTI5MmM2MWNkZmMxZmNlMjFmOTcxZTI0YWQzN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxMTk1YzFhNzgzYzc4MWNmMTNiNWNmOGI1MzFkYTRjYjY5MGYyMDYxMGQ2NjhhMDliNmI5NGQxMDhmNWM2ZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5YjU0YzE1YzU4ZWQ0NDYxYmI0YjgzM2Y5OWE2YTEzYWNkZjBlODM2YTJmZWUxYThhZTg3MWNiYjdlODJmMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzNmViMWI2MmZjNGViMDQ0NDBmNjc1ODUyMjFmNGQ3NzQ1MmY1ZWE0MWE3NjJmZDhhYmQ4MGEzNWRmZmJiM2EifQ"
                 }
             ]
         },
@@ -362,10 +357,54 @@
                         "repo-lines-v1:sha256:ddc49f8160d8bab40062e695abbc0ca4900296ccd1cd1407ff46843551f82f37:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwMzFjZmMwZTc5MTJhNDc1YWM0NzA3Y2VmZTE0OTNjMWYzMzUyZjdkYTViNTIwM2MwODhjYTlhYmFjN2Y4NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkYjQ5MGQ2M2Q1YzUwNDUzZGJiYmNkMGVjYjFkNGVjNDFmZGY5YjIzMDA2NGRmMjkyN2ZhNzY3OTNmMzBhOGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjYmE5MGE5MmRlN2RlZDUxNTZkYjcwZTAzNjU4YTAyYTFhYjI4NGZlMWI3ZjkxYjdhY2FjMTdhZTE1MzM3YjAifQ"
                 }
             ]
+        },
+        {
+            "id": "claim_b7b4f730ef6c4cb994335ab50bc40827",
+            "statement":
+                "Forward-tip-wipe connections rotate seams, seek angled branches, validate emitted loop and branch eligibility, and flush unsafe groups into separate paths.",
+            "evidence": [
+                {
+                    "resource": "repo://include/geometry/contour_connection.h#L538-L618",
+                    "version":
+                        "repo-lines-v1:sha256:7c0e663ed030c5c4bd636af80e688ced6ef024d17d8635602c2f31193ae4f534:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMDQ0M2Y0NjdiMTI3YmU0YmJhZWExYWM2MDA2NWI0Nzk4NjA1YjFlZjhhMmM5OWE0MjBjNmMyOTM3YmM5ZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViZTJkYTkwOGJjY2Q0MDVjNGQyNGE0NDIzMWY3ZjA0NmU5YjE0MTcwY2Q4YWFlMjUzZDcwNmM1ZThjMjI5YzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyOGMwN2NlNjljOWZlOTViN2E5ZjgzZTczYjU5MTU0YTJlNWI0Njc3YTU5NzU2MzkyYzEwOGMxYmUwMWIyNDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3ZjY2NTZhMjljNjA2YWNjYjFlZjdmMmI5MzkxNWZjZDhlNDZlZDMxMDJlMzA1OTFhZmM3NDQ1OWMxYmE0NTEifQ"
+                },
+                {
+                    "resource": "repo://src/step/layer/regions/inset.cpp#L409-L491",
+                    "version":
+                        "repo-lines-v1:sha256:c343cfb1b2b20d747ac0f5c81121f19e491a52e725720c40d06cd15376db1930:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNjI0OTdkNjk2NjYyNTkxZGY4MWU1ZmI2YzUwMGUzMTg2Y2FhYjZiMmFjYWNjMWEzOGRlMzQ3NDFjZTExY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZmUzOGE3MTY2NjliM2I0MGZiYzg0Y2U1YTc3YmJiMzkwZGMxZjEzMmJjNmMwYTg4NTEwYjU4YjllZmI3ZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxOGY3N2VmODBjMjQ0ZTg5OGQ2ZTUxMzBmN2ZkZWJiNDE1MjUwMGJlYThiYzk2MjY1MzY2MmIwN2M1NDgxY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4MzBmZGNjMTFjNzYwOTMyNzc4Y2IzZTBlNjZmZjFkZDM1MmY2NGE1OGVmZTVkZTkxZTYxM2RiYzY0NDBhYzUifQ"
+                }
+            ]
+        },
+        {
+            "id": "claim_e38b18deb35746658bfb9ff14b12f7c0",
+            "statement":
+                "Perimeter-to-inset connections require adjacent region order, enabled chain controls, inset geometry and compatible effective materials for this island; only consumed inset output is cleared and localized inset segment settings are preserved.",
+            "evidence": [
+                {
+                    "resource": "repo://src/step/layer/island/polymer_island.cpp#L104-L142",
+                    "version":
+                        "repo-lines-v1:sha256:fa7511edcd8d99566844d634f181accd6211e316c45576440d89c2f7374efa86:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlYzRmMDlkMDg5YzkyOTI3MDA3MjIxM2U1MjQ3MmMyMzg0M2EyMjUyOTIwMzBkZWIyZDIyYWRlMmY0NGEwYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZDUxY2M5MTM2MWU4Mjk1Mzc5MmFlYjQ3YTk1ZmRiNzI0NjNiZTQ1MGU3ZTY4ZmRjNjA1ZTMyNmI2ZGYyZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjNmQxYmUwMWJiMGFiOGYyODk4ZTdmZjc0NDllOGVkMmVjOTQzNTA2OWY0YjIwNjVhN2ZjZTBmNWI1YmU5ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZTAyMjIxMTFlMDhhMGU4NjZmMzZhN2NlMTMyOTgzMDQ3NDU0ZWYxYTY0OTUxMjZmMzg0YzJmNDI4ZTk3ZTkifQ"
+                },
+                {
+                    "resource": "repo://src/step/layer/island/polymer_island.cpp#L28-L54",
+                    "version":
+                        "repo-lines-v1:sha256:a77aa6c01ba1fb8454b6fadf2ce7a51533ed55188f9c99f3dd40f37c1510cc1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljMDgzNDBkMmUyOTczYzdjZTAwZTczYTBiMDIyOGYyYjM1ZTRjY2Y1OWFkOTkwODE2OTZmNzVjNDdiZjAxY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkYjQ5MGQ2M2Q1YzUwNDUzZGJiYmNkMGVjYjFkNGVjNDFmZGY5YjIzMDA2NGRmMjkyN2ZhNzY3OTNmMzBhOGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlODY5ZTc2YmQ4ZTA2NDQ3ODhjZGJmYTQ3ZTI5OTUxYmI1MGZmMmJlZWI2NjM3OGM1NzM0ZjY2NzNjMzA0NTMifQ"
+                },
+                {
+                    "resource": "repo://src/step/layer/regions/perimeter.cpp#L1630-L1749",
+                    "version":
+                        "repo-lines-v1:sha256:1e80693451539cc5c0a9fb12a94f26b73024d8edf74f9a7ac5ccc8164cc985cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyMjI0MDE4MTM4MmYzMjg3OWVjNzYwNzMwZDhmNjFlMDNkYzI1MzE0NjJiY2I4Y2FiZTk0YTY3ZmRjZTA2MjgxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmZjkzYjk1MjZkNTRjNjdmZGU5NzhhM2U2ODMwY2JiN2E5ZTQ1Y2IwYWI4ZjVjYWJiMzkwOWE4MjI5OWEyMmFjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyODkyZjZlMWY4ZDcwN2IyMDRiNTJiYTYxNDk4YmQ1NTQzNjE3YTk5MWNkMjNmNTgwYzk2ODNmYTRmZDQ1NjkzIn0"
+                },
+                {
+                    "resource": "repo://tests/contour_connection_branch_tests.cpp#L1228-L1458",
+                    "version":
+                        "repo-lines-v1:sha256:392a01cac286f575c1e3ffc3058f1a987c18cfb5e0a7535ccd3bd2a68a41f130:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3ZDEwMzZlNzRjNGQ3YzQ2NjBlZWRlYzA0NjNhODhmOGQwNDA1Y2M1YjQ0MjE5ZTA3OGMwZjQxODBkOTA2ODdjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNTY5OTcyZWIxNjEzYWY4YTA0NmMxMTI3ZTUwMDEyN2Q3NDFiMTkyMTY3YTI1YmU3NWQ0YWUxMGFhZDdkNzdjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MiwiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwMmZiZDk0ZmRkOTlkOTU4MWQyOTI3ZjFlODUyODYwMGU0NjYyYWFkZjY5Y2I0ZjdmNjcxZjY3ZTBjNTg5OGFiIn0"
+                }
+            ]
         }
     ],
     "verification": {
-        "by": "openwiki/0.7.0",
-        "at": "2026-10-06T20:25:27.555Z"
+        "by": "openwiki/0.7.2",
+        "at": "2026-10-20T18:20:49.849Z"
     }
 }

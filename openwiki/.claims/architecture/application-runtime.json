@@ -1,6 +1,6 @@
     {
         "schemaVersion": 1,
-        "pageVersion": "sha256:997e89f292ee282fc36721f778750e49e637f24f9421856bf33acbcde95af40d",
+        "pageVersion": "sha256:189af5bdc97812d1286f8c339d2032b0ae91a6ca24cc1bdaeec9dd92d293278f",
         "claims":
             [
                 {
@@ -9,9 +9,9 @@
                         "The executable selects a headless QCoreApplication/MainControl runtime whenever argc is greater than one, and otherwise initializes embedded GUI resources and runs the singleton MainWindow under QApplication.",
                     "evidence": [
                         {
-                            "resource": "repo://src/main.cpp#L71-L120",
+                            "resource": "repo://src/main.cpp#L71-L121",
                             "version":
-                                "repo-lines-v1:sha256:08cb95c33fa5b2b8e5cc9a0291f6b309e9791d2de4defedb806b70b1d30b3054:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkMmNkNTNiN2I2Njg2MzdhOWU1MDE2MDVmNzFmY2I3OGY2ODIxNzE4YmFlZTVkOTIxZmE1NWFhMWQyYTdmODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3NGRlNzY5NzA0NjMzMzc0ODUxOWE5MmIwNWVmYzEzMDQyMjQxMDAyM2E3OTRlZmUxNjI3YzJhODJkNzJjZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjN2VmOTc5NmQxMjcyZWRiNWY0OGZjNWQwZTRkODQ5YmEzNDc5NWNjODY0ZjcxM2EyMGFmMjNhZTdkNGVmNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+                                "repo-lines-v1:sha256:ff8303bce58d09966c5121e39200576afe42dfe2d6e40471113ef67d25726d82:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkMmNkNTNiN2I2Njg2MzdhOWU1MDE2MDVmNzFmY2I3OGY2ODIxNzE4YmFlZTVkOTIxZmE1NWFhMWQyYTdmODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3NGRlNzY5NzA0NjMzMzc0ODUxOWE5MmIwNWVmYzEzMDQyMjQxMDAyM2E3OTRlZmUxNjI3YzJhODJkNzJjZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjN2VmOTc5NmQxMjcyZWRiNWY0OGZjNWQwZTRkODQ5YmEzNDc5NWNjODY0ZjcxM2EyMGFmMjNhZTdkNGVmNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
                         }
                     ]
                 },
@@ -50,12 +50,12 @@
                         "GUI slice completion starts a GCodeLoader whose independent signals feed visualization, text, timing, export metadata, status, and cancellation consumers.",
                     "evidence": [
                         {
-                            "resource": "repo://src/windows/main_window.cpp#L1369-L1392",
+                            "resource": "repo://src/windows/main_window.cpp#L1377-L1400",
                             "version":
                                 "repo-lines-v1:sha256:9d75877d8d5b4ddadb62955e9a70d14ea3c59e337fa8e493483194184419d19f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4OTE1YzFiODNmYWY3Nzg3ZTJiZjliM2VmNWFiMTI5YjdiZjg0YjZlOWRmMTNkMWVmZWVkNjcxYTEzOWIzODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmNTA5ZjIyODM4ZTEwNWQ4NWU0YmRmYTA1ZWRmNDFiNTNkY2U4ZWZlNmQ2OWMxYjEwOTdmM2U0OGY4YzA1MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzOTMzZWJjZTljYjkxZjEwNDkzMTU2ZGE5MmQ0NWU5NzMzM2M3ZTA0NjIxODliNjQ4NWVmM2EwNmQxZDhkNWIifQ"
                         },
                         {
-                            "resource": "repo://src/windows/main_window.cpp#L1450-L1488",
+                            "resource": "repo://src/windows/main_window.cpp#L1458-L1496",
                             "version": "repo-lines-v1:sha256:bb3615353a32328becb4622f2c66d91fa0fd620512b34cfec92fdda96e672611:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5OGMxZDY5MmE0ZjM4OWJjZTUyZTdiNDk0ODc0YmQ4NzNjNmM2OTEzZGVhZDdlYzljMjhjNzdjMzA1YjlkYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZDY3YTk1ZWYxMDhlMDgyZWVkNGIzMWI3MjZmNTliNGQ4MzRkNmNmODEwNmRmNjY2MWE4MTZmODIwMTRiNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0ZWIzOTU2NDdiZmQ3ZGEwNzNlZTllMDZmNjY4MDYwZDhmOTc3NjYxMjQ1ZTA2NTY5MzljOWMyZTQzNDRmN2YifQ"
                         }
                     ]
@@ -83,12 +83,12 @@
                         "AbstractSlicingThread is a QObject moved to an owned QThread at construction, and its destructor quits and joins that worker thread.",
                     "evidence": [
                         {
-                            "resource": "repo://include/threading/abs_slicing_thread.h#L22-L34",
+                            "resource": "repo://include/threading/abs_slicing_thread.h#L23-L35",
                             "version":
                                 "repo-lines-v1:sha256:14aa2b67f4f1538e9b7965dc42f728daf471dfe0639c30124968c71d6fc8fcb4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhYmZiYTI4YjYyZTM2M2YwYjE4ZjYwNTczN2JiODFjZTM4YjcwNmM0ZjM2NjQxYTc1OTFlZTVkODVlZGFkMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjNWEzOGMyOTY3N2M3OTMyNWY4OGI4ZTFiZDg4MTQwZTRhNTU4ZTdhZWQ2M2NiMjdmMmRjZDk0ZmVmZWM1NTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0OGIyMzZmZjgzMzljNDljODI0ZDI4YTAwOTk5ZGVhZmFjODRiMWQwNTVhZjY3ZDlhMTRiNGQyOTY3M2NlNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwZWU0MThmZjExNDlmMjEzOWM0ZTk5YTdjNmQyYWI0YjFjMGZiODBhMWVkN2U3NTc4ZGVmMmZmODUwZTRiZWEifQ"
                         },
                         {
-                            "resource": "repo://src/threading/abs_slicing_thread.cpp#L179-L191",
+                            "resource": "repo://src/threading/abs_slicing_thread.cpp#L180-L192",
                             "version":
                                 "repo-lines-v1:sha256:296e35e138f017dc89bab4dbe9c1870eecef12338c2353c19dee478f140abb5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNmRiZjAzOWZlMGI1OTc4NDhlNDhkYjE5ZmNmYWI0MTgzZWNlMzIzZWJiMDdjZTNiOTY4OGE2YjJkOTYxY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5YWJhMjkyZGE5MGZlNWUzNjY5YzlhMTA2ODU2ODc0Njg2ZTMxNjljYzFiNGQ2Mzc2MjlhNjQxNTBlNzFiZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxNDUzY2U4ZGEzYTA3OTk2ZTM3NmJmMzIwMTRmNzhjZGNiNGU2MTdjOWQxMjcxOTVjZDQ5MzMzYzgyZmFlNTkifQ"
                         }
@@ -144,12 +144,12 @@
                                 "repo-lines-v1:sha256:8a8529c40707efc52ade5cd254b2599a4558e96ccca6831043fb7076b45c5764:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDcxNWMzNTlmMWFlOGRkZjc0MTdkNzhhNTMzMDZjODE3N2YzMGQ2Yjk4OTkyMmQ0YmZmYTNmNjRjMGQzOWRlYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjAyNjYzZTZmZGVlOTBmZjgyMDdkM2Q0ZTkwOTE3Y2VjN2Y1N2FjNjEyY2Y5Nzg5MWJmMGEwZWY1NWViYjFlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGFmMWIzODI0M2ExMDRlYWRlYTBmODk3OTkzYjM2YjJlNDgxZmY0MWYxY2FhODU1NzZmNjM4MDY0MmYwZTUzZSJ9"
                         },
                         {
-                            "resource": "repo://src/windows/main_window.cpp#L564-L568",
+                            "resource": "repo://src/windows/main_window.cpp#L565-L569",
                             "version":
                                 "repo-lines-v1:sha256:83af36a1a729e9489f73f8fa56bcfe988b9f41df7205adc66bd000926130d609:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDA0OGYzMWI1ZTY5NDA0N2ZjZDAwYTMyYjkyZTM2YmM4OGU3YmRhOTAxMzBiN2MxYzJhZWYzMjg2MmFjMDkwNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODRiNjQxODM4MGJjZDRjODNjMWYwOTMxZjYxOTVkOGRhODAxNjg3MmI4YTE2Mzk1ODRlZWVkZmIyZDgwZDM4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTAyMjkzYTk2Yzg2MDdjNjU0N2U1YjRhOGU5ODNkYzViYmZlMWYwODc1MWEzOTIwY2MwYjQyNzJhM2E5YjdiMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTdmODU0MWQ2ODQxYjg1YWM2ZWY4MWNkNjA0YzkxMWJhZDZmMjAzYjEwZDk5OGUzMTdiMzQ2MTFkNjliZmZlOCJ9"
                         },
                         {
-                            "resource": "repo://src/windows/main_window.cpp#L883-L891",
+                            "resource": "repo://src/windows/main_window.cpp#L886-L894",
                             "version":
                                 "repo-lines-v1:sha256:2db2507c5a5dfd8f2fc80061f8158f82db5714e292ac8c8c8fe1d588735ca19d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4MTU1Y2Q4ZDZiNWZjMzRlOWFhYzE0YWY4MzViOGVkNGNmNDk2ZTE0NzIxNjA1YjhlMWVkNzg0NDE1YThiOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2I1MzNjMmFmOTcyNmQ3ZjkwNTFhZThlMjIwZDk4ZWU1OWRlYTgzOGIyNTE0YzcwNGNiZTBjYTg1ODFmN2Y1ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjU4ZGJiMjRjN2EzY2Y0NTVkNmNjZWI1M2FmMTVhZTRmMjUxYmVlYWJjYzE3NGViOWFjYzI2YWRmZTc5NDlkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGZjODY4OTI2ZTFiNWJkMWUwYTQ3N2JlNWVmNjI5MDkwMTNkMWUyZDcxOWQ0NzEyOGU1NDg3MjIzZTdiOTViMSJ9"
                         }
@@ -171,10 +171,32 @@
                                 "repo-lines-v1:sha256:60b16ba8eec5091576859febf1c43e5859c83d8d533d9340ebf1c9071a31688e:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZGQ0MTA2YWQxM2QzOWIzNmVjYmEzZGVmNTY3YzgyOWQ2M2QyNmU3ODhlMzE4NDM4N2RkODU5NTc5OTUxOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlYjBkNGMyYzk0YzU3MWI4YjdjODQ1NTIzNDdmZTQzNzRkNmEyMDU5ZWNmMTk1OWFjNjFlZDQ2ZjgyNjMxZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjNWI2ZTZmZGViODFiNWU3MzBkNDUxZTBkNmVmNGM5ZjJjMDE3ZjI0NzhmMGU1NDUzZGI1YjA0NGNlZGYzZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0ZTM3MzUxMTIyYmY5MWU5NDgzODk3OWYyMzk2MWZkODYzN2M1NWYwMTRmMDhjYWZlOWE1OGY4ZmU4Y2VlZWMifQ"
                         }
                     ]
+                },
+                {
+                    "id": "claim_7706c9526c44491cbc9acfce1be55fc0",
+                    "statement":
+                        "The Help menu reopens a parent-owned nonmodal ChangelogWindow that renders bundled Markdown offline, opens external links, and inherits theme text colors for links; its focused test runs outside the source tree and checks close/reopen behavior.",
+                    "evidence": [
+                        {
+                            "resource": "repo://src/windows/changelog.cpp#L13-L47",
+                            "version":
+                                "repo-lines-v1:sha256:9f53e4bec9b8bc51213f60ed6913b1b071303e5e18a066cbce89b62dfa8eb592:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5MmY5Y2EwYzdlY2JlODhiZTQ0ZjNkYmNlZTA4NTFiMzc4NjE0YjkwN2ViYmMxOTkwYTkxYTFlNmM5MTI4MzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3MjFiMDRhNjY4YzAwNjQxNzgwYWRkYzgyYTYyMjRmNWIyYTA0OGQ0ODE0ZTRiMTBmYzg4MTYzZjczZDk2ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1NTQyOWNiZWZhM2I4OGMxNDU3NmU3NGRlN2I3NDE0NjMzY2RlYzBlNzEwMTVkMThjMmZiZDc2NmY3NWViNWIifQ"
+                        },
+                        {
+                            "resource": "repo://src/windows/main_window.cpp#L908-L912",
+                            "version":
+                                "repo-lines-v1:sha256:38c4e90d10d65660c92937c685a73e3ac1c9766d83ff8f81d58f07eda370f08d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI4ODEwYzA3YjUyZTM1MThhZTg0MjRjMTVmZTY0YzM4OTRhMjgyMTU4ZTQxN2E1ZmFiMzYyMTc0OTYwYzIyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJkMTFjYWY0M2U5N2VmMzY5ZTZiZWVkMWEyNjhiZDA1ODM4ZjI5YjlkZDI1NGJmNjliYTY0ODg0MTQ3MjM0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDE0NjYxNDdlNjY1NjRhY2YwNjM1ZDQ1NTRhMGNmNGM0ODNlNjJlNmFmMGUwYTkwMjQ4NGRiMTkxZjczMWMyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDBiMWU3ZjYzYjZhZjM4MDMwZTQ1OWNhMDYzYmFlOWYxNWEzMzM2NGNiOWIzYTJkZGNjNzUzZjk0NmU1ZDBhNiJ9"
+                        },
+                        {
+                            "resource": "repo://tests/changelog_tests.cpp#L15-L68",
+                            "version":
+                                "repo-lines-v1:sha256:42b5322d8a61ae6c0cc33bf79f79c58e8391e6bf05922f48ed9471c33272370f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZGQ0MTA2YWQxM2QzOWIzNmVjYmEzZGVmNTY3YzgyOWQ2M2QyNmU3ODhlMzE4NDM4N2RkODU5NTc5OTUxOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNTQ0ZDljODM4Y2Q0ZDYwMDFjMmRiMTc1NmVkZWRiODk3YTgyMjE5ZmVjZDJiMzg2YWQwZDY0N2YwM2YzYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2NjAzM2Y1YWE5MTk1Yjg0YWM5MTUyOTc1NTJmM2JjNGI3ZTA5ZTRjNDdkN2E2N2VkN2RlMjM2YjQzYmU0MmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+                        }
+                    ]
                 }
             ],
         "verification": {
-            "by": "openwiki/0.7.0",
-            "at": "2026-10-08T21:29:05.545Z"
+            "by": "openwiki/0.7.2",
+            "at": "2026-10-20T18:20:49.849Z"
         }
     }

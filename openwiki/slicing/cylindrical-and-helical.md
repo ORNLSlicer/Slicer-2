@@ -3,9 +3,6 @@ type: guide
 title: Cylindrical and Helical Slicing
 description: How ORNL Slicer generates radial and helical paths directly, clips them to build geometry, orders them, and emits Arc Specialties machine motion.
 tags: [slicing, cylindrical, radial, helical, arc-specialties]
-verified:
-  - by: openwiki/0.7.0
-    at: 2026-10-06T20:25:27.555Z
 sources:
   - id: openwiki-source-9eef3e22b2b57db54842729c
     resource: repo://include/slicing/helical_path_rounding.h
@@ -21,6 +18,8 @@ sources:
     resource: repo://src/gcode/writers/arc_specialties_writer.cpp
   - id: openwiki-source-1c931b6d3c850e1860fde20c
     resource: repo://src/managers/session_manager.cpp
+  - id: openwiki-source-97f2984c6f7df859b5dac320
+    resource: repo://src/managers/settings/settings_version_control.cpp
   - id: openwiki-source-9691825f79c753541a758204
     resource: repo://src/slicing/helical_path_rounding.cpp
   - id: openwiki-source-8c60a8d33451696f8f70f5c5
@@ -31,7 +30,10 @@ sources:
     resource: repo://src/step/layer/cylindrical_layer.cpp
   - id: openwiki-source-74cea8ba6a71c48d8439dfdc
     resource: repo://src/threading/slicers/cylindrical_slicer.cpp
-generated: { by: "codex", at: "2026-10-06T20:25:27.555Z" }
+generated: { by: "codex", at: "2026-10-20T18:20:49.849Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-20T18:20:49.849Z
 ---
 
 # Cylindrical and Helical Slicing
@@ -97,17 +99,21 @@ The profile's generated top can differ from the nominal mesh top because infill 
 
 ## Clipping and Z rounding
 
-For each candidate radius, the helical sampler maps revolution position to angle, Z, and region using the profile. The angular direction follows handedness, while the geometric seam always begins at 90 degrees (+Y). Region bands are sampled separately so their identities survive flattening into the curve used for model-intersection tests. [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L191-L274) [source](repo://src/slicing/helical_tool_start_angle.cpp#L3-L18)
+For each candidate radius, the helical sampler maps revolution position to angle, Z, and region using the profile. The angular direction follows handedness, while the geometric seam always begins at 90 degrees (+Y). Region bands are sampled separately so their identities survive flattening into the curve used for model-intersection tests. [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L191-L274) [source](repo://src/slicing/helical_tool_start_angle.cpp#L11-L29)
 
 Every sample is classified against the nearest cached horizontal cross-section. When consecutive samples cross the model boundary, the transition is refined with 12 bisection iterations. If the generated start is outside the model, retention begins at the first entry; if the end is outside, retention stops at the highest exit. A curve wholly outside yields no path. [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L276-L399)
 
 The retained Z interval is rebuilt as a region profile. `Exact Intersection` keeps its clipped endpoint. `Complete Revolution` rounds up to the next full revolution, while `Last Full Revolution` rounds down and can eliminate a path shorter than one complete turn. During rounded reconstruction, shell pitches remain fixed and only a middle infill band can absorb the remaining height; reconstruction fails if the fixed shell regions exceed the rounded height. [source](repo://src/slicing/helical_region_profile.cpp#L130-L225) [source](repo://src/slicing/helical_region_profile.cpp#L364-L386) [source](repo://resources/settings/029_profile_helical.yaml#L4-L44)
 
-`HelicalPathRounding` is also kept as a focused uniform-pitch clipping/rounding utility and regression surface. Its exact, ceil-to-complete, and floor-to-last-full behavior is tested directly, but the current cylindrical generator performs its variable-region reconstruction through `HelicalRegionProfile`; do not assume the standalone utility is the call path for profile-driven slicing. [source](repo://include/slicing/helical_path_rounding.h#L10-L26) [source](repo://src/slicing/helical_path_rounding.cpp#L59-L129) [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L789-L867)
+`HelicalPathRounding` is also kept as a focused uniform-pitch clipping/rounding utility and regression surface. Its exact, ceil-to-complete, and floor-to-last-full behavior is tested directly, but the current cylindrical generator performs its variable-region reconstruction through `HelicalRegionProfile`; do not assume the standalone utility is the call path for profile-driven slicing. [source](repo://include/slicing/helical_path_rounding.h#L10-L26) [source](repo://src/slicing/helical_path_rounding.cpp#L59-L129) [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L802-L889)
 
 ## Seam, ordering, and tool orientation
 
-The helical start-angle setting is a tool-orientation offset, not a geometry-seam control. Geometry starts at +Y. The effective tool offset changes sign only when all three conditions hold: Z clipping requests a complete revolution, cylindrical path ordering is next-closest, and the optimizer chooses the generated end as the path start. [source](repo://src/slicing/helical_tool_start_angle.cpp#L3-L18) [source](repo://resources/settings/029_profile_helical.yaml#L4-L44)
+The persisted Helical Tool Start Arc Length Offset is a signed distance along the cylindrical surface, not a geometry-seam control. Geometry starts at +Y. For each actual generated radius `r`, `angleOffsetForRadius` computes `theta = s / r` in radians and stores the derived angle in segment/layer settings; the same distance therefore produces a smaller angle on a larger radius. A zero distance returns zero; nonfinite distance or a nonpositive/invalid radius for a nonzero distance fails conversion. The generator checks the first radius and every locally adjusted layer. [source](repo://src/slicing/helical_tool_start_angle.cpp#L11-L16) [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L699-L715) [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L802-L819)
+
+Legacy versioned settings convert the angle to distance using `inner radius + layer height / 2`; nonzero angles require valid reference geometry. Existing current distance values take precedence. [source](repo://src/managers/settings/settings_version_control.cpp#L331-L383)
+
+ The effective radius-derived tool offset changes sign only when all three conditions hold: Z clipping requests a complete revolution, cylindrical path ordering is next-closest, and the optimizer chooses the generated end as the path start. [source](repo://src/slicing/helical_tool_start_angle.cpp#L11-L29) [source](repo://resources/settings/029_profile_helical.yaml#L4-L44)
 
 Postprocessing removes previously generated travels and delegates ordering to `PathOrderOptimizer`. Direct cylindrical layers support next-closest and next-farthest ordering; helical linking may reverse a path. After selection, the layer restores print settings, creates settings for optimizer-generated travels, recomputes region-start flags, and applies the direction-aware helical tool offset. [source](repo://src/step/layer/cylindrical_layer.cpp#L54-L113) [source](repo://src/step/layer/cylindrical_layer.cpp#L194-L227)
 
@@ -118,6 +124,8 @@ A helical layer stores the full retained curve as one path whose segments carry 
 Arc Specialties output records the cylindrical pattern, ordering, coordinate-frame values, helical handedness, clipping-rounding choice, tool-frame rotations, and arcs per revolution in its header. During motion it selects region schedules, transforms cylindrical coordinates into machine/work frames, and can subdivide long angular travels into arc waypoints. These controller-specific behaviors explain the current capability gate around this writer. [source](repo://src/gcode/writers/arc_specialties_writer.cpp#L216-L270) [source](repo://src/gcode/writers/arc_specialties_writer.cpp#L365-L389) [source](repo://src/gcode/writers/arc_specialties_writer.cpp#L536-L698)
 
 Printable line and arc starts establish the layer, kinematics, and weld schedule before enabling deposition; unsupported arcs fall back to line output. Helical generation tracks the highest actual generated Z after clipping and rounding, and `doSlice()` passes the larger of that value and any existing writer maximum to setup before motion is written. That keeps the writer's safe startup height aligned with the path that will actually be emitted. [source](repo://src/gcode/writers/arc_specialties_writer.cpp#L700-L747) [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L423-L451) [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L842-L850)
+
+The writer reports the configured arc length and conversion rule in its header. CP receives the full derived angle and XR/YR receive half; the ordered-direction adjustment is applied to layer and segment settings before emission. Tests retain a constant physical distance across multiple radii and both handedness choices. [source](repo://src/gcode/writers/arc_specialties_writer.cpp#L292-L303) [source](repo://src/gcode/writers/arc_specialties_writer.cpp#L982-L1005) [source](repo://src/gcode/writers/arc_specialties_writer.cpp#L1120-L1132) [source](repo://tests/arc_specialties_parser_tests.cpp#L874-L878)
 
 ## Failure, cancellation, and diagnostics
 
@@ -135,7 +143,7 @@ Use the focused tests according to the behavior being changed:
 | Region sequence, pitch fallback, infill rounding, invalid inputs | `helical_region_profile_tests` verifies cumulative Z, floor/nearest/ceil choices, omitted nonpositive infill, and diagnostic reasons. [source](repo://tests/helical_region_profile_tests.cpp#L29-L139) |
 | Retained clipping profile | The same target checks clipped starts, preserved shell ordering and pitches, rounded endpoints, and last-full behavior without overshoot. [source](repo://tests/helical_region_profile_tests.cpp#L160-L280) |
 | Uniform-pitch clipping and start orientation | `helical_clip_rounding_tests` covers exact/complete/last-full results, sub-one-turn elimination, handed endpoints, fixed +Y geometry start, and tool-offset sign changes. [source](repo://tests/helical_clip_rounding_tests.cpp#L71-L213) |
-| Writer/parser integration | `arc_specialties_parser_tests` covers block numbering, rotation direction, region comments, tool frames, safe startup Z, clip-rounding metadata, travel behavior, and configured arc density. [source](repo://tests/arc_specialties_parser_tests.cpp#L806-L874) |
+| Writer/parser integration | `arc_specialties_parser_tests` covers block numbering, rotation direction, region comments, tool frames, safe startup Z, clip-rounding metadata, travel behavior, and configured arc density. [source](repo://tests/arc_specialties_parser_tests.cpp#L837-L909) |
 
 When modifying this subsystem, check the whole chain: settings meaning, per-part overlay, profile construction, geometry classification, retained-profile reconstruction, optimizer reversal, segment region metadata, header reporting, safe-height propagation, and the Arc Specialties parser-facing output. A change that is locally correct in the sampler can still become wrong after ordering or machine-frame conversion.
 

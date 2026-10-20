@@ -4,8 +4,8 @@ title: Application Runtime and Coordination
 description: Runtime map for ORNLSlicer's GUI and command-line shells, shared managers, worker threads, progress and cancellation signals, and output completion paths.
 tags: [runtime, qt, gui, cli, threading]
 verified:
-  - by: openwiki/0.7.0
-    at: 2026-10-08T21:29:05.545Z
+  - by: openwiki/0.7.2
+    at: 2026-10-20T18:20:49.849Z
 sources:
   - id: openwiki-source-3eee793d88e31c2c26304c07
     resource: repo://include/threading/abs_slicing_thread.h
@@ -25,11 +25,15 @@ sources:
     resource: repo://src/threading/session_loader.cpp
   - id: openwiki-source-c8bd61f0cfef6efd243b1e22
     resource: repo://src/widgets/main_toolbar.cpp
+  - id: openwiki-source-0883503c04a6d6436d2f870d
+    resource: repo://src/windows/changelog.cpp
   - id: openwiki-source-403d1cb683b233c4f42460d0
     resource: repo://src/windows/main_window.cpp
+  - id: openwiki-source-dc8bfc091185c8c7d36fe674
+    resource: repo://tests/changelog_tests.cpp
   - id: openwiki-source-eca38ea4c3df70e00aa49450
     resource: repo://tests/main_toolbar_tests.cpp
-generated: { by: "codex", at: "2026-10-08T21:29:05.545Z" }
+generated: { by: "codex", at: "2026-10-20T18:20:49.849Z" }
 ---
 
 # Application Runtime and Coordination
@@ -46,7 +50,7 @@ src/main.cpp
     └── user actions → SessionManager → slicer → GCodeLoader → views/export widgets
 ```
 
-Startup registers the Qt metatypes carried across queued signal/slot connections before choosing a shell. This includes shared `Part` and mesh pointers, toolpath segments, unit types, G-code metadata, JSON, and mesh-loader results. Both branches also publish a runtime diagnostic summary, but only the GUI initializes the embedded icon, shader, style, and configuration resources.
+Startup registers the Qt metatypes carried across queued signal/slot connections before choosing a shell. This includes shared `Part` and mesh pointers, toolpath segments, unit types, G-code metadata, JSON, and mesh-loader results. Both branches also publish a runtime diagnostic summary, but only the GUI initializes the embedded icon, shader, style, configuration, and bundled documentation resources.
 
 | Invocation | Qt application | Coordinator | Completion |
 | --- | --- | --- | --- |
@@ -89,6 +93,8 @@ An invalid cylindrical configuration is rejected before work starts: current sou
 `MainWindow` owns auxiliary dialogs as children, including the settings-file comparison dialog. It constructs that dialog during window setup, exposes **Compare Settings Files** in the Settings menu, and brings the existing dialog to the foreground when the action is triggered. The comparison dialog therefore remains a UI-owned helper; it does not introduce a second settings-state owner.
 
 The main toolbar is likewise a child of the main container and emits intent through signals that `MainWindow` connects to the active view and session consumers. Its command controls are `QAction`s (with only the view tabs represented by a widget action), allowing Qt to move trailing commands into its built-in overflow menu when width is constrained. At the normal startup view width the controls remain visible; the focused offscreen Qt test covers both that baseline and the constrained-overflow behavior.
+
+The Help menu opens a parent-owned, nonmodal `ChangelogWindow`. It renders `:/docs/CHANGELOG.md` from the embedded docs resource, so installed applications can show release history offline without the source checkout. External links open through `QTextBrowser`; link formatting inherits the theme color. The Close button hides the dialog and the existing instance can be reopened. `changelog_tests` checks resource availability from a temporary working directory, Markdown rendering, links, and reopen behavior. [source](repo://src/windows/changelog.cpp#L13-L47) [source](repo://src/windows/main_window.cpp#L908-L912) [source](repo://resources/docs/docs.qrc#L1-L5) [source](repo://tests/changelog_tests.cpp#L15-L68)
 
 ## Command-line state machine
 

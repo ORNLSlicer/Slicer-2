@@ -12,18 +12,22 @@ sources:
     resource: repo://cmake/presets/generic-llvm-ninja.json
   - id: openwiki-source-d44494ef3e497fea81240ef8
     resource: repo://CMakeLists.txt
-  - id: openwiki-source-cf53758b4249db7b3d333718
-    resource: repo://docs/contributing/linux-appimage.md
   - id: openwiki-source-71ae1012989bc835de1e9233
     resource: repo://nix/ornlslicer/default.nix
   - id: openwiki-source-b89f433e76caa6e1aa00a3e9
     resource: repo://tests/arc_specialties_parser_tests.cpp
   - id: openwiki-source-b56e4780c1ae610b3d8ba0db
     resource: repo://tests/as_printed_model_exporter_tests.cpp
+  - id: openwiki-source-dc8bfc091185c8c7d36fe674
+    resource: repo://tests/changelog_tests.cpp
   - id: openwiki-source-60219e40c59fdb42fb41cdd0
     resource: repo://tests/common_parser_tests.cpp
+  - id: openwiki-source-e45c507c8771c06c67d1765a
+    resource: repo://tests/gcode_layer_export_tests.cpp
   - id: openwiki-source-1d4aeeb295c375a2ff8ca729
     resource: repo://tests/gcode_settings_importer_tests.cpp
+  - id: openwiki-source-c104bb75a5f8622243458c6e
+    resource: repo://tests/gcode_shading_tests.cpp
   - id: openwiki-source-06dbed28cbcd952aa1f714fc
     resource: repo://tests/helical_region_profile_tests.cpp
   - id: openwiki-source-6a59e8ac36ba9aa084b8dcdf
@@ -50,12 +54,14 @@ sources:
     resource: repo://tests/test_utils.h
   - id: openwiki-source-fd42cdedbc9d871771e139f8
     resource: repo://tests/variable_layer_height_tests.cpp
+  - id: openwiki-source-e143789d80bbbd16ebcc1e73
+    resource: repo://tests/version_tests.py
   - id: openwiki-source-7a4801d8dab8724a03e566bd
     resource: repo://tests/visualization_colors_tests.cpp
-generated: { by: "codex", at: "2026-10-08T21:29:05.545Z" }
+generated: { by: "codex", at: "2026-10-20T18:20:49.849Z" }
 verified:
-  - by: openwiki/0.7.0
-    at: 2026-10-08T21:29:05.545Z
+  - by: openwiki/0.7.2
+    at: 2026-10-20T18:20:49.849Z
 ---
 
 # Test Strategy and Validation Map
@@ -67,7 +73,7 @@ ORNLSlicer uses small standalone C++ executables for focused regression coverage
                   all shared production sources
                        /             \
                       /               \
-             ornlslicer app       24 test executables
+             ornlslicer app       28 test executables
                                        |
                                       CTest
                                        |
@@ -98,7 +104,7 @@ nix develop .#ornlslicerDev -L --command \
   ctest --test-dir build/generic-llvm-ninja -C Debug --output-on-failure
 ```
 
-The preset uses Clang with the Ninja Multi-Config generator and writes to `build/generic-llvm-ninja`, so `-C Debug` selects the executable configuration for CTest. Do not substitute the unrelated top-level `build/` path. [source](repo://cmake/presets/generic-llvm-ninja.json#L1-L14) [source](repo://AGENTS.md#L60-L71)
+The preset uses Clang with the Ninja Multi-Config generator and writes to `build/generic-llvm-ninja`, so `-C Debug` selects the executable configuration for CTest. Do not substitute the unrelated top-level `build/` path. [source](repo://cmake/presets/generic-llvm-ninja.json#L1-L14) [source](repo://AGENTS.md#L166-L173)
 
 For a narrow change, build one prefixed executable target and filter by its unprefixed CTest name:
 
@@ -111,11 +117,11 @@ nix develop .#ornlslicerDev -L --command \
   -R '^arc_specialties_parser_tests$' --output-on-failure
 ```
 
-Use `ctest --test-dir build/generic-llvm-ninja -C Debug -N` to inspect the tests registered by the current configuration. Reconfigure after adding or deleting source, header, resource, or test-target declarations; source and resource discovery is glob-based even though test targets themselves are explicit. [source](repo://CMakeLists.txt#L139-L157) [source](repo://AGENTS.md#L49-L51)
+Use `ctest --test-dir build/generic-llvm-ninja -C Debug -N` to inspect the tests registered by the current configuration. Reconfigure after adding or deleting source, header, resource, or test-target declarations; source and resource discovery is glob-based even though test targets themselves are explicit. [source](repo://CMakeLists.txt#L139-L157) [source](repo://CMakeLists.txt#L139-L157)
 
 ## Coverage map
 
-The 24 always-declared focused tests divide into four practical risk groups. The table summarizes the behavior protected by each CTest name, not merely the class named by the file.
+The 28 always-declared focused tests divide into four practical risk groups. The table summarizes the behavior protected by each CTest name, not merely the class named by the file.
 
 | Area | CTest name | Principal regression surface |
 | --- | --- | --- |
@@ -128,23 +134,34 @@ The 24 always-declared focused tests divide into four practical risk groups. The
 | Helical and path geometry | `helical_region_profile_tests` | Band ordering, stepover fallback, infill-revolution rounding, invalid-input reasons, and retained clipping profiles. [source](repo://tests/helical_region_profile_tests.cpp#L250-L280) |
 | Helical and path geometry | `waam_layer_z_tests` | WAAM surface-reference Z, non-WAAM top reference, variable height, normal direction, and Wolf travel-lift behavior. [source](repo://tests/waam_layer_z_tests.cpp#L220-L239) |
 | Helical and path geometry | `path_modifier_tests` | Sharp-corner modification geometry, continuity, connector threshold behavior, and segment-local setting overrides. [source](repo://tests/path_modifier_tests.cpp#L30-L95) |
-| Helical and path geometry | `spiral_path_tests` | Spiral grouping for adjacent, disjoint, nested, separated-stack, and mid-edge-start paths. [source](repo://tests/spiral_path_tests.cpp#L32-L104) |
+| Helical and path geometry | `contour_connection_tests` | Connected grouping for nested, disjoint, separated and mid-edge-start loops. [source](repo://tests/contour_connection_tests.cpp#L32-L103) |
+| Helical and path geometry | `contour_connection_branch_tests` | Forward-wipe branches, localized widths/settings, perimeter-to-inset chains, material gates and fallback output. [source](repo://tests/contour_connection_branch_tests.cpp#L1228-L1458) |
 | Helical and path geometry | `helical_clip_rounding_tests` | Exact, last-full, and complete revolution clipping; sub-revolution omission; handed endpoints; offsets; and fixed seams. [source](repo://tests/helical_clip_rounding_tests.cpp#L185-L212) |
 | Settings compatibility | `gcode_settings_importer_tests` | Comment-style normalization, importer fixtures, legacy keys and version migration, unknown keys, and cancellation of missing-setting prompts. [source](repo://tests/gcode_settings_importer_tests.cpp#L64-L242) |
 | Settings compatibility | `settings_file_comparator_tests` | JSON/settings-array validation; changed and one-sided values across settings sets; recursive ordering behavior; floating-point tolerance; and unreadable or malformed files. [source](repo://tests/settings_file_comparator_tests.cpp#L15-L124) |
-| Settings compatibility | `settings_version_control_tests` | Forward migration of v10/v11 helical angle keys and the v12 variable-Z boolean into the current v13 representation. [source](repo://tests/settings_version_control_tests.cpp#L13-L65) |
+| Settings compatibility | `settings_version_control_tests` | Helical angle-to-distance migration, variable-Z conversion, connected-contour renames, collision handling and idempotence through version 15. [source](repo://tests/settings_version_control_tests.cpp#L15-L173) |
 | Settings compatibility | `settings_manager_tests` | Rejection of project-local and project-session JSON as global templates without rewriting either source file. [source](repo://tests/settings_manager_tests.cpp#L26-L94) |
 | Settings compatibility | `preferences_import_tests` | Transactional preference import, one aggregate unit-change signal, and observers seeing the complete final state. [source](repo://tests/preferences_import_tests.cpp#L20-L76) |
 | Settings compatibility | `preferences_manager_tests` | Persistence and defaulting of manager-owned preferences, including STEP-to-STL linear deflection. [source](repo://tests/preferences_manager_tests.cpp#L14-L52) |
 | Application UI | `main_toolbar_tests` | Full startup-width visibility plus constrained-width overflow, including availability of the Slice action from Qt's overflow menu. [source](repo://tests/main_toolbar_tests.cpp#L15-L78) |
 | Session lifecycle | `session_manager_tests` | Recent-project ordering, caps and clearing, project types, asynchronous CLI-style load, and archived settings migration. [source](repo://tests/session_manager_tests.cpp#L74-L188) |
 | Parsing and visualization | `common_parser_tests` | Travel timing and scaling plus modifier-only layer and tip-wipe height inference. [source](repo://tests/common_parser_tests.cpp#L296-L316) |
-| Parsing and visualization | `arc_specialties_parser_tests` | Arc Specialties parsing and writing, including optional stops, G80 scheduling, CP visualization, rejection cases, handedness, frames, comments, startup, rounding, and arc density. [source](repo://tests/arc_specialties_parser_tests.cpp#L790-L875) |
+| Parsing and visualization | `arc_specialties_parser_tests` | Arc Specialties parsing and writing, including optional stops, G80 scheduling, CP visualization, rejection cases, handedness, frames, comments, startup, rounding, and arc density. [source](repo://tests/arc_specialties_parser_tests.cpp#L837-L909) |
 | Parsing and visualization | `juggerbot_writer_tests` | Arc bead-area extrusion scaling and zero-RPM extrusion shutdown. [source](repo://tests/juggerbot_writer_tests.cpp#L81-L93) |
 | Parsing and visualization | `visualization_colors_tests` | Registry completeness, stable names/defaults, preference registration, and G-code comment/segment color mapping. [source](repo://tests/visualization_colors_tests.cpp#L93-L210) |
 | Export artifacts | `as_printed_model_exporter_tests` | Bead meshes and centerlines, bounds/orientation/units, radial and LFAM behavior, filtering, arc/corner geometry, and binary/ASCII STL validity. [source](repo://tests/as_printed_model_exporter_tests.cpp#L129-L341) |
 
-The declarations for those targets are centralized in the test block rather than inferred from filenames. Consequently, adding a new `tests/*.cpp` file alone does not add it to CTest; a corresponding executable and `add_test()` entry are required. [source](repo://CMakeLists.txt#L229-L461)
+The declarations for those targets are centralized in the test block rather than inferred from filenames. Consequently, adding a new `tests/*.cpp` file alone does not add it to CTest; a corresponding executable and `add_test()` entry are required. [source](repo://CMakeLists.txt#L229-L539)
+
+Additional focused targets cover the recently changed contracts:
+
+| CTest name | Contract |
+| --- | --- |
+| `gcode_layer_export_tests` | Standalone entry/shutdown across representative writers, corrupted metadata rejection before writes, single-layer handling, and stale-file cleanup. [source](repo://tests/gcode_layer_export_tests.cpp#L127-L294) |
+| `changelog_tests` | Bundled offline Markdown from outside the checkout, theme-colored links, nonmodal parent ownership, close/reopen behavior. [source](repo://tests/changelog_tests.cpp#L15-L68) |
+| `gcode_shading_tests` | Production shaders render bead geometry with preserved hue and original luminance across colors and neutral shades. OpenGL 4.4 or offscreen surface failure returns 77, configured as CTest skip. [source](repo://tests/gcode_shading_tests.cpp#L128-L181) [source](repo://CMakeLists.txt#L353-L363) |
+
+Release rules use a separate Python suite: `python3 tests/version_tests.py`. It tests real temporary Git histories plus Python/CMake/Nix version reader parity; it is not a CTest executable. Git, CMake and Nix must be available for the external-reader cases. [source](repo://tests/version_tests.py#L1-L35) [source](repo://tests/version_tests.py#L175-L284)
 
 ## Fixtures and isolation
 
@@ -154,7 +171,7 @@ Some parser, writer, settings, session, WAAM, and exporter tests instantiate `QC
 
 ## Optional whole-project slicing regression
 
-The only registered whole-application slicing test is conditional. At configure time, CMake checks `ORNLSLICER_NEW_IMPACT_PROJECT`; when that path exists, it registers `new_impact_project_regression`, launches the built `ornlslicer` executable with `--input_project_file` and `--output_location`, and writes artifacts beneath the build tree. The checked-in default is a developer-local absolute path, so this test is normally absent on other machines unless explicitly configured. [source](repo://CMakeLists.txt#L463-L475) [source](repo://tests/run_project_slice_regression.cmake#L1-L31)
+The only registered whole-application slicing test is conditional. At configure time, CMake checks `ORNLSLICER_NEW_IMPACT_PROJECT`; when that path exists, it registers `new_impact_project_regression`, launches the built `ornlslicer` executable with `--input_project_file` and `--output_location`, and writes artifacts beneath the build tree. The checked-in default is a developer-local absolute path, so this test is normally absent on other machines unless explicitly configured. [source](repo://CMakeLists.txt#L541-L553) [source](repo://tests/run_project_slice_regression.cmake#L1-L31)
 
 To enable it with an available project:
 
@@ -177,12 +194,12 @@ The push workflow has three complementary signals:
 
 - Ubuntu and macOS run `nix flake check --all-systems`;
 - Ubuntu builds and bundles the Linux AppImage and runs only its `--help` command as a smoke test;
-- Ubuntu cross-builds the Windows portable tree and installer and uploads both artifacts. [source](repo://.github/workflows/ci.yml#L1-L19) [source](repo://.github/workflows/ci.yml#L21-L61) [source](repo://.github/workflows/ci.yml#L63-L108)
+- Ubuntu cross-builds the Windows portable tree and installer and uploads both artifacts. [source](repo://.github/workflows/ci.yml#L1-L40) [source](repo://.github/workflows/ci.yml#L73-L87) [source](repo://.github/workflows/ci.yml#L106-L167)
 
-The workflow does not explicitly invoke `ctest`, and the Nix package derivation defines neither a check phase nor a CTest command. A green packaging workflow therefore demonstrates the declared Nix/build/package steps, but it should not be reported as a run of the 21 focused tests. [source](repo://.github/workflows/ci.yml#L8-L19) [source](repo://.github/workflows/ci.yml#L42-L56) [source](repo://nix/ornlslicer/default.nix#L12-L64)
+The workflow does not explicitly invoke `ctest`, and the Nix package derivation defines neither a check phase nor a CTest command. A green packaging workflow therefore demonstrates the declared Nix/build/package steps, but it should not be reported as a run of the 28 focused tests. [source](repo://.github/workflows/ci.yml#L8-L19) [source](repo://.github/workflows/ci.yml#L42-L56) [source](repo://nix/ornlslicer/default.nix#L12-L64)
 
-No current CTest target drives a complete widget workflow, native file dialogs, drag-and-drop, rendered toolpaths, screenshots, or OpenGL behavior. `main_toolbar_tests` does create an offscreen `QApplication` to exercise toolbar layout and overflow, but it does not cover the native or rendered boundaries. The AppImage smoke check starts only the command-line help path. Validate those risks interactively on a machine with a display and suitable graphics support; for AppImage release work, follow the dedicated launch, dialog, preferences, alternate-settings, and output-ownership checklist. [source](repo://CMakeLists.txt#L229-L509) [source](repo://tests/main_toolbar_tests.cpp#L15-L78) [source](repo://.github/workflows/ci.yml#L52-L56) [source](repo://docs/contributing/linux-appimage.md#L33-L72)
+The suite has bounded GUI and rendering checks: toolbar and changelog tests create offscreen widgets, and `gcode_shading_tests` renders bead geometry with the production shaders. It still does not drive the complete main-window workflow, native dialogs, drag-and-drop, or controller execution. A skipped shading test is not rendering evidence. The AppImage smoke check starts only the command-line help path. Validate those risks interactively on a machine with a display and suitable graphics support; for AppImage release work, follow the dedicated launch, dialog, preferences, alternate-settings, and output-ownership checklist. [source](repo://CMakeLists.txt#L229-L509) [source](repo://tests/main_toolbar_tests.cpp#L15-L78) [source](repo://.github/workflows/ci.yml#L83-L87) [source](repo://docs/contributing/linux-appimage.md#L33-L72)
 
-Likewise, parser and writer tests validate syntax transformations in process, not acceptance by a physical controller. The optional project regression proves only that one supplied project reaches a nonempty G-code artifact. Treat controller compatibility, representative-project output review, and machine motion as separate integration evidence. [source](repo://tests/arc_specialties_parser_tests.cpp#L790-L875) [source](repo://tests/juggerbot_writer_tests.cpp#L81-L93) [source](repo://tests/run_project_slice_regression.cmake#L23-L50)
+Likewise, parser and writer tests validate syntax transformations in process, not acceptance by a physical controller. The optional project regression proves only that one supplied project reaches a nonempty G-code artifact. Treat controller compatibility, representative-project output review, and machine motion as separate integration evidence. [source](repo://tests/arc_specialties_parser_tests.cpp#L837-L909) [source](repo://tests/juggerbot_writer_tests.cpp#L81-L93) [source](repo://tests/run_project_slice_regression.cmake#L23-L50)
 
 Related reading: [Build and Packaging](../operations/build-and-packaging.md), [Slicing Pipeline](../architecture/slicing-pipeline.md), [G-code and Visualization](../architecture/gcode-and-visualization.md), and [Machine Syntaxes](../integrations/machine-syntaxes.md).

@@ -3,9 +3,6 @@ type: architecture
 title: Slicing Pipeline Orchestration
 description: End-to-end orchestration of slicer selection, preprocessing, parallel step computation, postprocessing, output generation, progress, cancellation, and completion.
 tags: [slicing, pipeline, threading, cancellation, progress]
-verified:
-  - by: openwiki/0.7.0
-    at: 2026-10-06T20:25:27.555Z
 sources:
   - id: openwiki-source-1c931b6d3c850e1860fde20c
     resource: repo://src/managers/session_manager.cpp
@@ -23,7 +20,10 @@ sources:
     resource: repo://src/threading/step_thread.cpp
   - id: openwiki-source-9f10ba488daafec662ecc53a
     resource: repo://src/threading/traditional_ast.cpp
-generated: { by: "codex", at: "2026-10-06T20:25:27.555Z" }
+generated: { by: "codex", at: "2026-10-20T18:20:49.849Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-20T18:20:49.849Z
 ---
 
 # Slicing Pipeline Orchestration
@@ -92,7 +92,7 @@ After postprocessing, a traditional slicer writes output only when `m_skip_gcode
 3. `writeGCodeShutdown()` writes shutdown and settings footer content, optionally annotates layers with estimated times, flushes, and closes the file.
 4. A final cancellation check gates `sliceComplete`.
 
-The setup derives XY bounds and maximum Z from all non-clipping parts. Layer-time comments are a best-effort post-pass: parser, seek, or rewrite failures log warnings and leave slicing completion intact. [source](repo://src/threading/abs_slicing_thread.cpp#L352-L389) [source](repo://src/threading/abs_slicing_thread.cpp#L391-L453)
+The setup derives XY bounds and maximum Z from all non-clipping parts. Layer-time comments are a best-effort post-pass: parser, seek, or rewrite failures log warnings and leave slicing completion intact. [source](repo://src/threading/abs_slicing_thread.cpp#L290-L369) [source](repo://src/threading/abs_slicing_thread.cpp#L372-L434)
 
 ## Planar mode
 
@@ -110,7 +110,11 @@ Helical slicing is not a fourth slicer. It is a `CylindricalPathPattern` handled
 
 Preprocessing copies global and part settings, clones and clips build meshes, computes their bounds, and dispatches each part to either `generateHelicalLayers` or `generateRadialLayers`. These routines directly create `CylindricalLayer` objects and their paths while reporting both preprocessing and compute progress across parts. Effective helical rounding and handedness values are passed to the Arc Specialties writer for output metadata. [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L459-L564)
 
-If no printable cylindrical paths are produced, the slicer emits a warning identifying the selected pattern and relevant boundary setting, but it does not fail the slice. Postprocessing either immediately reports 100% for the empty case or calculates modifiers layer by layer. G-code is then written in cylindrical-layer order. [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L566-L580) [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L870-L901)
+If no printable cylindrical paths are produced, the slicer emits a warning identifying the selected pattern and relevant boundary setting, but it does not fail the slice. Postprocessing either immediately reports 100% for the empty case or calculates modifiers layer by layer. G-code is then written in cylindrical-layer order. [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L566-L580) [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L896-L935)
+
+## Standalone layer output
+
+Planar and cylindrical writers also serialize each layer with a fresh machine writer initialized to the shared header state, then embed the standalone program as compressed comment metadata. `writeStandaloneLayer` supplies isolated startup, layer entry, and shutdown behavior; normal continuous output keeps its own writer state. Adamantine skips the embedded programs. Export validation and file writing belong to the downstream [G-code export contract](gcode-and-visualization.md#individual-layer-programs). [source](repo://src/threading/abs_slicing_thread.cpp#L349-L358) [source](repo://src/threading/slicers/planar_slicer.cpp#L929-L955) [source](repo://src/threading/slicers/cylindrical_slicer.cpp#L908-L935)
 
 ## Image mode
 

@@ -8,10 +8,16 @@ sources:
     resource: repo://CMakeLists.txt
   - id: openwiki-source-90a873fbb389104f241eb359
     resource: repo://resources/configs/configs.qrc
+  - id: openwiki-source-bda7c0f8cd37c067df9f98b3
+    resource: repo://resources/settings/022_profile_perimeter.yaml
+  - id: openwiki-source-ef4b9c6751bed39ac234315e
+    resource: repo://resources/settings/023_profile_inset.yaml
   - id: openwiki-source-6f5d88049adbd611fb8e2754
     resource: repo://resources/settings/README.md
   - id: openwiki-source-f3d5520098265089809f783c
     resource: repo://scripts/generate_master_config.py
+  - id: openwiki-source-6ff64b74980934b110037d1f
+    resource: repo://src/configs/settings_base.cpp
   - id: openwiki-source-947071c6d2a2129ec7e8974b
     resource: repo://src/configs/settings_file_comparator.cpp
   - id: openwiki-source-6fcc7143f4182d92a74a222f
@@ -38,10 +44,10 @@ sources:
     resource: repo://tests/settings_manager_tests.cpp
   - id: openwiki-source-1fd14546369693e17741b750
     resource: repo://tests/settings_version_control_tests.cpp
-generated: { by: "codex", at: "2026-10-08T21:29:05.545Z" }
+generated: { by: "codex", at: "2026-10-20T18:20:49.849Z" }
 verified:
-  - by: openwiki/0.7.0
-    at: 2026-10-08T21:29:05.545Z
+  - by: openwiki/0.7.2
+    at: 2026-10-20T18:20:49.849Z
 ---
 
 # Settings, Templates, and Preferences
@@ -115,7 +121,7 @@ For planar slicing, effective values are built from broadest to narrowest scope:
 
 The first two steps are explicit in the preprocessor's setup for every build part. [source](repo://src/slicing/preprocessor.cpp#L29-L45) Layer-range application and local adjustment occur before the primary cross-section is computed. [source](repo://src/slicing/buffered_slicer.cpp#L43-L59) [source](repo://src/slicing/buffered_slicer.cpp#L248-L285)
 
-A settings mesh contributes its own `SettingsBase` and sliced geometry, not another global template. `BufferedSlicer` cross-sections each settings part at the active plane and wraps the result as a `SettingsPolygon`. [source](repo://src/slicing/buffered_slicer.cpp#L326-L344) Perimeter generation, for example, cuts paths at polygon boundaries, selects the containing polygon by subsegment midpoint, overlays that polygon's settings on the parent region base, and then copies the effective values into segment settings. [source](repo://src/step/layer/regions/perimeter.cpp#L800-L847)
+A settings mesh contributes its own `SettingsBase` and sliced geometry, not another global template. `BufferedSlicer` cross-sections each settings part at the active plane and wraps the result as a `SettingsPolygon`. [source](repo://src/slicing/buffered_slicer.cpp#L326-L344) Perimeter generation, for example, cuts paths at polygon boundaries, selects the containing polygon by subsegment midpoint, overlays that polygon's settings on the parent region base, and then copies the effective values into segment settings. [source](repo://src/step/layer/regions/perimeter.cpp#L1582-L1627)
 
 These scopes are sparse by design: a part, range, or region only needs to contain the keys it overrides. Later `populate` calls win for matching keys while unrelated inherited keys remain present.
 
@@ -135,9 +141,13 @@ When adding or changing a setting, keep all layers aligned:
 
 ## Versioning and migration
 
-Saved setting files carry a master version. If an older file is loaded, `SettingsManager::checkVersion` can roll it forward automatically, ask in the GUI, or ask on the console. Accepting a prompted migration mutates the JSON; file-based template loading writes the migrated document back. Declining returns `-1`, but the current loader still continues to inspect and load the document, so callers must not describe decline as a hard rejection. [source](repo://src/managers/settings/settings_manager.cpp#L243-L300) [source](repo://src/managers/settings/settings_manager.cpp#L93-L139)
+Saved setting files carry a master version. If an older file is loaded, `SettingsManager::checkVersion` can roll it forward automatically, ask in the GUI, or ask on the console. Accepting a prompted migration mutates the JSON; file-based template loading writes the migrated document back. Declining returns `-1`, but the current loader still continues to inspect and load the document, so callers must not describe decline as a hard rejection. [source](repo://src/managers/settings/settings_manager.cpp#L301-L366) [source](repo://src/managers/settings/settings_manager.cpp#L93-L139)
 
-Migrations are sequential transformations in `SettingsVersionControl`. Focused tests verify concrete compatibility behavior, including renaming two historical helical start-angle keys while retaining their values, converting the former boolean variable-Z setting into its enumeration value, and advancing all three fixtures to master version 13. [source](repo://tests/settings_version_control_tests.cpp#L13-L64)
+Migrations are sequential transformations in `SettingsVersionControl`, now through master version 15. Version 14 converts the legacy helical angular offset to a signed arc length using the first generated radius (inner radius plus half the layer height); a nonzero angle without reference geometry is rejected. Version 15 renames the seven connected perimeter/inset controls, retains an existing current key on collision, and preserves the separate spiral-lift setting. `SettingsBase` normalizes legacy contour keys on JSON import and before overlaying JSON, including unversioned part/range settings. Focused tests cover legacy angle conversion, variable-Z enum conversion, contour migration, collision handling, and idempotence. [source](repo://src/managers/settings/settings_version_control.cpp#L331-L383) [source](repo://src/managers/settings/settings_version_control.cpp#L424-L474) [source](repo://src/configs/settings_base.cpp#L13-L70) [source](repo://tests/settings_version_control_tests.cpp#L15-L173)
+
+`checkVersion` snapshots the document before attempting migration and restores it on exceptions, returning `-1` and showing a GUI error for prompted updates. As with declined migration, callers must inspect their own handling of that result rather than assuming a hard load rejection. [source](repo://src/managers/settings/settings_manager.cpp#L301-L366)
+
+Connected contour enable flags are local-capable, but complete-loop, connect-after-wipe, and perimeter-to-inset chain controls are global-only metadata. Their dependencies restrict them to planar slicing and the relevant enabled regions. See [Planar Path Generation](../slicing/planar-path-generation.md) for geometry and fallback behavior. [source](repo://resources/settings/022_profile_perimeter.yaml#L235-L282) [source](repo://resources/settings/023_profile_inset.yaml#L148-L183)
 
 Serialization should go through the version formatter. `globalJson()` and `saveTemplate()` both attach the current versioned header rather than writing the in-memory settings array directly. [source](repo://src/managers/settings/settings_manager.cpp#L463-L466) [source](repo://src/managers/settings/settings_manager.cpp#L473-L515)
 
@@ -154,6 +164,8 @@ With no explicit path, preferences live at the platform application-data locatio
 Import is transactional from an observer's perspective. A `QSignalBlocker` suppresses setter notifications while the whole JSON object is applied. Once every value and color migration is complete, the manager emits the individual unit/theme notifications and exactly one `anyUnitChanged` aggregate signal. The focused import test asserts both the single emission and that its callback can already observe the final unit, camera, lag, and color state. [source](repo://src/managers/preferences_manager.cpp#L250-L333) [source](repo://tests/preferences_import_tests.cpp#L44-L73)
 
 Preference-specific migrations and guards belong in `PreferencesManager`, not the build-setting version chain. For example, stored visualization colors are migrated by their own version marker, invalid or empty colors fall back to registered defaults, and STEP tessellation deflection is clamped to a positive supported range; the round-trip and lower-bound behavior are covered by a focused test. [source](repo://src/managers/preferences_manager.cpp#L34-L94) [source](repo://src/managers/preferences_manager.cpp#L192-L223) [source](repo://tests/preferences_manager_tests.cpp#L19-L50)
+
+Legacy `SpiralConnection` color preferences migrate to `Connection`; an existing current color wins. This is a preference migration, separate from the build-setting schema. [source](repo://src/managers/preferences_manager.cpp#L192-L210)
 
 ## Failure and review checklist
 

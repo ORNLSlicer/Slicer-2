@@ -6,10 +6,14 @@ tags: [build, cmake, nix, ci, packaging, diagnostics]
 sources:
   - id: openwiki-source-a836451b0e5d245b3d5c916a
     resource: repo://.codex/environments/environment.toml
+  - id: openwiki-source-22672afc9bd1f970cd00e64d
+    resource: repo://.github/workflows/auto-rebase.yaml
   - id: openwiki-source-164e2da859b5277df81c7d94
     resource: repo://.github/workflows/ci.yml
   - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
     resource: repo://.github/workflows/openwiki-update.yml
+  - id: openwiki-source-958d20e1c524bd4847a88ba0
+    resource: repo://.github/workflows/prepare-release.yml
   - id: openwiki-source-d02327111261f96a065fb8de
     resource: repo://cmake/build_info.cmake
   - id: openwiki-source-5d790bd7059cfd1497fadcf0
@@ -20,29 +24,35 @@ sources:
     resource: repo://cmake/version.cmake
   - id: openwiki-source-d44494ef3e497fea81240ef8
     resource: repo://CMakeLists.txt
+  - id: openwiki-source-6021bafd170e50774c4e66a0
+    resource: repo://docs/contributing/versioning.md
   - id: openwiki-source-3eda5d2b85501c78fc0ba02d
     resource: repo://flake.nix
   - id: openwiki-source-41844989991110a96eb2c453
     resource: repo://nix/appimage/default.nix
   - id: openwiki-source-71ae1012989bc835de1e9233
     resource: repo://nix/ornlslicer/default.nix
+  - id: openwiki-source-afb703049218d4fb87ac4eb5
+    resource: repo://nix/windows-installer/default.nix
   - id: openwiki-source-6f5d88049adbd611fb8e2754
     resource: repo://resources/settings/README.md
   - id: openwiki-source-dc724c400ef7006f36d0b685
     resource: repo://scripts/installer.nsi
+  - id: openwiki-source-d469b03ab78fae94381a088e
+    resource: repo://scripts/version.py
   - id: openwiki-source-d364d949938a433276255c32
     resource: repo://src/main.cpp
   - id: openwiki-source-3a34e9951a829d6407a1f125
     resource: repo://src/utilities/runtime_diagnostics.cpp
-generated: { by: "codex", at: "2026-10-08T21:29:05.545Z" }
+generated: { by: "codex", at: "2026-10-20T18:20:49.849Z" }
 verified:
-  - by: openwiki/0.7.0
-    at: 2026-10-08T21:29:05.545Z
+  - by: openwiki/0.7.2
+    at: 2026-10-20T18:20:49.849Z
 ---
 
 # Build, Generated Assets, CI, and Packaging
 
-ORNLSlicer has two cooperating build layers. CMake describes compilation, generated headers and settings, tests, installation, and platform targets. Nix supplies pinned dependencies, the developer shell, native and Windows-cross packages, the Linux AppImage bundler, and the same package entry points used by CI. [source](repo://CMakeLists.txt#L1-L36) [source](repo://flake.nix#L1-L43) [source](repo://flake.nix#L52-L108)
+ORNLSlicer has two cooperating build layers. CMake describes compilation, generated headers and settings, tests, installation, and platform targets. Nix supplies pinned dependencies, the developer shell, native and Windows-cross packages, the Linux AppImage bundler, and the same package entry points used by CI. [source](repo://CMakeLists.txt#L1-L36) [source](repo://flake.nix#L1-L43) [source](repo://flake.nix#L46-L127)
 
 ```text
 version.json + Git state ────────> generated build_info.h
@@ -63,7 +73,7 @@ src/*.cpp + include/*.h + *.qrc ─> ornlslicer_obj
 
 ## Reproducible developer build
 
-The default `ornlslicerDev` shell inherits the package's build inputs and adds Git, jq, ccache, pre-commit, Doxygen/Graphviz, LLDB, clang tools, Python utilities, and Linux-only NSIS, `cntr`, and `clazy`. The flake uses LLVM 18 for the build environment and selects separate LLVM tooling packages—18 on x86-64 Darwin and 22 elsewhere. [source](repo://flake.nix#L14-L41) [source](repo://flake.nix#L110-L146)
+The default `ornlslicerDev` shell inherits the package's build inputs and adds Git, jq, ccache, pre-commit, Doxygen/Graphviz, LLDB, clang tools, Python utilities, and Linux-only NSIS, `cntr`, and `clazy`. The flake uses LLVM 18 for the build environment and selects separate LLVM tooling packages—18 on x86-64 Darwin and 22 elsewhere. [source](repo://flake.nix#L14-L41) [source](repo://flake.nix#L130-L166)
 
 Configure once with the checked-in multi-config Clang/Ninja preset, then build the desired configuration and target inside the Nix shell:
 
@@ -71,6 +81,8 @@ Configure once with the checked-in multi-config Clang/Ninja preset, then build t
 nix develop .#ornlslicerDev -L --command cmake --preset generic-llvm-ninja
 nix develop .#ornlslicerDev -L --command \
   cmake --build build/generic-llvm-ninja --config Debug --target ornlslicer
+nix develop .#ornlslicerDev -L --command \
+  cmake --build build/generic-llvm-ninja --config Debug
 nix develop .#ornlslicerDev -L --command \
   ctest --test-dir build/generic-llvm-ninja -C Debug --output-on-failure
 ```
@@ -122,21 +134,23 @@ The Nix derivation deliberately configures with automatic generation off. Theref
 
 ## Version and diagnostic provenance
 
-`version.json` is read in two forms: the CMake project version omits the suffix, while build/runtime version text uses `major.minor.patch-suffix` when a suffix exists. During configure, CMake also captures the latest Git commit, appends `-dirty` when tracked work differs, classifies the configuration as multi-config, a named single configuration, or unspecified, and accepts an overridable package type whose default is `local`. Those values are substituted into `generated/include/ornlslicer/build_info.h`. [source](repo://cmake/version.cmake#L3-L45) [source](repo://cmake/git.cmake#L3-L37) [source](repo://cmake/build_info.cmake#L1-L25) [source](repo://CMakeLists.txt#L28-L36)
+`version.json` is read in two forms: the CMake project version omits the suffix, while build/runtime version text uses SemVer prerelease/build-metadata syntax (`2.2.0-rc.1`, `2.2.0+build.5`, or both). During configure, CMake also captures the latest Git commit, appends `-dirty` when tracked work differs, classifies the configuration as multi-config, a named single configuration, or unspecified, and accepts an overridable package type whose default is `local`. Those values are substituted into `generated/include/ornlslicer/build_info.h`. [source](repo://cmake/version.cmake#L3-L80) [source](repo://cmake/git.cmake#L3-L37) [source](repo://cmake/build_info.cmake#L1-L25) [source](repo://CMakeLists.txt#L28-L36)
 
 Both GUI and successful CLI startup log a one-line runtime summary. It includes mode, semantic version, Git revision, build configuration, package type, Qt runtime version, and Qt compile-time version; the application version exposed to Qt comes from the same generated header. This makes a captured stderr line sufficient to distinguish source revisions and Qt/runtime mismatches, provided the build was reconfigured after provenance changed. [source](repo://src/utilities/runtime_diagnostics.cpp#L9-L27) [source](repo://src/main.cpp#L69-L106)
 
 ## Nix package graph
 
-The flake constructs native packages and a `windows` package set using the MinGW cross toolchain. The ORNLSlicer derivation supplies CMake, pkg-config and Ninja as native tools; links the complete Qt/geometry/data dependency set; uses the Linux Qt wrapper when native; and uses the Windows Qt plugin deployment hook when cross compiling. [source](repo://flake.nix#L52-L83) [source](repo://nix/ornlslicer/default.nix#L1-L55)
+The flake constructs native packages and a `windows` package set using the MinGW cross toolchain. The ORNLSlicer derivation supplies CMake, pkg-config and Ninja as native tools; links the complete Qt/geometry/data dependency set; uses the Linux Qt wrapper when native; and uses the Windows Qt plugin deployment hook when cross compiling. [source](repo://flake.nix#L46-L103) [source](repo://nix/ornlslicer/default.nix#L1-L55)
 
 The CMake install tree contains the application, the Windows console binary and runtime DLLs on Windows, the user-guide PDF, and template directory. That install tree is what Nix packages and what the Windows installer copies. [source](repo://CMakeLists.txt#L554-L564) [source](repo://scripts/installer.nsi#L49-L78)
 
-The flake also advertises the project's Cachix substituter and trusted public key. Accepting the flake configuration lets local and CI Nix builds reuse those signed binaries; CI publishes new cache results only for the `develop` branch. [source](repo://flake.nix#L150-L153) [source](repo://.github/workflows/ci.yml#L30-L43) [source](repo://.github/workflows/ci.yml#L73-L89)
+The application source fileset includes `CHANGELOG.md`, CMake inputs, `include/`, `src/`, `tests/`, `resources/`, `templates/`, `version.json`, and the installed user guide. Workflow, wiki, and non-installed documentation changes therefore do not change that application source path. The changelog is included because the GUI embeds it as a Qt resource. Nix expressions and dependencies still independently affect derivations. [source](repo://flake.nix#L49-L83) [source](repo://resources/docs/docs.qrc#L1-L5)
+
+The flake advertises the signed Cachix substituter and public key. CI accepts flake configuration; cache write credentials are supplied only for pushes to `develop` and published releases. Develop pushes also realize the Linux development shell. Releases synchronously push four outputs before creating permanent version-specific pins for Linux, AppImage, Windows, and the Windows installer. Each release tag must equal `v` plus the package version. Other branches consume the cache without its write token. See [Cachix Workflow](../../docs/contributing/cachix.md) for developer publishing and retention verification. [source](repo://flake.nix#L170-L173) [source](repo://.github/workflows/ci.yml#L55-L99) [source](repo://.github/workflows/ci.yml#L123-L157)
 
 ## Linux AppImage
 
-The AppImage bundler accepts a derivation or flake app but is restricted to x86-64 Linux. Its custom `AppRun` checks `APPDIR`, then launches the packaged entry point through a pinned static PRoot while binding the bundled Nix store at `/nix`. This is path translation under the invoking user, not an elevation or security sandbox. [source](repo://flake.nix#L85-L108) [source](repo://nix/appimage/default.nix#L7-L35) [source](repo://docs/contributing/linux-appimage.md#L3-L18)
+The AppImage bundler accepts a derivation or flake app but is restricted to x86-64 Linux. Its custom `AppRun` checks `APPDIR`, then launches the packaged entry point through a pinned static PRoot while binding the bundled Nix store at `/nix`. This is path translation under the invoking user, not an elevation or security sandbox. [source](repo://flake.nix#L105-L127) [source](repo://nix/appimage/default.nix#L7-L35) [source](repo://docs/contributing/linux-appimage.md#L3-L18)
 
 Build the same artifact shape as CI with:
 
@@ -150,13 +164,23 @@ CI builds the Linux derivation, bundles it, then smoke-tests `--help` as a non-r
 
 ## Windows portable tree and installer
 
-CI builds `windows.ornl.ornlslicer` on an Ubuntu runner and names a portable directory and installer from the derivation metadata and workflow run. Installer generation runs `makensis` through `nix shell --accept-flake-config .#legacyPackages.x86_64-linux.nixpkgs.nsis`, so this packaging step obtains only the native NSIS tool instead of entering the broader development shell. The portable tree, output path, and version are passed as NSIS definitions, and both the portable tree and installer executable are uploaded. [source](repo://.github/workflows/ci.yml#L63-L108)
+CI builds `windows.ornl.ornlslicer` and the first-class `windowsInstaller` derivation on Ubuntu. The installer derivation runs native NSIS against the versioned Windows tree with normalized input timestamps and a deterministic `ornlslicer-<version>-installer.exe` filename. CI adds its run number only to the copied upload name; both portable and installer outputs remain independently cacheable. [source](repo://flake.nix#L93-L103) [source](repo://nix/windows-installer/default.nix#L10-L46) [source](repo://.github/workflows/ci.yml#L106-L167)
 
 The NSIS package installs for all users under 64-bit Program Files and requests administrator rights. It copies the full CMake/Nix install tree, records uninstall metadata and release links, creates application and uninstall Start Menu shortcuts, and removes the install and shortcut directories on uninstall. [source](repo://scripts/installer.nsi#L22-L47) [source](repo://scripts/installer.nsi#L49-L97)
 
 ## CI boundary
 
-Every push cancels an older in-progress run for the same workflow/ref. The check matrix runs `nix flake check --all-systems` on Ubuntu and macOS. Separate jobs build and package Linux and Windows artifacts with Git LFS content present; only the Linux AppImage receives a command-line smoke test in this workflow. Treat successful packaging as evidence for those declared checks, not as proof that every CTest executable or interactive GUI workflow ran. [source](repo://.github/workflows/ci.yml#L1-L19) [source](repo://.github/workflows/ci.yml#L21-L61) [source](repo://.github/workflows/ci.yml#L63-L107)
+Pushes, manual dispatches, and published releases run Nix CI. Version validation runs first and gates the Ubuntu/macOS flake checks and Linux/Windows packaging jobs. The declared runtime smoke test is Linux AppImage `--help` under a non-root user; the workflow does not declare a full CTest or interactive GUI pass. Concurrency cancels older runs for the same workflow/ref. [source](repo://.github/workflows/ci.yml#L1-L40) [source](repo://.github/workflows/ci.yml#L73-L87) [source](repo://.github/workflows/ci.yml#L106-L167)
+
+Auto-rebase uses a repository App token, checks out `develop`, and limits PR targets to branches in the same repository. Fork PRs are skipped; preserve this boundary whenever changing its `pull_request_target` handling. [source](repo://.github/workflows/auto-rebase.yaml#L44-L101)
+
+## Release preparation and changelog
+
+`version.json` contains exactly four string fields (`major`, `minor`, `patch`, `suffix`), canonical numeric components, and MAJOR at most 2. CMake and Nix use validated readers; product versions are separate from settings schema versions. `scripts/version.py validate` checks schema and optional base/tag constraints. `prepare` defaults to a JSON dry run; only `--write` changes `version.json` and it refuses existing edits to that file. [source](repo://cmake/version.cmake#L3-L80) [source](repo://nix/version.nix#L1-L27) [source](repo://scripts/version.py#L78-L126) [source](repo://scripts/version.py#L214-L254)
+
+Release inference uses eligible canonical tags and full Conventional Commit messages: `fix`/`perf` select PATCH, `feat` selects MINOR, and breaking messages require MAJOR below 2. At MAJOR 2, breaking changes require an explicit MINOR bump plus a compatibility note; the tool never produces MAJOR 3. Missing/mismatched tags, ambiguous metadata, and non-increasing candidates fail. Read [Versioning and Release Preparation](../../docs/contributing/versioning.md) for tag eligibility and prerelease rules. [source](repo://scripts/version.py#L113-L211)
+
+The manually dispatched Prepare release workflow runs on `develop` and defaults to dry run. Write mode creates a fresh `codex/release-<version>` branch, commits only the version file, opens a PR to `develop`, and explicitly dispatches Nix CI; it refuses to overwrite an existing release branch. Maintainers finalize `CHANGELOG.md` on that PR branch after the version-only commit and carry compatibility notes into release notes. The bundled Help viewer consumes that same file. [source](repo://.github/workflows/prepare-release.yml#L31-L105) [source](repo://docs/contributing/changelog.md#L1-L52) [source](repo://resources/docs/docs.qrc#L1-L5)
 
 ## Automated OpenWiki maintenance
 

@@ -32,16 +32,20 @@ sources:
     resource: repo://src/managers/session_manager.cpp
   - id: openwiki-source-ee47d8a7bebb804c33b330b4
     resource: repo://src/managers/settings/settings_manager.cpp
+  - id: openwiki-source-97f2984c6f7df859b5dac320
+    resource: repo://src/managers/settings/settings_version_control.cpp
   - id: openwiki-source-b1134fc13dd24912e260b947
     resource: repo://src/threading/abs_slicing_thread.cpp
   - id: openwiki-source-4c1d7b6308a78ba9c493ce8a
     resource: repo://src/threading/gcode_loader.cpp
   - id: openwiki-source-c9b49d4d1b98e2ebff97fee2
     resource: repo://src/threading/session_loader.cpp
-generated: { by: "codex", at: "2026-10-08T21:29:05.545Z" }
+  - id: openwiki-source-c104bb75a5f8622243458c6e
+    resource: repo://tests/gcode_shading_tests.cpp
+generated: { by: "codex", at: "2026-10-20T18:20:49.849Z" }
 verified:
-  - by: openwiki/0.7.0
-    at: 2026-10-08T21:29:05.545Z
+  - by: openwiki/0.7.2
+    at: 2026-10-20T18:20:49.849Z
 ---
 
 # ORNLSlicer OpenWiki Quickstart
@@ -59,7 +63,7 @@ git status --short --branch
 rg -n 'NamedType|setting_key|signalName|command_text' include src resources tests
 ```
 
-Headers and implementations are normally paired beneath `include/` and `src/`; `resources/settings/` owns setting metadata, `templates/` owns installed process/printer templates, and CMake/Nix own build and package topology. [source](repo://AGENTS.md#L35-L40) [source](repo://resources/settings/README.md#L1-L15) [source](repo://CMakeLists.txt#L139-L164) [source](repo://CMakeLists.txt#L478-L515) [source](repo://CMakeLists.txt#L552-L564)
+Headers and implementations are normally paired beneath `include/` and `src/`; `resources/settings/` owns setting metadata, `templates/` owns installed process/printer templates, and CMake/Nix own build and package topology. [source](repo://AGENTS.md#L159-L162) [source](repo://resources/settings/README.md#L1-L15) [source](repo://CMakeLists.txt#L139-L164) [source](repo://CMakeLists.txt#L478-L515) [source](repo://CMakeLists.txt#L552-L564)
 
 Establish the ordinary development baseline inside the repository's Nix shell:
 
@@ -69,7 +73,7 @@ nix develop .#ornlslicerDev -L --command \
   cmake --build build/generic-llvm-ninja --config Debug --target ornlslicer
 ```
 
-The checked-in preset uses Clang, Ninja Multi-Config, and `build/generic-llvm-ninja`. For a compile-only iteration across shared production sources, replace the final target with `ornlslicer_obj`; that object library is linked by both the application and focused test executables. [source](repo://cmake/presets/generic-llvm-ninja.json#L1-L14) [source](repo://CMakeLists.txt#L139-L164) [source](repo://AGENTS.md#L56-L64)
+The checked-in preset uses Clang, Ninja Multi-Config, and `build/generic-llvm-ninja`. For a compile-only iteration across shared production sources, replace the final target with `ornlslicer_obj`; that object library is linked by both the application and focused test executables. [source](repo://cmake/presets/generic-llvm-ninja.json#L1-L14) [source](repo://CMakeLists.txt#L139-L164) [source](repo://AGENTS.md#L166-L173)
 
 ## The entry rule: arguments select the shell
 
@@ -127,6 +131,10 @@ Toolpath modes select a concrete writer from the active machine syntax. Generate
 | Add or change a machine dialect | syntax enum/metadata, `src/gcode/writers`, parser selection in `GCodeLoader`, and syntax-specific tests | [Machine Syntaxes](integrations/machine-syntaxes.md) |
 | Change imported/generated G-code display, timing, colors, preview, or export | `src/threading/gcode_loader.cpp` and its parser, widget, or export consumer | [G-code and Visualization](architecture/gcode-and-visualization.md) |
 | Change dependencies, generated build metadata, packages, AppImage, or installer | `CMakeLists.txt`, `cmake/`, `flake.nix`, `nix/`, and packaging scripts | [Build and Packaging](operations/build-and-packaging.md) |
+| Change connected contours, forward-wipe connections, or perimeter-to-inset chains | `include/geometry/contour_connection.h`, perimeter/inset regions and `PolymerIsland::optimize` | [Planar Path Generation](slicing/planar-path-generation.md#connected-contours) |
+| Change standalone layer export or preview connection identity | `src/gcode/gcode_layer_export.cpp`, `src/threading/gcode_layer_saver.cpp`, writer hooks and loader comments | [G-code and Visualization](architecture/gcode-and-visualization.md) |
+| Prepare a release, adjust version rules, or maintain release history | `scripts/version.py`, `version.json`, `CHANGELOG.md`, release workflows | [Build and Packaging](operations/build-and-packaging.md#release-preparation-and-changelog) |
+| Change the offline Help changelog viewer | `src/windows/changelog.cpp`, `resources/docs/docs.qrc`, Help-menu wiring | [Application Runtime](architecture/application-runtime.md#runtime-ui-extensions) |
 | Add or choose regression coverage | the explicit test target block in `CMakeLists.txt` and the matching standalone file under `tests/` | [Test Strategy](testing/strategy.md) |
 
 Project persistence is a zip-backed contract, not merely a file extension. `SessionLoader` embeds active model data and serializes part transforms, global settings, part-local settings, ranges, and a version marker; loading restores those pieces after the settings-version preflight in `SessionManager`. [source](repo://src/threading/session_loader.cpp#L37-L128) [source](repo://src/threading/session_loader.cpp#L131-L216) [source](repo://src/managers/session_manager.cpp#L708-L740)
@@ -135,7 +143,7 @@ The geometry route is also the output route: `Step` owns settings, slicing-plane
 
 ## Settings are a source-to-generated contract
 
-Edit `resources/settings/*.yaml`; do not treat the generated JSON files as the authoring surface. Sorted YAML path order and in-file setting order determine generated catalog and UI order. Generate and validate both artifacts together: [source](repo://resources/settings/README.md#L1-L15) [source](repo://AGENTS.md#L52-L55)
+Edit `resources/settings/*.yaml`; do not treat the generated JSON files as the authoring surface. Sorted YAML path order and in-file setting order determine generated catalog and UI order. Generate and validate both artifacts together: [source](repo://resources/settings/README.md#L1-L15) [source](repo://AGENTS.md#L162-L173)
 
 ```bash
 python3 scripts/generate_master_config.py \
@@ -146,6 +154,8 @@ jq empty resources/configs/master.conf resources/configs/setting_inputs.conf
 ```
 
 Both generated files are embedded under the `/configs` Qt resource prefix. `SettingsManager` parses them into the master catalog, composite input metadata, and default-valued active global settings; the CLI converter also reads embedded `master.conf`. A settings change is incomplete if the YAML and both generated artifacts disagree. [source](repo://resources/configs/configs.qrc#L1-L8) [source](repo://src/managers/settings/settings_manager.cpp#L38-L68) [source](repo://src/console/command_line_processor.cpp#L34-L41)
+
+Current persisted settings are schema version 15. Helical tool offsets are signed arc lengths evaluated at each actual radius; legacy angles migrate with first-radius reference geometry. Connected contour keys replace former spiral-connection names while spiralized printing remains separate. [source](repo://src/managers/settings/settings_version_control.cpp#L331-L383) [source](repo://src/managers/settings/settings_version_control.cpp#L424-L474)
 
 For template, override-precedence, widget dependency, migration, and preference persistence details, use [Settings and Preferences](architecture/settings-and-preferences.md).
 
@@ -174,7 +184,7 @@ nix develop .#ornlslicerDev -L --command \
   ctest --test-dir build/generic-llvm-ninja -C Debug --output-on-failure
 ```
 
-Focused binaries use the `ornlslicer_` build-target prefix while CTest names omit it. The test block declares 24 focused executables and one project-slice regression that appears only when its configured local `.s2p` fixture exists. For the recent settings comparison, template-shape filter, and toolbar-overflow contracts, build `ornlslicer_settings_file_comparator_tests`, `ornlslicer_settings_manager_tests`, and `ornlslicer_main_toolbar_tests`, then filter CTest with their three unprefixed names. [source](repo://CMakeLists.txt#L229-L494) [source](repo://CMakeLists.txt#L496-L508)
+Focused binaries use the `ornlslicer_` build-target prefix while CTest names omit it. The test block declares 28 focused executables and one project-slice regression that appears only when its configured local `.s2p` fixture exists. For the recent settings comparison, template-shape filter, and toolbar-overflow contracts, build `ornlslicer_settings_file_comparator_tests`, `ornlslicer_settings_manager_tests`, and `ornlslicer_main_toolbar_tests`, then filter CTest with their three unprefixed names. [source](repo://CMakeLists.txt#L229-L539) [source](repo://CMakeLists.txt#L541-L553)
 
 Use these additional checks according to the changed contract:
 
@@ -182,7 +192,7 @@ Use these additional checks according to the changed contract:
 - C++: format changed files with the repository `.clang-format` and compile the affected target;
 - source/header/resource additions or deletions: rerun CMake configure because production inputs are globbed;
 - documentation only: run `git diff --check -- <touched-files>`;
-- GUI, native-dialog, OpenGL, or controller-facing behavior: add interactive or external integration evidence because current CTest and packaging smoke checks do not cover those outcomes. [source](repo://AGENTS.md#L46-L51) [source](repo://CMakeLists.txt#L139-L157) [source](repo://.github/workflows/ci.yml#L52-L56)
+- GUI, native-dialog, OpenGL, or controller-facing behavior: use the bounded toolbar, changelog, color and shader tests where applicable, then add interactive or external integration evidence for the remaining outcomes. [source](repo://AGENTS.md#L166-L175) [source](repo://CMakeLists.txt#L139-L157) [source](repo://.github/workflows/ci.yml#L83-L87)
 
 The exact test-to-risk map, the optional whole-project regression, and the distinction between local CTest and CI packaging evidence are in [Test Strategy and Validation Map](testing/strategy.md).
 

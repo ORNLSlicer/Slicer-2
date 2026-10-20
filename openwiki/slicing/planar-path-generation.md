@@ -3,12 +3,9 @@ type: guide
 title: Planar Cross-Sections and Path Generation
 description: How planar slicing turns meshes and layered settings into cross-sections, islands, region paths, globally ordered motion, and final modifiers.
 tags: [slicing, planar, cross-section, toolpath, optimization]
-verified:
-  - by: openwiki/0.7.0
-    at: 2026-10-06T20:25:27.555Z
 sources:
-  - id: openwiki-source-887cfcc08f62566488b9d633
-    resource: repo://include/geometry/spiral_path.h
+  - id: openwiki-source-37878225e1b652f31b122609
+    resource: repo://include/geometry/contour_connection.h
   - id: openwiki-source-8882bcf023823dd683b4b159
     resource: repo://include/slicing/buffered_slicer.h
   - id: openwiki-source-7aa3597430c5531fbd775d9a
@@ -35,6 +32,8 @@ sources:
     resource: repo://src/step/layer/layer.cpp
   - id: openwiki-source-54164313dac767bd4d5141e6
     resource: repo://src/step/layer/regions/infill.cpp
+  - id: openwiki-source-28ac42c237d5d9987f0085d5
+    resource: repo://src/step/layer/regions/inset.cpp
   - id: openwiki-source-e451362b0f73808dce5d1127
     resource: repo://src/step/layer/regions/perimeter.cpp
   - id: openwiki-source-49cb237e320e24287dd4e890
@@ -45,13 +44,18 @@ sources:
     resource: repo://src/threading/step_thread.cpp
   - id: openwiki-source-9f10ba488daafec662ecc53a
     resource: repo://src/threading/traditional_ast.cpp
+  - id: openwiki-source-611a07d7b5589694e83c490e
+    resource: repo://tests/contour_connection_branch_tests.cpp
+  - id: openwiki-source-4f43f1fde5d2866604687e66
+    resource: repo://tests/contour_connection_tests.cpp
   - id: openwiki-source-adce7a1f3cfeab8995ef38b7
     resource: repo://tests/global_layer_tests.cpp
-  - id: openwiki-source-51467dfa692587cc89b1d6a2
-    resource: repo://tests/spiral_path_tests.cpp
   - id: openwiki-source-fd42cdedbc9d871771e139f8
     resource: repo://tests/variable_layer_height_tests.cpp
-generated: { by: "codex", at: "2026-10-06T20:25:27.555Z" }
+generated: { by: "codex", at: "2026-10-20T18:20:49.849Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-20T18:20:49.849Z
 ---
 
 # Planar Cross-Sections and Path Generation
@@ -112,7 +116,7 @@ The effective layer settings are assembled in this order:
 
 The first four stages create the `SliceMeta::settings` snapshot. The fifth is intentionally not a blanket `SettingsBase::populate()`: each region decides which local values affect its geometry or segment metadata. [source](repo://src/threading/slicers/planar_slicer.cpp#L46-L57) [source](repo://src/slicing/preprocessor.cpp#L29-L48) [source](repo://src/slicing/buffered_slicer.cpp#L43-L59) [source](repo://src/slicing/buffered_slicer.cpp#L326-L345)
 
-For example, infill removes masks whose relevant infill settings differ from the base, fills the remaining geometry with base settings, then fills intersections with enabled local masks using their line spacing and angle. Perimeters instead split contour segments at settings-polygon boundaries and populate each subsegment from the first containing mask, so speed, material, width policy, and modifier inputs can change along one contour. The initial overlap check makes overlapping settings-part precedence an error rather than relying on iteration order. [source](repo://src/step/layer/regions/infill.cpp#L43-L80) [source](repo://src/step/layer/regions/perimeter.cpp#L676-L698) [source](repo://src/step/layer/regions/perimeter.cpp#L797-L865) [source](repo://src/slicing/slicing_utilities.cpp#L226-L255)
+For example, infill removes masks whose relevant infill settings differ from the base, fills the remaining geometry with base settings, then fills intersections with enabled local masks using their line spacing and angle. Perimeters instead split contour segments at settings-polygon boundaries and populate each subsegment from the first containing mask, so speed, material, width policy, and modifier inputs can change along one contour. The initial overlap check makes overlapping settings-part precedence an error rather than relying on iteration order. [source](repo://src/step/layer/regions/infill.cpp#L43-L80) [source](repo://src/step/layer/regions/perimeter.cpp#L1582-L1627) [source](repo://src/step/layer/regions/perimeter.cpp#L1641-L1680) [source](repo://src/slicing/slicing_utilities.cpp#L226-L255)
 
 ## Variable layer height
 
@@ -154,7 +158,15 @@ Region optimizers turn computed polylines into `Path` and segment objects, choos
 
 Optimizers must make progress on imperfect generated input. Focused tests pin empty island results to `-1`, filter empty paths and degenerate polylines, consume zero-distance candidates even under next-farthest ordering, and distinguish monotonic open-line linking from explicit path-order linking. [source](repo://tests/optimizer_empty_input_tests.cpp#L139-L228)
 
-Perimeter and inset loops can be joined into open spiral-style groups. Only nested loops with a short enough connector remain in one extruding group; unrelated or non-adjacent loops terminate the current group so callers can travel to the next one. Tests cover adjacent nested loops, disjoint loops, overly large nested gaps, multiple separate inset stacks, and a start point lying mid-edge. [source](repo://include/geometry/spiral_path.h#L201-L208) [source](repo://include/geometry/spiral_path.h#L228-L307) [source](repo://tests/spiral_path_tests.cpp#L32-L103)
+### Connected contours
+
+`ContourConnection::linkClosedPolylineGroups` joins eligible nested loops into open extrusion groups. Unrelated loops and gaps beyond the width-based connector limit terminate a group, leaving travel between groups. Point annotations identify the outgoing connector without mutating the original loop's settings. The current helper and tests replace the removed `SpiralPath` header and test target; connected contours are distinct from spiralized layer printing. [source](repo://include/geometry/contour_connection.h#L275-L330) [source](repo://include/geometry/contour_connection.h#L780-L878) [source](repo://include/geometry/connection.h#L10-L24) [source](repo://tests/contour_connection_tests.cpp#L32-L103)
+
+Perimeter and inset controls independently select connection enablement, completion of the loop before connection, and connection after a forward tip wipe. The post-wipe branch code rotates seams, prefers a local angled approach, validates both emitted loops and the final branch geometry, and flushes the current group when a connection is unsafe. This preserves separate paths rather than assuming every requested connection exists. [source](repo://resources/settings/022_profile_perimeter.yaml#L235-L282) [source](repo://resources/settings/023_profile_inset.yaml#L148-L183) [source](repo://include/geometry/contour_connection.h#L538-L618) [source](repo://src/step/layer/regions/inset.cpp#L409-L491)
+
+`PolymerIsland::optimize` can pass computed inset geometry and widths to the perimeter stage when both connection modes and Connect to insets are enabled, inset geometry exists, and the perimeter is immediately before the inset in region order. Effective multi-material settings must permit the same material for both regions, including overrides from settings polygons that actually intersect this island. Only consumed inset output is suppressed; unavailable chains retain the normal inset path. [source](repo://src/step/layer/island/polymer_island.cpp#L28-L54) [source](repo://src/step/layer/island/polymer_island.cpp#L104-L142)
+
+Perimeter-to-inset chains retain destination-region settings, local bead widths, and connection identity. The perimeter tracks consumed inset geometry and applies localized inset settings to the corresponding segments; writer transitions can change region state without ending the physical path. Regression coverage includes localized materials, unrelated masks, intervening regions, fallback paths, and reoptimization after eligibility changes. [source](repo://src/step/layer/regions/perimeter.cpp#L1630-L1749) [source](repo://tests/contour_connection_branch_tests.cpp#L1228-L1458)
 
 ## Postprocessing, modifiers, and output coordinates
 
@@ -167,7 +179,7 @@ For every dirty global layer, planar postprocessing performs this exact sequence
 
 [source](repo://src/threading/slicers/planar_slicer.cpp#L870-L920) [source](repo://src/step/global_layer.cpp#L110-L181)
 
-Region-level modifiers include sharp-corner extension, trajectory slowdown, startup, tip wipe, and optional spiral lift. Modifier code reads segment-local settings before its fallback settings where supported; the sharp-corner regression proves that local settings can enable an extension even when the fallback is disabled, and also guards continuity and the close-connector threshold. [source](repo://src/geometry/path_modifier.cpp#L77-L116) [source](repo://src/step/layer/regions/perimeter.cpp#L704-L795) [source](repo://tests/path_modifier_tests.cpp#L30-L95)
+Region-level modifiers include sharp-corner extension, trajectory slowdown, startup, tip wipe, and optional spiral lift. Modifier code reads segment-local settings before its fallback settings where supported; the sharp-corner regression proves that local settings can enable an extension even when the fallback is disabled, and also guards continuity and the close-connector threshold. [source](repo://src/geometry/path_modifier.cpp#L77-L116) [source](repo://src/step/layer/regions/perimeter.cpp#L1409-L1508) [source](repo://tests/path_modifier_tests.cpp#L30-L95)
 
 Arc fitting is deliberately narrow: it requires G3 support, an emitting syntax whose writer implements arcs, planar mode, and the exact +Z slicing normal. After reorientation, the layer also raises ordinary material paths to a printable minimum Z and redirects clearance modifiers that would cross the build plate; wire-arc surface-referenced and spiralized paths use separate height conventions. [source](repo://src/step/layer/regions/region_base.cpp#L29-L55) [source](repo://src/step/layer/regions/region_base.cpp#L258-L262) [source](repo://src/step/layer/layer.cpp#L410-L465) [source](repo://src/step/layer/layer.cpp#L486-L522)
 
