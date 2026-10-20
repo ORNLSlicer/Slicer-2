@@ -58,7 +58,9 @@ The supported cacheable outputs are:
 The [Nix CI workflow](../../.github/workflows/ci.yml) passes
 `--accept-flake-config` to checks, evaluations, builds, and bundling so each job
 can consume the signed public cache. Its built-in GitHub token is read-only and
-checkout credentials are not retained in the Linux and Windows build jobs.
+checkout credentials are not retained in the Linux and Windows build jobs. A
+separate release-only publication job receives `contents: write` to attach
+downloads after all builds and checks pass; it receives no Cachix token.
 
 Cache write credentials are available in two trusted cases:
 
@@ -118,6 +120,11 @@ After publishing or rerunning a release:
    that workflow run.
 4. Treat a missing pin as a failed release-maintenance task even if the GitHub
    release artifacts uploaded successfully.
+
+The release-only publication job attaches the AppImage, Windows installer, and
+portable ZIP to the GitHub release after all builds, checks, and pin steps pass.
+See [Versioning and release preparation](versioning.md#github-workflow) for
+branch promotion, download verification, and failed-run recovery.
 
 ## Obtain Write Access
 

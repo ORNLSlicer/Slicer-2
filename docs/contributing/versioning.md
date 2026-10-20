@@ -93,10 +93,56 @@ The tests require Python 3.9+, Git, CMake 3.25+, and Nix (`nix-instantiate`). Th
 exercise real temporary Git repositories and compare the Python, CMake and pure
 Nix readers without compiling the application or downloading its dependencies.
 
+## Release branches
+
+`develop` is the integration branch and remains the repository's default branch.
+`main` contains released code. Prepare each version through a temporary
+`codex/release-<version>` PR into `develop`, then promote `develop` into `main`
+with a merge commit. Do not squash or rebase the promotion: version-baseline
+discovery relies on the shared history and matching release tree. Do not add
+release-only edits while merging into `main`; make those changes through
+`develop` first. Historical releases on `master` remain unchanged.
+
+A separate stabilization branch is only needed when new development must
+continue during release testing. Merge its fixes and finalized version/changelog
+back into `develop` before promotion. For routine releases, hold new feature
+merges between finalizing the release PR and promoting `develop`.
+
+## Repository setup
+
+The workflow files must be present on the repository's default branch before
+GitHub permits dispatch. In **Settings > Actions > General > Workflow
+permissions**, enable **Allow GitHub Actions to create and approve pull
+requests** and save. This setting permits release PR creation; the workflow does
+not approve or merge PRs. The default token permissions may remain read-only:
+the preparation and publication jobs request their required write permissions
+explicitly. If the checkbox is unavailable or disabled by policy, ask an
+organization/enterprise administrator to enable it. See
+[GitHub's repository Actions settings](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository).
+
+Enable **Allow merge commits** in **Settings > General > Pull Requests**.
+In **Settings > Rules > Rulesets**, edit the active rules targeting `main`:
+disable **Require linear history** and allow merge commits in the pull-request
+rule's allowed merge methods. A rebase-only rule still blocks promotion even
+when the repository permits merge commits. Organization-owned rules require an
+organization administrator to make the corresponding change. If a ruleset
+covers both `main` and `develop`, split the branch-specific rules to retain
+`develop`'s existing merge policy while allowing merge commits on `main`.
+
+Keep PR review requirements and require successful version validation for
+promotion PRs: select the actual job check after a **Version validation** PR
+run, rather than the workflow display name. **Nix CI** builds branch pushes
+and the final `main` commit.
+Keep `CACHIX_AUTH_TOKEN` configured as described in
+[Cachix Workflow](cachix.md).
+
 ## GitHub workflow
 
 1. Run **Prepare release** (`prepare-release.yml`) against `develop`. It defaults
    to a dry run; inspect the calculated version, baseline, and compatibility note.
+   Review the changelog and source for breaking changes even when inference says
+   `breaking=false`: unmarked commit messages cannot identify them. At MAJOR 2,
+   select `bump=minor` and provide a compatibility note for such changes too.
 2. Run again with `dry_run=false` to create `codex/release-<version>` and a PR into
    `develop`. Select an explicit bump/note when needed. The workflow changes only
    `version.json`, runs focused checks, and dispatches **Nix CI** on the release
@@ -107,22 +153,56 @@ Nix readers without compiling the application or downloading its dependencies.
    the selected version, release date, highlights, and compatibility notes; follow
    [Maintaining the Changelog](changelog.md). This is a manual step after the
    workflow's version-only commit. Review and merge the PR after CI passes.
-   Create `v<full-version>` on the release
-   commit or release-branch merge containing it, then publish the GitHub release.
-   Tag validation runs before Nix builds/cache publication. Copy compatibility
-   notes and the finalized changelog section into the release notes.
+4. Open a promotion PR with base `main` and head `develop`. Wait for version
+   validation and the Nix CI run for the reviewed `develop` commit to pass, then
+   use **Create a merge commit**. Confirm Nix CI passes on the resulting `main`
+   commit and that its tree matches the reviewed release contents.
+5. Create `v<full-version>` on that exact `main` commit, then publish the GitHub
+   release using that tag. Do not rely on the release form's default target,
+   which is `develop`. Copy compatibility notes and the finalized changelog
+   section into the release notes. Creating a tag alone does not publish
+   downloads; the `release: published` event starts publication.
+6. Confirm every job in the release-triggered **Nix CI** run passes. Version/tag
+   validation runs before builds and cache publication. After both platform
+   builds, Cachix pins, and Linux/macOS flake checks succeed, the **publish** job
+   downloads that run's artifacts and attaches three files to the release:
+   the Linux `.appimage`, Windows installer `.exe`, and Windows portable `.zip`.
+   The ZIP contains the complete `ornlslicer/` tree; extract it before running
+   `ornlslicer/bin/ornlslicer.exe`. Linux users must mark the downloaded AppImage
+   executable with `chmod +x <filename>.appimage`. Verify all three release
+   downloads and the [four Cachix pins](cachix.md#release-retention).
 
-The workflow files must be present on the repository's default branch before
-GitHub permits dispatch. Repository Actions settings must allow GitHub Actions
-to create pull requests. The workflow uses the repository `GITHUB_TOKEN` with
-contents, pull-request, and Actions write permissions; it needs no additional
-credential. Because bot-token pushes/PR creation do not start ordinary workflows,
-it explicitly uses `workflow_dispatch` to start CI, which GitHub permits with
-that token ([GitHub documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)).
+CI validates product versions on pushes, PRs into `develop` or `main`, and
+published releases. The release tag must equal `v<version.json>` and exceed
+previous eligible release tags; it is excluded when finding its predecessor.
+The publication job alone receives GitHub contents-write permission; platform
+builds retain read-only GitHub tokens. Preparation explicitly dispatches Nix CI
+because pushes made with `GITHUB_TOKEN` do not trigger push workflows
+([GitHub documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)).
 
-If PR creation or CI dispatch fails, the run fails visibly and preserves the
-already-pushed release branch. Open the PR or dispatch `ci.yml` on that branch
-manually after correcting permissions. A rerun refuses to overwrite it.
-CI validates product versions on pushes, PRs into `develop`, and published
-releases. The release tag must equal `v<version.json>` and exceed previous
-eligible release tags; it is excluded when finding its predecessor.
+## Recovering a failed run
+
+If preparation reports `GitHub Actions is not permitted to create or approve
+pull requests`, enable the repository setting above. When preparation has already
+pushed `codex/release-<version>`, preserve it and open the PR manually:
+
+```sh
+RELEASE_VERSION='<full-version>'
+gh pr create --base develop --head "codex/release-${RELEASE_VERSION}" \
+  --title "chore(release): prepare ${RELEASE_VERSION}" --body-file release-body.md
+gh workflow run ci.yml --ref "codex/release-${RELEASE_VERSION}"
+```
+
+Replace `<full-version>` with the calculated version and write `release-body.md`
+with the dry-run plan and reviewed compatibility note first. If the PR already
+exists but CI dispatch failed, run only the second command. Re-running
+preparation refuses to overwrite an existing branch; it does not resume it.
+
+If a release build, pin, or upload fails, fix the reported cause and rerun the
+failed jobs in the original release-triggered run. A manual `ci.yml` dispatch
+only builds artifacts and does not publish assets or pins. Running release jobs
+are isolated from branch/tag-push concurrency and are not canceled by newer runs.
+Uploads use `gh release upload --clobber` to replace matching asset names on a
+rerun. Windows download names include the workflow run number, which is stable
+across rerun attempts. Do not move a published tag to fix a release; publish a
+new version when the released source must change.

@@ -30,6 +30,7 @@ Release versions follow the project's
 
 ### Fixed
 
+- Fixed release promotion validation for PRs into `main` and automatic attachment of Linux and Windows downloads after release checks pass.
 - Fixed toolbar commands becoming inaccessible on scaled displays ([#314](https://github.com/ORNLSlicer/ORNLSlicer/pull/314)).
 - Fixed Wolf settings headers failing to reload in RGCodeTools ([#316](https://github.com/ORNLSlicer/ORNLSlicer/pull/316)).
 - Fixed Wire Arc paths using incorrect deposition-surface Z coordinates ([#293](https://github.com/ORNLSlicer/ORNLSlicer/pull/293)).

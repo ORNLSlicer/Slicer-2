@@ -46,7 +46,9 @@ the changelog manually on that release PR's branch before merging it:
 4. Commit the changelog on the release branch and review it with the version bump.
    If the planned release date changes, correct it before tagging. The application
    built from that commit will contain the finalized history.
-5. After merge, tag and publish as described in [Versioning and Releases](versioning.md).
+5. After merging the preparation PR into `develop`, promote `develop` into `main`
+   with a merge commit, then tag that `main` commit and publish as described in
+   [Versioning and Releases](versioning.md#github-workflow).
    Copy the released section's highlights and categorized entries into the GitHub
    release notes. These steps are manual; the workflow does not generate or publish
    changelog entries or release notes.
