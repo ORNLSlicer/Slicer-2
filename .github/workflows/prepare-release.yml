@@ -1,0 +1,105 @@
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Conventional Commit inference or explicit bump
+        type: choice
+        options: [auto, patch, minor, major]
+        default: auto
+      suffix:
+        description: Optional prerelease/build suffix (e.g. rc.1+build.5)
+        type: string
+        default: ''
+      compatibility_note:
+        description: Required migration/compatibility explanation for breaking changes at MAJOR 2
+        type: string
+        default: ''
+      dry_run:
+        description: Calculate and validate without creating a branch or PR
+        type: boolean
+        default: true
+
+concurrency:
+  group: prepare-release-develop
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      BUMP: ${{ inputs.bump }}
+      SUFFIX: ${{ inputs.suffix }}
+      COMPATIBILITY_NOTE: ${{ inputs.compatibility_note }}
+      DRY_RUN: ${{ inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: develop
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - name: Test version rules and build readers
+        run: python3 tests/version_tests.py
+      - name: Calculate and validate release
+        run: |
+          set -euo pipefail
+          mode=--dry-run
+          if [[ "$DRY_RUN" == "false" ]]; then mode=--write; fi
+          python3 scripts/version.py prepare \
+            --bump "$BUMP" --suffix "$SUFFIX" \
+            --compatibility-note "$COMPATIBILITY_NOTE" "$mode" \
+            > "$RUNNER_TEMP/release-plan.json"
+          cat "$RUNNER_TEMP/release-plan.json"
+          base="$(python3 -c 'import json, os; print(json.load(open(os.environ["RUNNER_TEMP"] + "/release-plan.json"))["base"])')"
+          python3 scripts/version.py validate --base "$base"
+      - name: Open release pull request
+        if: inputs.dry_run == false
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="$(python3 -c 'import json, os; print(json.load(open(os.environ["RUNNER_TEMP"] + "/release-plan.json"))["version"])')"
+          branch="codex/release-${version}"
+          gh auth setup-git
+          if [[ -n "$(git ls-remote --heads origin "refs/heads/$branch")" ]]; then
+            echo "Release branch $branch already exists. Review or remove it before preparing again."
+            gh pr list --head "$branch" --base develop --state all
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          plan = json.loads((root / "release-plan.json").read_text())
+          body = (
+              f"Prepare `{plan['version']}` from `{plan['previous']}`. "
+              f"Selected `{plan['bump']}` from commits since `{plan['base']}`.\n\n"
+              "`version.json` remains the authoritative build and packaging version.\n"
+          )
+          if plan["compatibility_note"]:
+              body += "\nCompatibility and migration:\n\n" + plan["compatibility_note"] + "\n"
+          body += "\nValidation: version rules, real Git release scenarios, CMake/Nix reader fixtures, and version transition checks passed.\n"
+          (root / "release-body.md").write_text(body)
+          (root / "release-commit.txt").write_text(f"chore(release): prepare {plan['version']}\n\n" + body)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$branch"
+          git add -- version.json
+          git commit --file "$RUNNER_TEMP/release-commit.txt"
+          git push origin "HEAD:refs/heads/$branch"
+          gh pr create --base develop --head "$branch" \
+            --title "chore(release): prepare $version" \
+            --body-file "$RUNNER_TEMP/release-body.md"
+          gh workflow run ci.yml --ref "$branch"

@@ -48,3 +48,7 @@ Document public APIs with Doxygen blocks (purpose, constraints, usage).
 ## [Cachix Workflow](docs/contributing/cachix.md)
 
 Configure cache access and publish trusted Nix build outputs for reuse by developers and CI.
+
+## [Versioning and Releases](docs/contributing/versioning.md)
+
+Validate product versions and prepare reviewable release bumps with MAJOR capped at 2.
