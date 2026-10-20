@@ -69,7 +69,7 @@ jobs:
         run: |
           set -euo pipefail
           version="$(python3 -c 'import json, os; print(json.load(open(os.environ["RUNNER_TEMP"] + "/release-plan.json"))["version"])')"
-          branch="codex/release-${version}"
+          branch="release/${version}"
           gh auth setup-git
           if [[ -n "$(git ls-remote --heads origin "refs/heads/$branch")" ]]; then
             echo "Release branch $branch already exists. Review or remove it before preparing again."

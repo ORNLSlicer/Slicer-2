@@ -97,7 +97,7 @@ Nix readers without compiling the application or downloading its dependencies.
 
 `develop` is the integration branch and remains the repository's default branch.
 `main` contains released code. Prepare each version through a temporary
-`codex/release-<version>` PR into `develop`, then promote `develop` into `main`
+`release/<version>` PR into `develop`, then promote `develop` into `main`
 with a merge commit. Do not squash or rebase the promotion: version-baseline
 discovery relies on the shared history and matching release tree. Do not add
 release-only edits while merging into `main`; make those changes through
@@ -143,7 +143,7 @@ Keep `CACHIX_AUTH_TOKEN` configured as described in
    Review the changelog and source for breaking changes even when inference says
    `breaking=false`: unmarked commit messages cannot identify them. At MAJOR 2,
    select `bump=minor` and provide a compatibility note for such changes too.
-2. Run again with `dry_run=false` to create `codex/release-<version>` and a PR into
+2. Run again with `dry_run=false` to create `release/<version>` and a PR into
    `develop`. Select an explicit bump/note when needed. The workflow changes only
    `version.json`, runs focused checks, and dispatches **Nix CI** on the release
    branch. It never force-pushes or replaces an existing branch. Review an existing
@@ -184,13 +184,13 @@ because pushes made with `GITHUB_TOKEN` do not trigger push workflows
 
 If preparation reports `GitHub Actions is not permitted to create or approve
 pull requests`, enable the repository setting above. When preparation has already
-pushed `codex/release-<version>`, preserve it and open the PR manually:
+pushed `release/<version>`, preserve it and open the PR manually:
 
 ```sh
 RELEASE_VERSION='<full-version>'
-gh pr create --base develop --head "codex/release-${RELEASE_VERSION}" \
+gh pr create --base develop --head "release/${RELEASE_VERSION}" \
   --title "chore(release): prepare ${RELEASE_VERSION}" --body-file release-body.md
-gh workflow run ci.yml --ref "codex/release-${RELEASE_VERSION}"
+gh workflow run ci.yml --ref "release/${RELEASE_VERSION}"
 ```
 
 Replace `<full-version>` with the calculated version and write `release-body.md`
