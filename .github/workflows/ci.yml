@@ -2,6 +2,7 @@
 name: Nix CI
 on:
   push:
+  workflow_dispatch:
   release:
     types:
       - published
@@ -13,7 +14,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  version:
+    uses: ./.github/workflows/versioning.yml
+    with:
+      base: ${{ github.event.before || '' }}
+      release_tag: ${{ github.event.release.tag_name || '' }}
+
   check:
+    needs: version
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -29,6 +37,7 @@ jobs:
       - run: nix flake check --all-systems --accept-flake-config
 
   linux:
+    needs: version
     env:
       ci_derivation: ornl.ornlslicer
       out_link: ornlslicer.appimage
@@ -95,6 +104,7 @@ jobs:
           path: ${{ env.artifact }}
 
   windows:
+    needs: version
     env:
       ci_derivation: windows.ornl.ornlslicer
       installer_derivation: windowsInstaller

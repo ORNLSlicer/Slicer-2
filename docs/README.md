@@ -31,6 +31,7 @@ authoritative.
 - [Documentation](contributing/documentation.md)
 - [Linux AppImage Packaging](contributing/linux-appimage.md)
 - [Cachix Workflow](contributing/cachix.md)
+- [Versioning and Releases](contributing/versioning.md)
 
 ## Migrated Wiki Content
 

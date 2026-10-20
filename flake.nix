@@ -44,10 +44,7 @@
     inherit config;
 
     lib = rec {
-      fetchVersion = version_file: let
-        inherit (lib.pipe version_file [ builtins.readFile builtins.fromJSON ]) major minor patch suffix;
-        version = "${major}.${minor}.${patch}";
-      in if suffix == "" then version else "${version}+${suffix}";
+      fetchVersion = import ./nix/version.nix;
 
       mkPackages = { pkgs, stdenv ? pkgs.stdenv }: let
         source = pkgs.lib.fileset.toSource {
