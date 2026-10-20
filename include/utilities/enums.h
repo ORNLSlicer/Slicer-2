@@ -245,6 +245,7 @@ enum class ThemeName {
 inline QString toString(ThemeName theme) {
     switch (theme) {
         case ThemeName::kLightMode:
+        default:
             return Constants::UI::Themes::kSystemMode;
         case ThemeName::kDarkMode:
             return Constants::UI::Themes::kDarkMode;
