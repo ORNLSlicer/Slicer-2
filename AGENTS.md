@@ -181,3 +181,5 @@ Prefer single-file or single-test runs during iteration. Full suites are for the
 **Accumulated corrections. This section is for the agent to maintain, not just the human.**
 
 When the user corrects your approach, append a one-line rule here before ending the session. Write it concretely ("Always use X for Y"), never abstractly ("be careful with Y"). If an existing line already covers the correction, tighten it instead of adding a new one. Remove lines when the underlying issue goes away (model upgrades, refactors, process changes).
+
+- Verify hook file-type filters before claiming generated JSON is excluded; keep formatter changes after confirming parsed JSON matches the staged data, then re-stage and rerun pre-commit.
