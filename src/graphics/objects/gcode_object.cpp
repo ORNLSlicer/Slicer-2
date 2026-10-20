@@ -576,15 +576,20 @@ void GCodeObject::drawBufferRuns(SegmentRenderBuffer buffer, ushort render_mode)
 }
 
 void GCodeObject::draw() {
+    const auto program           = this->view()->shaderProgram();
+    const int preserve_color_hue = program->uniformLocation("preserveColorHue");
+    program->setUniformValue(preserve_color_hue, true);
     drawBufferRuns(SegmentRenderBuffer::kPrimary, m_primary_render_mode);
 
-    if (m_travel_line_vao.isNull()) { return; }
-
-    this->vao()->release();
-    m_travel_line_vao->bind();
-    drawBufferRuns(SegmentRenderBuffer::kTravelLine, GL_LINES);
-    m_travel_line_vao->release();
-    this->vao()->bind();
+    if (!m_travel_line_vao.isNull()) {
+        this->vao()->release();
+        m_travel_line_vao->bind();
+        drawBufferRuns(SegmentRenderBuffer::kTravelLine, GL_LINES);
+        m_travel_line_vao->release();
+        this->vao()->bind();
+    }
+    // The shader is shared with part meshes and other scene objects.
+    program->setUniformValue(preserve_color_hue, false);
 }
 
 void GCodeObject::updateTravelLineColors(std::vector<float>& colors, uint whence) {

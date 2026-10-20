@@ -350,6 +350,18 @@ if(ORNLSLICER_BUILD_TESTS)
     target_link_libraries(${PROJECT_NAME}_visualization_colors_tests PRIVATE ${PROJECT_NAME}_obj)
     add_test(NAME visualization_colors_tests COMMAND ${PROJECT_NAME}_visualization_colors_tests)
 
+    add_executable(${PROJECT_NAME}_gcode_shading_tests tests/gcode_shading_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_gcode_shading_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_gcode_shading_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME gcode_shading_tests COMMAND ${PROJECT_NAME}_gcode_shading_tests)
+    set_tests_properties(gcode_shading_tests PROPERTIES SKIP_RETURN_CODE 77)
+
     add_executable(${PROJECT_NAME}_preferences_import_tests tests/preferences_import_tests.cpp)
     target_include_directories(
         ${PROJECT_NAME}_preferences_import_tests
