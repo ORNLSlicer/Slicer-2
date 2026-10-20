@@ -193,7 +193,7 @@ def prepare(current: Version, bump: str, suffix: str, compatibility_note: str) -
     candidate = read_version(json.dumps(candidate.document() | {"suffix": suffix}))
     try:
         git("check-ref-format", f"refs/tags/v{candidate}")
-        git("check-ref-format", f"refs/heads/codex/release-{candidate}")
+        git("check-ref-format", f"refs/heads/release/{candidate}")
     except ValueError as exc:
         raise ValueError(f"version {candidate} cannot form a valid Git release tag/branch (for example, .lock is forbidden)") from exc
     validate_transition(baseline, candidate)
