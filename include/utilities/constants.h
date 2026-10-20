@@ -158,7 +158,7 @@ class Constants {
         static const QString kLeadIn;
         static const QString kFlyingStart;
         static const QString kPerimeterTipWipe;
-        static const QString kSpiralConnection;
+        static const QString kConnection;
     };
 
     class PrinterSettings {
@@ -607,9 +607,9 @@ class Constants {
             static const QString kEnableFlyingStart;
             static const QString kFlyingStartDistance;
             static const QString kFlyingStartSpeed;
-            static const QString kEnableSpiralPerimeter;
-            static const QString kCompletePathBeforeConnecting;
-            static const QString kBranchAfterTipWipe;
+            static const QString kConnectPerimeters;
+            static const QString kCompleteLoopBeforeConnecting;
+            static const QString kConnectAfterTipWipe;
             static const QString kConnectToInsets;
         };
 
@@ -628,9 +628,9 @@ class Constants {
             static const QString kMinPathLength;
             static const QString kMinSegmentLength;
             static const QString kOverlap;
-            static const QString kEnableSpiralInset;
-            static const QString kCompletePathBeforeConnecting;
-            static const QString kBranchAfterTipWipe;
+            static const QString kConnectInsets;
+            static const QString kCompleteLoopBeforeConnecting;
+            static const QString kConnectAfterTipWipe;
         };
 
         class Skeleton {

@@ -68,6 +68,41 @@ int main(int argc, char* argv[]) {
     QTemporaryDir temp_dir;
     if (!ORNL::Testing::expect(temp_dir.isValid(), "Could not create temporary directory.")) return EXIT_FAILURE;
 
+    const QString connection_path = temp_dir.filePath("legacy-connections.gcode");
+    const QString connection_gcode =
+        ";Settings Footer\n"
+        ";layer_height 200\n"
+        ";default_width 400\n"
+        ";spiral_perimeter true\n"
+        ";spiral_perimeter_complete_path_before_connecting false\n"
+        ";spiral_perimeter_branch_after_tip_wipe true\n"
+        ";spiral_perimeter_connect_to_insets true\n"
+        ";spiral_inset true\n"
+        ";spiral_inset_complete_path_before_connecting true\n"
+        ";spiral_inset_branch_after_tip_wipe false\n"
+        ";enable_spiral_perimeter true\n";
+    if (!ORNL::Testing::expect(writeFile(connection_path, connection_gcode),
+                               "Could not write legacy connection footer."))
+        return EXIT_FAILURE;
+    const auto connection_result = ORNL::GcodeSettingsImporter::importFile(connection_path, true);
+    if (!ORNL::Testing::expect(connection_result.errors.isEmpty() && connection_result.warnings.isEmpty(),
+                               qPrintable(connection_result.errors.join("\n") + connection_result.warnings.join("\n"))))
+        return EXIT_FAILURE;
+    const auto connection_settings =
+        connection_result.settings_file[ORNL::Constants::SettingFileStrings::kSettings].at(0);
+    if (!ORNL::Testing::expect(
+            connection_settings.at(ORNL::PS::Perimeter::kConnectPerimeters.toStdString()) == true &&
+                connection_settings.at(ORNL::PS::Perimeter::kCompleteLoopBeforeConnecting.toStdString()) == false &&
+                connection_settings.at(ORNL::PS::Perimeter::kConnectAfterTipWipe.toStdString()) == true &&
+                connection_settings.at(ORNL::PS::Perimeter::kConnectToInsets.toStdString()) == true &&
+                connection_settings.at(ORNL::PS::Inset::kConnectInsets.toStdString()) == true &&
+                connection_settings.at(ORNL::PS::Inset::kCompleteLoopBeforeConnecting.toStdString()) == true &&
+                connection_settings.at(ORNL::PS::Inset::kConnectAfterTipWipe.toStdString()) == false &&
+                connection_settings.at(ORNL::MS::SpiralLift::kPerimeterEnable.toStdString()) == true &&
+                !connection_settings.contains("spiral_perimeter") && !connection_settings.contains("spiral_inset"),
+            "Legacy G-code footer connection settings must be renamed without changing their values or spiral lift."))
+        return EXIT_FAILURE;
+
     const QString semicolon_path = temp_dir.path() + "/semicolon.gcode";
     const QString semicolon_gcode =
         "G1 X0 Y0\n"

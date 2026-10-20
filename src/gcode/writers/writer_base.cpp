@@ -136,8 +136,8 @@ QString WriterBase::regionComment(RegionType region_type, PathModifiers path_mod
     }
 
     if (path_modifiers != PathModifiers::kNone) { comment += m_space % toString(path_modifiers); }
-    if (is_connection && path_modifiers != PathModifiers::kSpiralConnection) {
-        comment += m_space % Constants::PathModifierStrings::kSpiralConnection;
+    if (is_connection && path_modifiers != PathModifiers::kConnection) {
+        comment += m_space % Constants::PathModifierStrings::kConnection;
     }
 
     return comment;

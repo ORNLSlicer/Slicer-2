@@ -192,6 +192,13 @@ std::map<std::string, std::string> PreferencesManager::getVisualizationHexColors
 void PreferencesManager::setDefaultVisualizationColors(
     const std::unordered_map<std::string, std::string>& visualizationColorsHex) {
     std::unordered_map<std::string, std::string> migratedVisualizationColorsHex = visualizationColorsHex;
+    const auto legacyConnection = migratedVisualizationColorsHex.find("SpiralConnection");
+    if (legacyConnection != migratedVisualizationColorsHex.end()) {
+        const std::string legacyColor = legacyConnection->second;
+        migratedVisualizationColorsHex.erase(legacyConnection);
+        migratedVisualizationColorsHex.try_emplace("Connection", legacyColor);
+        m_dirty = true;
+    }
     if (m_visualization_color_migration_version < kVisualizationColorMigrationVersion) {
         migrateVisualizationColorDefaults(migratedVisualizationColorsHex);
         m_visualization_color_migration_version = kVisualizationColorMigrationVersion;

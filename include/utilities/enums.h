@@ -527,7 +527,7 @@ enum class PathModifiers : uint16_t {
     kRampingDown      = 1 << 10,
     kLeadIn           = 1 << 11,
     kFlyingStart      = 1 << 12,
-    kSpiralConnection = 1 << 13
+    kConnection       = 1 << 13
 };
 
 enum class TipWipeDirection { kOptimal = 0, kForward = 1, kReverse = 2, kAngled = 3 };
@@ -578,8 +578,8 @@ inline QString toString(PathModifiers modifier_type) {
             return Constants::PathModifierStrings::kFlyingStart;
         case PathModifiers::kPerimeterTipWipe:
             return Constants::PathModifierStrings::kPerimeterTipWipe;
-        case PathModifiers::kSpiralConnection:
-            return Constants::PathModifierStrings::kSpiralConnection;
+        case PathModifiers::kConnection:
+            return Constants::PathModifierStrings::kConnection;
     }
     return QString();
 }
@@ -841,7 +841,7 @@ enum class VisualizationColors {
     kHelicalPerimeter,
     kHelicalInset,
     kHelicalInfill,
-    kSpiralConnection,
+    kConnection,
 
     Length
 };
@@ -889,7 +889,7 @@ VisualizationColorDefinitions() {
             {VisualizationColors::kHelicalPerimeter, "HelicalPerimeter", QColor(0, 0, 255, 255)},
             {VisualizationColors::kHelicalInset, "HelicalInset", QColor(0, 204, 255, 255)},
             {VisualizationColors::kHelicalInfill, "HelicalInfill", QColor(0, 255, 0, 255)},
-            {VisualizationColors::kSpiralConnection, "SpiralConnection", QColor(0, 250, 154, 255)},
+            {VisualizationColors::kConnection, "Connection", QColor(0, 250, 154, 255)},
         }};
 
     return definitions;

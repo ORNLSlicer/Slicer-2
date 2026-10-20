@@ -494,27 +494,27 @@ if(ORNLSLICER_BUILD_TESTS)
     target_link_libraries(${PROJECT_NAME}_path_modifier_tests PRIVATE ${PROJECT_NAME}_obj)
     add_test(NAME path_modifier_tests COMMAND ${PROJECT_NAME}_path_modifier_tests)
 
-    add_executable(${PROJECT_NAME}_spiral_path_tests tests/spiral_path_tests.cpp)
+    add_executable(${PROJECT_NAME}_contour_connection_tests tests/contour_connection_tests.cpp)
     target_include_directories(
-        ${PROJECT_NAME}_spiral_path_tests
+        ${PROJECT_NAME}_contour_connection_tests
         PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}/include
             ${CMAKE_CURRENT_BINARY_DIR}/generated/include
             ${ORNLSLICER_INCLUDE_DIRS}
     )
-    target_link_libraries(${PROJECT_NAME}_spiral_path_tests PRIVATE ${PROJECT_NAME}_obj)
-    add_test(NAME spiral_path_tests COMMAND ${PROJECT_NAME}_spiral_path_tests)
+    target_link_libraries(${PROJECT_NAME}_contour_connection_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME contour_connection_tests COMMAND ${PROJECT_NAME}_contour_connection_tests)
 
-    add_executable(${PROJECT_NAME}_spiral_branch_tests tests/spiral_branch_tests.cpp)
+    add_executable(${PROJECT_NAME}_contour_connection_branch_tests tests/contour_connection_branch_tests.cpp)
     target_include_directories(
-        ${PROJECT_NAME}_spiral_branch_tests
+        ${PROJECT_NAME}_contour_connection_branch_tests
         PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}/include
             ${CMAKE_CURRENT_BINARY_DIR}/generated/include
             ${ORNLSLICER_INCLUDE_DIRS}
     )
-    target_link_libraries(${PROJECT_NAME}_spiral_branch_tests PRIVATE ${PROJECT_NAME}_obj)
-    add_test(NAME spiral_branch_tests COMMAND ${PROJECT_NAME}_spiral_branch_tests)
+    target_link_libraries(${PROJECT_NAME}_contour_connection_branch_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME contour_connection_branch_tests COMMAND ${PROJECT_NAME}_contour_connection_branch_tests)
 
     add_executable(${PROJECT_NAME}_helical_clip_rounding_tests tests/helical_clip_rounding_tests.cpp)
     target_include_directories(

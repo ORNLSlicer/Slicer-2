@@ -242,7 +242,7 @@ bool verifyContinuousBranch(const QVector<ORNL::Path>& paths, const std::string&
             previous->getSb()->setting<ORNL::PathModifiers>(ORNL::SS::kPathModifiers);
         const ORNL::PathModifiers modifiers = segment->getSb()->setting<ORNL::PathModifiers>(ORNL::SS::kPathModifiers);
         if (previous_modifiers == ORNL::PathModifiers::kForwardTipWipe &&
-            modifiers == ORNL::PathModifiers::kSpiralConnection &&
+            modifiers == ORNL::PathModifiers::kConnection &&
             dynamic_cast<ORNL::LineSegment*>(segment.data()) != nullptr && segment->isPrintingSegment()) {
             found_branch = true;
             ++branch_count;
@@ -317,7 +317,7 @@ bool verifyLoopsCompleteBeforeWipe(const QVector<ORNL::Path>& paths, const std::
 
             const ORNL::PathModifiers modifiers =
                 segment->getSb()->setting<ORNL::PathModifiers>(ORNL::SS::kPathModifiers);
-            if (modifiers == ORNL::PathModifiers::kSpiralConnection) {
+            if (modifiers == ORNL::PathModifiers::kConnection) {
                 has_loop_start = false;
                 continue;
             }
@@ -353,7 +353,7 @@ bool verifyLoopRemainsOpenBeforeWipe(const QVector<ORNL::Path>& paths, const std
 
             const ORNL::PathModifiers modifiers =
                 segment->getSb()->setting<ORNL::PathModifiers>(ORNL::SS::kPathModifiers);
-            if (modifiers == ORNL::PathModifiers::kSpiralConnection) {
+            if (modifiers == ORNL::PathModifiers::kConnection) {
                 has_loop_start = false;
                 continue;
             }
@@ -559,7 +559,7 @@ bool verifySeparatedBranchGroups(const QVector<ORNL::Path>& paths, const std::st
             const QSharedPointer<ORNL::SegmentBase>& segment = path[i];
             if (dynamic_cast<ORNL::TravelSegment*>(segment.data()) != nullptr) { ++travel_count; }
             if (segment->getSb()->setting<ORNL::PathModifiers>(ORNL::SS::kPathModifiers) ==
-                ORNL::PathModifiers::kSpiralConnection) {
+                ORNL::PathModifiers::kConnection) {
                 passed &= expect(segment->length() <= max_branch_length,
                                  region_name + " should not extrude a long branch between unrelated loops.");
             }
@@ -578,7 +578,7 @@ bool verifyBranchConnectionsStayAtLayerZ(const QVector<ORNL::Path>& paths, const
         for (int i = 0; i < path.size(); ++i) {
             const QSharedPointer<ORNL::SegmentBase>& segment = path[i];
             if (segment->getSb()->setting<ORNL::PathModifiers>(ORNL::SS::kPathModifiers) !=
-                ORNL::PathModifiers::kSpiralConnection) {
+                ORNL::PathModifiers::kConnection) {
                 continue;
             }
 
@@ -692,7 +692,7 @@ bool verifyConnectionComments(const QVector<ORNL::Path>& paths, const QSharedPoi
             const auto sb       = segment->getSb();
             const auto modifier = sb->setting<ORNL::PathModifiers>(ORNL::SS::kPathModifiers);
             const bool connection =
-                modifier == ORNL::PathModifiers::kSpiralConnection ||
+                modifier == ORNL::PathModifiers::kConnection ||
                 (sb->contains(ORNL::SS::kIsConnection) && sb->setting<bool>(ORNL::SS::kIsConnection));
             if (!connection) { continue; }
             const auto region     = sb->setting<ORNL::RegionType>(ORNL::SS::kRegionType);
@@ -725,13 +725,13 @@ void configureConnectedInsets(const QSharedPointer<ORNL::SettingsBase>& settings
     settings->setSetting(ORNL::PS::Perimeter::kEnable, true);
     settings->setSetting(ORNL::PS::Perimeter::kCount, 2);
     settings->setSetting(ORNL::PS::Perimeter::kBeadWidth, ORNL::Distance(5.0));
-    settings->setSetting(ORNL::PS::Perimeter::kEnableSpiralPerimeter, true);
+    settings->setSetting(ORNL::PS::Perimeter::kConnectPerimeters, true);
     settings->setSetting(ORNL::PS::Perimeter::kConnectToInsets, true);
-    settings->setSetting(ORNL::PS::Perimeter::kBranchAfterTipWipe, false);
+    settings->setSetting(ORNL::PS::Perimeter::kConnectAfterTipWipe, false);
     settings->setSetting(ORNL::PS::Inset::kEnable, true);
     settings->setSetting(ORNL::PS::Inset::kCount, 2);
     settings->setSetting(ORNL::PS::Inset::kBeadWidth, ORNL::Distance(5.0));
-    settings->setSetting(ORNL::PS::Inset::kEnableSpiralInset, true);
+    settings->setSetting(ORNL::PS::Inset::kConnectInsets, true);
     settings->setSetting(ORNL::MS::TipWipe::kPerimeterEnable, false);
     settings->setSetting(ORNL::MS::TipWipe::kInsetEnable, true);
     settings->setSetting(ORNL::MS::TipWipe::kInsetDistance, ORNL::Distance(2.0));
@@ -754,9 +754,9 @@ int main() {
 
     perimeter_settings->setSetting(ORNL::PS::Perimeter::kCount, 5);
     perimeter_settings->setSetting(ORNL::PS::Perimeter::kBeadWidth, ORNL::Distance(5.0));
-    perimeter_settings->setSetting(ORNL::PS::Perimeter::kEnableSpiralPerimeter, true);
-    perimeter_settings->setSetting(ORNL::PS::Perimeter::kBranchAfterTipWipe, true);
-    perimeter_settings->setSetting(ORNL::PS::Perimeter::kCompletePathBeforeConnecting, false);
+    perimeter_settings->setSetting(ORNL::PS::Perimeter::kConnectPerimeters, true);
+    perimeter_settings->setSetting(ORNL::PS::Perimeter::kConnectAfterTipWipe, true);
+    perimeter_settings->setSetting(ORNL::PS::Perimeter::kCompleteLoopBeforeConnecting, false);
     perimeter_settings->setSetting(ORNL::PS::Perimeter::kConnectToInsets, false);
     perimeter_settings->setSetting(ORNL::PS::Ordering::kPerimeterReverseDirection,
                                    static_cast<int>(ORNL::PrintDirection::kReverse_All_Layers));
@@ -774,7 +774,7 @@ int main() {
     perimeter.optimize(0, perimeter_location, should_next_path_be_ccw);
     passed &= verifyContinuousBranch(perimeter.getPaths(), "Perimeter", ORNL::Distance(8.5));
 
-    perimeter_settings->setSetting(ORNL::PS::Perimeter::kCompletePathBeforeConnecting, true);
+    perimeter_settings->setSetting(ORNL::PS::Perimeter::kCompleteLoopBeforeConnecting, true);
     perimeter_settings->setSetting(ORNL::PS::Perimeter::kMinSegmentLength, ORNL::Distance(1.0));
     perimeter_settings->setSetting(ORNL::PS::Ordering::kPerimeterReverseDirection,
                                    static_cast<int>(ORNL::PrintDirection::kReverse_off));
@@ -783,7 +783,7 @@ int main() {
     passed &= verifyContinuousBranch(perimeter.getPaths(), "Completed perimeter", ORNL::Distance(8.5));
     passed &= verifyLoopsCompleteBeforeWipe(perimeter.getPaths(), "Completed perimeter");
     auto ordinary_perimeter_settings = QSharedPointer<ORNL::SettingsBase>::create(*perimeter_settings);
-    ordinary_perimeter_settings->setSetting(ORNL::PS::Perimeter::kBranchAfterTipWipe, false);
+    ordinary_perimeter_settings->setSetting(ORNL::PS::Perimeter::kConnectAfterTipWipe, false);
     ordinary_perimeter_settings->setSetting(ORNL::MS::TipWipe::kPerimeterEnable, false);
     ORNL::Perimeter ordinary_perimeter(ordinary_perimeter_settings, 0, {}, geometry);
     ordinary_perimeter.setGeometry(geometry);
@@ -796,9 +796,9 @@ int main() {
     QSharedPointer<ORNL::SettingsBase> inset_settings = defaultSettings();
     inset_settings->setSetting(ORNL::PS::Inset::kCount, 5);
     inset_settings->setSetting(ORNL::PS::Inset::kBeadWidth, ORNL::Distance(5.0));
-    inset_settings->setSetting(ORNL::PS::Inset::kEnableSpiralInset, true);
-    inset_settings->setSetting(ORNL::PS::Inset::kBranchAfterTipWipe, true);
-    inset_settings->setSetting(ORNL::PS::Inset::kCompletePathBeforeConnecting, false);
+    inset_settings->setSetting(ORNL::PS::Inset::kConnectInsets, true);
+    inset_settings->setSetting(ORNL::PS::Inset::kConnectAfterTipWipe, true);
+    inset_settings->setSetting(ORNL::PS::Inset::kCompleteLoopBeforeConnecting, false);
     inset_settings->setSetting(ORNL::PS::Ordering::kInsetReverseDirection,
                                static_cast<int>(ORNL::PrintDirection::kReverse_All_Layers));
     inset_settings->setSetting(ORNL::MS::TipWipe::kInsetEnable, true);
@@ -813,7 +813,7 @@ int main() {
     inset.optimize(0, inset_location, should_next_path_be_ccw);
     passed &= verifyContinuousBranch(inset.getPaths(), "Inset", ORNL::Distance(8.5));
     auto ordinary_inset_settings = QSharedPointer<ORNL::SettingsBase>::create(*inset_settings);
-    ordinary_inset_settings->setSetting(ORNL::PS::Inset::kBranchAfterTipWipe, false);
+    ordinary_inset_settings->setSetting(ORNL::PS::Inset::kConnectAfterTipWipe, false);
     ordinary_inset_settings->setSetting(ORNL::MS::TipWipe::kInsetEnable, false);
     ORNL::Inset ordinary_inset(ordinary_inset_settings, 0, {});
     ordinary_inset.setGeometry(geometry);
@@ -823,7 +823,7 @@ int main() {
     passed &= verifyConnectionComments(ordinary_inset.getPaths(), ordinary_inset_settings, false, true, false,
                                        "Standalone inset");
 
-    inset_settings->setSetting(ORNL::PS::Inset::kCompletePathBeforeConnecting, true);
+    inset_settings->setSetting(ORNL::PS::Inset::kCompleteLoopBeforeConnecting, true);
     inset_settings->setSetting(ORNL::PS::Inset::kMinSegmentLength, ORNL::Distance(1.0));
     inset_settings->setSetting(ORNL::PS::Ordering::kInsetReverseDirection,
                                static_cast<int>(ORNL::PrintDirection::kReverse_off));
@@ -835,8 +835,8 @@ int main() {
     QSharedPointer<ORNL::SettingsBase> lifted_branch_settings = defaultSettings();
     lifted_branch_settings->setSetting(ORNL::PS::Inset::kCount, 5);
     lifted_branch_settings->setSetting(ORNL::PS::Inset::kBeadWidth, ORNL::Distance(5.0));
-    lifted_branch_settings->setSetting(ORNL::PS::Inset::kEnableSpiralInset, true);
-    lifted_branch_settings->setSetting(ORNL::PS::Inset::kBranchAfterTipWipe, true);
+    lifted_branch_settings->setSetting(ORNL::PS::Inset::kConnectInsets, true);
+    lifted_branch_settings->setSetting(ORNL::PS::Inset::kConnectAfterTipWipe, true);
     lifted_branch_settings->setSetting(ORNL::MS::TipWipe::kInsetEnable, true);
     lifted_branch_settings->setSetting(ORNL::MS::TipWipe::kInsetDistance, ORNL::Distance(2.0));
     lifted_branch_settings->setSetting(ORNL::MS::TipWipe::kInsetLiftHeight, ORNL::Distance(3.0));
@@ -863,9 +863,9 @@ int main() {
     QSharedPointer<ORNL::SettingsBase> filtered_branch_settings = defaultSettings();
     filtered_branch_settings->setSetting(ORNL::PS::Inset::kCount, 5);
     filtered_branch_settings->setSetting(ORNL::PS::Inset::kBeadWidth, ORNL::Distance(5.0));
-    filtered_branch_settings->setSetting(ORNL::PS::Inset::kEnableSpiralInset, true);
-    filtered_branch_settings->setSetting(ORNL::PS::Inset::kBranchAfterTipWipe, true);
-    filtered_branch_settings->setSetting(ORNL::PS::Inset::kCompletePathBeforeConnecting, false);
+    filtered_branch_settings->setSetting(ORNL::PS::Inset::kConnectInsets, true);
+    filtered_branch_settings->setSetting(ORNL::PS::Inset::kConnectAfterTipWipe, true);
+    filtered_branch_settings->setSetting(ORNL::PS::Inset::kCompleteLoopBeforeConnecting, false);
     filtered_branch_settings->setSetting(ORNL::MS::TipWipe::kInsetEnable, true);
     filtered_branch_settings->setSetting(ORNL::MS::TipWipe::kInsetDistance, ORNL::Distance(2.0));
     filtered_branch_settings->setSetting(ORNL::MS::TipWipe::kInsetDirection,
@@ -898,8 +898,8 @@ int main() {
     QSharedPointer<ORNL::SettingsBase> separated_branch_settings = defaultSettings();
     separated_branch_settings->setSetting(ORNL::PS::Inset::kCount, 2);
     separated_branch_settings->setSetting(ORNL::PS::Inset::kBeadWidth, ORNL::Distance(5.0));
-    separated_branch_settings->setSetting(ORNL::PS::Inset::kEnableSpiralInset, true);
-    separated_branch_settings->setSetting(ORNL::PS::Inset::kBranchAfterTipWipe, true);
+    separated_branch_settings->setSetting(ORNL::PS::Inset::kConnectInsets, true);
+    separated_branch_settings->setSetting(ORNL::PS::Inset::kConnectAfterTipWipe, true);
     separated_branch_settings->setSetting(ORNL::MS::TipWipe::kInsetEnable, true);
     separated_branch_settings->setSetting(ORNL::MS::TipWipe::kInsetDistance, ORNL::Distance(2.0));
     separated_branch_settings->setSetting(ORNL::MS::TipWipe::kInsetDirection,
@@ -916,9 +916,9 @@ int main() {
     QSharedPointer<ORNL::SettingsBase> square_inset_settings = defaultSettings();
     square_inset_settings->setSetting(ORNL::PS::Inset::kCount, 100);
     square_inset_settings->setSetting(ORNL::PS::Inset::kBeadWidth, ORNL::Distance(4.5));
-    square_inset_settings->setSetting(ORNL::PS::Inset::kEnableSpiralInset, true);
-    square_inset_settings->setSetting(ORNL::PS::Inset::kBranchAfterTipWipe, true);
-    square_inset_settings->setSetting(ORNL::PS::Inset::kCompletePathBeforeConnecting, true);
+    square_inset_settings->setSetting(ORNL::PS::Inset::kConnectInsets, true);
+    square_inset_settings->setSetting(ORNL::PS::Inset::kConnectAfterTipWipe, true);
+    square_inset_settings->setSetting(ORNL::PS::Inset::kCompleteLoopBeforeConnecting, true);
     square_inset_settings->setSetting(ORNL::PS::Optimizations::kPointOrder,
                                       static_cast<int>(ORNL::PointOrderOptimization::kConsecutive));
     square_inset_settings->setSetting(ORNL::PS::Optimizations::kConsecutiveDistanceThreshold, ORNL::Distance(100.0));
@@ -939,8 +939,8 @@ int main() {
     QSharedPointer<ORNL::SettingsBase> reverse_wipe_settings = defaultSettings();
     reverse_wipe_settings->setSetting(ORNL::PS::Inset::kCount, 5);
     reverse_wipe_settings->setSetting(ORNL::PS::Inset::kBeadWidth, ORNL::Distance(5.0));
-    reverse_wipe_settings->setSetting(ORNL::PS::Inset::kEnableSpiralInset, true);
-    reverse_wipe_settings->setSetting(ORNL::PS::Inset::kBranchAfterTipWipe, true);
+    reverse_wipe_settings->setSetting(ORNL::PS::Inset::kConnectInsets, true);
+    reverse_wipe_settings->setSetting(ORNL::PS::Inset::kConnectAfterTipWipe, true);
     reverse_wipe_settings->setSetting(ORNL::MS::TipWipe::kInsetEnable, true);
     reverse_wipe_settings->setSetting(ORNL::MS::TipWipe::kInsetDistance, ORNL::Distance(2.0));
     reverse_wipe_settings->setSetting(ORNL::MS::TipWipe::kInsetDirection,
@@ -951,10 +951,10 @@ int main() {
     reverse_wipe_inset.compute(0);
     ORNL::Point reverse_wipe_location(-10.0, -10.0, 0.0);
     reverse_wipe_inset.optimize(0, reverse_wipe_location, should_next_path_be_ccw);
-    passed &= expect(!containsModifier(reverse_wipe_inset.getPaths(), ORNL::PathModifiers::kSpiralConnection),
+    passed &= expect(!containsModifier(reverse_wipe_inset.getPaths(), ORNL::PathModifiers::kConnection),
                      "Reverse tip wipes should not use the forward-only branch connection algorithm.");
     passed &= expect(containsModifier(reverse_wipe_inset.getPaths(), ORNL::PathModifiers::kReverseTipWipe),
-                     "Reverse tip wipes should retain normal spiral path modifier behavior.");
+                     "Reverse tip wipes should retain normal connected path modifier behavior.");
 
     QSharedPointer<ORNL::SettingsBase> connected_settings = defaultSettings();
     configureConnectedInsets(connected_settings);
@@ -1085,7 +1085,7 @@ int main() {
         QSharedPointer<ORNL::SettingsBase> lifted_connected_settings = defaultSettings();
         configureConnectedInsets(lifted_connected_settings);
         lifted_connected_settings->setSetting(ORNL::PS::Perimeter::kCount, perimeter_count);
-        lifted_connected_settings->setSetting(ORNL::PS::Perimeter::kBranchAfterTipWipe, true);
+        lifted_connected_settings->setSetting(ORNL::PS::Perimeter::kConnectAfterTipWipe, true);
         lifted_connected_settings->setSetting(ORNL::MS::TipWipe::kPerimeterEnable, true);
         lifted_connected_settings->setSetting(ORNL::MS::TipWipe::kPerimeterDistance, ORNL::Distance(2.0));
         lifted_connected_settings->setSetting(ORNL::MS::TipWipe::kPerimeterLiftHeight, ORNL::Distance(3.0));
@@ -1127,17 +1127,16 @@ int main() {
                 passed &= verifyLoopRemainsOpenBeforeWipe(lifted_connected_perimeter->getPaths(), case_name,
                                                           ORNL::RegionType::kPerimeter);
             }
-            passed &=
-                expect(containsModifierWithRegion(lifted_connected_perimeter->getPaths(),
-                                                  ORNL::PathModifiers::kSpiralConnection, ORNL::RegionType::kPerimeter),
-                       case_name + " should retain perimeter settings on the perimeter-to-inset bridge.");
+            passed &= expect(containsModifierWithRegion(lifted_connected_perimeter->getPaths(),
+                                                        ORNL::PathModifiers::kConnection, ORNL::RegionType::kPerimeter),
+                             case_name + " should retain perimeter settings on the perimeter-to-inset bridge.");
         }
     }
 
     QSharedPointer<ORNL::SettingsBase> unsafe_connected_settings = defaultSettings();
     configureConnectedInsets(unsafe_connected_settings);
     unsafe_connected_settings->setSetting(ORNL::PS::Perimeter::kCount, 1);
-    unsafe_connected_settings->setSetting(ORNL::PS::Perimeter::kBranchAfterTipWipe, true);
+    unsafe_connected_settings->setSetting(ORNL::PS::Perimeter::kConnectAfterTipWipe, true);
     unsafe_connected_settings->setSetting(ORNL::PS::Inset::kCount, 1);
     unsafe_connected_settings->setSetting(ORNL::PS::Inset::kMinPathLength, ORNL::Distance(150.0));
     unsafe_connected_settings->setSetting(ORNL::MS::TipWipe::kPerimeterEnable, true);

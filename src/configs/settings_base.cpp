@@ -4,26 +4,36 @@
 #include <qsharedpointer.h>
 
 #include "geometry/point.h"
+#include "managers/settings/settings_version_control.h"
 #include "units/unit.h"
 #include "utilities/constants.h"
 #include "utilities/enums.h"
 #include "utilities/qt_json_conversion.h"
 
 namespace ORNL {
+namespace {
+void mergeCurrentSettings(fifojson& destination, const fifojson& source) {
+    int index = 0;
+    for (auto& array : source.items()) {
+        for (auto it : array.value().items()) { destination[index][it.key()] = it.value(); }
+        index++;
+    }
+}
+}  // namespace
+
 SettingsBase::SettingsBase() {  //: m_json(nlohmann::json::object()){
     // NOP
 }
 
 void SettingsBase::populate(const QSharedPointer<SettingsBase> other) {
-    this->populate(other->m_json);
+    // Stored settings are normalized on import; do not repeat migration while copying segment settings.
+    mergeCurrentSettings(m_json, other->m_json);
 }
 
 void SettingsBase::populate(const fifojson& j) {
-    int index = 0;
-    for (auto& array : j.items()) {
-        for (auto it : array.value().items()) { m_json[index][it.key()] = it.value(); }
-        index++;
-    }
+    fifojson current_settings = j;
+    for (auto& group : current_settings) { SettingsVersionControl::migrateConnectedContourSettingKeys(group); }
+    mergeCurrentSettings(m_json, current_settings);
 }
 
 void SettingsBase::splice(const fifojson& j) {
@@ -57,6 +67,7 @@ fifojson& SettingsBase::json() {
 
 void SettingsBase::json(const fifojson& j) {
     m_json = j;
+    for (auto& group : m_json) { SettingsVersionControl::migrateConnectedContourSettingKeys(group); }
 }
 
 void SettingsBase::makeGlobalAdjustments() {

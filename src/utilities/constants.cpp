@@ -226,7 +226,7 @@ const QString Constants::PathModifierStrings::kRampingDown      = "RAMPING DOWN"
 const QString Constants::PathModifierStrings::kLeadIn           = "LEAD IN";
 const QString Constants::PathModifierStrings::kFlyingStart      = "FLYING START";
 const QString Constants::PathModifierStrings::kPerimeterTipWipe = "PERIMETER TIP WIPE";
-const QString Constants::PathModifierStrings::kSpiralConnection = "CONNECTION";
+const QString Constants::PathModifierStrings::kConnection       = "CONNECTION";
 
 //================================================================================
 // Printer Settings
@@ -569,30 +569,30 @@ const QString Constants::ProfileSettings::Layer::kExtruderSpeed    = "default_ex
 const QString Constants::ProfileSettings::Layer::kMinExtrudeLength = "minimum_extrude_length";
 
 // Perimeter
-const QString Constants::ProfileSettings::Perimeter::kEnable                = "perimeter";
-const QString Constants::ProfileSettings::Perimeter::kCount                 = "perimeter_count";
-const QString Constants::ProfileSettings::Perimeter::kBoundarySelection     = "perimeter_boundary_selection";
-const QString Constants::ProfileSettings::Perimeter::kBeadWidth             = "perimeter_width";
-const QString Constants::ProfileSettings::Perimeter::kAdaptive              = "perimeter_adapt";
-const QString Constants::ProfileSettings::Perimeter::kAdaptiveMinWidth      = "perimeter_adapt_min_width";
-const QString Constants::ProfileSettings::Perimeter::kAdaptiveMaxWidth      = "perimeter_adapt_max_width";
-const QString Constants::ProfileSettings::Perimeter::kSpeed                 = "perimeter_speed";
-const QString Constants::ProfileSettings::Perimeter::kExtruderSpeed         = "perimeter_extruder_speed";
-const QString Constants::ProfileSettings::Perimeter::kExtrusionMultiplier   = "perimeter_extrusion_multiplier";
-const QString Constants::ProfileSettings::Perimeter::kMinPathLength         = "perimeter_minimum_path_length";
-const QString Constants::ProfileSettings::Perimeter::kMinSegmentLength      = "perimeter_minimum_segment_length";
-const QString Constants::ProfileSettings::Perimeter::kEnableLeadIn          = "perimeter_lead_in";
-const QString Constants::ProfileSettings::Perimeter::kLeadInFirstLayerOnly  = "perimeter_lead_in_first_layer";
-const QString Constants::ProfileSettings::Perimeter::kEnableLeadInX         = "perimeter_lead_in_x";
-const QString Constants::ProfileSettings::Perimeter::kEnableLeadInY         = "perimeter_lead_in_y";
-const QString Constants::ProfileSettings::Perimeter::kEnableFlyingStart     = "perimeter_flying_start";
-const QString Constants::ProfileSettings::Perimeter::kFlyingStartDistance   = "perimeter_flying_start_distance";
-const QString Constants::ProfileSettings::Perimeter::kFlyingStartSpeed      = "perimeter_flying_start_speed";
-const QString Constants::ProfileSettings::Perimeter::kEnableSpiralPerimeter = "spiral_perimeter";
-const QString Constants::ProfileSettings::Perimeter::kCompletePathBeforeConnecting =
-    "spiral_perimeter_complete_path_before_connecting";
-const QString Constants::ProfileSettings::Perimeter::kBranchAfterTipWipe = "spiral_perimeter_branch_after_tip_wipe";
-const QString Constants::ProfileSettings::Perimeter::kConnectToInsets    = "spiral_perimeter_connect_to_insets";
+const QString Constants::ProfileSettings::Perimeter::kEnable               = "perimeter";
+const QString Constants::ProfileSettings::Perimeter::kCount                = "perimeter_count";
+const QString Constants::ProfileSettings::Perimeter::kBoundarySelection    = "perimeter_boundary_selection";
+const QString Constants::ProfileSettings::Perimeter::kBeadWidth            = "perimeter_width";
+const QString Constants::ProfileSettings::Perimeter::kAdaptive             = "perimeter_adapt";
+const QString Constants::ProfileSettings::Perimeter::kAdaptiveMinWidth     = "perimeter_adapt_min_width";
+const QString Constants::ProfileSettings::Perimeter::kAdaptiveMaxWidth     = "perimeter_adapt_max_width";
+const QString Constants::ProfileSettings::Perimeter::kSpeed                = "perimeter_speed";
+const QString Constants::ProfileSettings::Perimeter::kExtruderSpeed        = "perimeter_extruder_speed";
+const QString Constants::ProfileSettings::Perimeter::kExtrusionMultiplier  = "perimeter_extrusion_multiplier";
+const QString Constants::ProfileSettings::Perimeter::kMinPathLength        = "perimeter_minimum_path_length";
+const QString Constants::ProfileSettings::Perimeter::kMinSegmentLength     = "perimeter_minimum_segment_length";
+const QString Constants::ProfileSettings::Perimeter::kEnableLeadIn         = "perimeter_lead_in";
+const QString Constants::ProfileSettings::Perimeter::kLeadInFirstLayerOnly = "perimeter_lead_in_first_layer";
+const QString Constants::ProfileSettings::Perimeter::kEnableLeadInX        = "perimeter_lead_in_x";
+const QString Constants::ProfileSettings::Perimeter::kEnableLeadInY        = "perimeter_lead_in_y";
+const QString Constants::ProfileSettings::Perimeter::kEnableFlyingStart    = "perimeter_flying_start";
+const QString Constants::ProfileSettings::Perimeter::kFlyingStartDistance  = "perimeter_flying_start_distance";
+const QString Constants::ProfileSettings::Perimeter::kFlyingStartSpeed     = "perimeter_flying_start_speed";
+const QString Constants::ProfileSettings::Perimeter::kConnectPerimeters    = "connect_perimeters";
+const QString Constants::ProfileSettings::Perimeter::kCompleteLoopBeforeConnecting =
+    "perimeter_complete_loop_before_connecting";
+const QString Constants::ProfileSettings::Perimeter::kConnectAfterTipWipe = "perimeter_connect_after_tip_wipe";
+const QString Constants::ProfileSettings::Perimeter::kConnectToInsets     = "perimeter_connect_to_insets";
 
 // Inset
 const QString Constants::ProfileSettings::Inset::kEnable              = "inset";
@@ -607,10 +607,10 @@ const QString Constants::ProfileSettings::Inset::kExtrusionMultiplier = "inset_e
 const QString Constants::ProfileSettings::Inset::kMinPathLength       = "inset_minimum_path_length";
 const QString Constants::ProfileSettings::Inset::kMinSegmentLength    = "inset_minimum_segment_length";
 const QString Constants::ProfileSettings::Inset::kOverlap             = "inset_overlap_distance";
-const QString Constants::ProfileSettings::Inset::kEnableSpiralInset   = "spiral_inset";
-const QString Constants::ProfileSettings::Inset::kCompletePathBeforeConnecting =
-    "spiral_inset_complete_path_before_connecting";
-const QString Constants::ProfileSettings::Inset::kBranchAfterTipWipe = "spiral_inset_branch_after_tip_wipe";
+const QString Constants::ProfileSettings::Inset::kConnectInsets       = "connect_insets";
+const QString Constants::ProfileSettings::Inset::kCompleteLoopBeforeConnecting =
+    "inset_complete_loop_before_connecting";
+const QString Constants::ProfileSettings::Inset::kConnectAfterTipWipe = "inset_connect_after_tip_wipe";
 
 // Skeleton
 const QString Constants::ProfileSettings::Skeleton::kEnable                        = "skeleton";

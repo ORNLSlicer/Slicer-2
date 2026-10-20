@@ -28,7 +28,7 @@ inline void copySettings(const QSharedPointer<SettingsBase>& destination, const 
         destination->setSetting(SS::kIsConnection, source->setting<bool>(SS::kIsConnection));
     }
     else if (source->contains(SS::kPathModifiers) &&
-             source->setting<PathModifiers>(SS::kPathModifiers) == PathModifiers::kSpiralConnection) {
+             source->setting<PathModifiers>(SS::kPathModifiers) == PathModifiers::kConnection) {
         destination->setSetting(SS::kIsConnection, true);
     }
     if (source->contains(SS::kConnectionRegion)) {

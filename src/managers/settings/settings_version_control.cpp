@@ -436,6 +436,7 @@ void SettingsVersionControl::rollSettingsForward(double& version, fifojson& sett
     if (version < 12) pre_12_0To12_0(version, settings);
     if (version < 13) pre_13_0To13_0(version, settings);
     if (version < 14) pre_14_0To14_0(version, settings);
+    if (version < 15) pre_15_0To15_0(version, settings);
 }
 
 void SettingsVersionControl::formatSettings(double version, fifojson& settings) {
@@ -451,7 +452,22 @@ void SettingsVersionControl::formatSettings(double version, fifojson& settings) 
     settings                                             = new_format;
 }
 
+void SettingsVersionControl::migrateConnectedContourSettingKeys(fifojson& settings_group) {
+    using Perimeter = Constants::ProfileSettings::Perimeter;
+    using Inset     = Constants::ProfileSettings::Inset;
+    renameSettingKey(settings_group, "spiral_perimeter", Perimeter::kConnectPerimeters);
+    renameSettingKey(settings_group, "spiral_perimeter_complete_path_before_connecting",
+                     Perimeter::kCompleteLoopBeforeConnecting);
+    renameSettingKey(settings_group, "spiral_perimeter_branch_after_tip_wipe", Perimeter::kConnectAfterTipWipe);
+    renameSettingKey(settings_group, "spiral_perimeter_connect_to_insets", Perimeter::kConnectToInsets);
+    renameSettingKey(settings_group, "spiral_inset", Inset::kConnectInsets);
+    renameSettingKey(settings_group, "spiral_inset_complete_path_before_connecting",
+                     Inset::kCompleteLoopBeforeConnecting);
+    renameSettingKey(settings_group, "spiral_inset_branch_after_tip_wipe", Inset::kConnectAfterTipWipe);
+}
+
 void SettingsVersionControl::migrateLegacySettingKeys(fifojson& settings_group) {
+    migrateConnectedContourSettingKeys(settings_group);
     migrateSlicingSettingKeys(settings_group);
     migrateHelicalToolStartAngleOffset(settings_group);
     migrateHelicalToolStartAngleOffsetToArcLength(settings_group);
@@ -713,6 +729,21 @@ void SettingsVersionControl::pre_14_0To14_0(double& version, fifojson& settings)
     }
 
     version  = 14.0;
+    settings = new_format;
+}
+
+void SettingsVersionControl::pre_15_0To15_0(double& version, fifojson& settings) {
+    QString dt          = QDateTime::currentDateTime().toString();
+    fifojson new_format = settings;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 15.0;
+
+    auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
+    if (settings_array != new_format.end() && settings_array.value().is_array()) {
+        for (auto& settings_group : settings_array.value()) { migrateConnectedContourSettingKeys(settings_group); }
+    }
+
+    version  = 15.0;
     settings = new_format;
 }
 }  // namespace ORNL

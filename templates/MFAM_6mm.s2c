@@ -3,7 +3,7 @@
         "created_by": "ORNLSlicer",
         "created_on": "Mon Aug 10 13:10:48 2026",
         "last_modified": "Fri Sep 18 15:41:42 2026",
-        "version": 14.0,
+        "version": 15.0,
         "lock": "true"
     },
     "settings": [
@@ -127,7 +127,7 @@
             "inset_minimum_path_length": 8000.999701000753,
             "inset_minimum_segment_length": 0,
             "inset_overlap_distance": 0,
-            "spiral_inset": false,
+            "connect_insets": false,
             "laser_scanner": false,
             "laser_speed": 0,
             "laser_scanner_height_offset": 0,
@@ -250,7 +250,7 @@
             "perimeter_flying_start": false,
             "perimeter_flying_start_distance": 0,
             "perimeter_flying_start_speed": 0,
-            "spiral_perimeter": false,
+            "connect_perimeters": false,
             "raft": false,
             "raft_offset": 0,
             "raft_layer_count": 1,

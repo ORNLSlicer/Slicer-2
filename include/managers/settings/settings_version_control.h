@@ -24,6 +24,10 @@ class SettingsVersionControl {
     //! \param settings_group: a single settings object to modify
     static void migrateLegacySettingKeys(fifojson& settings_group);
 
+    //! \brief Rename legacy contour connection keys without changing values; current keys take precedence.
+    //! \param settings_group: a single settings object to modify, including sparse part or range overrides
+    static void migrateConnectedContourSettingKeys(fifojson& settings_group);
+
    private:
     //! \brief Rolls initial settings templates without a version to version 1.0
     //! \param version: current version in settings file
@@ -94,5 +98,10 @@ class SettingsVersionControl {
     //! \param version: current version in settings file
     //! \param settings: settings to alter
     static void pre_14_0To14_0(double& version, fifojson& settings);
+
+    //! \brief Rolls connected contour setting names to version 15.0
+    //! \param version: current version in settings file
+    //! \param settings: settings to alter
+    static void pre_15_0To15_0(double& version, fifojson& settings);
 };
 }  // namespace ORNL

@@ -14,7 +14,7 @@
 #include "utilities/mathutils.h"
 
 namespace ORNL {
-namespace SpiralPath {
+namespace ContourConnection {
 namespace detail {
 struct RayLoopIntersection {
     Point point;
@@ -380,7 +380,7 @@ inline Distance closedPolylineLength(const Polyline& line) {
 }
 
 /*!
- * \brief Returns the point where a spiral transition should begin.
+ * \brief Returns the point where a contour connection should begin.
  */
 inline Point transitionStartPoint(const Polyline& line, Distance distance_before_start,
                                   bool complete_before_connecting = false) {
@@ -789,7 +789,7 @@ inline bool canConnectAfterForwardWipe(const Polyline& current_loop, const Polyl
 }
 
 /*!
- * \brief Links ordered closed loops into open spiral-style polyline groups.
+ * \brief Links ordered closed loops into open connected polyline groups.
  *
  * Adjacent loops are joined with an extruding connector. When the candidate connector would jump between unrelated or
  * non-adjacent loops, the current group ends at the connector start so the caller can emit a travel to the next group.
@@ -798,7 +798,7 @@ inline bool canConnectAfterForwardWipe(const Polyline& current_loop, const Polyl
  * \param loop_widths Bead widths for the ordered loops.
  * \param fallback_width Width used when a per-loop width is not supplied.
  * \param complete_before_connecting Close each loop before adding the connector to the next loop.
- * \return One or more polylines, each representing a connectable spiral group.
+ * \return One or more polylines, each representing a group of connected contours.
  */
 inline QVector<Polyline> linkClosedPolylineGroups(const QVector<Polyline>& ordered_loops,
                                                   const QVector<Distance>& loop_widths, Distance fallback_width,
@@ -825,16 +825,16 @@ inline QVector<Polyline> linkClosedPolylineGroups(const QVector<Polyline>& order
         }
     }
 
-    QVector<Polyline> spiral_groups;
-    Polyline spiral;
+    QVector<Polyline> connected_groups;
+    Polyline connected_path;
 
     while (!loops.isEmpty() && loops.front().loop.size() < 3) { loops.removeFirst(); }
 
-    if (loops.isEmpty()) { return spiral_groups; }
+    if (loops.isEmpty()) { return connected_groups; }
 
     detail::StitchLoop current_loop = loops.takeFirst();
     while (true) {
-        spiral += current_loop.loop;
+        connected_path += current_loop.loop;
 
         while (!loops.isEmpty() && loops.front().loop.size() < 3) { loops.removeFirst(); }
 
@@ -847,8 +847,10 @@ inline QVector<Polyline> linkClosedPolylineGroups(const QVector<Polyline>& order
                 current_loop.loop, prepared_next_loop.loop, stop_distance, current_loop.complete_before_connecting);
 
             if (detail::canConnectLoops(current_loop, prepared_next_loop, connector_start, stop_distance)) {
-                if (spiral.back() != connector_start) { spiral += connector_start; }
-                if (spiral.back() != prepared_next_loop.loop.front()) { Connection::markStart(spiral.back()); }
+                if (connected_path.back() != connector_start) { connected_path += connector_start; }
+                if (connected_path.back() != prepared_next_loop.loop.front()) {
+                    Connection::markStart(connected_path.back());
+                }
                 current_loop = prepared_next_loop;
             }
             else {
@@ -856,9 +858,9 @@ inline QVector<Polyline> linkClosedPolylineGroups(const QVector<Polyline>& order
                     current_loop.loop, detail::validWidthOrFallback(current_loop.width, fallback_width),
                     current_loop.complete_before_connecting);
 
-                if (spiral.back() != final_stop) { spiral += final_stop; }
-                spiral_groups.push_back(spiral);
-                spiral.clear();
+                if (connected_path.back() != final_stop) { connected_path += final_stop; }
+                connected_groups.push_back(connected_path);
+                connected_path.clear();
                 current_loop = next_loop;
             }
         }
@@ -867,13 +869,13 @@ inline QVector<Polyline> linkClosedPolylineGroups(const QVector<Polyline>& order
                 current_loop.loop, detail::validWidthOrFallback(current_loop.width, fallback_width),
                 current_loop.complete_before_connecting);
 
-            if (spiral.back() != final_stop) { spiral += final_stop; }
-            spiral_groups.push_back(spiral);
+            if (connected_path.back() != final_stop) { connected_path += final_stop; }
+            connected_groups.push_back(connected_path);
             break;
         }
     }
 
-    return spiral_groups;
+    return connected_groups;
 }
 
 inline QVector<Polyline> linkClosedPolylineGroups(const QVector<Polyline>& ordered_loops,
@@ -893,7 +895,7 @@ inline QVector<Polyline> linkClosedPolylineGroups(const QVector<Polyline>& order
 }
 
 /*!
- * \brief Links ordered closed loops into one open spiral-style polyline.
+ * \brief Links ordered closed loops into one open connected polyline.
  *
  * \param ordered_loops Closed loops without a repeated final point.
  * \param loop_widths Bead widths for the ordered loops.
@@ -924,15 +926,15 @@ inline Polyline linkClosedPolylines(const QVector<Polyline>& ordered_loops, cons
         }
     }
 
-    Polyline spiral;
+    Polyline connected_path;
 
     while (!loops.isEmpty() && loops.front().loop.size() < 3) { loops.removeFirst(); }
 
-    if (loops.isEmpty()) { return spiral; }
+    if (loops.isEmpty()) { return connected_path; }
 
     detail::StitchLoop current_loop = loops.takeFirst();
     while (true) {
-        spiral += current_loop.loop;
+        connected_path += current_loop.loop;
 
         while (!loops.isEmpty() && loops.front().loop.size() < 3) { loops.removeFirst(); }
 
@@ -943,9 +945,9 @@ inline Polyline linkClosedPolylines(const QVector<Polyline>& ordered_loops, cons
             const Point connector_start =
                 detail::prepareConnector(current_loop.loop, next_loop.loop, stop_distance, complete_before_connecting);
 
-            if (spiral.back() != connector_start) { spiral += connector_start; }
+            if (connected_path.back() != connector_start) { connected_path += connector_start; }
 
-            if (spiral.back() != next_loop.loop.front()) { Connection::markStart(spiral.back()); }
+            if (connected_path.back() != next_loop.loop.front()) { Connection::markStart(connected_path.back()); }
 
             current_loop = next_loop;
         }
@@ -954,45 +956,45 @@ inline Polyline linkClosedPolylines(const QVector<Polyline>& ordered_loops, cons
                 current_loop.loop, detail::validWidthOrFallback(current_loop.width, fallback_width),
                 complete_before_connecting);
 
-            if (spiral.back() != final_stop) { spiral += final_stop; }
+            if (connected_path.back() != final_stop) { connected_path += final_stop; }
             break;
         }
     }
 
-    return spiral;
+    return connected_path;
 }
 
 inline Polyline linkClosedPolylines(const QVector<Polyline>& ordered_loops, Distance final_stop_distance,
                                     bool complete_before_connecting = false) {
     QVector<Polyline> loops = ordered_loops;
-    Polyline spiral;
+    Polyline connected_path;
 
     for (int loop_index = 0, end = loops.size(); loop_index < end; ++loop_index) {
         const Polyline& loop = loops[loop_index];
         if (loop.size() < 3) { continue; }
 
-        spiral += loop;
+        connected_path += loop;
 
         if (loop_index + 1 < end) {
             Polyline next_loop = loops[loop_index + 1];
             const Point connector_start =
                 detail::prepareConnector(loop, next_loop, final_stop_distance, complete_before_connecting);
 
-            if (spiral.back() != connector_start) { spiral += connector_start; }
+            if (connected_path.back() != connector_start) { connected_path += connector_start; }
 
-            if (spiral.back() != next_loop.front()) { Connection::markStart(spiral.back()); }
+            if (connected_path.back() != next_loop.front()) { Connection::markStart(connected_path.back()); }
 
             loops[loop_index + 1] = next_loop;
         }
         else {
             const Point final_stop = detail::transitionPoint(loop, final_stop_distance, complete_before_connecting);
 
-            if (spiral.back() != final_stop) { spiral += final_stop; }
+            if (connected_path.back() != final_stop) { connected_path += final_stop; }
         }
     }
 
-    return spiral;
+    return connected_path;
 }
 
-}  // namespace SpiralPath
+}  // namespace ContourConnection
 }  // namespace ORNL
