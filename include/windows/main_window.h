@@ -43,6 +43,7 @@
 #include "widgets/part_widget/part_widget.h"
 #include "widgets/settings/setting_bar.h"
 #include "windows/about.h"
+#include "windows/changelog.h"
 #include "windows/flowratecalc.h"
 #include "windows/gcode_export.h"
 #include "windows/layer_times_window.h"
@@ -403,6 +404,7 @@ class MainWindow : public QMainWindow {
     XtrudeCalcWindow* m_xtrude_calc_window;
     SettingsFileCompareDialog* m_settings_file_compare_window;
     AboutWindow* m_about_window;
+    ChangelogWindow* m_changelog_window;
 
     //! \brief QActions
     QMap<QString, menu_info> m_actions;

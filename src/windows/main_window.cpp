@@ -336,7 +336,8 @@ void MainWindow::setupWindows() {
     m_export_window                = new GcodeExport(this);
     m_layertimebar                 = new LayerTimesWindow(this);
     // m_ingersollPostProcessor = new IngersollPostProcessor(this);
-    m_about_window = new AboutWindow(this);
+    m_about_window     = new AboutWindow(this);
+    m_changelog_window = new ChangelogWindow(this);
 }
 
 void MainWindow::setupWidgets() {
@@ -594,12 +595,13 @@ void MainWindow::setupActions() {
     m_actions["python_int"] = {"Python Interpreter", ":/icons/python.ico", false, QKeySequence(), nullptr};
 
     // Menu Help
-    m_actions["manual"]   = {"User's Manual", ":/icons/help_black.png", false, QKeySequence(), nullptr};
-    m_actions["repo"]     = {"Open Website/Repository", ":/icons/web_black.png", false, QKeySequence(), nullptr};
-    m_actions["bug"]      = {"Report Bug", ":/icons/bug_black.png", false, QKeySequence(), nullptr};
-    m_actions["about_s2"] = {QString("About %1").arg(QApplication::applicationDisplayName()),
-                             ":/icons/ornlslicer_logo.png", false, QKeySequence(), nullptr};
-    m_actions["about_qt"] = {"About Qt", ":/icons/qt.png", false, QKeySequence(), nullptr};
+    m_actions["manual"]    = {"User's Manual", ":/icons/help_black.png", false, QKeySequence(), nullptr};
+    m_actions["changelog"] = {"Changelog", ":/icons/help_black.png", false, QKeySequence(), nullptr};
+    m_actions["repo"]      = {"Open Website/Repository", ":/icons/web_black.png", false, QKeySequence(), nullptr};
+    m_actions["bug"]       = {"Report Bug", ":/icons/bug_black.png", false, QKeySequence(), nullptr};
+    m_actions["about_s2"]  = {QString("About %1").arg(QApplication::applicationDisplayName()),
+                              ":/icons/ornlslicer_logo.png", false, QKeySequence(), nullptr};
+    m_actions["about_qt"]  = {"About Qt", ":/icons/qt.png", false, QKeySequence(), nullptr};
 
     // Menu Debug
     m_actions["debug"]   = {"Run MainWindow::debug()", ":/icons/test_black.png", false, QKeySequence(tr("Ctrl+Space")),
@@ -719,6 +721,7 @@ void MainWindow::setupActions() {
 
     // Help
     m_menu_help->addAction(m_actions["manual"].action);
+    m_menu_help->addAction(m_actions["changelog"].action);
     m_menu_help->addSeparator();
     m_menu_help->addAction(m_actions["repo"].action);
     m_menu_help->addAction(m_actions["bug"].action);
@@ -902,6 +905,11 @@ void MainWindow::setupEvents() {
     });
     connect(m_actions["repo"].action, &QAction::triggered, this,
             [this] { QDesktopServices::openUrl(QUrl("https://github.com/ORNLSlicer/ORNLSlicer")); });
+    connect(m_actions["changelog"].action, &QAction::triggered, m_changelog_window, [this] {
+        m_changelog_window->showNormal();
+        m_changelog_window->raise();
+        m_changelog_window->activateWindow();
+    });
     connect(m_actions["bug"].action, &QAction::triggered, this,
             [this] { QDesktopServices::openUrl(QUrl("https://github.com/ORNLSlicer/ORNLSlicer/issues")); });
     connect(m_actions["about_s2"].action, &QAction::triggered, m_about_window, [this] {

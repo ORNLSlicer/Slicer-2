@@ -52,3 +52,7 @@ Configure cache access and publish trusted Nix build outputs for reuse by develo
 ## [Versioning and Releases](docs/contributing/versioning.md)
 
 Validate product versions and prepare reviewable release bumps with MAJOR capped at 2.
+
+## [Changelog](docs/contributing/changelog.md)
+
+Record notable changes under `Unreleased` and finalize release notes during release review.

@@ -50,6 +50,7 @@
         source = pkgs.lib.fileset.toSource {
           root = ./.;
           fileset = pkgs.lib.fileset.unions [
+            ./CHANGELOG.md
             ./CMakeLists.txt
             ./cmake
             ./docs/ornlslicer-user-guide.pdf
