@@ -1,11 +1,27 @@
 ---
 name: Nix CI
-on: push
+on:
+  push:
+  workflow_dispatch:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'release' }}
 jobs:
+  version:
+    uses: ./.github/workflows/versioning.yml
+    with:
+      base: ${{ github.event.before || '' }}
+      release_tag: ${{ github.event.release.tag_name || '' }}
+
   check:
+    needs: version
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -14,85 +30,165 @@ jobs:
       run:
         working-directory: ./
     steps:
-      - uses: actions/checkout@v5
-      - uses: cachix/install-nix-action@v31
-      - run: nix flake check --all-systems
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - run: nix flake check --all-systems --accept-flake-config
 
   linux:
+    needs: version
     env:
       ci_derivation: ornl.ornlslicer
       out_link: ornlslicer.appimage
-    runs-on: ubuntu-latest
+      package_out_link: ornlslicer-linux
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: ./
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           lfs: 'true'
-      - uses: cachix/install-nix-action@v31
+          persist-credentials: false
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
       - name: Publish Nix build results to Cachix
-        if: github.ref == 'refs/heads/develop'
-        uses: cachix/cachix-action@v17
+        if: >-
+          (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
+          (github.event_name == 'release' && github.event.action == 'published')
+        uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: ornl-slicer
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          skipPush: ${{ github.event_name == 'release' }}
+      - name: Realize Development Environment
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        run: nix build -L --accept-flake-config --no-link .#devShells.x86_64-linux.ornlslicerDev
       - name: Setup Environment
-        run: echo "artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name).appimage" >> $GITHUB_ENV
+        run: |
+          {
+            echo "artifact=$(nix eval --accept-flake-config --raw .#${{ env.ci_derivation }}.name).appimage"
+            echo "release_version=$(nix eval --accept-flake-config --raw .#${{ env.ci_derivation }}.version)"
+          } >> "$GITHUB_ENV"
       - name: Compile Linux Build
-        run: nix build -L .#${{ env.ci_derivation }} --accept-flake-config
+        run: nix build -L .#${{ env.ci_derivation }} --accept-flake-config -o ${{ env.package_out_link }}
       - name: Bundle Output
         run: |
-          nix bundle -L --bundler .#appimage .#${{ env.ci_derivation }} -o ${{ env.out_link }}
+          nix bundle -L \
+            --accept-flake-config \
+            --bundler .#appimage \
+            .#${{ env.ci_derivation }} \
+            -o ${{ env.out_link }}
           cp ${{ env.out_link }} ${{ env.artifact }}
+      - name: Smoke Test AppImage
+        run: |
+          test "$(id -u)" -ne 0
+          test "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns)" = "1"
+          timeout 30s ./${{ env.artifact }} --help
+      - name: Pin Linux Release Outputs
+        if: github.event_name == 'release' && github.event.action == 'published'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          test "$RELEASE_TAG" = "v${release_version}"
+
+          package_path="$(readlink -f "${package_out_link}")"
+          appimage_path="$(readlink -f "${out_link}")"
+          cachix push ornl-slicer "$package_path" "$appimage_path"
+          cachix pin ornl-slicer "ornlslicer-${RELEASE_TAG}-linux" "$package_path" --keep-forever
+          cachix pin ornl-slicer "ornlslicer-${RELEASE_TAG}-appimage" "$appimage_path" --keep-forever
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.artifact }}
           path: ${{ env.artifact }}
+          if-no-files-found: error
 
   windows:
+    needs: version
     env:
       ci_derivation: windows.ornl.ornlslicer
+      installer_derivation: windowsInstaller
+      installer_out_link: ornlslicer-installer
       out_link: ornlslicer
-      nsis_script: scripts/installer.nsi
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           lfs: 'true'
-      - uses: cachix/install-nix-action@v31
+          persist-credentials: false
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
       - name: Publish Nix build results to Cachix
-        if: github.ref == 'refs/heads/develop'
-        uses: cachix/cachix-action@v17
+        if: >-
+          (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
+          (github.event_name == 'release' && github.event.action == 'published')
+        uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: ornl-slicer
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          skipPush: ${{ github.event_name == 'release' }}
       - name: Setup Environment
         run: |
-          echo "install_artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name)-installer-${{ github.run_number }}.exe" >> $GITHUB_ENV
-          echo "package_artifact=$(nix eval --raw .#${{ env.ci_derivation }}.name)-portable-${{ github.run_number }}" >> $GITHUB_ENV
-          echo "version=$(nix eval --raw .#${{ env.ci_derivation }}.version)" >> $GITHUB_ENV
+          {
+            echo "install_artifact=$(nix eval --accept-flake-config --raw .#${{ env.ci_derivation }}.name)-installer-${{ github.run_number }}.exe"
+            echo "installer_file=$(nix eval --accept-flake-config --raw .#${{ env.installer_derivation }}.installerFileName)"
+            echo "package_artifact=$(nix eval --accept-flake-config --raw .#${{ env.ci_derivation }}.name)-portable-${{ github.run_number }}"
+            echo "release_version=$(nix eval --accept-flake-config --raw .#${{ env.ci_derivation }}.version)"
+          } >> "$GITHUB_ENV"
       - name: Compile Windows Build
         run: nix build -L .#${{ env.ci_derivation }} --accept-flake-config -o ${{ env.out_link }}
       - name: Generate Installer
-        run: >
-          nix develop --accept-flake-config --command
-          makensis
-          -DOUTFILE=../${{ env.install_artifact }}
-          -DEXE_SOURCES=${{ env.out_link }}
-          -DVERSION=${{ env.version }}
-          ${{ env.nsis_script }}
+        run: |
+          nix build -L .#${{ env.installer_derivation }} --accept-flake-config -o ${{ env.installer_out_link }}
+          cp "${{ env.installer_out_link }}/${{ env.installer_file }}" "${{ env.install_artifact }}"
+      - name: Pin Windows Release Outputs
+        if: github.event_name == 'release' && github.event.action == 'published'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          test "$RELEASE_TAG" = "v${release_version}"
+
+          package_path="$(readlink -f "${out_link}")"
+          installer_path="$(readlink -f "${installer_out_link}")"
+          cachix push ornl-slicer "$package_path" "$installer_path"
+          cachix pin ornl-slicer "ornlslicer-${RELEASE_TAG}-windows" "$package_path" --keep-forever
+          cachix pin ornl-slicer "ornlslicer-${RELEASE_TAG}-windows-installer" "$installer_path" --keep-forever
+      - name: Archive Portable Build
+        run: zip -r "${package_artifact}.zip" "${out_link}/"
       - name: Upload Portable Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.package_artifact }}
-          path: ${{ env.out_link }}
+          path: ${{ env.package_artifact }}.zip
+          if-no-files-found: error
       - name: Upload Installer Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.install_artifact }}
           path: ${{ env.install_artifact }}
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'release' && github.event.action == 'published'
+    needs: [check, linux, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Download Release Artifacts
+        run: gh run download "$GITHUB_RUN_ID" --dir release-assets
+      - name: Attach Release Downloads
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            release-assets/*/*.appimage \
+            release-assets/*/*.exe \
+            release-assets/*/*.zip \
+            --clobber

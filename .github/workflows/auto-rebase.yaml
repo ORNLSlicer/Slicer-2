@@ -1,0 +1,190 @@
+---
+name: Auto Rebase PRs
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request_target:
+    branches:
+      - develop
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull request number to rebase. Leave blank to use branch or all open PRs."
+        required: false
+        type: string
+      branch:
+        description: "Branch to rebase when pr_number is blank. Leave blank to rebase all open PRs."
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-develop
+  cancel-in-progress: false
+
+jobs:
+  rebase:
+    name: Rebase open develop PRs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    env:
+      BASE_BRANCH: develop
+    steps:
+      - name: Create auto-rebase App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.AUTO_REBASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTO_REBASE_APP_PRIVATE_KEY }}
+
+      - name: Checkout develop
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ env.BASE_BRANCH }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: true
+
+      - name: Configure Git identity
+        env:
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+
+          bot_id="$(gh api "/users/${APP_SLUG}[bot]" --jq '.id')"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${bot_id}+${APP_SLUG}[bot]@users.noreply.github.com"
+
+      - name: Collect PR branches
+        id: targets
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_DRAFT: ${{ github.event.pull_request.draft || false }}
+          PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          INPUT_PR_NUMBER: ${{ inputs.pr_number || '' }}
+          INPUT_BRANCH: ${{ inputs.branch || '' }}
+        run: |
+          set -euo pipefail
+
+          TARGETS_FILE="/tmp/auto-rebase-targets.txt"
+          : > "$TARGETS_FILE"
+
+          if [[ "$EVENT_NAME" == "pull_request_target" ]]; then
+            if [[ "$PR_DRAFT" == "true" ]]; then
+              echo "Skipping draft pull request branch $PR_HEAD_REF."
+            elif [[ "$PR_HEAD_REPOSITORY" == "$REPOSITORY" ]]; then
+              printf '%s\n' "$PR_HEAD_REF" > "$TARGETS_FILE"
+            else
+              echo "Skipping forked pull request branch $PR_HEAD_REPOSITORY:$PR_HEAD_REF."
+            fi
+          elif [[ -n "$INPUT_PR_NUMBER" ]]; then
+            gh pr view "$INPUT_PR_NUMBER" \
+              --json baseRefName,headRefName,headRepositoryOwner,headRepository,isDraft \
+              --jq 'select(.baseRefName == env.BASE_BRANCH and .headRepositoryOwner.login == env.REPOSITORY_OWNER and .headRepository.name == env.REPOSITORY_NAME) | .headRefName' \
+              > "$TARGETS_FILE"
+          elif [[ -n "$INPUT_BRANCH" ]]; then
+            gh pr list \
+              --base "$BASE_BRANCH" \
+              --head "$INPUT_BRANCH" \
+              --state open \
+              --limit 100 \
+              --json headRefName,headRepositoryOwner,headRepository,isDraft \
+              --jq '.[] | select(.headRepositoryOwner.login == env.REPOSITORY_OWNER and .headRepository.name == env.REPOSITORY_NAME) | .headRefName' \
+              > "$TARGETS_FILE"
+          else
+            gh pr list \
+              --base "$BASE_BRANCH" \
+              --state open \
+              --limit 100 \
+              --json headRefName,headRepositoryOwner,headRepository,isDraft \
+              --jq '.[] | select(.isDraft == false and .headRepositoryOwner.login == env.REPOSITORY_OWNER and .headRepository.name == env.REPOSITORY_NAME) | .headRefName' \
+              > "$TARGETS_FILE"
+          fi
+
+          sort -u "$TARGETS_FILE" -o "$TARGETS_FILE"
+
+          if [[ ! -s "$TARGETS_FILE" ]]; then
+            echo "No same-repository pull request branches targeting $BASE_BRANCH were found."
+            echo "has_targets=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Branches queued for rebase:"
+            cat "$TARGETS_FILE"
+            echo "has_targets=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Rebase branches onto develop
+        if: steps.targets.outputs.has_targets == 'true'
+        run: |
+          set -euo pipefail
+
+          TARGETS_FILE="/tmp/auto-rebase-targets.txt"
+          FAILED_FILE="/tmp/auto-rebase-failed.txt"
+          git fetch origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
+          : > "$FAILED_FILE"
+
+          while IFS= read -r branch; do
+            [[ -n "$branch" ]] || continue
+
+            if [[ "$branch" == "$BASE_BRANCH" ]]; then
+              echo "Skipping $branch because it is the base branch."
+              continue
+            fi
+
+            echo "::group::Rebase $branch"
+            echo "Rebasing $branch onto origin/$BASE_BRANCH"
+            if ! git fetch origin "+refs/heads/$branch:refs/remotes/origin/$branch"; then
+              echo "::error title=Fetch failed::Could not fetch $branch from origin."
+              printf '%s\n' "$branch" >> "$FAILED_FILE"
+              echo "::endgroup::"
+              continue
+            fi
+
+            expected_remote="$(git rev-parse "refs/remotes/origin/$branch")"
+            git switch --force-create "$branch" "$expected_remote"
+
+            if ! git rebase "refs/remotes/origin/$BASE_BRANCH"; then
+              echo "::error title=Rebase conflict::Could not rebase $branch onto origin/$BASE_BRANCH."
+              git rebase --abort || true
+              printf '%s\n' "$branch" >> "$FAILED_FILE"
+              echo "::endgroup::"
+              continue
+            fi
+
+            if [[ "$(git rev-parse HEAD)" == "$expected_remote" ]]; then
+              echo "$branch is already current; no push needed."
+              echo "::endgroup::"
+              continue
+            fi
+
+            if ! git push --force-with-lease="refs/heads/$branch:$expected_remote" origin "HEAD:refs/heads/$branch"; then
+              echo "::error title=Push failed::Could not update $branch. The branch may have changed during this run."
+              printf '%s\n' "$branch" >> "$FAILED_FILE"
+              echo "::endgroup::"
+              continue
+            fi
+
+            echo "::endgroup::"
+          done < "$TARGETS_FILE"
+
+          if [[ -s "$FAILED_FILE" ]]; then
+            echo "Branches that need manual attention:"
+            cat "$FAILED_FILE"
+            exit 1
+          fi

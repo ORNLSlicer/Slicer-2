@@ -28,7 +28,7 @@ Windows limits file paths to 260 characters by default, which can break builds w
 
 - **For ORNL-managed machines**, follow the [ORNL-specific WSL2 guide](ORNL-WSL2-Installation.md).
 - **For all others**:
-  
+
   1. Open a **PowerShell** window.
   2. **Run**:
      ```powershell
@@ -132,6 +132,10 @@ Nix is used to provide reproducible development environments.
 
    > This may take time—downloads and builds will run automatically. Approve any prompts.
 
+   Contributors with write access to the project's binary cache should also
+   follow the [Cachix workflow](../contributing/cachix.md) to share trusted Nix
+   build outputs with other developers and CI.
+
 
 ## 8. Set Up Visual Studio Code
 
@@ -156,7 +160,6 @@ Nix is used to provide reproducible development environments.
      - `CMake Tools`
      - `direnv`
      - `EditorConfig for VS Code`
-     - `github.copilot` (optional)
      - `LLDB DAP`
      - `Nix`
      - `WSL`
@@ -165,6 +168,16 @@ Nix is used to provide reproducible development environments.
 ## 9. Build and Run ORNLSlicer
 
 1. **Open a terminal** in VSCode: `Terminal > New Terminal`.
+
+   To build the Debug application from the terminal using 32 parallel jobs,
+   run:
+
+   ```bash
+   nix develop .#ornlslicerDev -L --command cmake --build build/generic-llvm-ninja --config Debug --target ornlslicer -j 32
+   ```
+
+   Adjust `32` to match the number of parallel jobs appropriate for your
+   development machine.
 
 2. **Configure the LLDB Debugger**:
    - Run:

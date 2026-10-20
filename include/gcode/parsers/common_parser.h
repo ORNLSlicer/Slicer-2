@@ -2,6 +2,7 @@
 
 #include <QScopedPointer>
 #include <QVector>
+
 #include <qcontainerfwd.h>
 #include <qhash.h>
 #include <qhashfunctions.h>
@@ -37,7 +38,7 @@ namespace ORNL {
  */
 class CommonParser : public ParserBase {
     Q_OBJECT
-  public:
+   public:
     //! \brief Constructor that allows for unit type selection
     //! \param meta Meta to use for units and command styles
     //! \param allowLayerAlter Whether or not the layers can be altered to adhere to the min layer time
@@ -210,6 +211,9 @@ class CommonParser : public ParserBase {
     //! \return travel time in gcode file
     Time getTravelTime();
 
+    //! \brief Returns the estimated total travel time after feedrate adjustment.
+    Time getAdjustedTravelTime();
+
     //! \brief Returns whether or not any lines were altered to enforce minimum layer times or expand/contract
     bool getWasModified();
 
@@ -220,7 +224,7 @@ class CommonParser : public ParserBase {
     //! \return List of start lines for each layer
     QList<int> getLayerStartLines();
 
-  signals:
+   signals:
 
     //! \brief Send status updates to slice dialog of progress
     //! \param type Current step process type
@@ -232,7 +236,7 @@ class CommonParser : public ParserBase {
     //!  main_window's status window.  Info includes: time, volume, weight, and material info.
     void forwardInfoToMainWindow(QString parsingInfo);
 
-  protected:
+   protected:
     //! \brief Returns the current line to the child parser
     //! \return Current line index
     int getCurrentLine();
@@ -289,6 +293,9 @@ class CommonParser : public ParserBase {
     //! \param value Value to set the speed to.
     //! \note This value will be set using the defined unit type.
     void setSpeed(NT value);
+
+    //! \brief Clears the active modal feedrate when a syntax-specific feedrate macro has no numeric preview value.
+    void clearModalFeedrate();
 
     //! \brief Sets the spindle speed of the extruder.
     //! \param value Value to set the spindle speed to.
@@ -471,8 +478,8 @@ class CommonParser : public ParserBase {
     //! \brief Tracks whether the parsed command stream is actively depositing material.
     bool m_deposition_active = false;
 
-    bool m_dynamic_spindle_control; // true if on, false if off.
-    bool m_park;                    // true if parking, false if not.
+    bool m_dynamic_spindle_control;  // true if on, false if off.
+    bool m_park;                     // true if parking, false if not.
 
     // Purging variables
     bool m_return_to_prev_location;
@@ -487,7 +494,7 @@ class CommonParser : public ParserBase {
     //! \brief Constant used for time adjustment and child parsers
     QChar m_space;
 
-  private:
+   private:
     //! \brief calculates distance for the current motion segment
     Distance getCurrentGXDistance();
 
@@ -519,6 +526,9 @@ class CommonParser : public ParserBase {
     //! \brief Returns whether the current motion command deposits material.
     bool currentMotionDepositsMaterial() const;
 
+    //! \brief Returns whether this motion should be allowed to update inferred bead height.
+    bool currentMotionInfersBeadHeight() const;
+
     //! \brief Records the authored modal feedrate for a parsed motion command.
     void recordModalFeedrateForCommand(const GcodeCommand& command);
 
@@ -530,6 +540,11 @@ class CommonParser : public ParserBase {
 
     //! \brief Reads a numeric F token from a command before its comment.
     bool commandFeedrate(const QString& line, double& feedrate);
+
+    //! \brief Returns the time delta caused by feedrate adjustment for a parsed motion command.
+    Time adjustedFeedrateTimeDeltaForCommand(const GcodeCommand& command,
+                                             QMap<int, double>::const_iterator& explicit_feedrate,
+                                             bool& emitted_feedrate_set, double& emitted_feedrate);
 
     //! \brief Inserts feedrates where scaled and protected modal spans meet.
     void materializeFeedrateTransitions(double modifier);
@@ -664,6 +679,6 @@ class CommonParser : public ParserBase {
     //! \brief Line at which each layer start (used for visualization)
     QList<int> m_layer_start_lines;
 
-}; // class CommonParser
+};  // class CommonParser
 
-} // namespace ORNL
+}  // namespace ORNL

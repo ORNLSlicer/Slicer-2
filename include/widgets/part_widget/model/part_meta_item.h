@@ -3,6 +3,7 @@
 #include <GL/gl.h>
 
 #include <QObject>
+
 #include <qlist.h>
 #include <qsharedpointer.h>
 #include <qtmetamacros.h>
@@ -24,7 +25,7 @@ class PartMetaModel;
 class PartMetaItem : public QObject, public QEnableSharedFromThis<PartMetaItem> {
     Q_OBJECT
 
-  private:
+   private:
     //! \enum PartMetaUpdateType
     //! \brief Type of update to model.
     enum class PartMetaUpdateType {
@@ -34,13 +35,17 @@ class PartMetaItem : public QObject, public QEnableSharedFromThis<PartMetaItem> 
         kParentingUpdate,
         kSelectionUpdate,
         kVisualUpdate,
-        kTransformUpdate
+        kTransformUpdate,
+        kNameUpdate
     };
 
-  public:
+   public:
     //! \brief Constructor.
     //! \param p: Part to creat from.
     PartMetaItem(QSharedPointer<Part> p);
+
+    //! \brief Renames the part.
+    void renamePart(QString new_name);
 
     void replaceInModel(QString filename);
 
@@ -143,11 +148,11 @@ class PartMetaItem : public QObject, public QEnableSharedFromThis<PartMetaItem> 
     //! \brief Sets the number of visible instances for this item.
     void setInstanceCount(int count);
 
-  signals:
+   signals:
     //! \brief Signal that this item was modified.
     void modified(PartMetaUpdateType type);
 
-  private:
+   private:
     //! \brief Model needs access to update type / model setting.
     friend class PartMetaModel;
 
@@ -159,9 +164,9 @@ class PartMetaItem : public QObject, public QEnableSharedFromThis<PartMetaItem> 
     MeshType m_type;
     uint m_transparency;
     bool m_solid_wireframe_mode = false;
-    bool m_wireframe_mode = false;
-    ushort m_render_mode = GL_TRIANGLES;
-    uint m_scale_unit_index = 0;
+    bool m_wireframe_mode       = false;
+    ushort m_render_mode        = GL_TRIANGLES;
+    uint m_scale_unit_index     = 0;
 
     //! \brief Transform
     QVector3D m_translation;
@@ -183,4 +188,4 @@ class PartMetaItem : public QObject, public QEnableSharedFromThis<PartMetaItem> 
     QSharedPointer<PartMetaModel> m_model;
 };
 
-} // namespace ORNL
+}  // namespace ORNL

@@ -16,7 +16,7 @@ namespace ORNL {
  * \brief The gcode writer for the Wolf syntax
  */
 class WolfWriter : public WriterBase {
-  public:
+   public:
     //! \brief Constructor
     WolfWriter(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb);
 
@@ -41,6 +41,9 @@ class WolfWriter : public WriterBase {
 
     //! \brief Writes G-Code to be executed at the start of each path
     QString writeBeforePath(RegionType type) override;
+
+    //! \brief Updates the controller path type when a continuous path changes regions
+    QString writeBeforePathRegionTransition(RegionType type) override;
 
     //! \brief Writes G-Code for traveling between paths
     QString writeTravel(Point start_location, Point target_location, TravelLiftType lType,
@@ -78,7 +81,7 @@ class WolfWriter : public WriterBase {
     //! \brief Writes G-Code for a pause, G4
     QString writeDwell(Time time) override;
 
-  private: //! \brief Defines the machine type - used to differentiate between polymer extrusion and wire-arc
+   private:  //! \brief Defines the machine type - used to differentiate between polymer extrusion and wire-arc
     MachineType m_machine_type;
     //! \brief Writes G-Code to enable the extruder
     QString writeExtruderOn(RegionType region_type, int rpm, int extruder_number);
@@ -112,5 +115,5 @@ class WolfWriter : public WriterBase {
     //! \brief Integer identifier for path type: 1 = perimeter, 2 = inset, 8 = skeleton, 5 = infill, 6 = tip wipe
     int m_wolf_path_type;
 
-}; // class WolfWriter
-} // namespace ORNL
+};  // class WolfWriter
+}  // namespace ORNL

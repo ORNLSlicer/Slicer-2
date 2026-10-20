@@ -1,9 +1,9 @@
 #pragma once
 
-#include <vector>
-
 #include <QVector3D>
 #include <QVector>
+#include <vector>
+
 #include <clipper.hpp>
 #include <qcontainerfwd.h>
 
@@ -21,7 +21,7 @@ class PolygonList;
  * \brief List of line segments that form an open path
  */
 class Polyline : public QVector<Point> {
-  public:
+   public:
     // QVector constructors.
     using QVector<Point>::QVector;
 
@@ -97,6 +97,7 @@ class Polyline : public QVector<Point> {
 
     /*!
      * \brief Collapses segments shorter than \p min_segment_length.
+     * \note Annotated loop-connection endpoints are retained, including short segments at those boundaries.
      *
      * \param min_segment_length Minimum allowed segment length. A value less than or equal to zero leaves the polyline
      * unchanged.
@@ -218,9 +219,9 @@ class Polyline : public QVector<Point> {
     friend class Polygon;
     friend class PolygonList;
 
-  private:
+   private:
     //! \brief Internal function used for Clipper to get a Clipper::Path
     //! from the current polyline
     ClipperLib2::Path operator()() const;
 };
-} // namespace ORNL
+}  // namespace ORNL

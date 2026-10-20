@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QStyleFactory>
+
 #include <nlohmann/json_fwd.hpp>
 #include <qcontainerfwd.h>
 #include <qcoreapplication.h>
@@ -108,6 +109,7 @@ int main(int argc, char* argv[]) {
         Q_INIT_RESOURCE(shaders);
         Q_INIT_RESOURCE(styles);
         Q_INIT_RESOURCE(configs);
+        Q_INIT_RESOURCE(docs);
 
         // Get the instance of the main window and show it.
         ORNL::MainWindow* w = ORNL::MainWindow::getInstance();

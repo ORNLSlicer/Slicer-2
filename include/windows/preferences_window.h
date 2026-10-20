@@ -3,10 +3,12 @@
 #include <QCheckBox>
 #include <QCloseEvent>
 #include <QComboBox>
+#include <QDoubleSpinBox>
 #include <QGroupBox>
 #include <QMainWindow>
 #include <QRadioButton>
 #include <QSpinBox>
+
 #include <qhashfunctions.h>
 #include <qlist.h>
 #include <qsharedpointer.h>
@@ -18,23 +20,25 @@
 #include "utilities/enums.h"
 
 namespace ORNL {
+class VisualizationColorPicker;
+
 /*!
  * \class PreferencesWindow
  * \brief Window that allows the user to change his/her preferences
  */
 class PreferencesWindow : public QMainWindow {
     Q_OBJECT
-  public:
+   public:
     //! \brief Constructor
     explicit PreferencesWindow(QWidget* parent = 0);
 
     //! \brief Destructor
     ~PreferencesWindow();
 
-  signals:
+   signals:
     void updateTheme();
 
-  private slots:
+   private slots:
     //! \brief Tell the preferences manager to import preferences from file
     void importPreferences();
 
@@ -54,11 +58,14 @@ class PreferencesWindow : public QMainWindow {
     void updateMassUnitVisual(Mass oldUnit, Mass newUnit);
     void updateThemeVisual();
 
-  private:
+   private:
     //! \brief Setup all components
     void setupLayout();
     //! \brief Setup the events for the various widgets.
     void setupEvents();
+
+    //! \brief Reload every preference control after importing a file.
+    void refreshFromPreferences();
 
     //! \brief Setup the events for the various widgets.
     //! \param choice Preference choice for current preference set
@@ -94,13 +101,24 @@ class PreferencesWindow : public QMainWindow {
     QComboBox* m_theme_combobox;
     QComboBox* m_gcode_preview_mode_combobox;
     QComboBox* m_disabled_setting_visibility_combobox;
+    QDoubleSpinBox* m_step_stl_linear_deflection_spinbox;
     QSpinBox* m_gcode_preview_vertex_threshold_spinbox;
+    QSpinBox* m_layer_lag_spinbox;
+    QSpinBox* m_segment_lag_spinbox;
+    QCheckBox* m_invert_camera_checkbox;
+    QCheckBox* m_use_implicit_transforms_checkbox;
+    QCheckBox* m_always_drop_parts_checkbox;
+    QCheckBox* m_gcode_info_visible_by_default_checkbox;
+    QCheckBox* m_optimization_points_visible_by_default_checkbox;
     QCheckBox* m_warn_unsaved_project_on_close_checkbox;
+
+    //! \brief Visualization color controls shown in the preferences window.
+    QList<VisualizationColorPicker*> m_visualization_color_pickers;
 
     //! \brief List of groupboxes that hold radio buttons for various preferences
     QList<QGroupBox*> m_boxes;
 
     //! \brief Copy of pointer to manager that holds actual preference information
     QSharedPointer<PreferencesManager> m_preferences_manager;
-}; // class PreferencesWindow
-} // namespace ORNL
+};  // class PreferencesWindow
+}  // namespace ORNL

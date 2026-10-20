@@ -1,11 +1,13 @@
 #pragma once
 
+#include <QString>
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 
-#include <QCoreApplication>
-#include <QMessageBox>
 #include <qcolor.h>
+#include <qhashfunctions.h>
 #include <qtcoreexports.h>
 
 #include "constants.h"
@@ -27,14 +29,14 @@ enum MeshType { kBuild, kClipping, kSettings, kSupport };
  * \brief types of meshes that can be generated
  */
 enum MeshGeneratorType {
-    kNone = 0,
+    kNone                 = 0,
     kDefaultSettingRegion = 1,
-    kOpenTopBox = 2,
-    kRectangularBox = 3,
-    kTriangularPyramid = 4,
-    kCylinder = 5,
-    kCone = 6,
-    kHexagonalPrism = 7
+    kOpenTopBox           = 2,
+    kRectangularBox       = 3,
+    kTriangularPyramid    = 4,
+    kCylinder             = 5,
+    kCone                 = 6,
+    kHexagonalPrism       = 7
 };
 
 /*! \enum BuildVolumeType
@@ -113,24 +115,29 @@ inline QString toString(RadialPathBoundaryPolicy handling) {
 }
 
 /*!
- * @enum HelicalPathBoundaryPolicy
- * @brief Selects how a helical path is clipped to the model boundary.
+ * @enum HelicalPathZClipRounding
+ * @brief Controls where Z-clipped helical paths end relative to full revolutions.
  */
-enum class HelicalPathBoundaryPolicy : uint8_t {
-    //! @brief Keep every portion of the helix that lies inside the model.
-    kClip = 0,
+enum class HelicalPathZClipRounding : uint8_t {
+    //! @brief End exactly at the highest-Z model intersection.
+    kExactIntersection = 0,
 
-    //! @brief Keep the helix through the model intersection with the greatest Z value.
-    kClipZ = 1
+    //! @brief Continue upward to the next complete revolution.
+    kCompleteRevolution = 1,
+
+    //! @brief End at the previous complete revolution.
+    kLastFullRevolution = 2
 };
 
-inline QString toString(HelicalPathBoundaryPolicy handling) {
-    switch (handling) {
-        case HelicalPathBoundaryPolicy::kClipZ:
-            return "Clip Z";
-        case HelicalPathBoundaryPolicy::kClip:
+inline QString toString(HelicalPathZClipRounding rounding) {
+    switch (rounding) {
+        case HelicalPathZClipRounding::kCompleteRevolution:
+            return "Complete Revolution";
+        case HelicalPathZClipRounding::kLastFullRevolution:
+            return "Last Full Revolution";
+        case HelicalPathZClipRounding::kExactIntersection:
         default:
-            return "Clip";
+            return "Exact Intersection";
     }
 }
 
@@ -179,23 +186,50 @@ inline QString toString(CylinderAxisSource mode) {
 }
 
 /*!
+ * @enum HelicalInfillRevolutionsRounding
+ * @brief Controls how helical infill is rounded to whole revolutions.
+ */
+enum class HelicalInfillRevolutionsRounding : uint8_t {
+    //! @brief Round to the nearest whole number of revolutions.
+    kRound = 0,
+
+    //! @brief Round down to the nearest whole number of revolutions.
+    kFloor = 1,
+
+    //! @brief Round up to the nearest whole number of revolutions.
+    kCeil = 2
+};
+
+inline QString toString(HelicalInfillRevolutionsRounding rounding) {
+    switch (rounding) {
+        case HelicalInfillRevolutionsRounding::kFloor:
+            return "Floor";
+        case HelicalInfillRevolutionsRounding::kCeil:
+            return "Ceil";
+        case HelicalInfillRevolutionsRounding::kRound:
+        default:
+            return "Round";
+    }
+}
+
+/*!
  * \enum AffectedArea
  * \brief The AffectedArea enum
  */
-enum class AffectedArea : int // was uint8_t
+enum class AffectedArea : int  // was uint8_t
 {
-    kNone = 0,
-    kPerimeter = 1 << 0,
-    kInset = 1 << 1,
-    kInfill = 1 << 2,
-    kTopSkin = 1 << 3,
-    kBottomSkin = 1 << 4,
-    kSkin = 1 << 5,
-    kSupport = 1 << 6,
-    kRaft = 1 << 7,
-    kBrim = 1 << 8,
-    kSkirt = 1 << 9,
-    kLaserScan = 1 << 10,
+    kNone        = 0,
+    kPerimeter   = 1 << 0,
+    kInset       = 1 << 1,
+    kInfill      = 1 << 2,
+    kTopSkin     = 1 << 3,
+    kBottomSkin  = 1 << 4,
+    kSkin        = 1 << 5,
+    kSupport     = 1 << 6,
+    kRaft        = 1 << 7,
+    kBrim        = 1 << 8,
+    kSkirt       = 1 << 9,
+    kLaserScan   = 1 << 10,
     kThermalScan = 1 << 11
 };
 
@@ -211,6 +245,7 @@ enum class ThemeName {
 inline QString toString(ThemeName theme) {
     switch (theme) {
         case ThemeName::kLightMode:
+        default:
             return Constants::UI::Themes::kSystemMode;
         case ThemeName::kDarkMode:
             return Constants::UI::Themes::kDarkMode;
@@ -226,38 +261,38 @@ inline ThemeName themeFromString(const QString& theme) {
  * @brief Available output syntaxes and parser/writer dialects.
  */
 enum class GcodeSyntax : uint8_t {
-    kBeam = 0,
-    kCincinnati = 1,
-    kCommon = 2,
-    kDmgDmu = 3,
-    kGudel = 4,
-    kHaasInch = 5,
-    kHaasMetric = 6,
+    kBeam                 = 0,
+    kCincinnati           = 1,
+    kCommon               = 2,
+    kDmgDmu               = 3,
+    kGudel                = 4,
+    kHaasInch             = 5,
+    kHaasMetric           = 6,
     kHaasMetricNoComments = 7,
-    kHurco = 8,
-    kIngersoll = 9,
-    kMarlin = 10,
-    kJuggerBot = 11,
-    kMazak = 12,
-    kMVP = 13,
-    kRomiFanuc = 14,
-    kSiemens = 15,
-    kThermwood = 16,
-    kWolf = 17,
-    kRepRap = 18,
-    kMach4 = 19,
-    kAeroBasic = 20,
-    kMeld = 21,
-    kORNL = 22,
-    kOkuma = 23,
-    kTormach = 24,
-    kAML3D = 25,
-    kKraussMaffei = 26,
-    kSandia = 27,
-    kMeltio = 28,
-    kAdamantine = 29,
-    kORNLMetric = 30,
-    kArcSpecialties = 31
+    kHurco                = 8,
+    kIngersoll            = 9,
+    kMarlin               = 10,
+    kJuggerBot            = 11,
+    kMazak                = 12,
+    kMVP                  = 13,
+    kRomiFanuc            = 14,
+    kSiemens              = 15,
+    kThermwood            = 16,
+    kWolf                 = 17,
+    kRepRap               = 18,
+    kMach4                = 19,
+    kAeroBasic            = 20,
+    kMeld                 = 21,
+    kORNL                 = 22,
+    kOkuma                = 23,
+    kTormach              = 24,
+    kAML3D                = 25,
+    kKraussMaffei         = 26,
+    kSandia               = 27,
+    kMeltio               = 28,
+    kAdamantine           = 29,
+    kORNLMetric           = 30,
+    kArcSpecialties       = 31
 };
 
 inline QString toString(GcodeSyntax syntax) {
@@ -333,13 +368,13 @@ inline QString toString(GcodeSyntax syntax) {
  * \brief The InfillPatterns enum
  */
 enum class InfillPatterns : uint8_t {
-    kLines = 0,
-    kGrid = 1,
-    kConcentric = 2,
-    kTriangles = 3,
+    kLines                = 0,
+    kGrid                 = 1,
+    kConcentric           = 2,
+    kTriangles            = 3,
     kHexagonsAndTriangles = 4,
-    kHoneycomb = 5,
-    kRadialHatch = 6
+    kHoneycomb            = 5,
+    kRadialHatch          = 6
 };
 
 //! \brief Function for going from json to InfillPatterns
@@ -372,11 +407,11 @@ inline QString toString(InfillPatterns infill_type) {
  * \brief Types of regions, used to lookup when dealing with abstract region.
  */
 enum class RegionType : int {
-    kUnknown = 0,
+    kUnknown   = 0,
     kPerimeter = 1 << 0,
-    kInset = 1 << 1,
-    kInfill = 1 << 2,
-    kSkin = 1 << 3,
+    kInset     = 1 << 1,
+    kInfill    = 1 << 2,
+    kSkin      = 1 << 3,
     kSkirt,
     kBrim,
     kRaft,
@@ -413,54 +448,32 @@ inline constexpr RegionType operator|(const RegionType& lhs, const RegionType& r
     return static_cast<RegionType>(static_cast<int>(lhs) | static_cast<int>(rhs));
 }
 
-inline RegionType& operator|=(RegionType& lhs, const RegionType& rhs) { return lhs = lhs | rhs; }
+inline RegionType& operator|=(RegionType& lhs, const RegionType& rhs) {
+    return lhs = lhs | rhs;
+}
 
 inline constexpr RegionType operator&(const RegionType& lhs, const RegionType& rhs) {
     return static_cast<RegionType>(static_cast<int>(lhs) & static_cast<int>(rhs));
 }
 
-inline RegionType& operator&=(RegionType& lhs, const RegionType& rhs) { return lhs = lhs & rhs; }
+inline RegionType& operator&=(RegionType& lhs, const RegionType& rhs) {
+    return lhs = lhs & rhs;
+}
 
 inline RegionType fromString(QString type) {
-    if (type == Constants::RegionTypeStrings::kUnknown) {
-        return RegionType::kUnknown;
-    }
-    else if (type == Constants::RegionTypeStrings::kPerimeter) {
-        return RegionType::kPerimeter;
-    }
-    else if (type == Constants::RegionTypeStrings::kInset) {
-        return RegionType::kInset;
-    }
-    else if (type == Constants::RegionTypeStrings::kSkin) {
-        return RegionType::kSkin;
-    }
-    else if (type == Constants::RegionTypeStrings::kInfill) {
-        return RegionType::kInfill;
-    }
-    else if (type == Constants::RegionTypeStrings::kSupport) {
-        return RegionType::kSupport;
-    }
-    else if (type == Constants::RegionTypeStrings::kSupportRoof) {
-        return RegionType::kSupportRoof;
-    }
-    else if (type == Constants::RegionTypeStrings::kRaft) {
-        return RegionType::kRaft;
-    }
-    else if (type == Constants::RegionTypeStrings::kBrim) {
-        return RegionType::kBrim;
-    }
-    else if (type == Constants::RegionTypeStrings::kSkirt) {
-        return RegionType::kSkirt;
-    }
-    else if (type == Constants::RegionTypeStrings::kLaserScan) {
-        return RegionType::kLaserScan;
-    }
-    else if (type == Constants::RegionTypeStrings::kThermalScan) {
-        return RegionType::kThermalScan;
-    }
-    else if (type == Constants::RegionTypeStrings::kSkeleton) {
-        return RegionType::kSkeleton;
-    }
+    if (type == Constants::RegionTypeStrings::kUnknown) { return RegionType::kUnknown; }
+    else if (type == Constants::RegionTypeStrings::kPerimeter) { return RegionType::kPerimeter; }
+    else if (type == Constants::RegionTypeStrings::kInset) { return RegionType::kInset; }
+    else if (type == Constants::RegionTypeStrings::kSkin) { return RegionType::kSkin; }
+    else if (type == Constants::RegionTypeStrings::kInfill) { return RegionType::kInfill; }
+    else if (type == Constants::RegionTypeStrings::kSupport) { return RegionType::kSupport; }
+    else if (type == Constants::RegionTypeStrings::kSupportRoof) { return RegionType::kSupportRoof; }
+    else if (type == Constants::RegionTypeStrings::kRaft) { return RegionType::kRaft; }
+    else if (type == Constants::RegionTypeStrings::kBrim) { return RegionType::kBrim; }
+    else if (type == Constants::RegionTypeStrings::kSkirt) { return RegionType::kSkirt; }
+    else if (type == Constants::RegionTypeStrings::kLaserScan) { return RegionType::kLaserScan; }
+    else if (type == Constants::RegionTypeStrings::kThermalScan) { return RegionType::kThermalScan; }
+    else if (type == Constants::RegionTypeStrings::kSkeleton) { return RegionType::kSkeleton; }
     throw UnknownRegionTypeException("Cannot convert this string to RegionType");
 }
 
@@ -501,20 +514,21 @@ inline QString toString(RegionType region_type) {
  * \brief The PathModifiers enum
  */
 enum class PathModifiers : uint16_t {
-    kNone = 0,
-    kReverseTipWipe = 1 << 0,
-    kForwardTipWipe = 1 << 1,
-    kPerimeterTipWipe = 1 << 2, // Rename to not include perimeter
-    kAngledTipWipe = 1 << 3,
-    kInitialStartup = 1 << 4,
-    kSlowDown = 1 << 5,
-    kCoasting = 1 << 6,
-    kPrestart = 1 << 7,
-    kSpiralLift = 1 << 8,
-    kRampingUp = 1 << 9,
-    kRampingDown = 1 << 10,
-    kLeadIn = 1 << 11,
-    kFlyingStart = 1 << 12
+    kNone             = 0,
+    kReverseTipWipe   = 1 << 0,
+    kForwardTipWipe   = 1 << 1,
+    kPerimeterTipWipe = 1 << 2,  // Rename to not include perimeter
+    kAngledTipWipe    = 1 << 3,
+    kInitialStartup   = 1 << 4,
+    kSlowDown         = 1 << 5,
+    kCoasting         = 1 << 6,
+    kPrestart         = 1 << 7,
+    kSpiralLift       = 1 << 8,
+    kRampingUp        = 1 << 9,
+    kRampingDown      = 1 << 10,
+    kLeadIn           = 1 << 11,
+    kFlyingStart      = 1 << 12,
+    kConnection       = 1 << 13
 };
 
 enum class TipWipeDirection { kOptimal = 0, kForward = 1, kReverse = 2, kAngled = 3 };
@@ -523,13 +537,17 @@ inline constexpr PathModifiers operator|(const PathModifiers& lhs, const PathMod
     return static_cast<PathModifiers>(static_cast<int>(lhs) | static_cast<int>(rhs));
 }
 
-inline PathModifiers& operator|=(PathModifiers& lhs, const PathModifiers& rhs) { return lhs = lhs | rhs; }
+inline PathModifiers& operator|=(PathModifiers& lhs, const PathModifiers& rhs) {
+    return lhs = lhs | rhs;
+}
 
 inline constexpr PathModifiers operator&(const PathModifiers& lhs, const PathModifiers& rhs) {
     return static_cast<PathModifiers>(static_cast<int>(lhs) & static_cast<int>(rhs));
 }
 
-inline PathModifiers& operator&=(PathModifiers& lhs, const PathModifiers& rhs) { return lhs = lhs & rhs; }
+inline PathModifiers& operator&=(PathModifiers& lhs, const PathModifiers& rhs) {
+    return lhs = lhs & rhs;
+}
 
 inline QString toString(PathModifiers modifier_type) {
     switch (modifier_type) {
@@ -561,6 +579,8 @@ inline QString toString(PathModifiers modifier_type) {
             return Constants::PathModifierStrings::kFlyingStart;
         case PathModifiers::kPerimeterTipWipe:
             return Constants::PathModifierStrings::kPerimeterTipWipe;
+        case PathModifiers::kConnection:
+            return Constants::PathModifierStrings::kConnection;
     }
     return QString();
 }
@@ -570,10 +590,10 @@ inline QString toString(PathModifiers modifier_type) {
  * \brief The Smoothing Type enum
  */
 enum class SmoothingType : uint8_t {
-    kDouglasPeucker = 0,
-    kRadialDistance = 1,
+    kDouglasPeucker        = 0,
+    kRadialDistance        = 1,
     kPerpendicularDistance = 2,
-    kReumannWitkam = 3
+    kReumannWitkam         = 3
 };
 
 /*!
@@ -581,22 +601,22 @@ enum class SmoothingType : uint8_t {
  * \brief The Path/ Island OrderOptimization enum
  */
 enum class IslandOrderOptimization : uint8_t {
-    kNextClosest = 0,
-    kNextFarthest = 1,
+    kNextClosest            = 0,
+    kNextFarthest           = 1,
     kShortestDistanceApprox = 2,
-    kShortestDistanceBrute = 3,
-    kLeastRecentlyVisited = 4,
-    kRandom = 5,
-    kCustomPoint = 6
+    kShortestDistanceBrute  = 3,
+    kLeastRecentlyVisited   = 4,
+    kRandom                 = 5,
+    kCustomPoint            = 6
 };
 
 enum class PathOrderOptimization : uint8_t {
-    kNextClosest = 0,
+    kNextClosest  = 0,
     kNextFarthest = 1,
-    kRandom = 2,
-    kOutsideIn = 3,
-    kInsideOut = 4,
-    kCustomPoint = 5
+    kRandom       = 2,
+    kOutsideIn    = 3,
+    kInsideOut    = 4,
+    kCustomPoint  = 5
 };
 
 inline PathOrderOptimization optionalPathOrderOptimization(int optimization,
@@ -624,11 +644,11 @@ inline bool optionalPathOrderUsesCustomLocation(int optimization) {
 }
 
 enum class PointOrderOptimization : uint8_t {
-    kNextClosest = 0,
-    kNextFarthest = 1,
-    kRandom = 2,
-    kConsecutive = 3,
-    kCustomPoint = 4,
+    kNextClosest         = 0,
+    kNextFarthest        = 1,
+    kRandom              = 2,
+    kConsecutive         = 3,
+    kCustomPoint         = 4,
     kCustomFarthestPoint = 5
 };
 
@@ -654,26 +674,26 @@ enum class Axis : uint8_t { kX, kY, kZ };
 enum class IslandType : uint8_t { kAll, kBrim, kPolymer, kRaft, kLaserScan, kThermalScan, kSkirt, kSupport };
 
 enum class MachineType : uint8_t {
-    kPellet = 0,
-    kFilament = 1,
-    kWire_Arc = 2,
+    kPellet     = 0,
+    kFilament   = 1,
+    kWire_Arc   = 2,
     kLaser_Wire = 3,
-    kConcrete = 4,
-    kThermoset = 5
+    kConcrete   = 4,
+    kThermoset  = 5
 };
 
 enum class PrintMaterial : uint8_t {
-    kABS20CF = 0,
-    kABS = 1,
-    kPPS = 2,
-    kPPS50CF = 3,
-    kPPSU = 4,
+    kABS20CF  = 0,
+    kABS      = 1,
+    kPPS      = 2,
+    kPPS50CF  = 3,
+    kPPSU     = 4,
     kPPSU25CF = 5,
-    kPESU = 6,
+    kPESU     = 6,
     kPESU25CF = 7,
-    kPLA = 8,
+    kPLA      = 8,
     kConcrete = 9,
-    kOther = 10
+    kOther    = 10
 };
 
 // ToDo: QMap might be preferred
@@ -737,6 +757,8 @@ inline Density toDensityValue(PrintMaterial material) {
     }
 }
 
+enum class VariableZ : uint8_t { kNone = 0, kVar200 = 1, kVar201 = 2 };
+
 enum class LayerChange : uint8_t { kZ_only = 0, kW_only = 1, kBoth_Z_and_W = 2 };
 
 enum class SeamSelection : uint8_t { kRandom, kOptimized, kRotating };
@@ -769,9 +791,9 @@ inline QString toString(DisabledSettingVisibility visibility) {
  * the automatic threshold fallback. Thin Lines disables true-width previews.
  */
 enum class GCodePreviewMode : uint8_t {
-    kAuto = 0,
+    kAuto       = 0,
     kTrueWidths = 1,
-    kThinLines = 2,
+    kThinLines  = 2,
 };
 
 inline QString toString(GCodePreviewMode mode) {
@@ -817,168 +839,96 @@ enum class VisualizationColors {
     kTipWipeReverse,
     kTravel,
     kUnknown,
+    kHelicalPerimeter,
+    kHelicalInset,
+    kHelicalInfill,
+    kConnection,
 
     Length
 };
 
-inline QString VisualizationColorsName(VisualizationColors color) {
-    switch (color) {
-        case VisualizationColors::kBrim:
-            return "Brim";
-        case VisualizationColors::kCoasting:
-            return "Coasting";
-        case VisualizationColors::kInfill:
-            return "Infill";
-        case VisualizationColors::kInitialStartup:
-            return "InitialStartup";
-        case VisualizationColors::kInset:
-            return "Inset";
-        case VisualizationColors::kInsetArc:
-            return "InsetArc";
-        case VisualizationColors::kLaserScan:
-            return "LaserScan";
-        case VisualizationColors::kLeadIn:
-            return "LeadIn";
-        case VisualizationColors::kFlyingStart:
-            return "FlyingStart";
-        case VisualizationColors::kPerimeter:
-            return "Perimeter";
-        case VisualizationColors::kPerimeterArc:
-            return "PerimeterArc";
-        case VisualizationColors::kPrestart:
-            return "Prestart";
-        case VisualizationColors::kRaft:
-            return "Raft";
-        case VisualizationColors::kRadial:
-            return "Radial";
-        case VisualizationColors::kHelical:
-            return "Helical";
-        case VisualizationColors::kRampingDown:
-            return "RampingDown";
-        case VisualizationColors::kRampingUp:
-            return "RampingUp";
-        case VisualizationColors::kSkeleton:
-            return "Skeleton";
-        case VisualizationColors::kSkin:
-            return "Skin";
-        case VisualizationColors::kSkirt:
-            return "Skirt";
-        case VisualizationColors::kSlowDown:
-            return "SlowDown";
-        case VisualizationColors::kSpiralLift:
-            return "SpiralLift";
-        case VisualizationColors::kSupport:
-            return "Support";
-        case VisualizationColors::kSupportRoof:
-            return "SupportRoof";
-        case VisualizationColors::kThermalScan:
-            return "ThermalScan";
-        case VisualizationColors::kTipWipeAngled:
-            return "TipWipeAngled";
-        case VisualizationColors::kTipWipeForward:
-            return "TipWipeForward";
-        case VisualizationColors::kTipWipeReverse:
-            return "TipWipeReverse";
-        case VisualizationColors::kTravel:
-            return "Travel";
+struct VisualizationColorDefinition {
+    VisualizationColors color;
+    const char* name;
+    QColor default_color;
+};
 
-        case VisualizationColors::kUnknown:
-        case VisualizationColors::Length:
-            return "Unknown";
+inline const std::array<VisualizationColorDefinition, static_cast<std::size_t>(VisualizationColors::Length)>&
+VisualizationColorDefinitions() {
+    static const std::array<VisualizationColorDefinition, static_cast<std::size_t>(VisualizationColors::Length)>
+        definitions {{
+            {VisualizationColors::kBrim, "Brim", QColor(200, 113, 55, 255)},
+            {VisualizationColors::kCoasting, "Coasting", QColor(211, 95, 141, 255)},
+            {VisualizationColors::kInfill, "Infill", QColor(0, 255, 0, 255)},
+            {VisualizationColors::kInitialStartup, "InitialStartup", QColor(135, 222, 205, 255)},
+            {VisualizationColors::kInset, "Inset", QColor(0, 204, 255, 255)},
+            {VisualizationColors::kInsetArc, "InsetArc", QColor(0, 184, 255, 255)},
+            {VisualizationColors::kLaserScan, "LaserScan", QColor(90, 255, 90, 255)},
+            {VisualizationColors::kLeadIn, "LeadIn", QColor(255, 153, 51, 255)},
+            {VisualizationColors::kFlyingStart, "FlyingStart", QColor(120, 150, 250)},
+            {VisualizationColors::kPerimeter, "Perimeter", QColor(0, 0, 255, 255)},
+            {VisualizationColors::kPerimeterArc, "PerimeterArc", QColor(32, 64, 255, 255)},
+            {VisualizationColors::kPrestart, "Prestart", QColor(204, 0, 255, 255)},
+            {VisualizationColors::kRaft, "Raft", QColor(102, 102, 102, 255)},
+            {VisualizationColors::kRadial, "Radial", QColor(47, 82, 102, 255)},
+            {VisualizationColors::kHelical, "Helical", QColor(127, 0, 255, 255)},
+            {VisualizationColors::kRampingDown, "RampingDown", QColor(22, 99, 137, 255)},
+            {VisualizationColors::kRampingUp, "RampingUp", QColor(99, 22, 137, 255)},
+            {VisualizationColors::kSkeleton, "Skeleton", QColor(160, 44, 44, 255)},
+            {VisualizationColors::kSkin, "Skin", QColor(0, 128, 0, 255)},
+            {VisualizationColors::kSkirt, "Skirt", QColor(211, 188, 95, 255)},
+            {VisualizationColors::kSlowDown, "SlowDown", QColor(44, 160, 137, 255)},
+            {VisualizationColors::kSpiralLift, "SpiralLift", QColor(113, 55, 200, 255)},
+            {VisualizationColors::kSupport, "Support", QColor(255, 102, 0, 255)},
+            {VisualizationColors::kSupportRoof, "SupportRoof", QColor(255, 179, 128, 255)},
+            {VisualizationColors::kThermalScan, "ThermalScan", QColor(240, 130, 130, 255)},
+            {VisualizationColors::kTipWipeAngled, "TipWipeAngled", QColor(179, 128, 255, 255)},
+            {VisualizationColors::kTipWipeForward, "TipWipeForward", QColor(179, 128, 255, 255)},
+            {VisualizationColors::kTipWipeReverse, "TipWipeReverse", QColor(179, 128, 255, 255)},
+            {VisualizationColors::kTravel, "Travel", QColor(233, 175, 198, 255)},
+            {VisualizationColors::kUnknown, "Unknown", QColor(0, 0, 0, 255)},
+            {VisualizationColors::kHelicalPerimeter, "HelicalPerimeter", QColor(0, 0, 255, 255)},
+            {VisualizationColors::kHelicalInset, "HelicalInset", QColor(0, 204, 255, 255)},
+            {VisualizationColors::kHelicalInfill, "HelicalInfill", QColor(0, 255, 0, 255)},
+            {VisualizationColors::kConnection, "Connection", QColor(0, 250, 154, 255)},
+        }};
 
-        default:
-            QMessageBox::critical(
-                Q_NULLPTR, QCoreApplication::applicationName(),
-                "Unimplemented corosponding visualization colors string.\n"
-                "With a new enum entry for color, a corrosponding name (in VisualizationColorsName) and\n"
-                "default color value (in VisualizationColorsDefaults) needs to be created.",
-                QMessageBox::Cancel);
-            throw std::invalid_argument("Unimplemented corosponding visualization colors string");
-    }
+    return definitions;
 }
 
-inline constexpr const QColor VisualizationColorsDefaults(VisualizationColors color) {
-    switch (color) {
-        case VisualizationColors::kBrim:
-            return QColor(200, 113, 55, 255);
-        case VisualizationColors::kCoasting:
-            return QColor(211, 95, 141, 255);
-        case VisualizationColors::kInfill:
-            return QColor(0, 255, 0, 255);
-        case VisualizationColors::kInitialStartup:
-            return QColor(135, 222, 205, 255);
-        case VisualizationColors::kInset:
-            return QColor(0, 204, 255, 255);
-        case VisualizationColors::kInsetArc:
-            return QColor(0, 184, 255, 255);
-        case VisualizationColors::kLaserScan:
-            return QColor(90, 255, 90, 255);
-        case VisualizationColors::kLeadIn:
-            return QColor(255, 153, 51, 255);
-        case VisualizationColors::kFlyingStart:
-            return QColor(120, 150, 250);
-        case VisualizationColors::kPerimeter:
-            return QColor(0, 0, 255, 255);
-        case VisualizationColors::kPerimeterArc:
-            return QColor(32, 64, 255, 255);
-        case VisualizationColors::kPrestart:
-            return QColor(204, 0, 255, 255);
-        case VisualizationColors::kRaft:
-            return QColor(102, 102, 102, 255);
-        case VisualizationColors::kRadial:
-            return QColor(47, 82, 102, 255);
-        case VisualizationColors::kHelical:
-            return QColor(127, 0, 255, 255);
-        case VisualizationColors::kRampingDown:
-            return QColor(22, 99, 137, 255);
-        case VisualizationColors::kRampingUp:
-            return QColor(99, 22, 137, 255);
-        case VisualizationColors::kSkeleton:
-            return QColor(160, 44, 44, 255);
-        case VisualizationColors::kSkin:
-            return QColor(0, 128, 0, 255);
-        case VisualizationColors::kSkirt:
-            return QColor(211, 188, 95, 255);
-        case VisualizationColors::kSlowDown:
-            return QColor(44, 160, 137, 255);
-        case VisualizationColors::kSpiralLift:
-            return QColor(113, 55, 200, 255);
-        case VisualizationColors::kSupport:
-            return QColor(255, 102, 0, 255);
-        case VisualizationColors::kSupportRoof:
-            return QColor(255, 179, 128, 255);
-        case VisualizationColors::kThermalScan:
-            return QColor(240, 130, 130, 255);
-        case VisualizationColors::kTipWipeAngled:
-            return QColor(179, 128, 255, 255);
-        case VisualizationColors::kTipWipeForward:
-            return QColor(179, 128, 255, 255);
-        case VisualizationColors::kTipWipeReverse:
-            return QColor(179, 128, 255, 255);
-        case VisualizationColors::kTravel:
-            return QColor(233, 175, 198, 255);
-
-        case VisualizationColors::kUnknown:
-        case VisualizationColors::Length:
-            return QColor(0, 0, 0, 255);
-
-        default:
-            QMessageBox::critical(
-                Q_NULLPTR, QCoreApplication::applicationName(),
-                "Unimplemented corosponding visualization default color.\n"
-                "With a new enum entry for color, a corrosponding name (in VisualizationColorsName) and\n"
-                "default color value (in VisualizationColorsDefaults) needs to be created.",
-                QMessageBox::Cancel);
-            throw std::invalid_argument("Unimplemented corosponding visualization default color");
+inline const VisualizationColorDefinition& VisualizationColorDefinitionFor(VisualizationColors color) {
+    for (const VisualizationColorDefinition& definition : VisualizationColorDefinitions()) {
+        if (definition.color == color) { return definition; }
     }
+
+    throw std::invalid_argument("Unimplemented corresponding visualization color");
+}
+
+inline QString VisualizationColorsName(VisualizationColors color) {
+    return VisualizationColorDefinitionFor(color).name;
+}
+
+inline QColor VisualizationColorsDefaults(VisualizationColors color) {
+    return VisualizationColorDefinitionFor(color).default_color;
+}
+
+inline bool VisualizationColorFromName(const QString& name, VisualizationColors& color) {
+    for (const VisualizationColorDefinition& definition : VisualizationColorDefinitions()) {
+        if (name == definition.name) {
+            color = definition.color;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 enum class SegmentDisplayType : uint8_t {
-    kNone = 0x00,
-    kLine = 1 << 0,
-    kTravel = 1 << 1,
+    kNone    = 0x00,
+    kLine    = 1 << 0,
+    kTravel  = 1 << 1,
     kSupport = 1 << 2,
-    kAll = 0xff
+    kAll     = 0xff
 };
 
 inline constexpr SegmentDisplayType operator|(const SegmentDisplayType& lhs, const SegmentDisplayType& rhs) {
@@ -1007,21 +957,25 @@ inline constexpr TravelLiftType operator|(const TravelLiftType& lhs, const Trave
     return static_cast<TravelLiftType>(static_cast<int>(lhs) | static_cast<int>(rhs));
 }
 
-inline TravelLiftType& operator|=(TravelLiftType& lhs, const TravelLiftType& rhs) { return lhs = lhs | rhs; }
+inline TravelLiftType& operator|=(TravelLiftType& lhs, const TravelLiftType& rhs) {
+    return lhs = lhs | rhs;
+}
 
 inline constexpr TravelLiftType operator&(const TravelLiftType& lhs, const TravelLiftType& rhs) {
     return static_cast<TravelLiftType>(static_cast<int>(lhs) & static_cast<int>(rhs));
 }
 
-inline TravelLiftType& operator&=(TravelLiftType& lhs, const TravelLiftType& rhs) { return lhs = lhs & rhs; }
+inline TravelLiftType& operator&=(TravelLiftType& lhs, const TravelLiftType& rhs) {
+    return lhs = lhs & rhs;
+}
 
 enum class StatusUpdateStepType : uint8_t {
-    kPreProcess = 0,
-    kCompute = 1,
-    kPostProcess = 2,
+    kPreProcess     = 0,
+    kCompute        = 1,
+    kPostProcess    = 2,
     kGcodeGeneraton = 3,
-    kGcodeParsing = 4,
-    kVisualization = 5,
+    kGcodeParsing   = 4,
+    kVisualization  = 5,
 };
 
 inline QString toString(StatusUpdateStepType statusType) {
@@ -1039,6 +993,8 @@ inline QString toString(StatusUpdateStepType statusType) {
         case StatusUpdateStepType::kVisualization:
             return "Visualization:";
     }
+
+    return QString();
 }
 
 enum class QuaternionOrder { kXYZ = 0, kZYX = 1 };
@@ -1051,4 +1007,4 @@ enum class TormachMode : uint8_t { kMode21 = 0, kMode40 = 1, kMode102 = 2, kMode
 
 enum class PolygonPartition : uint8_t { kConvex = 0, kMonoX = 1, kMonoY = 2 };
 
-} // namespace ORNL
+}  // namespace ORNL

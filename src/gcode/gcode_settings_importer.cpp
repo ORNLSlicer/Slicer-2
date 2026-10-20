@@ -1,11 +1,11 @@
 #include "gcode/gcode_settings_importer.h"
 
-#include <cmath>
-#include <limits>
-
 #include <QFile>
 #include <QHash>
 #include <QIODevice>
+#include <cmath>
+#include <limits>
+
 #include <qchar.h>
 #include <qcontainerfwd.h>
 
@@ -15,15 +15,14 @@
 
 namespace ORNL {
 namespace {
-constexpr double kIntegerTolerance = 1e-9;
+constexpr double kIntegerTolerance              = 1e-9;
 constexpr double kModifyFeedrateLayerTimeMethod = 1.0;
 
-const QString kSettingsFooter = "Settings Footer";
+const QString kSettingsFooter          = "Settings Footer";
 const QString kInfillMaximumPathLength = "infill_maximum_path_length";
 
 QString jsonString(const fifojson& object, const std::string& key) {
-    if (!object.contains(key) || !object.at(key).is_string())
-        return QString();
+    if (!object.contains(key) || !object.at(key).is_string()) return QString();
 
     return QString::fromStdString(object.at(key).get<std::string>());
 }
@@ -34,16 +33,14 @@ QString settingType(const fifojson& master_entry) {
 
 QString settingDisplay(const QString& key, const fifojson& master) {
     const auto entry = master.find(key.toStdString());
-    if (entry == master.end())
-        return key;
+    if (entry == master.end()) return key;
 
     const QString display = GcodeSettingsImporter::displayName(entry.value());
     return display.isEmpty() ? key : display;
 }
 
 bool numberValue(const fifojson& value, double& result) {
-    if (!value.is_number())
-        return false;
+    if (!value.is_number()) return false;
 
     result = value.get<double>();
     return std::isfinite(result);
@@ -51,8 +48,7 @@ bool numberValue(const fifojson& value, double& result) {
 
 bool integerValue(const fifojson& value, int& result) {
     double number = 0.0;
-    if (!numberValue(value, number))
-        return false;
+    if (!numberValue(value, number)) return false;
 
     const double rounded = std::round(number);
     if (std::abs(number - rounded) > kIntegerTolerance || rounded < std::numeric_limits<int>::min() ||
@@ -72,8 +68,7 @@ bool boolValue(const fifojson& value, bool& result) {
 
     if (value.is_number()) {
         double number = 0.0;
-        if (!numberValue(value, number))
-            return false;
+        if (!numberValue(value, number)) return false;
 
         if (std::abs(number) <= kIntegerTolerance) {
             result = false;
@@ -106,12 +101,9 @@ bool boolValue(const fifojson& value, bool& result) {
 
 QString commentText(const QString& line) {
     const QString trimmed = line.trimmed();
-    if (trimmed.isEmpty())
-        return QString();
+    if (trimmed.isEmpty()) return QString();
 
-    if (trimmed.startsWith(';') || trimmed.startsWith('\'')) {
-        return trimmed.mid(1).trimmed();
-    }
+    if (trimmed.startsWith(';') || trimmed.startsWith('\'')) { return trimmed.mid(1).trimmed(); }
 
     if (trimmed.startsWith('(') && trimmed.endsWith(')') && trimmed.size() >= 2) {
         return trimmed.mid(1, trimmed.size() - 2).trimmed();
@@ -122,8 +114,7 @@ QString commentText(const QString& line) {
 
 int firstSpaceIndex(const QString& value) {
     for (int i = 0, end = value.size(); i < end; ++i) {
-        if (value.at(i).isSpace())
-            return i;
+        if (value.at(i).isSpace()) return i;
     }
 
     return -1;
@@ -134,12 +125,10 @@ bool parseFooterSettings(QIODevice& contents, QHash<QString, QString>& raw_value
 
     while (!contents.atEnd()) {
         const QString text = commentText(QString::fromUtf8(contents.readLine()));
-        if (text.isEmpty())
-            continue;
+        if (text.isEmpty()) continue;
 
         if (!in_footer) {
-            if (text.compare(kSettingsFooter, Qt::CaseInsensitive) == 0)
-                in_footer = true;
+            if (text.compare(kSettingsFooter, Qt::CaseInsensitive) == 0) in_footer = true;
             continue;
         }
 
@@ -149,7 +138,7 @@ bool parseFooterSettings(QIODevice& contents, QHash<QString, QString>& raw_value
             continue;
         }
 
-        const QString key = text.left(separator).trimmed();
+        const QString key   = text.left(separator).trimmed();
         const QString value = text.mid(separator + 1).trimmed();
 
         if (key.isEmpty() || value.isEmpty()) {
@@ -157,8 +146,7 @@ bool parseFooterSettings(QIODevice& contents, QHash<QString, QString>& raw_value
             continue;
         }
 
-        if (raw_values.contains(key))
-            warnings.append("Duplicate footer value for " + key + "; using the last value.");
+        if (raw_values.contains(key)) warnings.append("Duplicate footer value for " + key + "; using the last value.");
 
         raw_values[key] = value;
     }
@@ -166,19 +154,23 @@ bool parseFooterSettings(QIODevice& contents, QHash<QString, QString>& raw_value
     return in_footer;
 }
 
-void migrateLegacyRawSettingKeys(QHash<QString, QString>& raw_values) {
+QString migrateLegacyRawSettingKeys(QHash<QString, QString>& raw_values) {
     fifojson raw_settings = fifojson::object();
     for (auto raw = raw_values.constBegin(); raw != raw_values.constEnd(); ++raw) {
         raw_settings[raw.key().toStdString()] = raw.value().toStdString();
     }
 
-    SettingsVersionControl::migrateLegacySettingKeys(raw_settings);
+    try {
+        SettingsVersionControl::migrateLegacySettingKeys(raw_settings);
+    } catch (const std::exception& e) { return QString::fromUtf8(e.what()); }
 
     raw_values.clear();
     for (const auto& item : raw_settings.items()) {
         if (item.value().is_string())
             raw_values[QString::fromStdString(item.key())] = QString::fromStdString(item.value().get<std::string>());
     }
+
+    return QString();
 }
 
 bool parseRawValue(const QString& key, const fifojson& master_entry, const QString& raw_value, fifojson& parsed_value,
@@ -188,7 +180,7 @@ bool parseRawValue(const QString& key, const fifojson& master_entry, const QStri
         return true;
     } catch (const std::exception& e) {
         const QString type = settingType(master_entry);
-        if (type == "string" || type == "multiline_text") {
+        if (type == "string" || type == "multiline_text" || type == "file_path") {
             parsed_value = raw_value.toStdString();
             return true;
         }
@@ -202,32 +194,20 @@ bool validateDoubleRange(const QString& key, const QString& type, double value, 
     double minimum = 0.0;
     double maximum = static_cast<double>(std::numeric_limits<float>::max());
 
-    if (type == "location") {
-        minimum = static_cast<double>(std::numeric_limits<float>::lowest());
-    }
+    if (type == "location") { minimum = static_cast<double>(std::numeric_limits<float>::lowest()); }
     else if (type == "unitless_float") {
         minimum = Constants::Limits::Minimums::kMinUnitlessFloat;
         maximum = Constants::Limits::Maximums::kMaxUnitlessFloat;
     }
-    else if (type == "percentage") {
-        maximum = 500.0;
-    }
-    else if (type == "percentage100") {
-        maximum = 100.0;
-    }
-    else if (type == "rpm") {
-        maximum = 9999.99;
-    }
-    else if (type == "density") {
-        maximum = 9999.9999;
-    }
+    else if (type == "percentage") { maximum = 500.0; }
+    else if (type == "percentage100") { maximum = 100.0; }
+    else if (type == "rpm") { maximum = 9999.99; }
+    else if (type == "density") { maximum = 9999.9999; }
     else if (type == "angle") {
         minimum = Constants::Limits::Minimums::kMinAngle();
         maximum = Constants::Limits::Maximums::kMaxAngle();
     }
-    else if (type == "temperature") {
-        minimum = 0.0;
-    }
+    else if (type == "temperature") { minimum = 0.0; }
 
     if (value < minimum || value > maximum) {
         error = key + " is outside the allowed " + type + " range.";
@@ -246,24 +226,20 @@ bool isDoubleType(const QString& type) {
 
 double settingDouble(const fifojson& settings, const QString& key) {
     const auto value = settings.find(key.toStdString());
-    if (value == settings.end())
-        return 0.0;
+    if (value == settings.end()) return 0.0;
 
     double result = 0.0;
-    if (numberValue(value.value(), result))
-        return result;
+    if (numberValue(value.value(), result)) return result;
 
     bool bool_result = false;
-    if (boolValue(value.value(), bool_result))
-        return bool_result ? 1.0 : 0.0;
+    if (boolValue(value.value(), bool_result)) return bool_result ? 1.0 : 0.0;
 
     return 0.0;
 }
 
 bool settingBool(const fifojson& settings, const QString& key) {
     const auto value = settings.find(key.toStdString());
-    if (value == settings.end())
-        return false;
+    if (value == settings.end()) return false;
 
     bool result = false;
     return boolValue(value.value(), result) && result;
@@ -271,12 +247,10 @@ bool settingBool(const fifojson& settings, const QString& key) {
 
 int settingInt(const fifojson& settings, const QString& key) {
     const auto value = settings.find(key.toStdString());
-    if (value == settings.end())
-        return 0;
+    if (value == settings.end()) return 0;
 
     int result = 0;
-    if (integerValue(value.value(), result))
-        return result;
+    if (integerValue(value.value(), result)) return result;
 
     return static_cast<int>(settingDouble(settings, key));
 }
@@ -288,14 +262,13 @@ bool jsonValuesMatch(const fifojson& actual, const fifojson& expected) {
     }
 
     if (expected.is_number()) {
-        double actual_number = 0.0;
+        double actual_number   = 0.0;
         double expected_number = 0.0;
         return numberValue(actual, actual_number) && numberValue(expected, expected_number) &&
                std::abs(actual_number - expected_number) <= kIntegerTolerance;
     }
 
-    if (expected.is_string() && actual.is_string())
-        return actual.get<std::string>() == expected.get<std::string>();
+    if (expected.is_string() && actual.is_string()) return actual.get<std::string>() == expected.get<std::string>();
 
     return actual == expected;
 }
@@ -303,51 +276,41 @@ bool jsonValuesMatch(const fifojson& actual, const fifojson& expected) {
 bool dependencyIsActive(const fifojson& dependency, const fifojson& settings);
 
 bool dependencyArrayIsActive(const fifojson& dependencies, bool require_all, const fifojson& settings) {
-    if (!dependencies.is_array())
-        return true;
+    if (!dependencies.is_array()) return true;
 
     if (require_all) {
         for (const auto& dependency : dependencies) {
-            if (!dependencyIsActive(dependency, settings))
-                return false;
+            if (!dependencyIsActive(dependency, settings)) return false;
         }
         return true;
     }
 
     for (const auto& dependency : dependencies) {
-        if (dependencyIsActive(dependency, settings))
-            return true;
+        if (dependencyIsActive(dependency, settings)) return true;
     }
     return false;
 }
 
 bool dependencyIsActive(const fifojson& dependency, const fifojson& settings) {
-    if (dependency.is_null())
-        return true;
+    if (dependency.is_null()) return true;
 
-    if (dependency.is_string())
-        return dependency.get<std::string>().empty();
+    if (dependency.is_string()) return dependency.get<std::string>().empty();
 
-    if (dependency.is_array())
-        return dependencyArrayIsActive(dependency, true, settings);
+    if (dependency.is_array()) return dependencyArrayIsActive(dependency, true, settings);
 
-    if (!dependency.is_object())
-        return true;
+    if (!dependency.is_object()) return true;
 
     for (const auto& item : dependency.items()) {
         const QString key = QString::fromStdString(item.key());
         if (key == "AND") {
-            if (!dependencyArrayIsActive(item.value(), true, settings))
-                return false;
+            if (!dependencyArrayIsActive(item.value(), true, settings)) return false;
         }
         else if (key == "OR") {
-            if (!dependencyArrayIsActive(item.value(), false, settings))
-                return false;
+            if (!dependencyArrayIsActive(item.value(), false, settings)) return false;
         }
         else {
             const auto actual = settings.find(item.key());
-            if (actual == settings.end() || !jsonValuesMatch(actual.value(), item.value()))
-                return false;
+            if (actual == settings.end() || !jsonValuesMatch(actual.value(), item.value())) return false;
         }
     }
 
@@ -356,24 +319,28 @@ bool dependencyIsActive(const fifojson& dependency, const fifojson& settings) {
 
 bool settingIsActive(const QString& key, const fifojson& master, const fifojson& settings) {
     const auto entry = master.find(key.toStdString());
-    if (entry == master.end())
-        return false;
+    if (entry == master.end()) return false;
 
     const auto dependency = entry.value().find(Constants::Settings::Master::kDepends);
     return dependency == entry.value().end() || dependencyIsActive(dependency.value(), settings);
 }
 
-bool configuredRange(double minimum, double maximum) { return minimum != 0.0 || maximum != 0.0; }
+bool configuredRange(double minimum, double maximum) {
+    return minimum != 0.0 || maximum != 0.0;
+}
 
-bool validRange(double minimum, double maximum) { return configuredRange(minimum, maximum) && minimum < maximum; }
+bool validRange(double minimum, double maximum) {
+    return configuredRange(minimum, maximum) && minimum < maximum;
+}
 
-QString numberText(double value) { return QString::number(value, 'g', 6); }
+QString numberText(double value) {
+    return QString::number(value, 'g', 6);
+}
 
 void addDimensionRangeError(const QString& min_key, const QString& max_key, const QString& min_label,
                             const QString& max_label, const fifojson& settings, const fifojson& master,
                             QStringList& errors) {
-    if (!settingIsActive(min_key, master, settings) && !settingIsActive(max_key, master, settings))
-        return;
+    if (!settingIsActive(min_key, master, settings) && !settingIsActive(max_key, master, settings)) return;
 
     const double minimum = settingDouble(settings, min_key);
     const double maximum = settingDouble(settings, max_key);
@@ -385,12 +352,11 @@ void addDimensionRangeError(const QString& min_key, const QString& max_key, cons
 
 void addBoundsError(const QString& key, const QString& min_key, const QString& max_key, const QString& axis,
                     const fifojson& settings, const fifojson& master, QStringList& errors) {
-    if (!settingIsActive(key, master, settings))
-        return;
+    if (!settingIsActive(key, master, settings)) return;
 
     const double minimum = settingDouble(settings, min_key);
     const double maximum = settingDouble(settings, max_key);
-    const double value = settingDouble(settings, key);
+    const double value   = settingDouble(settings, key);
     if (validRange(minimum, maximum) && (value < minimum || value > maximum)) {
         errors.append(settingDisplay(key, master) + " (" + numberText(value) + ") is outside the " + axis +
                       " build volume range (" + numberText(minimum) + " to " + numberText(maximum) + ").");
@@ -400,8 +366,7 @@ void addBoundsError(const QString& key, const QString& min_key, const QString& m
 void validateActiveStaticSettings(const fifojson& settings, const fifojson& master, QStringList& errors) {
     for (const auto& item : master.items()) {
         const QString key = QString::fromStdString(item.key());
-        if (!settingIsActive(key, master, settings))
-            continue;
+        if (!settingIsActive(key, master, settings)) continue;
 
         const auto value = settings.find(item.key());
         if (value == settings.end()) {
@@ -426,8 +391,8 @@ void validateDynamicSettings(const fifojson& settings, const fifojson& master, Q
     addDimensionRangeError(PRS::Dimensions::kWMin, PRS::Dimensions::kWMax, "Minimum W", "Maximum W", settings, master,
                            errors);
 
-    const double min_extruder_speed = settingDouble(settings, PRS::MachineSpeed::kMinExtruderSpeed);
-    const double max_extruder_speed = settingDouble(settings, PRS::MachineSpeed::kMaxExtruderSpeed);
+    const double min_extruder_speed   = settingDouble(settings, PRS::MachineSpeed::kMinExtruderSpeed);
+    const double max_extruder_speed   = settingDouble(settings, PRS::MachineSpeed::kMaxExtruderSpeed);
     const bool has_min_extruder_speed = min_extruder_speed > 0.0;
     const bool has_max_extruder_speed = max_extruder_speed > 0.0;
     const bool invalid_extruder_range =
@@ -447,11 +412,10 @@ void validateDynamicSettings(const fifojson& settings, const fifojson& master, Q
 
     for (const auto& item : master.items()) {
         const QString key = QString::fromStdString(item.key());
-        if (!settingIsActive(key, master, settings))
-            continue;
+        if (!settingIsActive(key, master, settings)) continue;
 
-        const QString type = settingType(item.value());
-        const double value = settingDouble(settings, key);
+        const QString type    = settingType(item.value());
+        const double value    = settingDouble(settings, key);
         const QString display = settingDisplay(key, master);
 
         if (type == "rpm" && key != PRS::MachineSpeed::kMinExtruderSpeed &&
@@ -497,14 +461,11 @@ void validateDynamicSettings(const fifojson& settings, const fifojson& master, Q
 
     const double layer_height = settingDouble(settings, PS::Layer::kLayerHeight);
     for (const QString& key : bead_width_keys) {
-        if (!settingIsActive(key, master, settings))
-            continue;
+        if (!settingIsActive(key, master, settings)) continue;
 
-        const double value = settingDouble(settings, key);
+        const double value    = settingDouble(settings, key);
         const QString display = settingDisplay(key, master);
-        if (value <= 0.0) {
-            errors.append(display + " must be greater than zero.");
-        }
+        if (value <= 0.0) { errors.append(display + " must be greater than zero."); }
         else if (layer_height > 0.0 && value < layer_height) {
             errors.append(display + " (" + numberText(value) + ") is smaller than Layer Height (" +
                           numberText(layer_height) + ").");
@@ -530,12 +491,10 @@ void validateDynamicSettings(const fifojson& settings, const fifojson& master, Q
     const double z_min = settingDouble(settings, PRS::Dimensions::kZMin);
     const double z_max = settingDouble(settings, PRS::Dimensions::kZMax);
     for (const QString& key : lift_distance_keys) {
-        if (!settingIsActive(key, master, settings))
-            continue;
+        if (!settingIsActive(key, master, settings)) continue;
 
         const double value = settingDouble(settings, key);
-        if (value <= 0.0)
-            continue;
+        if (value <= 0.0) continue;
 
         if (settingDouble(settings, PRS::MachineSpeed::kZSpeed) <= 0.0)
             errors.append(settingDisplay(key, master) + " requires Z Speed to be greater than zero.");
@@ -571,22 +530,23 @@ void validateDynamicSettings(const fifojson& settings, const fifojson& master, Q
 
     if (force_layer_time && use_feedrate_layer_time) {
         if (max_layer_time <= 0.0)
-            errors.append("Maximum Layer Time must be greater than zero when Modify Feedrate layer-time control is "
-                          "selected.");
+            errors.append(
+                "Maximum Layer Time must be greater than zero when Modify Feedrate layer-time control is "
+                "selected.");
         else if (min_layer_time > 0.0 && min_layer_time > max_layer_time)
             errors.append("Minimum Layer Time is greater than Maximum Layer Time.");
 
         if (settingDouble(settings, MS::Cooling::kExtruderScaleFactor) <= 0.0) {
-            errors.append("Extruder Scale Factor must be greater than zero when Modify Feedrate layer-time control is "
-                          "selected.");
+            errors.append(
+                "Extruder Scale Factor must be greater than zero when Modify Feedrate layer-time control is "
+                "selected.");
         }
     }
 }
 
 double currentMasterVersion() {
     QFile versions(":/configs/versions.conf");
-    if (!versions.open(QIODevice::ReadOnly))
-        return 0.0;
+    if (!versions.open(QIODevice::ReadOnly)) return 0.0;
 
     try {
         const fifojson version_data = fifojson::parse(QString(versions.readAll()).toStdString());
@@ -595,18 +555,16 @@ double currentMasterVersion() {
 }
 
 QString limitedList(const QStringList& values, int maximum = 12) {
-    if (values.size() <= maximum)
-        return values.join("\n");
+    if (values.size() <= maximum) return values.join("\n");
 
     QStringList limited = values.mid(0, maximum);
     limited.append(QString("...and %1 more.").arg(values.size() - maximum));
     return limited.join("\n");
 }
-} // namespace
+}  // namespace
 
-GcodeSettingsImporter::ImportResult
-GcodeSettingsImporter::importFile(const QString& gcode_path, bool use_defaults_for_missing,
-                                  const MissingValueCallback& missing_value_callback) {
+GcodeSettingsImporter::ImportResult GcodeSettingsImporter::importFile(
+    const QString& gcode_path, bool use_defaults_for_missing, const MissingValueCallback& missing_value_callback) {
     ImportResult result;
 
     QFile gcode_file(gcode_path);
@@ -626,18 +584,21 @@ GcodeSettingsImporter::importFile(const QString& gcode_path, bool use_defaults_f
         result.errors.append("The Settings Footer did not contain any setting values.");
         return result;
     }
-    migrateLegacyRawSettingKeys(raw_values);
+    const QString migration_error = migrateLegacyRawSettingKeys(raw_values);
+    if (!migration_error.isEmpty()) {
+        result.errors.append(migration_error);
+        return result;
+    }
 
     const fifojson master = GSM->getMaster()->json();
-    fifojson settings = fifojson::object();
+    fifojson settings     = fifojson::object();
 
     for (auto raw = raw_values.constBegin(); raw != raw_values.constEnd(); ++raw) {
-        if (master.find(raw.key().toStdString()) == master.end())
-            result.unknown_keys.append(raw.key());
+        if (master.find(raw.key().toStdString()) == master.end()) result.unknown_keys.append(raw.key());
     }
 
     for (const auto& item : master.items()) {
-        const QString key = QString::fromStdString(item.key());
+        const QString key            = QString::fromStdString(item.key());
         const fifojson& master_entry = item.value();
         fifojson candidate;
         bool value_was_prompted = false;
@@ -670,7 +631,7 @@ GcodeSettingsImporter::importFile(const QString& gcode_path, bool use_defaults_f
                 return result;
             }
 
-            candidate = prompted_value.value();
+            candidate          = prompted_value.value();
             value_was_prompted = true;
             result.prompted_keys.append(key);
         }
@@ -683,21 +644,18 @@ GcodeSettingsImporter::importFile(const QString& gcode_path, bool use_defaults_f
         }
 
         settings[item.key()] = normalized;
-        if (value_was_prompted && !result.prompted_keys.contains(key))
-            result.prompted_keys.append(key);
+        if (value_was_prompted && !result.prompted_keys.contains(key)) result.prompted_keys.append(key);
     }
 
     if (!result.unknown_keys.isEmpty()) {
         result.warnings.append("Unknown footer settings were ignored:\n" + limitedList(result.unknown_keys));
     }
 
-    if (!result.errors.isEmpty())
-        return result;
+    if (!result.errors.isEmpty()) return result;
 
     validateActiveStaticSettings(settings, master, result.errors);
     validateDynamicSettings(settings, master, result.errors);
-    if (!result.errors.isEmpty())
-        return result;
+    if (!result.errors.isEmpty()) return result;
 
     fifojson settings_array = fifojson::array();
     settings_array.push_back(settings);
@@ -729,7 +687,7 @@ bool GcodeSettingsImporter::validateValue(const QString& key, const fifojson& ma
     if (type == "enumeration") {
         int index = -1;
         if (value.is_string()) {
-            const QString option = QString::fromStdString(value.get<std::string>()).trimmed();
+            const QString option      = QString::fromStdString(value.get<std::string>()).trimmed();
             const QStringList options = settingOptions(master_entry);
             for (int i = 0, end = options.size(); i < end; ++i) {
                 if (options[i].compare(option, Qt::CaseInsensitive) == 0) {
@@ -753,7 +711,7 @@ bool GcodeSettingsImporter::validateValue(const QString& key, const fifojson& ma
         return true;
     }
 
-    if (type == "number" || type == "positive_int" || type == "power") {
+    if (type == "number" || type == "non_negative_int" || type == "positive_int" || type == "power") {
         int result = 0;
         if (!integerValue(value, result)) {
             error = key + " must be an integer value.";
@@ -765,7 +723,7 @@ bool GcodeSettingsImporter::validateValue(const QString& key, const fifojson& ma
             return false;
         }
 
-        if (enforce_ranges && type == "number" && result < 0) {
+        if (enforce_ranges && (type == "number" || type == "non_negative_int") && result < 0) {
             error = key + " must be zero or greater.";
             return false;
         }
@@ -781,14 +739,13 @@ bool GcodeSettingsImporter::validateValue(const QString& key, const fifojson& ma
             return false;
         }
 
-        if (enforce_ranges && !validateDoubleRange(key, type, result, error))
-            return false;
+        if (enforce_ranges && !validateDoubleRange(key, type, result, error)) return false;
 
         normalized_value = result;
         return true;
     }
 
-    if (type == "string" || type == "multiline_text") {
+    if (type == "string" || type == "multiline_text" || type == "file_path") {
         if (!value.is_string()) {
             error = key + " must be a string value.";
             return false;
@@ -826,10 +783,9 @@ QString GcodeSettingsImporter::displayName(const fifojson& master_entry) {
 QStringList GcodeSettingsImporter::settingOptions(const fifojson& master_entry) {
     QStringList options =
         jsonString(master_entry, Constants::Settings::Master::kOptions).split(',', Qt::SkipEmptyParts);
-    for (QString& option : options)
-        option = option.trimmed();
+    for (QString& option : options) option = option.trimmed();
 
     return options;
 }
 
-} // namespace ORNL
+}  // namespace ORNL

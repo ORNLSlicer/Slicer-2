@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <optional>
 
 #include <qassert.h>
 #include <qcontainerfwd.h>
@@ -28,10 +29,81 @@
 #include "utilities/enums.h"
 
 namespace ORNL {
+namespace {
+struct IslandOrderSelection {
+    QSharedPointer<Layer> settings_layer;
+    QSharedPointer<Layer> anchor_layer;
+};
+
+IslandOrderOptimization islandOrderMethod(const QSharedPointer<SettingsBase>& sb) {
+    return static_cast<IslandOrderOptimization>(sb->setting<int>(PS::Optimizations::kIslandOrder));
+}
+
+bool hasOrderableIsland(const QSharedPointer<Layer>& layer) {
+    if (layer.isNull()) return false;
+
+    for (const QSharedPointer<IslandBase>& island : layer->getIslands()) {
+        if (!island.isNull() && !island->getGeometry().isEmpty()) return true;
+    }
+
+    return false;
+}
+
+bool sameCustomIslandOrderAnchor(const QSharedPointer<Layer>& lhs, const QSharedPointer<Layer>& rhs) {
+    const Point lhs_anchor =
+        OptimizationAnchor::customIslandOrderPoint(lhs->getSb(), lhs->getSlicingPlane(), lhs->getShift());
+    const Point rhs_anchor =
+        OptimizationAnchor::customIslandOrderPoint(rhs->getSb(), rhs->getSlicingPlane(), rhs->getShift());
+    return lhs_anchor.distance(rhs_anchor)() <= 0.01;
+}
+
+IslandOrderSelection commonIslandOrderSelection(const QMap<QUuid, QSharedPointer<Part::StepPair>>& step_pairs) {
+    std::optional<IslandOrderOptimization> common_method;
+    IslandOrderSelection selection;
+    bool settings_conflict = false;
+    bool anchor_conflict   = false;
+
+    for (auto it = step_pairs.constBegin(); it != step_pairs.constEnd(); ++it) {
+        if (it.value().isNull() || !hasOrderableIsland(it.value()->printing_layer)) continue;
+
+        QSharedPointer<Layer> printing_layer = it.value()->printing_layer;
+        const IslandOrderOptimization method = islandOrderMethod(printing_layer->getSb());
+        if (selection.anchor_layer.isNull()) { selection.anchor_layer = printing_layer; }
+
+        if (settings_conflict) continue;
+
+        if (!common_method.has_value()) {
+            common_method            = method;
+            selection.settings_layer = printing_layer;
+            continue;
+        }
+
+        if (common_method.value() != method) {
+            qWarning() << "Global layer has conflicting island order settings; using global settings";
+            settings_conflict        = true;
+            selection.settings_layer = nullptr;
+        }
+        else if (method == IslandOrderOptimization::kCustomPoint &&
+                 !sameCustomIslandOrderAnchor(selection.anchor_layer, printing_layer)) {
+            anchor_conflict = true;
+        }
+    }
+
+    if (anchor_conflict) {
+        if (common_method.has_value() && common_method.value() == IslandOrderOptimization::kCustomPoint &&
+            !selection.settings_layer.isNull()) {
+            qWarning() << "Global layer has conflicting custom island order anchors; using global settings";
+            selection.settings_layer = nullptr;
+        }
+    }
+
+    return selection;
+}
+}  // namespace
 
 GlobalLayer::GlobalLayer(int layer_number) {
     // make a new empty list for the step groups
-    m_step_pairs = QMap<QUuid, QSharedPointer<Part::StepPair>>();
+    m_step_pairs   = QMap<QUuid, QSharedPointer<Part::StepPair>>();
     m_layer_number = layer_number;
 }
 
@@ -39,8 +111,7 @@ void GlobalLayer::unorient() {
     QMap<QUuid, QSharedPointer<Part::StepPair>>::ConstIterator itr;
     for (itr = m_step_pairs.constBegin(); itr != m_step_pairs.constEnd(); ++itr) {
         auto step_pair = itr.value();
-        if (step_pair.isNull() || step_pair->printing_layer.isNull())
-            continue;
+        if (step_pair.isNull() || step_pair->printing_layer.isNull()) continue;
 
         step_pair->printing_layer->unorient();
     }
@@ -50,8 +121,7 @@ void GlobalLayer::reorient() {
     QMap<QUuid, QSharedPointer<Part::StepPair>>::ConstIterator itr;
     for (itr = m_step_pairs.constBegin(); itr != m_step_pairs.constEnd(); ++itr) {
         auto step_pair = itr.value();
-        if (step_pair.isNull() || step_pair->printing_layer.isNull())
-            continue;
+        if (step_pair.isNull() || step_pair->printing_layer.isNull()) continue;
 
         step_pair->printing_layer->reorient();
     }
@@ -62,8 +132,8 @@ void GlobalLayer::calculateModifiers(QSharedPointer<SettingsBase> global_sb, Poi
         QSharedPointer<IslandBase> firstIsland = m_island_order.front();
         if (!firstIsland.isNull() && !firstIsland->getRegions().isEmpty()) {
             // Retrieve relevant settings
-            bool perimeter_enabled = firstIsland->getSb()->setting<bool>(PS::Perimeter::kEnable);
-            bool perimeter_lead_in_enabled = firstIsland->getSb()->setting<bool>(PS::Perimeter::kEnableLeadIn);
+            bool perimeter_enabled                  = firstIsland->getSb()->setting<bool>(PS::Perimeter::kEnable);
+            bool perimeter_lead_in_enabled          = firstIsland->getSb()->setting<bool>(PS::Perimeter::kEnableLeadIn);
             bool perimeter_lead_in_first_layer_only = global_sb->setting<bool>(PS::Perimeter::kLeadInFirstLayerOnly);
 
             if (perimeter_enabled && perimeter_lead_in_enabled &&
@@ -86,18 +156,18 @@ void GlobalLayer::calculateModifiers(QSharedPointer<SettingsBase> global_sb, Poi
         if (!lastIsland.isNull() && !lastIsland->getRegions().isEmpty()) {
             Q_ASSERT(lastIsland->getType() == IslandType::kPolymer);
             QList<QSharedPointer<RegionBase>> regions = lastIsland->getRegions();
-            QSharedPointer<RegionBase> lastRegion = regions.back();
+            QSharedPointer<RegionBase> lastRegion     = regions.back();
             if (!lastRegion.isNull() && !lastRegion->getPaths().isEmpty() && lastRegion->getPaths().back().size() > 0) {
                 Path& finalPath = lastRegion->getPaths().back();
 
                 if (finalPath.back()->getSb()->setting<PathModifiers>(SS::kPathModifiers) !=
                     PathModifiers::kSpiralLift) {
-                    PathModifierGenerator::GenerateSpiralLift(
-                        finalPath, global_sb->setting<Distance>(MS::SpiralLift::kLiftRadius),
-                        global_sb->setting<Distance>(MS::SpiralLift::kLiftHeight),
-                        global_sb->setting<int>(MS::SpiralLift::kLiftPoints),
-                        global_sb->setting<Velocity>(MS::SpiralLift::kLiftSpeed),
-                        global_sb->setting<bool>(PRS::MachineSetup::kSupportG3));
+                    PathModifierGenerator::GenerateSpiralLift(finalPath,
+                                                              global_sb->setting<Distance>(MS::SpiralLift::kLiftRadius),
+                                                              global_sb->setting<Distance>(MS::SpiralLift::kLiftHeight),
+                                                              global_sb->setting<int>(MS::SpiralLift::kLiftPoints),
+                                                              global_sb->setting<Velocity>(MS::SpiralLift::kLiftSpeed),
+                                                              global_sb->setting<bool>(PRS::MachineSetup::kSupportG3));
 
                     // move current location to the end of the spiral lift
                     current_location = finalPath.back()->end();
@@ -107,8 +177,7 @@ void GlobalLayer::calculateModifiers(QSharedPointer<SettingsBase> global_sb, Poi
     }
 
     for (QSharedPointer<IslandBase> island : m_island_order) {
-        if (!island.isNull())
-            island->fitCircularArcs(global_sb);
+        if (!island.isNull()) island->fitCircularArcs(global_sb);
     }
 }
 
@@ -117,12 +186,10 @@ void GlobalLayer::connectPaths(QSharedPointer<SettingsBase> global_sb, Point& st
     // this function "connects" paths by inserting travels between disconnected pathing. Also orders parts & islands.
 
     for (auto i = m_step_pairs.constBegin(); i != m_step_pairs.constEnd(); ++i) {
-        if (i.value().isNull())
-            continue;
+        if (i.value().isNull()) continue;
 
         QSharedPointer<Layer> printing_layer = i.value()->printing_layer;
-        if (printing_layer.isNull())
-            continue;
+        if (printing_layer.isNull()) continue;
 
         for (QSharedPointer<IslandBase> island : printing_layer->getIslands()) {
             if (!island.isNull())
@@ -130,9 +197,15 @@ void GlobalLayer::connectPaths(QSharedPointer<SettingsBase> global_sb, Point& st
         }
     }
 
+    IslandOrderSelection order_selection = commonIslandOrderSelection(m_step_pairs);
+    QSharedPointer<SettingsBase> island_order_sb =
+        order_selection.settings_layer.isNull() ? global_sb : order_selection.settings_layer->getSb();
+    QSharedPointer<Layer> order_anchor_layer =
+        order_selection.settings_layer.isNull() ? order_selection.anchor_layer : order_selection.settings_layer;
+
     // get the island order method from the settings
     IslandOrderOptimization islandOrderMethod =
-        static_cast<IslandOrderOptimization>(global_sb->setting<int>(PS::Optimizations::kIslandOrder));
+        static_cast<IslandOrderOptimization>(island_order_sb->setting<int>(PS::Optimizations::kIslandOrder));
 
     // 1) Connect paths for all the scans first.
     if (containsScanLayers()) {
@@ -144,32 +217,27 @@ void GlobalLayer::connectPaths(QSharedPointer<SettingsBase> global_sb, Point& st
         // 1.1.1) Get a list of all the islands and the parts they belong to
         QHash<QSharedPointer<IslandBase>, QUuid> islands_for_all_parts;
         for (auto i = m_step_pairs.constBegin(); i != m_step_pairs.constEnd(); ++i) {
-            QUuid part_id = i.key();
+            QUuid part_id                            = i.key();
             QSharedPointer<Part::StepPair> step_pair = i.value();
-            if (step_pair.isNull() || step_pair->printing_layer.isNull())
-                continue;
+            if (step_pair.isNull() || step_pair->printing_layer.isNull()) continue;
 
             auto part_islands = step_pair->printing_layer->getIslands().toVector();
             for (auto island : part_islands) {
-                if (!island.isNull() && !island->getGeometry().isEmpty())
-                    islands_for_all_parts.insert(island, part_id);
+                if (!island.isNull() && !island->getGeometry().isEmpty()) islands_for_all_parts.insert(island, part_id);
             }
         }
 
         // 1.1.2) Get the right start point for the Island Order Optimizer part ordering
         Point start_point = start;
         if (islandOrderMethod == IslandOrderOptimization::kCustomPoint) {
-            const auto first_step_pair = m_step_pairs.constBegin();
-            if (first_step_pair != m_step_pairs.constEnd() && !first_step_pair.value().isNull() &&
-                !first_step_pair.value()->printing_layer.isNull()) {
-                QSharedPointer<Layer> printing_layer = first_step_pair.value()->printing_layer;
-                start_point = OptimizationAnchor::customIslandOrderPoint(global_sb, printing_layer->getSlicingPlane(),
-                                                                         printing_layer->getShift());
+            if (!order_anchor_layer.isNull()) {
+                start_point = OptimizationAnchor::customIslandOrderPoint(
+                    island_order_sb, order_anchor_layer->getSlicingPlane(), order_anchor_layer->getShift());
             }
         }
 
         // 1.1.3) Make the IOO and get the order results
-        IslandBaseOrderOptimizer part_oo(start_point, islands_for_all_parts, islandOrderMethod); // mode 2
+        IslandBaseOrderOptimizer part_oo(start_point, islands_for_all_parts, islandOrderMethod);  // mode 2
         m_part_order = part_oo.computePartOrder();
 
         // 1.2) Connect the scans in determined order
@@ -194,25 +262,21 @@ void GlobalLayer::connectPaths(QSharedPointer<SettingsBase> global_sb, Point& st
     m_island_order.clear();
     QMultiMap<int, QSharedPointer<IslandBase>> islands_for_layer;
     for (auto island : getIslands()) {
-        if (island.isNull() || island->getGeometry().isEmpty())
-            continue;
+        if (island.isNull() || island->getGeometry().isEmpty()) continue;
 
         islands_for_layer.insert(static_cast<int>(island->getType()), island);
     }
 
     // make an optimizer to do the ordering
     IslandBaseOrderOptimizer island_optimizer(start, islands_for_layer.values(), start_index,
-                                              islandOrderMethod); // mode 1 - ordering islands
+                                              islandOrderMethod);  // mode 1 - ordering islands
 
     // Do seam adjustment if necessary
     if (islandOrderMethod == IslandOrderOptimization::kCustomPoint) {
         Point start_override = start;
-        const auto first_step_pair = m_step_pairs.constBegin();
-        if (first_step_pair != m_step_pairs.constEnd() && !first_step_pair.value().isNull() &&
-            !first_step_pair.value()->printing_layer.isNull()) {
-            QSharedPointer<Layer> printing_layer = first_step_pair.value()->printing_layer;
-            start_override = OptimizationAnchor::customIslandOrderPoint(global_sb, printing_layer->getSlicingPlane(),
-                                                                        printing_layer->getShift());
+        if (!order_anchor_layer.isNull()) {
+            start_override = OptimizationAnchor::customIslandOrderPoint(
+                island_order_sb, order_anchor_layer->getSlicingPlane(), order_anchor_layer->getShift());
         }
 
         island_optimizer.setStartPoint(start_override);
@@ -249,8 +313,7 @@ void GlobalLayer::connectPaths(QSharedPointer<SettingsBase> global_sb, Point& st
         }
 
         if (print_support_first) {
-            if (!support_islands.isEmpty())
-                ordered_islands_to_process.push_back(support_islands);
+            if (!support_islands.isEmpty()) ordered_islands_to_process.push_back(support_islands);
 
             if (islands_for_layer.values(static_cast<int>(IslandType::kPolymer)).size() > 0)
                 ordered_islands_to_process.push_back(islands_for_layer.values(static_cast<int>(IslandType::kPolymer)));
@@ -259,8 +322,7 @@ void GlobalLayer::connectPaths(QSharedPointer<SettingsBase> global_sb, Point& st
             if (islands_for_layer.values(static_cast<int>(IslandType::kPolymer)).size() > 0)
                 ordered_islands_to_process.push_back(islands_for_layer.values(static_cast<int>(IslandType::kPolymer)));
 
-            if (!support_islands.isEmpty())
-                ordered_islands_to_process.push_back(support_islands);
+            if (!support_islands.isEmpty()) ordered_islands_to_process.push_back(support_islands);
         }
     }
 
@@ -333,13 +395,11 @@ void GlobalLayer::connectPaths(QSharedPointer<SettingsBase> global_sb, Point& st
     if (islandOrderMethod == IslandOrderOptimization::kLeastRecentlyVisited)
         start_index = island_optimizer.getFirstIndexSelected();
 
-    for (QSharedPointer<IslandBase> island : islands_for_layer)
-        island->markRegionStartSegment();
+    for (QSharedPointer<IslandBase> island : islands_for_layer) island->markRegionStartSegment();
 }
 
-QList<QMap<QSharedPointer<IslandBase>, QList<QSharedPointer<IslandBase>>>>
-GlobalLayer::createSequence(QList<QSharedPointer<IslandBase>> parent,
-                            QList<QList<QSharedPointer<IslandBase>>> children) {
+QList<QMap<QSharedPointer<IslandBase>, QList<QSharedPointer<IslandBase>>>> GlobalLayer::createSequence(
+    QList<QSharedPointer<IslandBase>> parent, QList<QList<QSharedPointer<IslandBase>>> children) {
     QList<QMap<QSharedPointer<IslandBase>, QList<QSharedPointer<IslandBase>>>> result;
     int children_size = children.size();
     result.reserve(children_size);
@@ -351,15 +411,13 @@ GlobalLayer::createSequence(QList<QSharedPointer<IslandBase>> parent,
 
     QList<QSharedPointer<IslandBase>> valid_parent;
     for (const QSharedPointer<IslandBase>& brim : parent) {
-        if (hasSequenceGeometry(brim))
-            valid_parent.append(brim);
+        if (hasSequenceGeometry(brim)) valid_parent.append(brim);
     }
 
     if (valid_parent.size() == 0) {
         for (int i = 0; i < children_size; ++i) {
             QList<QSharedPointer<IslandBase>> islandSet = children[i];
-            for (QSharedPointer<IslandBase> isl : islandSet)
-                result[i].insert(isl, QList<QSharedPointer<IslandBase>>());
+            for (QSharedPointer<IslandBase> isl : islandSet) result[i].insert(isl, QList<QSharedPointer<IslandBase>>());
         }
     }
     else {
@@ -367,8 +425,7 @@ GlobalLayer::createSequence(QList<QSharedPointer<IslandBase>> parent,
             for (int i = 0; i < children_size; ++i) {
                 QList<QSharedPointer<IslandBase>> islandSet = children[i];
                 for (QSharedPointer<IslandBase> isl : islandSet) {
-                    if (!hasSequenceGeometry(isl))
-                        continue;
+                    if (!hasSequenceGeometry(isl)) continue;
 
                     if (brim->getGeometry().first().inside(isl->getGeometry().first().first())) {
                         result[i][brim].append(isl);
@@ -384,11 +441,9 @@ bool GlobalLayer::containsScanLayers() {
     QMap<QUuid, QSharedPointer<Part::StepPair>>::ConstIterator itr;
     for (itr = m_step_pairs.constBegin(); itr != m_step_pairs.constEnd(); ++itr) {
         auto step_pair = itr.value();
-        if (step_pair.isNull())
-            continue;
+        if (step_pair.isNull()) continue;
 
-        if (step_pair->scan_layer != nullptr)
-            return true;
+        if (step_pair->scan_layer != nullptr) return true;
     }
     return false;
 }
@@ -398,8 +453,7 @@ QVector<QSharedPointer<IslandBase>> GlobalLayer::getIslands() {
     QMap<QUuid, QSharedPointer<Part::StepPair>>::ConstIterator itr;
     for (itr = m_step_pairs.constBegin(); itr != m_step_pairs.constEnd(); ++itr) {
         auto step_pair = itr.value();
-        if (step_pair.isNull() || step_pair->printing_layer.isNull())
-            continue;
+        if (step_pair.isNull() || step_pair->printing_layer.isNull()) continue;
 
         auto part_islands = step_pair->printing_layer->getIslands().toVector();
         layer_islands.append(part_islands);
@@ -424,8 +478,7 @@ QString GlobalLayer::writeGCode(QSharedPointer<WriterBase> writer) {
         if (containsScanLayers()) {
             for (auto part : m_part_order) {
                 QSharedPointer<ScanLayer> scan_layer = m_step_pairs[part]->scan_layer;
-                if (scan_layer != nullptr)
-                    gcode += scan_layer->writeGCode(writer);
+                if (scan_layer != nullptr) gcode += scan_layer->writeGCode(writer);
             }
             gcode += writer->writeAfterAllScans();
         }
@@ -435,9 +488,7 @@ QString GlobalLayer::writeGCode(QSharedPointer<WriterBase> writer) {
             gcode += writer->writeAfterIsland();
         }
     }
-    else {
-        gcode += writer->writeEmptyStep();
-    }
+    else { gcode += writer->writeEmptyStep(); }
 
     return gcode;
 }
@@ -446,11 +497,9 @@ void GlobalLayer::setDirtyBit(bool dirty) {
     QMap<QUuid, QSharedPointer<Part::StepPair>>::ConstIterator itr;
     for (itr = m_step_pairs.constBegin(); itr != m_step_pairs.constEnd(); ++itr) {
         auto step_pair = itr.value();
-        if (step_pair->printing_layer != nullptr)
-            step_pair->printing_layer->setDirtyBit(dirty);
+        if (step_pair->printing_layer != nullptr) step_pair->printing_layer->setDirtyBit(dirty);
 
-        if (step_pair->scan_layer != nullptr)
-            step_pair->scan_layer->setDirtyBit(dirty);
+        if (step_pair->scan_layer != nullptr) step_pair->scan_layer->setDirtyBit(dirty);
     }
 }
 
@@ -466,8 +515,7 @@ double GlobalLayer::getMinZ() {
         auto step_pair = itr.value();
         if (step_pair->printing_layer != nullptr) {
             double step_min = step_pair->printing_layer->getMinZ();
-            if (step_min < min)
-                min = step_min;
+            if (step_min < min) min = step_min;
         }
     }
     return min;
@@ -479,4 +527,4 @@ Distance GlobalLayer::getLayerHeight() {
     Q_ASSERT(first_layer != nullptr);
     return first_layer->getSb()->setting<Distance>(PS::Layer::kLayerHeight);
 }
-} // namespace ORNL
+}  // namespace ORNL

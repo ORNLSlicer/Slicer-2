@@ -1,10 +1,11 @@
 
 #include "managers/session_manager.h"
 
-#include <cstdlib>
-
 #include <QCoreApplication>
 #include <QStandardPaths>
+#include <cstdlib>
+#include <string>
+
 #include <qcontainerfwd.h>
 #include <qdir.h>
 #include <qfiledevice.h>
@@ -28,10 +29,9 @@
 #include "part/part.h"
 #include "threading/mesh_loader.h"
 #include "threading/session_loader.h"
-#include "threading/slicers/helical_slicer.h"
+#include "threading/slicers/cylindrical_slicer.h"
 #include "threading/slicers/image_slicer.h"
 #include "threading/slicers/planar_slicer.h"
-#include "threading/slicers/radial_slicer.h"
 #include "units/derivative_units.h"
 #include "units/unit.h"
 #include "utilities/constants.h"
@@ -42,30 +42,80 @@
 
 namespace ORNL {
 namespace {
-bool supportsCylindricalSlicing(GcodeSyntax syntax) { return syntax == GcodeSyntax::kArcSpecialties; }
-} // namespace
+constexpr int kMaxRecentFiles = 10;
+
+bool supportsCylindricalSlicing(GcodeSyntax syntax) {
+    return syntax == GcodeSyntax::kArcSpecialties;
+}
+
+QString absoluteFilePath(const QString& path) {
+    return QFileInfo(path).absoluteFilePath();
+}
+
+bool hasSuffix(const QString& path, const QStringList& suffixes) {
+    return suffixes.contains(QFileInfo(path).suffix().toLower());
+}
+
+QStringList readStringList(const fifojson& j, const char* key) {
+    QStringList values;
+    if (!j.contains(key) || !j[key].is_array()) return values;
+
+    for (const fifojson& value : j[key]) {
+        if (!value.is_string()) continue;
+
+        values.push_back(QString::fromStdString(value.get<std::string>()));
+    }
+
+    return values;
+}
+
+QStringList sanitizedRecentFiles(const QStringList& files, const QStringList& suffixes) {
+    QStringList result;
+    for (const QString& file : files) {
+        const QString path = absoluteFilePath(file);
+        if (path.isEmpty() || !hasSuffix(path, suffixes) || result.contains(path)) continue;
+
+        result.push_back(path);
+        if (result.size() >= kMaxRecentFiles) break;
+    }
+
+    return result;
+}
+
+void addRecentFile(QStringList& files, QString path) {
+    path = absoluteFilePath(path);
+    if (path.isEmpty()) return;
+
+    files.removeAll(path);
+    files.prepend(path);
+
+    while (files.size() > kMaxRecentFiles) { files.removeLast(); }
+}
+
+fifojson stringListToJson(const QStringList& values) {
+    fifojson result = fifojson::array();
+    for (const QString& value : values) { result.push_back(value); }
+    return result;
+}
+}  // namespace
 
 QSharedPointer<SessionManager> SessionManager::m_singleton = QSharedPointer<SessionManager>();
 
 QSharedPointer<SessionManager> SessionManager::getInstance() {
-    if (m_singleton.isNull()) {
-        m_singleton.reset(new SessionManager());
-    }
+    if (m_singleton.isNull()) { m_singleton.reset(new SessionManager()); }
     return m_singleton;
 }
 
-SessionManager::SessionManager() : m_file(QString()), m_sensor_files_generated(false) {
+SessionManager::SessionManager() : m_file(QString()), m_dirty_history(false), m_sensor_files_generated(false) {
     // Create static location for gcode output for session
     QString appPathStr = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir appPath(appPathStr);
     QString httpAppLocationStr = QDir::temp().absolutePath() + "/http_config";
     QDir httpConfigPath(httpAppLocationStr);
     try {
-        if (!appPath.exists())
-            QDir().mkpath(appPathStr);
+        if (!appPath.exists()) QDir().mkpath(appPathStr);
 
-        if (!httpConfigPath.exists())
-            QDir().mkpath(httpAppLocationStr);
+        if (!httpConfigPath.exists()) QDir().mkpath(httpAppLocationStr);
     } catch (...) { qWarning() << "Check your path, cannot create directory:" + appPathStr; }
 
     defaultGcodeFile = appPath.filePath("gcode_output");
@@ -74,16 +124,12 @@ SessionManager::SessionManager() : m_file(QString()), m_sensor_files_generated(f
     // clear any temp STLs created from http import
     appPath.setNameFilters(QStringList() << "*.stl");
     appPath.setFilter(QDir::Files);
-    for (QString tempStls : appPath.entryList()) {
-        appPath.remove(tempStls);
-    }
+    for (QString tempStls : appPath.entryList()) { appPath.remove(tempStls); }
 }
 
 SessionManager::~SessionManager() {
     // Free the C allocated memory.
-    for (model_data file : m_models) {
-        free(file.model);
-    }
+    for (model_data file : m_models) { free(file.model); }
     saveHistory();
 }
 
@@ -93,8 +139,8 @@ void SessionManager::loadHistory() {
 
     if (file.exists()) {
         file.open(QIODevice::ReadOnly);
-        QString history = file.readAll();
-        fifojson j = json::parse(history.toStdString());
+        QString history         = file.readAll();
+        fifojson j              = json::parse(history.toStdString());
         QString defaultLocation = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
 
         m_most_recent_setting_history.insert(Constants::Settings::SettingTab::kPrinter,
@@ -106,12 +152,15 @@ void SessionManager::loadHistory() {
         m_most_recent_setting_history.insert(Constants::Settings::SettingTab::kExperimental,
                                              QString::fromStdString(j.value("experimental_setting", "LFAM_03in")));
 
-        m_most_recent_model_location = j.value("model_location", defaultLocation);
-        m_most_recent_project_location = j.value("project_location", defaultLocation);
-        m_most_recent_gcode_location = j.value("gcode_location", defaultLocation);
-        m_most_recent_setting_folder_location = j.value("setting_folder_location", defaultLocation);
+        m_most_recent_model_location                    = j.value("model_location", defaultLocation);
+        m_most_recent_project_location                  = j.value("project_location", defaultLocation);
+        m_most_recent_gcode_location                    = j.value("gcode_location", defaultLocation);
+        m_most_recent_setting_folder_location           = j.value("setting_folder_location", defaultLocation);
         m_most_recent_layer_bar_setting_folder_location = j.value("layer_bar_setting_folder_location", defaultLocation);
-        m_most_recent_http_config = j.value("http_config", QString());
+        m_most_recent_http_config                       = j.value("http_config", QString());
+        m_recent_project_files = sanitizedRecentFiles(readStringList(j, "recent_project_files"), {"s2p"});
+        m_recent_model_files =
+            sanitizedRecentFiles(readStringList(j, "recent_model_files"), {"stl", "3mf", "obj", "amf", "step", "stp"});
 
         file.close();
     }
@@ -125,6 +174,8 @@ void SessionManager::loadHistory() {
             m_most_recent_setting_folder_location = m_most_recent_layer_bar_setting_folder_location =
                 QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
         m_most_recent_http_config = QString();
+        m_recent_project_files.clear();
+        m_recent_model_files.clear();
 
         m_dirty_history = true;
     }
@@ -134,16 +185,18 @@ void SessionManager::saveHistory() {
     if (m_dirty_history) {
         fifojson j;
 
-        j["printer_setting"] = m_most_recent_setting_history[Constants::Settings::SettingTab::kPrinter];
-        j["material_setting"] = m_most_recent_setting_history[Constants::Settings::SettingTab::kMaterial];
-        j["profile_setting"] = m_most_recent_setting_history[Constants::Settings::SettingTab::kProfile];
-        j["experimental_setting"] = m_most_recent_setting_history[Constants::Settings::SettingTab::kExperimental];
-        j["model_location"] = m_most_recent_model_location;
-        j["project_location"] = m_most_recent_project_location;
-        j["gcode_location"] = m_most_recent_gcode_location;
+        j["printer_setting"]         = m_most_recent_setting_history[Constants::Settings::SettingTab::kPrinter];
+        j["material_setting"]        = m_most_recent_setting_history[Constants::Settings::SettingTab::kMaterial];
+        j["profile_setting"]         = m_most_recent_setting_history[Constants::Settings::SettingTab::kProfile];
+        j["experimental_setting"]    = m_most_recent_setting_history[Constants::Settings::SettingTab::kExperimental];
+        j["model_location"]          = m_most_recent_model_location;
+        j["project_location"]        = m_most_recent_project_location;
+        j["gcode_location"]          = m_most_recent_gcode_location;
         j["setting_folder_location"] = m_most_recent_setting_folder_location;
         j["layer_bar_setting_folder_location"] = m_most_recent_layer_bar_setting_folder_location;
-        j["http_config"] = m_most_recent_http_config;
+        j["http_config"]                       = m_most_recent_http_config;
+        j["recent_project_files"]              = stringListToJson(m_recent_project_files);
+        j["recent_model_files"]                = stringListToJson(m_recent_model_files);
 
         // Causes segfault if QStandardPaths is referenced here?
         // QDir path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
@@ -156,7 +209,9 @@ void SessionManager::saveHistory() {
     }
 }
 
-QString SessionManager::sessionFile() { return m_file; }
+QString SessionManager::sessionFile() {
+    return m_file;
+}
 
 bool SessionManager::loadModel(QString filename, bool saveLocation, MeshType mt, bool synchRequired, QMatrix4x4 mtrx) {
     QFileInfo file_info(filename);
@@ -187,8 +242,10 @@ bool SessionManager::loadModel(QString filename, bool saveLocation, MeshType mt,
         loader->start();
     }
 
-    if (saveLocation)
+    if (saveLocation) {
         setMostRecentModelLocation(file_info.absoluteFilePath());
+        addRecentModelFile(filename, mt);
+    }
 
     return true;
 }
@@ -197,9 +254,9 @@ void SessionManager::addPart(QSharedPointer<Part> new_part, bool notify) {
     m_load_mutex.lock();
 
     // Try to find a name for this part.
-    QString name = new_part->name();
+    QString name     = new_part->name();
     QString org_name = name;
-    uint count = 1;
+    uint count       = 1;
 
     while (m_parts.contains(name)) {
         name = org_name + "_" + QString::number(count);
@@ -209,8 +266,7 @@ void SessionManager::addPart(QSharedPointer<Part> new_part, bool notify) {
     new_part->setName(name);
     m_parts.insert(name, new_part);
 
-    if (notify)
-        emit partAdded(new_part);
+    if (notify) emit partAdded(new_part);
     m_load_mutex.unlock();
 }
 
@@ -220,23 +276,23 @@ void SessionManager::addPart(QSharedPointer<MeshBase> new_mesh, QString filename
 
     // Try to find a name for this part.
     QString file_name;
-    if (filename == "") // filename is blank because the part is being loaded via project import
+    if (filename == "")  // filename is blank because the part is being loaded via project import
     {
-        file_name = new_part->name();
+        file_name        = new_part->name();
         QString org_name = file_name;
-        uint count = 1;
+        uint count       = 1;
 
         while (m_parts.contains(file_name)) {
             file_name = org_name + "_" + QString::number(count);
             count++;
         }
     }
-    else // filename exists because the part is being loaded via UI button
+    else  // filename exists because the part is being loaded via UI button
     {
         // Find everything after the last /
         QStringList full_name_parts = filename.split("/");
-        file_name = full_name_parts.at(full_name_parts.size() - 1);
-        QString orig_file_name = file_name;
+        file_name                   = full_name_parts.at(full_name_parts.size() - 1);
+        QString orig_file_name      = file_name;
 
         // Add a number to duplicated file names
         uint count = 1;
@@ -244,10 +300,8 @@ void SessionManager::addPart(QSharedPointer<MeshBase> new_mesh, QString filename
             // Separate at the periods, then join everything before the last period
             QStringList orig_file_name_parts = orig_file_name.split(".");
             QString name;
-            for (int i = 0; i < orig_file_name_parts.size() - 1; i++) {
-                name += orig_file_name_parts[i] + ".";
-            }
-            name.chop(1); // Without this, the file name will always include an extra period
+            for (int i = 0; i < orig_file_name_parts.size() - 1; i++) { name += orig_file_name_parts[i] + "."; }
+            name.chop(1);  // Without this, the file name will always include an extra period
             // Add a number to signify a new instance of an existing file name
             file_name = name + "_" + QString::number(count);
             // Re-add the file extension
@@ -263,6 +317,12 @@ void SessionManager::addPart(QSharedPointer<MeshBase> new_mesh, QString filename
     m_load_mutex.unlock();
 }
 
+void SessionManager::renamePart(QSharedPointer<Part> part, QString new_name) {
+    m_parts.remove(part->name());
+    part->setName(new_name);
+    m_parts.insert(new_name, part);
+}
+
 void SessionManager::reloadPart(QSharedPointer<PartMetaItem> pm) {
     QString filename = pm->part()->sourceFilePath();
 
@@ -272,9 +332,12 @@ void SessionManager::reloadPart(QSharedPointer<PartMetaItem> pm) {
     }
 
     QFileInfo file_info(filename);
+    const MeshType mesh_type = pm->part()->getMeshType();
+    setMostRecentModelLocation(file_info.absoluteFilePath());
+    addRecentModelFile(filename, mesh_type);
 
-    MeshLoader* loader = new MeshLoader(filename, pm->part()->getMeshType(), QMatrix4x4(),
-                                        PreferencesManager::getInstance()->getImportUnit());
+    MeshLoader* loader =
+        new MeshLoader(filename, mesh_type, QMatrix4x4(), PreferencesManager::getInstance()->getImportUnit());
 
     connect(loader, &MeshLoader::finished, loader, &MeshLoader::deleteLater);
 
@@ -298,9 +361,12 @@ void SessionManager::replacePart(QSharedPointer<PartMetaItem> pm, QString filena
     }
 
     QFileInfo file_info(filename);
+    const MeshType mesh_type = pm->part()->getMeshType();
+    setMostRecentModelLocation(file_info.absoluteFilePath());
+    addRecentModelFile(filename, mesh_type);
 
-    MeshLoader* loader = new MeshLoader(filename, pm->part()->getMeshType(), QMatrix4x4(),
-                                        PreferencesManager::getInstance()->getImportUnit());
+    MeshLoader* loader =
+        new MeshLoader(filename, mesh_type, QMatrix4x4(), PreferencesManager::getInstance()->getImportUnit());
 
     connect(loader, &MeshLoader::finished, loader, &MeshLoader::deleteLater);
 
@@ -321,9 +387,9 @@ void SessionManager::replacePart(QSharedPointer<PartMetaItem> pm, QString filena
 
 void SessionManager::addCopiedPart(QSharedPointer<Part> new_part) {
     // Try to find a name for this part.
-    QString name = new_part->name();
+    QString name     = new_part->name();
     QString org_name = name;
-    uint count = 1;
+    uint count       = 1;
 
     while (m_parts.contains(name)) {
         name = org_name + "_" + QString::number(count);
@@ -336,20 +402,17 @@ void SessionManager::addCopiedPart(QSharedPointer<Part> new_part) {
 }
 
 bool SessionManager::removePart(QSharedPointer<Part> part) {
-    if (!m_parts.contains(part->name()))
-        return false;
+    if (!m_parts.contains(part->name())) return false;
 
     // Keep the part around for a second so we can emit a removed signal. That way, any object that wants to
     // perform some finals operations on the part can still do so.
     QSharedPointer<Part> old_part = m_parts[part->name()];
     m_parts.remove(old_part->name());
 
-    if (m_models.contains(part->rootMesh()->name()))
-        m_models.remove(part->rootMesh()->name());
+    if (m_models.contains(part->rootMesh()->name())) m_models.remove(part->rootMesh()->name());
 
     for (auto& model : part->subMeshes())
-        if (m_models.contains(model->name()))
-            m_models.remove(model->name());
+        if (m_models.contains(model->name())) m_models.remove(model->name());
 
     emit partRemoved(old_part);
 
@@ -357,8 +420,7 @@ bool SessionManager::removePart(QSharedPointer<Part> part) {
 }
 
 bool SessionManager::removePart(QString name) {
-    if (!m_parts.contains(name))
-        return false;
+    if (!m_parts.contains(name)) return false;
 
     // Keep the part around for a second so we can emit a removed signal. That way, any object that wants to
     // perform some finals operations on the part can still do so.
@@ -381,13 +443,13 @@ fifojson SessionManager::partsJson() const {
     for (QSharedPointer<Part> curr_part : m_parts) {
         fifojson part_json = fifojson::object();
 
-        part_json[Constants::Settings::Session::kFile] = curr_part->rootMesh()->path().split("/").back();
-        part_json[Constants::Settings::Session::kMeshType] = static_cast<int>(curr_part->rootMesh()->type());
-        part_json[Constants::Settings::Session::kGenType] = static_cast<int>(curr_part->rootMesh()->genType());
+        part_json[Constants::Settings::Session::kFile]         = curr_part->rootMesh()->path().split("/").back();
+        part_json[Constants::Settings::Session::kMeshType]     = static_cast<int>(curr_part->rootMesh()->type());
+        part_json[Constants::Settings::Session::kGenType]      = static_cast<int>(curr_part->rootMesh()->genType());
         part_json[Constants::Settings::Session::kOrgDims]["x"] = curr_part->rootMesh()->originalDimensions().x;
         part_json[Constants::Settings::Session::kOrgDims]["y"] = curr_part->rootMesh()->originalDimensions().y;
         part_json[Constants::Settings::Session::kOrgDims]["z"] = curr_part->rootMesh()->originalDimensions().z;
-        part_json[Constants::Settings::Session::kTransforms] = curr_part->rootMesh()->transformations();
+        part_json[Constants::Settings::Session::kTransforms]   = curr_part->rootMesh()->transformations();
 
         session_json[Constants::Settings::Session::kParts][curr_part->name().toStdString()] = part_json;
     }
@@ -397,16 +459,14 @@ fifojson SessionManager::partsJson() const {
 
 bool SessionManager::loadPartsJson(fifojson j) {
     int totalParts = 0;
-    for (auto it : j[Constants::Settings::Session::kParts].items()) {
-        ++totalParts;
-    }
+    for (auto it : j[Constants::Settings::Session::kParts].items()) { ++totalParts; }
 
     emit totalPartsInProject(totalParts);
 
     for (auto it : j[Constants::Settings::Session::kParts].items()) {
         // Get mesh information
-        QString name = QString::fromStdString(it.key());
-        MeshType mesh_type = it.value()[Constants::Settings::Session::kMeshType];
+        QString name               = QString::fromStdString(it.key());
+        MeshType mesh_type         = it.value()[Constants::Settings::Session::kMeshType];
         MeshGeneratorType gen_type = it.value()[Constants::Settings::Session::kGenType];
         Distance3D org_dims(it.value()[Constants::Settings::Session::kOrgDims]["x"],
                             it.value()[Constants::Settings::Session::kOrgDims]["y"],
@@ -428,11 +488,11 @@ bool SessionManager::loadPartsJson(fifojson j) {
         }
 
         switch (gen_type) {
-            case kNone: // Not generated, so load from file
+            case kNone:  // Not generated, so load from file
             {
                 QString filename = QString::fromStdString(it.value()[Constants::Settings::Session::kFile]);
 
-                if (m_models.contains(filename)) // Allready have this model data
+                if (m_models.contains(filename))  // Allready have this model data
                 {
                     auto data = m_models.value(filename);
                     auto meshes =
@@ -506,8 +566,7 @@ bool SessionManager::loadPartsJson(fifojson j) {
 
 bool SessionManager::isBuildMode() {
     for (auto part : m_parts) {
-        if (part->getMeshType() == MeshType::kBuild)
-            return true;
+        if (part->getMeshType() == MeshType::kBuild) return true;
     }
 
     return false;
@@ -515,10 +574,7 @@ bool SessionManager::isBuildMode() {
 
 bool SessionManager::doSlice() {
     const GcodeSyntax syntax = GSM->getGlobal()->setting<GcodeSyntax>(PRS::MachineSetup::kSyntax);
-    const SlicingMode type = static_cast<SlicingMode>(GSM->getGlobal()->setting<int>(PS::Slicing::kSlicingMode));
-    const CylindricalPathPattern path_pattern =
-        static_cast<CylindricalPathPattern>(GSM->getGlobal()->setting<int>(PS::Slicing::kCylindricalPathPattern));
-
+    const SlicingMode type   = static_cast<SlicingMode>(GSM->getGlobal()->setting<int>(PS::Slicing::kSlicingMode));
     if (type == SlicingMode::kCylindrical && !supportsCylindricalSlicing(syntax)) {
         const QString message = "Cylindrical slicing requires Printer > Machine Setup > Syntax to be Arc Specialties.";
         qWarning() << message;
@@ -535,7 +591,7 @@ bool SessionManager::doSlice() {
         this->changeSlicer(type);
     else {
         // See if it has changed
-        if (m_slicing_mode != type || (type == SlicingMode::kCylindrical && m_cylindrical_path_pattern != path_pattern))
+        if (m_slicing_mode != type)
             this->changeSlicer(type);
         else
             m_ast->setGcodeOutput(tempGcodeFile);
@@ -550,7 +606,6 @@ bool SessionManager::doSlice() {
 }
 
 bool SessionManager::sliceComplete() {
-
     Diagnostics::logLine(QString("SessionManager slice complete: %1").arg(tempGcodeFile));
     emit forwardSliceComplete(tempGcodeFile, true);
     return true;
@@ -560,18 +615,22 @@ void SessionManager::forwardDialogUpdate(StatusUpdateStepType type, int complete
     emit updateDialog(type, completedPercentage);
 }
 
-void SessionManager::cancelSlice() { m_ast->setCancel(); }
+void SessionManager::cancelSlice() {
+    m_ast->setCancel();
+}
 
-void SessionManager::setCopiedPart(QSharedPointer<Part> part) { m_copied_part = part; }
+void SessionManager::setCopiedPart(QSharedPointer<Part> part) {
+    m_copied_part = part;
+}
 
 void SessionManager::pastePart() {
     QSharedPointer<Part> new_copy = QSharedPointer<Part>(new Part(*m_copied_part));
     // reset transforms so that part matches it's original as loaded (graphical manipulations still apply)
     new_copy->setTransformation(QMatrix4x4());
 
-    QString name = new_copy->name();
+    QString name     = new_copy->name();
     QString org_name = name = name.left(name.lastIndexOf('_'));
-    uint count = 1;
+    uint count              = 1;
 
     // Try to find a name for this part.
     while (m_parts.contains(name)) {
@@ -587,9 +646,7 @@ void SessionManager::pastePart() {
 }
 
 qint64 SessionManager::getSliceTimeElapsed() {
-    if (m_ast.isNull()) {
-        return 0;
-    }
+    if (m_ast.isNull()) { return 0; }
 
     return m_ast->getTimeElapsed();
 }
@@ -597,9 +654,6 @@ qint64 SessionManager::getSliceTimeElapsed() {
 bool SessionManager::changeSlicer(SlicingMode type) {
     // Disconnect the signals from the AST.
     QObject::disconnect(this, &SessionManager::startSlice, nullptr, nullptr);
-    const CylindricalPathPattern path_pattern =
-        static_cast<CylindricalPathPattern>(GSM->getGlobal()->setting<int>(PS::Slicing::kCylindricalPathPattern));
-
     // Reset the AST with a new slicer.
     switch (type) {
         case SlicingMode::kPlanar:
@@ -609,12 +663,7 @@ bool SessionManager::changeSlicer(SlicingMode type) {
             m_ast.reset(new ImageSlicer(tempGcodeFile));
             break;
         case SlicingMode::kCylindrical:
-            if (path_pattern == CylindricalPathPattern::kHelical) {
-                m_ast.reset(new HelicalSlicer(tempGcodeFile));
-            }
-            else {
-                m_ast.reset(new RadialSlicer(tempGcodeFile));
-            }
+            m_ast.reset(new CylindricalSlicer(tempGcodeFile));
             break;
         default:
             qWarning() << "Unknown slicing mode requested. Falling back to Planar slicer.";
@@ -624,12 +673,9 @@ bool SessionManager::changeSlicer(SlicingMode type) {
     }
 
     m_slicing_mode = type;
-    m_cylindrical_path_pattern = type == SlicingMode::kCylindrical ? path_pattern : CylindricalPathPattern::kRadial;
 
     // Reset part steps
-    for (QSharedPointer<Part> part : m_parts) {
-        part->clearSteps();
-    }
+    for (QSharedPointer<Part> part : m_parts) { part->clearSteps(); }
 
     // Reconnect the signal to the AST.
     QObject::connect(this, &SessionManager::startSlice, m_ast.get(), &AbstractSlicingThread::doSlice);
@@ -651,8 +697,10 @@ SessionLoader* SessionManager::saveSession(QString path, bool shouldTrack, bool 
     loader->start();
     m_file = path;
 
-    if (shouldTrack)
+    if (shouldTrack) {
         setMostRecentProjectLocation(QFileInfo(path).absolutePath());
+        addRecentProjectFile(path);
+    }
 
     return loader;
 }
@@ -660,8 +708,7 @@ SessionLoader* SessionManager::saveSession(QString path, bool shouldTrack, bool 
 SessionLoader* SessionManager::loadSession(bool shouldDelete, QString path, bool promptForSettingsUpdate) {
     // Clear out old data if necessary.
     if (shouldDelete) {
-        for (model_data file : m_models)
-            free(file.model);
+        for (model_data file : m_models) free(file.model);
 
         m_parts.clear();
         emit partsCleared();
@@ -677,12 +724,10 @@ SessionLoader* SessionManager::loadSession(bool shouldDelete, QString path, bool
     QString filename =
         QString::fromStdString(Constants::Settings::Session::Files::kGlobal) + " in project file: " + path + " ";
     fifojson settings = loader->getSettingsFromZip();
-    int result =
-        GSM->checkVersion(filename, settings,
-                          promptForSettingsUpdate ? SettingsVersionUpdateMode::kGuiPrompt
-                                                  : SettingsVersionUpdateMode::kAutoUpdate);
-    if (result == 1)
-        loader->updateSettingsJson(settings, promptForSettingsUpdate);
+    int result        = GSM->checkVersion(
+        filename, settings,
+        promptForSettingsUpdate ? SettingsVersionUpdateMode::kGuiPrompt : SettingsVersionUpdateMode::kAutoUpdate);
+    if (result == 1) loader->updateSettingsJson(settings, promptForSettingsUpdate);
 
     if (result >= 0) {
         connect(loader, &SessionLoader::finished, loader, &SessionLoader::deleteLater);
@@ -695,39 +740,49 @@ SessionLoader* SessionManager::loadSession(bool shouldDelete, QString path, bool
     return nullptr;
 }
 
-QHash<QString, QString> SessionManager::getMostRecentSettingHistory() { return m_most_recent_setting_history; }
+QHash<QString, QString> SessionManager::getMostRecentSettingHistory() {
+    return m_most_recent_setting_history;
+}
 
 void SessionManager::setMostRecentSettingHistory(QString key, QString name) {
     m_most_recent_setting_history[key] = name;
-    m_dirty_history = true;
+    m_dirty_history                    = true;
 }
 
-QString SessionManager::getMostRecentModelLocation() { return m_most_recent_model_location; }
+QString SessionManager::getMostRecentModelLocation() {
+    return m_most_recent_model_location;
+}
 
 void SessionManager::setMostRecentModelLocation(QString path) {
     m_most_recent_model_location = path;
-    m_dirty_history = true;
+    m_dirty_history              = true;
 }
 
-QString SessionManager::getMostRecentProjectLocation() { return m_most_recent_project_location; }
+QString SessionManager::getMostRecentProjectLocation() {
+    return m_most_recent_project_location;
+}
 
 void SessionManager::setMostRecentProjectLocation(QString path) {
     m_most_recent_project_location = path;
-    m_dirty_history = true;
+    m_dirty_history                = true;
 }
 
-QString SessionManager::getMostRecentGcodeLocation() { return m_most_recent_gcode_location; }
+QString SessionManager::getMostRecentGcodeLocation() {
+    return m_most_recent_gcode_location;
+}
 
 void SessionManager::setMostRecentGcodeLocation(QString path) {
     m_most_recent_gcode_location = path;
-    m_dirty_history = true;
+    m_dirty_history              = true;
 }
 
-QString SessionManager::getMostRecentSettingFolderLocation() { return m_most_recent_setting_folder_location; }
+QString SessionManager::getMostRecentSettingFolderLocation() {
+    return m_most_recent_setting_folder_location;
+}
 
 void SessionManager::setMostRecentSettingFolderLocation(QString path) {
     m_most_recent_setting_folder_location = path;
-    m_dirty_history = true;
+    m_dirty_history                       = true;
 }
 
 QString SessionManager::getMostRecentLayerBarSettingFolderLocation() {
@@ -736,13 +791,59 @@ QString SessionManager::getMostRecentLayerBarSettingFolderLocation() {
 
 void SessionManager::setMostRecentLayerBarSettingFolderLocation(QString path) {
     m_most_recent_layer_bar_setting_folder_location = path;
+    m_dirty_history                                 = true;
+}
+bool SessionManager::sensorFilesGenerated() {
+    return m_sensor_files_generated;
+}
+
+QString SessionManager::getMostRecentHTTPConfig() {
+    return m_most_recent_http_config;
+}
+
+void SessionManager::setMostRecentHTTPConfig(QString config) {
+    m_most_recent_http_config = config;
+}
+
+QStringList SessionManager::getRecentProjectFiles() const {
+    return m_recent_project_files;
+}
+
+QStringList SessionManager::getRecentModelFiles() const {
+    return m_recent_model_files;
+}
+
+void SessionManager::addRecentProjectFile(QString path) {
+    if (!hasSuffix(path, {"s2p"})) return;
+
+    addRecentFile(m_recent_project_files, path);
     m_dirty_history = true;
 }
-bool SessionManager::sensorFilesGenerated() { return m_sensor_files_generated; }
 
-QString SessionManager::getMostRecentHTTPConfig() { return m_most_recent_http_config; }
+void SessionManager::addRecentModelFile(QString path, MeshType mt) {
+    if (mt != MeshType::kBuild || !hasSuffix(path, {"stl", "3mf", "obj", "amf", "step", "stp"})) return;
 
-void SessionManager::setMostRecentHTTPConfig(QString config) { m_most_recent_http_config = config; }
+    addRecentFile(m_recent_model_files, path);
+    m_dirty_history = true;
+}
 
-void SessionManager::setDefaultGcodeDir(QString dir) { defaultGcodeFile = dir + "\\gcode_output"; }
-} // namespace ORNL
+void SessionManager::removeRecentFile(QString path) {
+    path = absoluteFilePath(path);
+
+    const bool removed_project = m_recent_project_files.removeAll(path) > 0;
+    const bool removed_model   = m_recent_model_files.removeAll(path) > 0;
+    if (removed_project || removed_model) m_dirty_history = true;
+}
+
+void SessionManager::clearRecentFiles() {
+    if (m_recent_project_files.isEmpty() && m_recent_model_files.isEmpty()) return;
+
+    m_recent_project_files.clear();
+    m_recent_model_files.clear();
+    m_dirty_history = true;
+}
+
+void SessionManager::setDefaultGcodeDir(QString dir) {
+    defaultGcodeFile = dir + "\\gcode_output";
+}
+}  // namespace ORNL

@@ -59,10 +59,12 @@ VALID_TYPES = {
     "density",
     "distance",
     "enumeration",
+    "file_path",
     "location",
     "multiline_text",
     "number",
     "numbered_list",
+    "non_negative_int",
     "percentage",
     "percentage100",
     "positive_int",
@@ -297,6 +299,12 @@ def validate_setting(setting: OrderedDict[str, Any], setting_names: set[str]) ->
     if setting["type"] == "boolean" and not isinstance(setting["default"], bool):
         raise ValueError(f"{name}: boolean default must be true or false")
 
+    if setting["type"] == "non_negative_int":
+        if not isinstance(setting["default"], int) or isinstance(setting["default"], bool):
+            raise ValueError(f"{name}: non_negative_int default must be an integer")
+        if setting["default"] < 0:
+            raise ValueError(f"{name}: non_negative_int default must be zero or greater")
+
     validate_dependency(setting["depends"], setting_names, name)
 
 
@@ -366,8 +374,10 @@ def validate_input(setting_input: OrderedDict[str, Any], settings_by_name: Order
             raise ValueError(f"{name}: vector2 components must be distance or location settings")
         if len(set(component_types)) != 1:
             raise ValueError(f"{name}: vector2 components must share the same setting type")
-    elif any(component_type != "unitless_float" for component_type in component_types):
-        raise ValueError(f"{name}: vector3 components must be unitless_float settings")
+    elif any(component_type not in {"angle", "unitless_float"} for component_type in component_types):
+        raise ValueError(f"{name}: vector3 components must be angle or unitless_float settings")
+    elif len(set(component_types)) != 1:
+        raise ValueError(f"{name}: vector3 components must share the same setting type")
 
 
 def normalize_for_master(setting: OrderedDict[str, Any]) -> OrderedDict[str, Any]:

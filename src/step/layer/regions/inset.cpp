@@ -12,6 +12,7 @@
 
 #include "configs/settings_base.h"
 #include "gcode/writers/writer_base.h"
+#include "geometry/contour_connection.h"
 #include "geometry/path.h"
 #include "geometry/path_modifier.h"
 #include "geometry/point.h"
@@ -21,7 +22,6 @@
 #include "geometry/segment_base.h"
 #include "geometry/segments/line.h"
 #include "geometry/settings_polygon.h"
-#include "geometry/spiral_path.h"
 #include "optimizers/polyline_order_optimizer.h"
 #include "step/layer/regions/region_base.h"
 #include "units/unit.h"
@@ -32,14 +32,12 @@ namespace ORNL {
 namespace {
 Polyline toOpenPolyline(Polygon poly) {
     Polyline line = poly.toPolyline();
-    if (!line.isEmpty()) {
-        line.pop_back();
-    }
+    if (!line.isEmpty()) { line.pop_back(); }
     return line;
 }
 
 bool isValidInsetLine(const Polyline& line, Distance min_path_length) {
-    return line.size() >= 3 && SpiralPath::closedPolylineLength(line) >= min_path_length;
+    return line.size() >= 3 && ContourConnection::closedPolylineLength(line) >= min_path_length;
 }
 
 QVector<Polygon> appendValidPathLines(const PolygonList& path_lines, QVector<Polyline>& computed_geometry,
@@ -77,7 +75,7 @@ QVector<Polygon> validPathLines(const PolygonList& path_lines, Distance min_path
 Distance totalPathLineLength(const QVector<Polygon>& path_lines) {
     Distance total_length;
     for (const Polygon& poly : path_lines) {
-        total_length += SpiralPath::closedPolylineLength(toOpenPolyline(poly));
+        total_length += ContourConnection::closedPolylineLength(toOpenPolyline(poly));
     }
     return total_length;
 }
@@ -85,20 +83,16 @@ Distance totalPathLineLength(const QVector<Polygon>& path_lines) {
 PolygonList pathLineFootprint(const Polygon& path_line, Distance bead_width, const PolygonList& clipping_geometry) {
     PolygonList outer_offset = path_line.offset(bead_width / 2);
     PolygonList inner_offset = path_line.offset(-bead_width / 2);
-    PolygonList footprint = outer_offset ^ inner_offset;
+    PolygonList footprint    = outer_offset ^ inner_offset;
 
     return footprint & clipping_geometry;
 }
 
 bool subtractPathLineFootprints(PolygonList& geometry, const QVector<Polygon>& path_lines, Distance bead_width) {
     PolygonList path_line_footprint;
-    for (const Polygon& poly : path_lines) {
-        path_line_footprint += pathLineFootprint(poly, bead_width, geometry);
-    }
+    for (const Polygon& poly : path_lines) { path_line_footprint += pathLineFootprint(poly, bead_width, geometry); }
 
-    if (path_line_footprint.isEmpty()) {
-        return false;
-    }
+    if (path_line_footprint.isEmpty()) { return false; }
 
     geometry -= path_line_footprint;
     return true;
@@ -106,42 +100,38 @@ bool subtractPathLineFootprints(PolygonList& geometry, const QVector<Polygon>& p
 
 PolygonList insetPathLines(const PolygonList& geometry, Distance bead_width, Distance overlap) {
     PolygonList path_line = geometry.offset(-bead_width / 2);
-    if (overlap > 0) {
-        path_line = path_line.offset(overlap);
-    }
+    if (overlap > 0) { path_line = path_line.offset(overlap); }
 
     return path_line;
 }
 
-double netAreaAbs(PolygonList geometry) { return std::fabs(geometry.netArea()()); }
+double netAreaAbs(PolygonList geometry) {
+    return std::fabs(geometry.netArea()());
+}
 
 double negligibleAreaTolerance(double reference_area, Distance nominal_width) {
     return std::max(reference_area * 1.0e-6, nominal_width() * nominal_width() * 1.0e-4);
 }
 
-bool hasInternalBoundaries(const PolygonList& geometry) { return !geometry.internalPolygonBoundaries().isEmpty(); }
+bool hasInternalBoundaries(const PolygonList& geometry) {
+    return !geometry.internalPolygonBoundaries().isEmpty();
+}
 
 Distance clampedAdaptiveWidth(Distance requested_width, Distance nominal_width, Distance min_width,
                               Distance max_width) {
     double requested = requested_width();
-    if (!std::isfinite(requested) || requested <= 0) {
-        requested = nominal_width();
-    }
+    if (!std::isfinite(requested) || requested <= 0) { requested = nominal_width(); }
 
     double lower = std::max(0.0, min_width());
     double upper = max_width() > 0 ? max_width() : std::numeric_limits<double>::max();
-    if (upper < lower) {
-        upper = lower;
-    }
+    if (upper < lower) { upper = lower; }
 
     return Distance(std::clamp(requested, lower, upper));
 }
 
 bool geometryClearedByFootprints(PolygonList geometry, const QVector<Polygon>& path_lines, Distance bead_width,
                                  double reference_area, Distance nominal_width) {
-    if (!subtractPathLineFootprints(geometry, path_lines, bead_width)) {
-        return false;
-    }
+    if (!subtractPathLineFootprints(geometry, path_lines, bead_width)) { return false; }
 
     return geometry.isEmpty() || netAreaAbs(geometry) <= negligibleAreaTolerance(reference_area, nominal_width);
 }
@@ -149,9 +139,7 @@ bool geometryClearedByFootprints(PolygonList geometry, const QVector<Polygon>& p
 bool shellWidthCoversGeometry(PolygonList geometry, const QVector<Polygon>& path_lines, Distance bead_width,
                               Distance nominal_width) {
     const Distance path_length = totalPathLineLength(path_lines);
-    if (path_length <= 0) {
-        return false;
-    }
+    if (path_length <= 0) { return false; }
 
     const Distance full_area_width = Distance(netAreaAbs(geometry) / path_length());
     return std::fabs(full_area_width() - bead_width()) <= std::max(nominal_width() * 1.0e-4, 1.0e-6);
@@ -161,9 +149,7 @@ std::optional<Distance> fullCoverageAdaptiveWidth(PolygonList geometry, Distance
                                                   Distance min_path_length, Distance min_segment_length,
                                                   Distance min_width, Distance max_width) {
     const double initial_area = netAreaAbs(geometry);
-    if (initial_area <= 0) {
-        return std::nullopt;
-    }
+    if (initial_area <= 0) { return std::nullopt; }
     const bool shell_geometry = hasInternalBoundaries(geometry);
 
     Distance candidate_width = nominal_width;
@@ -172,9 +158,7 @@ std::optional<Distance> fullCoverageAdaptiveWidth(PolygonList geometry, Distance
         candidate_path_lines =
             validPathLines(insetPathLines(geometry, candidate_width, overlap), min_path_length, min_segment_length);
         const Distance candidate_length = totalPathLineLength(candidate_path_lines);
-        if (candidate_length <= 0) {
-            return std::nullopt;
-        }
+        if (candidate_length <= 0) { return std::nullopt; }
 
         const Distance next_width =
             clampedAdaptiveWidth(Distance(initial_area / candidate_length()), nominal_width, min_width, max_width);
@@ -188,9 +172,7 @@ std::optional<Distance> fullCoverageAdaptiveWidth(PolygonList geometry, Distance
 
     candidate_path_lines =
         validPathLines(insetPathLines(geometry, candidate_width, overlap), min_path_length, min_segment_length);
-    if (candidate_path_lines.isEmpty()) {
-        return std::nullopt;
-    }
+    if (candidate_path_lines.isEmpty()) { return std::nullopt; }
 
     if (geometryClearedByFootprints(geometry, candidate_path_lines, candidate_width, initial_area, nominal_width)) {
         return candidate_width;
@@ -217,24 +199,18 @@ Distance adaptiveContourWidthForGeometry(PolygonList geometry, Distance nominal_
     for (int i = 0; i < remaining_count && !preview_geometry.isEmpty(); ++i) {
         QVector<Polygon> preview_path_lines = validPathLines(insetPathLines(preview_geometry, nominal_width, overlap),
                                                              min_path_length, min_segment_length);
-        if (preview_path_lines.isEmpty()) {
-            break;
-        }
+        if (preview_path_lines.isEmpty()) { break; }
 
         preview_length += totalPathLineLength(preview_path_lines);
-        if (!subtractPathLineFootprints(preview_geometry, preview_path_lines, nominal_width)) {
-            break;
-        }
+        if (!subtractPathLineFootprints(preview_geometry, preview_path_lines, nominal_width)) { break; }
     }
 
-    if (preview_length <= 0) {
-        return nominal_width;
-    }
+    if (preview_length <= 0) { return nominal_width; }
 
     const bool more_nominal_paths_fit =
         !validPathLines(insetPathLines(preview_geometry, nominal_width, overlap), min_path_length, min_segment_length)
              .isEmpty();
-    const double initial_area = netAreaAbs(geometry);
+    const double initial_area           = netAreaAbs(geometry);
     const double preview_remaining_area = netAreaAbs(preview_geometry);
     const double target_area =
         more_nominal_paths_fit ? std::max(0.0, initial_area - preview_remaining_area) : initial_area;
@@ -251,11 +227,9 @@ QVector<Distance> plannedAdaptiveContourWidths(PolygonList geometry, Distance no
         const Distance path_width =
             adaptiveContourWidthForGeometry(geometry, nominal_width, remaining_count - i, overlap, min_path_length,
                                             min_segment_length, min_width, max_width);
-        PolygonList path_lines = insetPathLines(geometry, path_width, overlap);
+        PolygonList path_lines            = insetPathLines(geometry, path_width, overlap);
         QVector<Polygon> valid_path_lines = validPathLines(path_lines, min_path_length, min_segment_length);
-        if (valid_path_lines.isEmpty()) {
-            break;
-        }
+        if (valid_path_lines.isEmpty()) { break; }
 
         widths.push_back(path_width);
 
@@ -263,12 +237,8 @@ QVector<Distance> plannedAdaptiveContourWidths(PolygonList geometry, Distance no
             hasInternalBoundaries(geometry) &&
             shellWidthCoversGeometry(geometry, valid_path_lines, path_width, nominal_width);
 
-        if (!subtractPathLineFootprints(geometry, valid_path_lines, path_width)) {
-            break;
-        }
-        if (clear_shell_geometry) {
-            geometry.clear();
-        }
+        if (!subtractPathLineFootprints(geometry, valid_path_lines, path_width)) { break; }
+        if (clear_shell_geometry) { geometry.clear(); }
     }
 
     return widths;
@@ -279,17 +249,15 @@ Distance adaptiveContourWidth(PolygonList geometry, Distance nominal_width, int 
                               Distance max_width) {
     QVector<Distance> widths = plannedAdaptiveContourWidths(geometry, nominal_width, remaining_count, overlap,
                                                             min_path_length, min_segment_length, min_width, max_width);
-    if (widths.isEmpty()) {
-        return nominal_width;
-    }
+    if (widths.isEmpty()) { return nominal_width; }
 
     return *std::max_element(widths.begin(), widths.end(),
                              [](const Distance& lhs, const Distance& rhs) { return lhs() < rhs(); });
 }
 
 double distanceXYToSegment(const Point& point, const Point& start, const Point& end) {
-    const double dx = end.x() - start.x();
-    const double dy = end.y() - start.y();
+    const double dx     = end.x() - start.x();
+    const double dy     = end.y() - start.y();
     const double len_sq = dx * dx + dy * dy;
     if (len_sq <= std::numeric_limits<double>::epsilon()) {
         return std::hypot(point.x() - start.x(), point.y() - start.y());
@@ -302,20 +270,16 @@ double distanceXYToSegment(const Point& point, const Point& start, const Point& 
 }
 
 bool pointOnClosedPolylineXY(const Point& point, const Polyline& line, double tolerance) {
-    if (line.size() < 2) {
-        return false;
-    }
+    if (line.size() < 2) { return false; }
 
     for (int i = 0; i < line.size(); ++i) {
-        if (distanceXYToSegment(point, line[i], line[(i + 1) % line.size()]) <= tolerance) {
-            return true;
-        }
+        if (distanceXYToSegment(point, line[i], line[(i + 1) % line.size()]) <= tolerance) { return true; }
     }
 
     return false;
 }
 
-} // namespace
+}  // namespace
 
 Inset::Inset(const QSharedPointer<SettingsBase>& sb, const int index, const QVector<SettingsPolygon>& settings_polygons)
     : RegionBase(sb, index, settings_polygons, PolygonList(), RegionType::kInset) {
@@ -327,9 +291,7 @@ QString Inset::writeGCode(QSharedPointer<WriterBase> writer) {
     gcode += writer->writeBeforeRegion(RegionType::kInset);
     for (Path path : m_paths) {
         gcode += writer->writeBeforePath(RegionType::kInset);
-        for (QSharedPointer<SegmentBase> segment : path.getSegments()) {
-            gcode += segment->writeGCode(writer);
-        }
+        for (QSharedPointer<SegmentBase> segment : path.getSegments()) { gcode += segment->writeGCode(writer); }
         gcode += writer->writeAfterPath(RegionType::kInset);
     }
     gcode += writer->writeAfterRegion(RegionType::kInset);
@@ -344,17 +306,15 @@ void Inset::compute(uint layer_num) {
     setMaterialNumber(m_sb->setting<int>(MS::MultiMaterial::kInsetNum));
 
     Distance beadWidth = m_sb->setting<Distance>(PS::Inset::kBeadWidth);
-    int rings = m_sb->setting<int>(PS::Inset::kCount);
+    int rings          = m_sb->setting<int>(PS::Inset::kCount);
 
-    Distance overlap = m_sb->setting<Distance>(PS::Inset::kOverlap);
-    const Distance min_path_length = m_sb->setting<Distance>(PS::Inset::kMinPathLength);
+    Distance overlap                  = m_sb->setting<Distance>(PS::Inset::kOverlap);
+    const Distance min_path_length    = m_sb->setting<Distance>(PS::Inset::kMinPathLength);
     const Distance min_segment_length = m_sb->setting<Distance>(PS::Inset::kMinSegmentLength);
 
-    int ring_nr = 0;
+    int ring_nr           = 0;
     PolygonList path_line = m_geometry.offset(-beadWidth / 2);
-    if (overlap > 0) {
-        path_line = path_line.offset(overlap);
-    }
+    if (overlap > 0) { path_line = path_line.offset(overlap); }
 
     if (m_sb->setting<bool>(PS::Inset::kAdaptive)) {
         const Distance min_adaptive_width = m_sb->setting<Distance>(PS::Inset::kAdaptiveMinWidth);
@@ -372,9 +332,7 @@ void Inset::compute(uint layer_num) {
                 appendValidPathLines(path_line, m_computed_geometry, m_computed_widths, min_path_length, path_width,
                                      min_segment_length, skipped_path_line);
 
-            if (valid_path_lines.isEmpty()) {
-                break;
-            }
+            if (valid_path_lines.isEmpty()) { break; }
 
             ring_nr++;
 
@@ -382,12 +340,8 @@ void Inset::compute(uint layer_num) {
                 hasInternalBoundaries(m_geometry) &&
                 shellWidthCoversGeometry(m_geometry, valid_path_lines, path_width, beadWidth);
 
-            if (!subtractPathLineFootprints(m_geometry, valid_path_lines, path_width)) {
-                break;
-            }
-            if (clear_shell_geometry) {
-                m_geometry.clear();
-            }
+            if (!subtractPathLineFootprints(m_geometry, valid_path_lines, path_width)) { break; }
+            if (clear_shell_geometry) { m_geometry.clear(); }
         }
         return;
     }
@@ -398,22 +352,18 @@ void Inset::compute(uint layer_num) {
             appendValidPathLines(path_line, m_computed_geometry, m_computed_widths, min_path_length, beadWidth,
                                  min_segment_length, skipped_path_line);
 
-        if (valid_path_lines.isEmpty()) {
-            break;
-        }
+        if (valid_path_lines.isEmpty()) { break; }
 
         ring_nr++;
 
         if (skipped_path_line) {
-            if (!subtractPathLineFootprints(m_geometry, valid_path_lines, beadWidth)) {
-                break;
-            }
+            if (!subtractPathLineFootprints(m_geometry, valid_path_lines, beadWidth)) { break; }
 
             path_line = m_geometry.offset(-beadWidth / 2);
         }
         else {
             m_geometry = path_line.offset(-beadWidth / 2., -beadWidth / 2.);
-            path_line = path_line.offset(-beadWidth, -beadWidth / 2.);
+            path_line  = path_line.offset(-beadWidth, -beadWidth / 2.);
         }
     }
 }
@@ -453,27 +403,125 @@ void Inset::optimize(int layerNumber, Point& current_location, bool& shouldNextP
 
     if (static_cast<PrintDirection>(m_sb->setting<int>(PS::Ordering::kInsetReverseDirection)) !=
         PrintDirection::kReverse_off) {
-        for (Polyline& line : m_computed_geometry) {
-            line = line.reverse();
-        }
+        for (Polyline& line : m_computed_geometry) { line = line.reverse(); }
     }
 
-    auto appendSpiralPaths = [&](const QVector<Polyline>& spiral_groups, bool ccw, Distance min_path_length) {
-        for (const Polyline& spiral_group : spiral_groups) {
-            if (spiral_group.size() < 3) {
-                continue;
+    const bool forward_tip_wipe_enabled =
+        m_sb->setting<bool>(MS::TipWipe::kInsetEnable) &&
+        static_cast<TipWipeDirection>(m_sb->setting<int>(MS::TipWipe::kInsetDirection)) == TipWipeDirection::kForward;
+
+    auto appendBranchAfterTipWipePaths = [&](const QVector<Polyline>& ordered_loops, const QVector<Distance>& widths,
+                                             Distance fallback_width, bool complete_before_connecting, bool ccw,
+                                             Distance min_path_length) {
+        Path branched_path;
+        branched_path.setCCW(ccw);
+
+        QVector<Polyline> branch_loops   = ordered_loops;
+        const Distance tip_wipe_distance = m_sb->setting<Distance>(MS::TipWipe::kInsetDistance);
+
+        for (int i = branch_loops.size() - 2; i >= 0; --i) {
+            if (branch_loops[i].size() < 3 || branch_loops[i + 1].isEmpty()) { continue; }
+
+            const Distance loop_width = i < widths.size() ? widths[i] : fallback_width;
+            ContourConnection::rotateToForwardBranchSeam(branch_loops[i], branch_loops[i + 1].front(), loop_width,
+                                                         tip_wipe_distance, complete_before_connecting,
+                                                         m_sb->setting<Distance>(PS::Inset::kMinSegmentLength));
+        }
+
+        for (int i = 0, end = branch_loops.size() - 1; i < end; ++i) {
+            if (branch_loops[i].size() < 3 || branch_loops[i + 1].size() < 3) { continue; }
+
+            const Distance loop_width = i < widths.size() ? widths[i] : fallback_width;
+            ContourConnection::angleForwardBranchConnection(branch_loops[i], branch_loops[i + 1], loop_width,
+                                                            tip_wipe_distance, complete_before_connecting,
+                                                            m_sb->setting<Distance>(PS::Inset::kMinSegmentLength));
+        }
+
+        QVector<Path> branch_paths;
+        QVector<bool> emit_loop;
+        branch_paths.reserve(branch_loops.size());
+        emit_loop.reserve(branch_loops.size());
+        for (int i = 0, end = branch_loops.size(); i < end; ++i) {
+            const Polyline& loop = branch_loops[i];
+            Path newPath;
+            if (loop.size() >= 3) {
+                const Distance loop_width = i < widths.size() ? widths[i] : fallback_width;
+                const Point final_stop =
+                    ContourConnection::transitionStartPoint(loop, loop_width, complete_before_connecting);
+
+                Polyline branch_line;
+                branch_line += loop;
+                if (branch_line.back() != final_stop) { branch_line.push_back(final_stop); }
+
+                newPath = createPath(branch_line, false);
+                newPath.setCCW(ccw);
             }
 
-            Path newPath = createPath(spiral_group);
-            newPath.setCCW(ccw);
+            emit_loop.push_back(newPath.size() > 0 && newPath.calculateLength() >= min_path_length);
+            branch_paths.push_back(newPath);
+        }
+
+        QVector<bool> connect_to_next(branch_loops.size(), false);
+        for (int i = 0, end = branch_loops.size() - 1; i < end; ++i) {
+            const Distance loop_width = i < widths.size() ? widths[i] : fallback_width;
+            connect_to_next[i] = emit_loop[i] && emit_loop[i + 1] &&
+                                 ContourConnection::canConnectAfterForwardWipe(
+                                     branch_loops[i], branch_loops[i + 1], loop_width, tip_wipe_distance,
+                                     complete_before_connecting, m_sb->setting<Distance>(PS::Inset::kMinSegmentLength));
+        }
+
+        auto flushBranchedPath = [&]() {
+            if (branched_path.size() == 0) { return; }
+
+            current_location = branched_path.back()->end();
+            m_paths.push_back(branched_path);
+            branched_path.clear();
+            branched_path.setCCW(ccw);
+        };
+
+        for (int i = 0, end = branch_loops.size(); i < end; ++i) {
+            Path newPath = branch_paths[i];
+            if (!emit_loop[i]) {
+                flushBranchedPath();
+                continue;
+            }
 
             if (newPath.size() > 0) {
-                newPath.getSegments().removeLast();
-            }
+                const bool begins_group     = branched_path.size() == 0;
+                const bool continues_branch = i < connect_to_next.size() && connect_to_next[i];
+                QSharedPointer<SettingsBase> branch_settings =
+                    QSharedPointer<SettingsBase>::create(*newPath.front()->getSb());
+                branch_settings->setSetting(SS::kPathModifiers, PathModifiers::kConnection);
 
-            if (newPath.calculateLength() < min_path_length) {
-                continue;
+                calculateModifiers(newPath, m_sb->setting<bool>(PRS::MachineSetup::kSupportG3), true, continues_branch,
+                                   begins_group);
+
+                if (begins_group) {
+                    PathModifierGenerator::GenerateTravel(newPath, current_location,
+                                                          m_sb->setting<Velocity>(PS::Travel::kSpeed));
+                }
+                else {
+                    LSegmentPtr branch = LSegmentPtr::create(branched_path.back()->end(), newPath.front()->start());
+                    branch->setSb(branch_settings);
+                    branched_path.append(branch);
+                }
+
+                branched_path.append(newPath);
+                if (!continues_branch) { flushBranchedPath(); }
             }
+        }
+
+        flushBranchedPath();
+    };
+
+    auto appendConnectedPaths = [&](const QVector<Polyline>& connected_groups, bool ccw, Distance min_path_length) {
+        for (const Polyline& connected_group : connected_groups) {
+            if (connected_group.size() < 3) { continue; }
+
+            Path newPath = createPath(connected_group, false);
+            newPath.setCCW(ccw);
+
+            if (newPath.calculateLength() < min_path_length) { continue; }
 
             if (newPath.size() > 0) {
                 calculateModifiers(newPath, m_sb->setting<bool>(PRS::MachineSetup::kSupportG3), true);
@@ -486,33 +534,48 @@ void Inset::optimize(int layerNumber, Point& current_location, bool& shouldNextP
         }
     };
 
-    if (m_sb->setting<bool>(PS::Inset::kEnableSpiralInset)) {
+    if (m_sb->setting<bool>(PS::Inset::kConnectInsets)) {
+        const bool complete_path_before_connecting = m_sb->setting<bool>(PS::Inset::kCompleteLoopBeforeConnecting);
+        const bool branch_after_tip_wipe =
+            m_sb->setting<bool>(PS::Inset::kConnectAfterTipWipe) && forward_tip_wipe_enabled;
+
         if (!m_sb->setting<bool>(PS::Inset::kAdaptive)) {
-            Point spiral_query_location = current_location;
-            PolylineOrderOptimizer spiral_poo(spiral_query_location, layerNumber);
-            configureOptimizer(spiral_poo, pointOrderOptimization);
-            spiral_poo.setGeometryToEvaluate(m_computed_geometry, RegionType::kInset, pathOrderOptimization);
+            Point connection_query_location = current_location;
+            PolylineOrderOptimizer connection_optimizer(connection_query_location, layerNumber);
+            configureOptimizer(connection_optimizer, pointOrderOptimization);
+            connection_optimizer.setGeometryToEvaluate(m_computed_geometry, RegionType::kInset, pathOrderOptimization);
 
             QVector<Polyline> ordered_insets;
             const Distance min_path_length = m_sb->setting<Distance>(PS::Inset::kMinPathLength);
-            const Distance bead_width = m_sb->setting<Distance>(PS::Inset::kBeadWidth);
+            const Distance bead_width      = m_sb->setting<Distance>(PS::Inset::kBeadWidth);
 
-            while (spiral_poo.getCurrentPolylineCount() > 0) {
+            while (connection_optimizer.getCurrentPolylineCount() > 0) {
                 if (!ordered_insets.isEmpty()) {
-                    spiral_poo.setPointParameters(PointOrderOptimization::kNextClosest, false, 0, 0, false, 0, false);
+                    connection_optimizer.setPointParameters(PointOrderOptimization::kNextClosest, false, 0, 0, false, 0,
+                                                            false);
                 }
 
-                Polyline result = spiral_poo.linkNextPolyline();
+                Polyline result = connection_optimizer.linkNextPolyline();
 
-                if (result.size() < 3 || SpiralPath::closedPolylineLength(result) < min_path_length) {
+                if (result.size() < 3 || ContourConnection::closedPolylineLength(result) < min_path_length) {
                     continue;
                 }
 
-                spiral_query_location = SpiralPath::transitionStartPoint(result, bead_width);
+                connection_query_location =
+                    ContourConnection::transitionStartPoint(result, bead_width, complete_path_before_connecting);
                 ordered_insets.push_back(result);
             }
 
-            if (ordered_insets.isEmpty()) {
+            if (ordered_insets.isEmpty()) { return; }
+
+            if (branch_after_tip_wipe && ordered_insets.size() > 1) {
+                QVector<Distance> ordered_widths;
+                ordered_widths.reserve(ordered_insets.size());
+                for (int i = 0, end = ordered_insets.size(); i < end; ++i) { ordered_widths.push_back(bead_width); }
+
+                appendBranchAfterTipWipePaths(ordered_insets, ordered_widths, bead_width,
+                                              complete_path_before_connecting, ordered_insets.front().orientation(),
+                                              min_path_length);
                 return;
             }
 
@@ -522,9 +585,7 @@ void Inset::optimize(int layerNumber, Point& current_location, bool& shouldNextP
                 Path newPath = createPath(result);
                 newPath.setCCW(result.orientation());
 
-                if (newPath.calculateLength() < min_path_length) {
-                    return;
-                }
+                if (newPath.calculateLength() < min_path_length) { return; }
 
                 if (newPath.size() > 0) {
                     calculateModifiers(newPath, m_sb->setting<bool>(PRS::MachineSetup::kSupportG3));
@@ -538,39 +599,39 @@ void Inset::optimize(int layerNumber, Point& current_location, bool& shouldNextP
                 return;
             }
 
-            appendSpiralPaths(SpiralPath::linkClosedPolylineGroups(ordered_insets, bead_width),
-                              ordered_insets.front().orientation(), min_path_length);
+            appendConnectedPaths(ContourConnection::linkClosedPolylineGroups(ordered_insets, bead_width,
+                                                                             complete_path_before_connecting),
+                                 ordered_insets.front().orientation(), min_path_length);
 
             return;
         }
 
-        Point spiral_query_location = current_location;
-        PolylineOrderOptimizer spiral_poo(spiral_query_location, layerNumber);
-        configureOptimizer(spiral_poo, pointOrderOptimization);
-        spiral_poo.setGeometryToEvaluate(m_computed_geometry, RegionType::kInset, pathOrderOptimization);
+        Point connection_query_location = current_location;
+        PolylineOrderOptimizer connection_optimizer(connection_query_location, layerNumber);
+        configureOptimizer(connection_optimizer, pointOrderOptimization);
+        connection_optimizer.setGeometryToEvaluate(m_computed_geometry, RegionType::kInset, pathOrderOptimization);
 
         QVector<Polyline> ordered_insets;
         QVector<Distance> ordered_inset_widths;
-        bool has_spiral_orientation = false;
-        bool spiral_orientation = false;
+        bool has_contour_orientation   = false;
+        bool contour_orientation       = false;
         const Distance min_path_length = m_sb->setting<Distance>(PS::Inset::kMinPathLength);
 
-        while (spiral_poo.getCurrentPolylineCount() > 0) {
+        while (connection_optimizer.getCurrentPolylineCount() > 0) {
             if (!ordered_insets.isEmpty()) {
-                spiral_poo.setPointParameters(PointOrderOptimization::kNextClosest, false, 0, 0, false, 0, false);
+                connection_optimizer.setPointParameters(PointOrderOptimization::kNextClosest, false, 0, 0, false, 0,
+                                                        false);
             }
 
-            Polyline result = spiral_poo.linkNextPolyline();
+            Polyline result = connection_optimizer.linkNextPolyline();
 
-            if (result.size() < 3 || SpiralPath::closedPolylineLength(result) < min_path_length) {
-                continue;
-            }
+            if (result.size() < 3 || ContourConnection::closedPolylineLength(result) < min_path_length) { continue; }
 
-            if (!has_spiral_orientation) {
-                spiral_orientation = result.orientation();
-                has_spiral_orientation = true;
+            if (!has_contour_orientation) {
+                contour_orientation     = result.orientation();
+                has_contour_orientation = true;
             }
-            else if (result.orientation() != spiral_orientation) {
+            else if (result.orientation() != contour_orientation) {
                 result = result.reverse();
                 result.move(result.size() - 1, 0);
             }
@@ -578,10 +639,16 @@ void Inset::optimize(int layerNumber, Point& current_location, bool& shouldNextP
             const Distance result_width = beadWidthForSegment(result.front(), result[1], m_sb);
             ordered_inset_widths.push_back(result_width);
             ordered_insets.push_back(result);
-            spiral_query_location = SpiralPath::transitionStartPoint(result, result_width);
+            connection_query_location =
+                ContourConnection::transitionStartPoint(result, result_width, complete_path_before_connecting);
         }
 
-        if (ordered_insets.isEmpty()) {
+        if (ordered_insets.isEmpty()) { return; }
+
+        if (branch_after_tip_wipe && ordered_insets.size() > 1) {
+            appendBranchAfterTipWipePaths(
+                ordered_insets, ordered_inset_widths, m_sb->setting<Distance>(PS::Inset::kBeadWidth),
+                complete_path_before_connecting, ordered_insets.front().orientation(), min_path_length);
             return;
         }
 
@@ -591,16 +658,12 @@ void Inset::optimize(int layerNumber, Point& current_location, bool& shouldNextP
             first_loop_poo.setGeometryToEvaluate({ordered_insets.first()}, RegionType::kInset,
                                                  PathOrderOptimization::kNextClosest);
             Polyline result = first_loop_poo.linkNextPolyline();
-            if (result.size() < 3) {
-                result = ordered_insets.first();
-            }
+            if (result.size() < 3) { result = ordered_insets.first(); }
 
             Path newPath = createPath(result);
             newPath.setCCW(result.orientation());
 
-            if (newPath.calculateLength() < min_path_length) {
-                return;
-            }
+            if (newPath.calculateLength() < min_path_length) { return; }
 
             if (newPath.size() > 0) {
                 calculateModifiers(newPath, m_sb->setting<bool>(PRS::MachineSetup::kSupportG3));
@@ -615,8 +678,9 @@ void Inset::optimize(int layerNumber, Point& current_location, bool& shouldNextP
         }
 
         const Distance nominal_width = m_sb->setting<Distance>(PS::Inset::kBeadWidth);
-        appendSpiralPaths(SpiralPath::linkClosedPolylineGroups(ordered_insets, ordered_inset_widths, nominal_width),
-                          ordered_insets.front().orientation(), min_path_length);
+        appendConnectedPaths(ContourConnection::linkClosedPolylineGroups(
+                                 ordered_insets, ordered_inset_widths, nominal_width, complete_path_before_connecting),
+                             ordered_insets.front().orientation(), min_path_length);
 
         return;
     }
@@ -627,18 +691,14 @@ void Inset::optimize(int layerNumber, Point& current_location, bool& shouldNextP
         Polyline result = poo.linkNextPolyline();
 
         // Exit early if no inset path can be made
-        if (result.size() < 3) {
-            continue;
-        }
+        if (result.size() < 3) { continue; }
 
         // Create path from polyline
         Path newPath = createPath(result);
         newPath.setCCW(result.orientation());
 
         // Exit early if inset path is too short
-        if (newPath.calculateLength() < m_sb->setting<Distance>(PS::Inset::kMinPathLength)) {
-            continue;
-        }
+        if (newPath.calculateLength() < m_sb->setting<Distance>(PS::Inset::kMinPathLength)) { continue; }
 
         if (newPath.size() > 0) {
             calculateModifiers(newPath, m_sb->setting<bool>(PRS::MachineSetup::kSupportG3));
@@ -651,36 +711,49 @@ void Inset::optimize(int layerNumber, Point& current_location, bool& shouldNextP
 }
 
 Path Inset::createPath(Polyline line) {
-    line = line.removeShortSegments(m_sb->setting<Distance>(PS::Inset::kMinSegmentLength), true);
-    if (line.size() < 3) {
-        return Path();
-    }
+    return createPath(line, true);
+}
+
+Path Inset::createPath(Polyline line, bool closed) {
+    line = line.removeShortSegments(m_sb->setting<Distance>(PS::Inset::kMinSegmentLength), closed);
+    if (line.size() < (closed ? 3 : 2)) { return Path(); }
 
     // ---------- No Settings Regions ----------
     if (m_settings_polygons.isEmpty()) {
         Path path;
 
-        for (size_t i = 0; i < line.size(); ++i) {
-            const Point& start = line[i];
-            const Point& end = line[(i + 1) % line.size()];
+        const size_t segment_count = closed ? line.size() : line.size() - 1;
+        for (size_t i = 0; i < segment_count; ++i) {
+            const Point& start        = line[i];
+            const Point& end          = line[(i + 1) % line.size()];
             const Distance bead_width = beadWidthForSegment(start, end, m_sb);
 
             LSegmentPtr segment = LSegmentPtr::create(start, end);
             populateSegmentSettings(segment->getSb(), m_sb, bead_width, isAdaptedWidth(bead_width, m_sb));
+            if (Connection::startsAt(start)) { segment->getSb()->setSetting(SS::kIsConnection, true); }
             path.append(segment);
         }
         return path;
     }
 
     // ---------- Settings Regions ----------
-    return createPathWithLocalizedSettings(line);
+    return createPathWithLocalizedSettings(line, closed);
 }
 
-QVector<Polyline> Inset::getComputedGeometry() { return m_computed_geometry; }
+QVector<Polyline> Inset::getComputedGeometry() {
+    return m_computed_geometry;
+}
 
-void Inset::calculateModifiers(Path& path, bool supportsG3) { calculateModifiers(path, supportsG3, false); }
+QVector<Distance> Inset::getComputedWidths() {
+    return m_computed_widths;
+}
 
-void Inset::calculateModifiers(Path& path, bool supportsG3, bool open_loop_tip_wipe) {
+void Inset::calculateModifiers(Path& path, bool supportsG3) {
+    calculateModifiers(path, supportsG3, false);
+}
+
+void Inset::calculateModifiers(Path& path, bool supportsG3, bool open_loop_tip_wipe, bool continues_to_branch,
+                               bool include_startup) {
     PathModifierGenerator::GenerateSharpCornerExtension(path, m_sb);
 
     if (m_sb->setting<bool>(ES::Ramping::kTrajectoryAngleEnabled)) {
@@ -689,8 +762,10 @@ void Inset::calculateModifiers(Path& path, bool supportsG3, bool open_loop_tip_w
 
     // add the modifiers
     if (m_sb->setting<bool>(MS::Slowdown::kInsetEnable)) {
+        const Distance lift_distance =
+            continues_to_branch ? Distance(0) : m_sb->setting<Distance>(MS::Slowdown::kInsetLiftDistance);
         PathModifierGenerator::GenerateSlowdown(path, m_sb->setting<Distance>(MS::Slowdown::kInsetDistance),
-                                                m_sb->setting<Distance>(MS::Slowdown::kInsetLiftDistance),
+                                                lift_distance,
                                                 m_sb->setting<Distance>(MS::Slowdown::kInsetCutoffDistance),
                                                 m_sb->setting<Velocity>(MS::Slowdown::kInsetSpeed),
                                                 m_sb->setting<AngularVelocity>(MS::Slowdown::kInsetExtruderSpeed),
@@ -702,20 +777,20 @@ void Inset::calculateModifiers(Path& path, bool supportsG3, bool open_loop_tip_w
             static_cast<TipWipeDirection>(m_sb->setting<int>(MS::TipWipe::kInsetDirection));
         if (wipe_direction == TipWipeDirection::kForward ||
             (!open_loop_tip_wipe && wipe_direction == TipWipeDirection::kOptimal)) {
+            const Distance lift_height =
+                continues_to_branch ? Distance(0) : m_sb->setting<Distance>(MS::TipWipe::kInsetLiftHeight);
             if (open_loop_tip_wipe && wipe_direction == TipWipeDirection::kForward) {
                 PathModifierGenerator::GenerateForwardTipWipeOpenLoop(
                     path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(MS::TipWipe::kInsetDistance),
                     m_sb->setting<Velocity>(MS::TipWipe::kInsetSpeed),
-                    m_sb->setting<AngularVelocity>(MS::TipWipe::kInsetExtruderSpeed),
-                    m_sb->setting<Distance>(MS::TipWipe::kInsetLiftHeight),
+                    m_sb->setting<AngularVelocity>(MS::TipWipe::kInsetExtruderSpeed), lift_height,
                     m_sb->setting<Distance>(MS::TipWipe::kInsetCutoffDistance));
             }
             else {
                 PathModifierGenerator::GenerateTipWipe(
                     path, PathModifiers::kForwardTipWipe, m_sb->setting<Distance>(MS::TipWipe::kInsetDistance),
                     m_sb->setting<Velocity>(MS::TipWipe::kInsetSpeed), m_sb->setting<Angle>(MS::TipWipe::kInsetAngle),
-                    m_sb->setting<AngularVelocity>(MS::TipWipe::kInsetExtruderSpeed),
-                    m_sb->setting<Distance>(MS::TipWipe::kInsetLiftHeight),
+                    m_sb->setting<AngularVelocity>(MS::TipWipe::kInsetExtruderSpeed), lift_height,
                     m_sb->setting<Distance>(MS::TipWipe::kInsetCutoffDistance));
             }
         }
@@ -735,13 +810,13 @@ void Inset::calculateModifiers(Path& path, bool supportsG3, bool open_loop_tip_w
                 m_sb->setting<Distance>(MS::TipWipe::kInsetLiftHeight),
                 m_sb->setting<Distance>(MS::TipWipe::kInsetCutoffDistance));
     }
-    if (m_sb->setting<bool>(MS::SpiralLift::kInsetEnable)) {
+    if (!continues_to_branch && m_sb->setting<bool>(MS::SpiralLift::kInsetEnable)) {
         PathModifierGenerator::GenerateSpiralLift(path, m_sb->setting<Distance>(MS::SpiralLift::kLiftRadius),
                                                   m_sb->setting<Distance>(MS::SpiralLift::kLiftHeight),
                                                   m_sb->setting<int>(MS::SpiralLift::kLiftPoints),
                                                   m_sb->setting<Velocity>(MS::SpiralLift::kLiftSpeed), supportsG3);
     }
-    if (m_sb->setting<bool>(MS::Startup::kInsetEnable)) {
+    if (include_startup && m_sb->setting<bool>(MS::Startup::kInsetEnable)) {
         if (m_sb->setting<bool>(MS::Startup::kInsetRampUpEnable)) {
             PathModifierGenerator::GenerateInitialStartupWithRampUp(
                 path, m_sb->setting<Distance>(MS::Startup::kInsetDistance),
@@ -762,19 +837,18 @@ void Inset::calculateModifiers(Path& path, bool supportsG3, bool open_loop_tip_w
     }
 }
 
-Path Inset::createPathWithLocalizedSettings(const Polyline& line) {
+Path Inset::createPathWithLocalizedSettings(const Polyline& line, bool closed) {
     Path path;
 
     // Iterate through each segment of the polyline
-    for (size_t i = 0; i < line.size(); ++i) {
+    const size_t segment_count = closed ? line.size() : line.size() - 1;
+    for (size_t i = 0; i < segment_count; ++i) {
         const Point& start = line[i];
-        const Point& end = line[(i + 1) % line.size()];
+        const Point& end   = line[(i + 1) % line.size()];
 
         // Clip the segment against the settings polygons
         QVector<Point> cuts;
-        for (const SettingsPolygon& polygon : m_settings_polygons) {
-            cuts += polygon.clipLine(start, end);
-        }
+        for (const SettingsPolygon& polygon : m_settings_polygons) { cuts += polygon.clipLine(start, end); }
 
         // Sort cuts based on their distance from the start point
         std::sort(cuts.begin(), cuts.end(),
@@ -801,9 +875,10 @@ Path Inset::createPathWithLocalizedSettings(const Polyline& line) {
                 }
             }
 
-            LSegmentPtr segment = LSegmentPtr::create(p0, p1);
+            LSegmentPtr segment       = LSegmentPtr::create(p0, p1);
             const Distance bead_width = beadWidthForSegment(p0, p1, parent_sb);
             populateSegmentSettings(segment->getSb(), parent_sb, bead_width, isAdaptedWidth(bead_width, parent_sb));
+            if (Connection::startsAt(start)) { segment->getSb()->setSetting(SS::kIsConnection, true); }
             path.append(segment);
         }
     }
@@ -820,8 +895,8 @@ void Inset::populateSegmentSettings(QSharedPointer<SettingsBase> segment_sb,
     if (adapted && bead_width > 0) {
         const Distance ref_width = parent_sb->setting<Distance>(PS::Inset::kBeadWidth);
         const Velocity ref_speed = parent_sb->setting<Velocity>(PS::Inset::kSpeed);
-        const double min_speed = ref_speed() * 0.01;
-        speed = Velocity(std::max((ref_speed() * ref_width()) / bead_width(), min_speed));
+        const double min_speed   = ref_speed() * 0.01;
+        speed                    = Velocity(std::max((ref_speed() * ref_width()) / bead_width(), min_speed));
     }
 
     segment_sb->setSetting(SS::kWidth, bead_width);
@@ -837,26 +912,20 @@ void Inset::populateSegmentSettings(QSharedPointer<SettingsBase> segment_sb,
 Distance Inset::beadWidthForSegment(const Point& start, const Point& end,
                                     const QSharedPointer<SettingsBase>& parent_sb) const {
     const Distance fallback_width = parent_sb->setting<Distance>(PS::Inset::kBeadWidth);
-    if (!parent_sb->setting<bool>(PS::Inset::kAdaptive)) {
-        return fallback_width;
-    }
+    if (!parent_sb->setting<bool>(PS::Inset::kAdaptive)) { return fallback_width; }
 
     Point midpoint = (start + end) * 0.5;
     const Distance tolerance(std::max(fallback_width() * 1.0e-3, 1.0e-6));
     for (int i = 0; i < m_computed_geometry.size() && i < m_computed_widths.size(); ++i) {
-        if (pointOnClosedPolylineXY(midpoint, m_computed_geometry[i], tolerance())) {
-            return m_computed_widths[i];
-        }
+        if (pointOnClosedPolylineXY(midpoint, m_computed_geometry[i], tolerance())) { return m_computed_widths[i]; }
     }
     if (!m_computed_widths.isEmpty()) {
         const Distance first_width = m_computed_widths.first();
-        const bool uniform_width = std::all_of(m_computed_widths.begin(), m_computed_widths.end(),
-                                               [first_width, tolerance](const Distance& width) {
+        const bool uniform_width   = std::all_of(m_computed_widths.begin(), m_computed_widths.end(),
+                                                 [first_width, tolerance](const Distance& width) {
                                                    return std::fabs(width() - first_width()) <= tolerance();
-                                               });
-        if (uniform_width) {
-            return first_width;
-        }
+                                                 });
+        if (uniform_width) { return first_width; }
     }
 
     return fallback_width;
@@ -866,4 +935,4 @@ bool Inset::isAdaptedWidth(const Distance& width, const QSharedPointer<SettingsB
     const Distance nominal_width = parent_sb->setting<Distance>(PS::Inset::kBeadWidth);
     return std::fabs(width() - nominal_width()) > std::max(nominal_width() * 1.0e-3, 1.0e-6);
 }
-} // namespace ORNL
+}  // namespace ORNL

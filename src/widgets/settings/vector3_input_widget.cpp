@@ -7,19 +7,22 @@
 #include <QRect>
 #include <QSizePolicy>
 #include <QToolTip>
+
 #include <qevent.h>
 #include <qnamespace.h>
 #include <qoverload.h>
 
+#include "managers/preferences_manager.h"
+#include "units/unit.h"
 #include "utilities/constants.h"
 #include "widgets/settings/setting_tab.h"
 
 namespace ORNL {
 namespace {
-constexpr int kComponentLabelWidth = 18;
+constexpr int kComponentLabelWidth    = 18;
 constexpr int kComponentMinimumHeight = 22;
-constexpr int kComponentSpacing = 4;
-constexpr int kSpinBoxWidth = 82;
+constexpr int kComponentSpacing       = 4;
+constexpr int kSpinBoxWidth           = 82;
 
 QLabel* createComponentLabel(QWidget* parent, const QString& text) {
     QLabel* label = new QLabel(text, parent);
@@ -39,14 +42,15 @@ void addComponentEditor(QHBoxLayout* layout, QWidget* parent, const QString& lab
     layout->addWidget(createComponentLabel(parent, label_text));
     layout->addWidget(spin_box);
 }
-} // namespace
+}  // namespace
 
 Vector3InputWidget::Vector3InputWidget(SettingTab* parent, QSharedPointer<SettingsBase> sb, QString primary_key,
                                        QString secondary_key, QString tertiary_key, fifojson json, QGridLayout* layout,
                                        int index, double primary_default, double secondary_default,
                                        double tertiary_default, QString primary_label, QString secondary_label,
                                        QString tertiary_label)
-    : QWidget(parent), SettingRowBase(parent, sb, primary_key, json, layout, index),
+    : QWidget(parent),
+      SettingRowBase(parent, sb, primary_key, json, layout, index),
       m_components {{{primary_key, new QDoubleSpinBox(this), primary_default},
                      {secondary_key, new QDoubleSpinBox(this), secondary_default},
                      {tertiary_key, new QDoubleSpinBox(this), tertiary_default}}},
@@ -63,13 +67,12 @@ Vector3InputWidget::Vector3InputWidget(SettingTab* parent, QSharedPointer<Settin
         Component& component = m_components[i];
         ensureSetting(component.key, component.default_value);
 
-        if (i != 0)
-            vector_layout->addSpacing(kComponentSpacing);
+        if (i != 0) vector_layout->addSpacing(kComponentSpacing);
         addComponentEditor(vector_layout, this, labels[i], component.spin_box);
 
         configureSpinBox(component.spin_box);
         component.spin_box->installEventFilter(this);
-        component.spin_box->setValue(m_sb->setting<double>(component.key));
+        component.spin_box->setValue(displayValue(m_sb->setting<double>(component.key)));
 
         const QString component_key = component.key;
         connect(component.spin_box, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
@@ -81,7 +84,7 @@ Vector3InputWidget::Vector3InputWidget(SettingTab* parent, QSharedPointer<Settin
 
     layout->addWidget(this, index, 1, Qt::AlignRight | Qt::AlignVCenter);
 
-    m_unit_label.reset(new QLabel(""));
+    m_unit_label.reset(new QLabel(unitText()));
     layout->addWidget(m_unit_label.get(), index, 2, Qt::AlignLeft);
     registerRowWidget(this);
 }
@@ -101,11 +104,14 @@ void Vector3InputWidget::setEnabled(bool enabled) {
     applyWidgetState(static_cast<QWidget*>(this));
 }
 
-void Vector3InputWidget::valueChanged(QVariant val) { updateSetting(m_components[0].key, val.toDouble()); }
+void Vector3InputWidget::valueChanged(QVariant val) {
+    updateSetting(m_components[0].key, val.toDouble());
+}
 
 void Vector3InputWidget::reloadValue() {
-    for (Component& component : m_components)
-        component.spin_box->blockSignals(true);
+    for (Component& component : m_components) component.spin_box->blockSignals(true);
+
+    m_unit_label->setText(unitText());
 
     bool all_consistent = true;
     for (Component& component : m_components) {
@@ -116,11 +122,9 @@ void Vector3InputWidget::reloadValue() {
         all_consistent = all_consistent && component_consistent;
     }
 
-    for (Component& component : m_components)
-        component.spin_box->blockSignals(false);
+    for (Component& component : m_components) component.spin_box->blockSignals(false);
 
-    for (const Component& component : m_components)
-        emit modified(component.key);
+    for (const Component& component : m_components) emit modified(component.key);
 
     if (!all_consistent) {
         setNotification("Multiple Values");
@@ -164,34 +168,62 @@ void Vector3InputWidget::clearNotification() {
 void Vector3InputWidget::configureSpinBox(QDoubleSpinBox* spin_box) {
     spin_box->setFocusPolicy(Qt::StrongFocus);
     spin_box->setAlignment(Qt::AlignRight);
-    spin_box->setMinimum(Constants::Limits::Minimums::kMinUnitlessFloat);
-    spin_box->setMaximum(Constants::Limits::Maximums::kMaxUnitlessFloat);
+    if (isAngleVector()) {
+        const Angle unit = PreferencesManager::getInstance()->getAngleUnit();
+        spin_box->setMinimum(Constants::Limits::Minimums::kMinAngle.to(unit));
+        spin_box->setMaximum(Constants::Limits::Maximums::kMaxAngle.to(unit));
+    }
+    else {
+        spin_box->setMinimum(Constants::Limits::Minimums::kMinUnitlessFloat);
+        spin_box->setMaximum(Constants::Limits::Maximums::kMaxUnitlessFloat);
+    }
     spin_box->setDecimals(m_precision);
     spin_box->setFixedWidth(kSpinBoxWidth);
     spin_box->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 }
 
-void Vector3InputWidget::ensureSetting(const QString& key, double default_value) {
-    if (!m_sb->contains(key))
-        m_sb->setSetting(key, default_value);
+bool Vector3InputWidget::isAngleVector() const {
+    return m_json.at(Constants::Settings::Master::kType).get<std::string>() == "angle";
 }
 
-void Vector3InputWidget::updateSetting(const QString& key, double value) {
+QString Vector3InputWidget::unitText() const {
+    if (isAngleVector()) return PreferencesManager::getInstance()->getAngleUnitText();
+
+    return "";
+}
+
+double Vector3InputWidget::displayValue(double base_value) const {
+    if (isAngleVector()) return Angle(base_value).to(PreferencesManager::getInstance()->getAngleUnit());
+
+    return base_value;
+}
+
+double Vector3InputWidget::baseValue(double display_value) const {
+    if (!isAngleVector()) return display_value;
+
+    Angle base_value;
+    base_value.from(display_value, PreferencesManager::getInstance()->getAngleUnit());
+    return base_value();
+}
+
+void Vector3InputWidget::ensureSetting(const QString& key, double default_value) {
+    if (!m_sb->contains(key)) m_sb->setSetting(key, default_value);
+}
+
+void Vector3InputWidget::updateSetting(const QString& key, double displayed_value) {
+    const double value = baseValue(displayed_value);
+
     notifyValueAboutToChange(key);
 
     if (m_settings_bases.size() != 0) {
-        for (QSharedPointer<SettingsBase> range : m_settings_bases)
-            range->setSetting(key, value);
+        for (QSharedPointer<SettingsBase> range : m_settings_bases) range->setSetting(key, value);
 
         const double global_value = m_sb->contains(key) ? m_sb->setting<double>(key) : value;
         removeRedundantLocalOverrides<double>(key, global_value);
     }
-    else {
-        m_sb->setSetting(key, value);
-    }
+    else { m_sb->setSetting(key, value); }
 
-    for (QSharedPointer<SettingRowBase> row : m_rows_to_notify)
-        row->checkDependencies();
+    for (QSharedPointer<SettingRowBase> row : m_rows_to_notify) row->checkDependencies();
 
     checkDynamicDependencies();
     updateWarningStateAfterEdit();
@@ -201,35 +233,31 @@ void Vector3InputWidget::updateSetting(const QString& key, double value) {
 double Vector3InputWidget::reloadDoubleValue(const QString& key, double default_value, bool& consistent) {
     if (m_settings_bases.size() > 0) {
         const double global_value = m_sb->contains(key) ? m_sb->setting<double>(key) : default_value;
-        const double first_value = effectiveValueHelper<double>(key, 0, global_value);
+        const double first_value  = effectiveValueHelper<double>(key, 0, global_value);
 
         bool all_bases_consistent = true;
         for (int index = 1, end = m_settings_bases.size(); index < end; ++index)
             all_bases_consistent =
                 all_bases_consistent && effectiveValueHelper<double>(key, index, global_value) == first_value;
 
-        if (all_bases_consistent)
-            return first_value;
+        if (all_bases_consistent) return first_value;
 
         consistent = false;
         return default_value;
     }
 
-    if (m_sb->contains(key))
-        return m_sb->setting<double>(key);
+    if (m_sb->contains(key)) return m_sb->setting<double>(key);
 
     return default_value;
 }
 
 bool Vector3InputWidget::hasConsistentEffectiveValues(const QString& key, double default_value) {
-    if (m_settings_bases.size() <= 1)
-        return true;
+    if (m_settings_bases.size() <= 1) return true;
 
     const double global_value = m_sb->contains(key) ? m_sb->setting<double>(key) : default_value;
-    const double first_value = effectiveValueHelper<double>(key, 0, global_value);
+    const double first_value  = effectiveValueHelper<double>(key, 0, global_value);
     for (int index = 1, end = m_settings_bases.size(); index < end; ++index) {
-        if (effectiveValueHelper<double>(key, index, global_value) != first_value)
-            return false;
+        if (effectiveValueHelper<double>(key, index, global_value) != first_value) return false;
     }
 
     return true;
@@ -237,8 +265,7 @@ bool Vector3InputWidget::hasConsistentEffectiveValues(const QString& key, double
 
 bool Vector3InputWidget::hasAnyInconsistentValue() {
     for (const Component& component : m_components) {
-        if (!hasConsistentEffectiveValues(component.key, component.default_value))
-            return true;
+        if (!hasConsistentEffectiveValues(component.key, component.default_value)) return true;
     }
 
     return false;
@@ -260,10 +287,9 @@ void Vector3InputWidget::updateWarningStateAfterEdit() {
 void Vector3InputWidget::setSpinBoxValue(QDoubleSpinBox* spin_box, const QString& key, double default_value,
                                          bool only_if_consistent, bool& consistent) {
     bool setting_consistent = true;
-    double value = reloadDoubleValue(key, default_value, setting_consistent);
-    consistent = setting_consistent;
+    double value            = reloadDoubleValue(key, default_value, setting_consistent);
+    consistent              = setting_consistent;
 
-    if (!only_if_consistent || setting_consistent)
-        spin_box->setValue(value);
+    if (!only_if_consistent || setting_consistent) spin_box->setValue(displayValue(value));
 }
-} // namespace ORNL
+}  // namespace ORNL

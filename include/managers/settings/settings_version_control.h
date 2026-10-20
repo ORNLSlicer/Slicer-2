@@ -9,7 +9,7 @@ namespace ORNL {
  *         if/when existing settings are altered.
  */
 class SettingsVersionControl {
-  public:
+   public:
     //! \brief Public interface: receives current version and settings for alteration
     //! \param version: current version in settings file
     //! \param settings: settings to alter
@@ -20,11 +20,15 @@ class SettingsVersionControl {
     //! \param settings: settings to modify
     static void formatSettings(double version, fifojson& settings);
 
-    //! \brief Migrate known legacy setting keys to their current names without changing values
+    //! \brief Migrate known legacy setting keys to their current names and current semantics
     //! \param settings_group: a single settings object to modify
     static void migrateLegacySettingKeys(fifojson& settings_group);
 
-  private:
+    //! \brief Rename legacy contour connection keys without changing values; current keys take precedence.
+    //! \param settings_group: a single settings object to modify, including sparse part or range overrides
+    static void migrateConnectedContourSettingKeys(fifojson& settings_group);
+
+   private:
     //! \brief Rolls initial settings templates without a version to version 1.0
     //! \param version: current version in settings file
     //! \param settings: settings to alter
@@ -74,5 +78,30 @@ class SettingsVersionControl {
     //! \param version: current version in settings file
     //! \param settings: settings to alter
     static void pre_10_0To10_0(double& version, fifojson& settings);
+
+    //! \brief Rolls helical start angle from an absolute angle to an offset from top dead center for version 11.0
+    //! \param version: current version in settings file
+    //! \param settings: settings to alter
+    static void pre_11_0To11_0(double& version, fifojson& settings);
+
+    //! \brief Rolls helical start angle offset to helical tool start angle offset for version 12.0
+    //! \param version: current version in settings file
+    //! \param settings: settings to alter
+    static void pre_12_0To12_0(double& version, fifojson& settings);
+
+    //! \brief Rolls settings after converting variable for z position to an enumeration for version 13.0
+    //! \param version: current version in settings file
+    //! \param settings: settings to alter
+    static void pre_13_0To13_0(double& version, fifojson& settings);
+
+    //! \brief Rolls the helical tool offset from an angle to an arc length for version 14.0
+    //! \param version: current version in settings file
+    //! \param settings: settings to alter
+    static void pre_14_0To14_0(double& version, fifojson& settings);
+
+    //! \brief Rolls connected contour setting names to version 15.0
+    //! \param version: current version in settings file
+    //! \param settings: settings to alter
+    static void pre_15_0To15_0(double& version, fifojson& settings);
 };
-} // namespace ORNL
+}  // namespace ORNL

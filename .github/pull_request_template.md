@@ -16,6 +16,9 @@ If there are no related issues, state that explicitly:
 ## Details
 
 <!--
+Update CHANGELOG.md under Unreleased for notable behavior, features, fixes, or
+integration changes. See docs/contributing/changelog.md for entry and release rules.
+
 Depending on the pull request type, please include the relevant details here:
 - Bug fix (`fix`): summarize the bug, how it was reproduced, the root cause, and why this fix addresses it.
 - New feature (`feat`): describe the user problem, the capability added, and the workflow or use case it enables.

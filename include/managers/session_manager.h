@@ -1,12 +1,12 @@
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
-
 #include <QDir>
 #include <QFile>
 #include <QQueue>
 #include <QStandardPaths>
+#include <cstddef>
+#include <cstdint>
+
 #include <qcontainerfwd.h>
 #include <qhash.h>
 #include <qmap.h>
@@ -14,6 +14,7 @@
 #include <qmutex.h>
 #include <qobject.h>
 #include <qsharedpointer.h>
+#include <qstringlist.h>
 #include <qtmetamacros.h>
 #include <qtypes.h>
 
@@ -40,7 +41,7 @@ class AbstractSlicingThread;
  */
 class SessionManager : public QObject {
     Q_OBJECT
-  public:
+   public:
     //! \brief Destructor.
     ~SessionManager();
 
@@ -56,16 +57,24 @@ class SessionManager : public QObject {
     };
 
     //! \brief Retuns a map of filename to model_data structures.
-    inline QMap<QString, model_data>& models() { return m_models; }
+    inline QMap<QString, model_data>& models() {
+        return m_models;
+    }
 
     //! \brief Returns a map of part name to Part class.
-    inline QMap<QString, QSharedPointer<Part>>& parts() { return m_parts; }
+    inline QMap<QString, QSharedPointer<Part>>& parts() {
+        return m_parts;
+    }
 
     //! \brief Returns a Part class associated with a name.
-    inline QSharedPointer<Part> getPart(QString name) { return m_parts.value(name, nullptr); }
+    inline QSharedPointer<Part> getPart(QString name) {
+        return m_parts.value(name, nullptr);
+    }
 
     //! \brief Retuns the number of parts in the session.
-    inline int count() { return m_parts.size(); }
+    inline int count() {
+        return m_parts.size();
+    }
 
     //! \brief Retuns the file last used to save the session.
     //! \todo This function will always return the autosave path since it is saved after the current session.
@@ -118,6 +127,24 @@ class SessionManager : public QObject {
     //! \brief Accessor to set history for the most recently selected http config
     void setMostRecentHTTPConfig(QString config);
 
+    //! \brief Accessor to get recently used project files.
+    QStringList getRecentProjectFiles() const;
+
+    //! \brief Accessor to get recently used model files.
+    QStringList getRecentModelFiles() const;
+
+    //! \brief Add a project file to recent history.
+    void addRecentProjectFile(QString path);
+
+    //! \brief Add a build model file to recent history.
+    void addRecentModelFile(QString path, MeshType mt = MeshType::kBuild);
+
+    //! \brief Remove a file from recent project and model history.
+    void removeRecentFile(QString path);
+
+    //! \brief Clear recent project and model file history.
+    void clearRecentFiles();
+
     //! \brief Sets the pointer to part to copy
     //! \param new_part: part to copy for later paste
     void addCopiedPart(QSharedPointer<Part> new_part);
@@ -126,7 +153,7 @@ class SessionManager : public QObject {
     //! there are 1000s of files)
     void setDefaultGcodeDir(QString dir);
 
-  public slots:
+   public slots:
     //! \brief loads a model into the session
     //! \param filename the path to the file
     //! \param saveLocation the location to save to
@@ -146,6 +173,11 @@ class SessionManager : public QObject {
     //! \note While a part can be externally generated and added, this slot is primarily used to add a part after a mesh
     //! loader thread has completed. \param filename the path to the file \param Mesh type mode, defaults to build
     void addPart(QSharedPointer<MeshBase> new_mesh, QString filename = "", MeshType mt = MeshType::kBuild);
+
+    //! \brief Renames a part and its key in the session.
+    //! \param part the part to have the key renamed
+    //! \param new_name the new name for the part
+    void renamePart(QSharedPointer<Part> part, QString new_name);
 
     //! \brief Reloads a part.
     void reloadPart(QSharedPointer<PartMetaItem> pm);
@@ -214,7 +246,7 @@ class SessionManager : public QObject {
     //! \brief Paste previously copied part
     void pastePart();
 
-  signals:
+   signals:
 
     //! \brief Signal to the slice dialog with status update information
     //! \param type The current section of the step being completed
@@ -254,7 +286,7 @@ class SessionManager : public QObject {
     //! \brief Signal for total number of parts expected to load from project
     void totalPartsInProject(int total);
 
-  private:
+   private:
     //! \brief Constructor
     SessionManager();
 
@@ -293,6 +325,8 @@ class SessionManager : public QObject {
     QString m_most_recent_setting_folder_location;
     QString m_most_recent_layer_bar_setting_folder_location;
     QString m_most_recent_http_config;
+    QStringList m_recent_project_files;
+    QStringList m_recent_model_files;
 
     //! \brief boolean to track when history needs written to file on close
     bool m_dirty_history;
@@ -302,9 +336,6 @@ class SessionManager : public QObject {
 
     //! \brief Default slicing mode is planar.
     SlicingMode m_slicing_mode = SlicingMode::kPlanar;
-
-    //! \brief Active cylindrical path pattern when cylindrical slicing is selected.
-    CylindricalPathPattern m_cylindrical_path_pattern = CylindricalPathPattern::kRadial;
 
     //! \brief Mutex to serialize final step of loading parts.  Map of parts
     //! must be accessed sequentially.
@@ -316,4 +347,4 @@ class SessionManager : public QObject {
     //! \brief pointer to part to potentially paste
     QSharedPointer<Part> m_copied_part;
 };
-} // namespace ORNL
+}  // namespace ORNL

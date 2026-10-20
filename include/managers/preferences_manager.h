@@ -1,14 +1,14 @@
 #pragma once
 
+#include <QApplication>
+#include <QObject>
+#include <QPair>
+#include <QStyle>
 #include <list>
 #include <map>
 #include <string>
 #include <unordered_map>
 
-#include <QApplication>
-#include <QObject>
-#include <QPair>
-#include <QStyle>
 #include <qcolor.h>
 #include <qcontainerfwd.h>
 #include <qcoreapplication.h>
@@ -31,7 +31,7 @@ namespace ORNL {
 class PreferencesManager : public QObject {
     Q_OBJECT
 
-  public:
+   public:
     //! \brief Returns the singleton
     static QSharedPointer<PreferencesManager> getInstance();
 
@@ -127,6 +127,12 @@ class PreferencesManager : public QObject {
     //! \return if true widths should be used
     bool getUseTrueWidthsPreference();
 
+    //! \brief Gets if g-code bead / segment info should be shown by default.
+    bool getGCodeInfoVisibleByDefaultPreference();
+
+    //! \brief Gets if optimization points should be shown by default.
+    bool getOptimizationPointsVisibleByDefaultPreference();
+
     //! \brief Returns the preferred g-code preview rendering mode.
     GCodePreviewMode getGCodePreviewModePreference();
 
@@ -165,6 +171,10 @@ class PreferencesManager : public QObject {
     //! \brief gets if a part should always be forced (dropped) to the floor after moving it
     //! \return if parts should always be dropped
     bool getAlwaysDropParts();
+
+    //! \brief Gets the linear deflection used when triangulating STEP files.
+    //! \return STEP triangulation linear deflection
+    Distance getStepStlLinearDeflection();
 
     //! \brief Get the lag between layers
     //! \return lag in milliseconds
@@ -227,7 +237,7 @@ class PreferencesManager : public QObject {
     //! \return visualization color map of name and color as hex string
     std::map<std::string, std::string> getVisualizationHexColors();
 
-  signals:
+   signals:
     //! \brief Signal emitted when the import unit is changed
     void importUnitChanged(Distance new_value, Distance old_value);
 
@@ -270,7 +280,7 @@ class PreferencesManager : public QObject {
     //! \brief Signal emitted when dependency-disabled setting visibility is changed
     void disabledSettingVisibilityChanged();
 
-  public slots:
+   public slots:
     //! \brief sets the unit used to scale when importing models
     //! \param du the unit text
     void setImportUnit(QString du);
@@ -354,6 +364,14 @@ class PreferencesManager : public QObject {
     //! \param use if true widths should be used
     void setUseTrueWidthsPreference(bool use);
 
+    //! \brief Sets if g-code bead / segment info should be shown by default
+    //! \param show if the info panel should be shown by default
+    void setGCodeInfoVisibleByDefaultPreference(bool show);
+
+    //! \brief Sets if optimization points should be shown by default
+    //! \param show if optimization points should be shown by default
+    void setOptimizationPointsVisibleByDefaultPreference(bool show);
+
     //! \brief Sets the preferred g-code preview rendering mode.
     //! \param mode selected preview mode
     void setGCodePreviewModePreference(GCodePreviewMode mode);
@@ -392,6 +410,14 @@ class PreferencesManager : public QObject {
     //! \param should if the part should be dropped
     void setShouldAlwaysDrop(bool should);
 
+    //! \brief Sets the linear deflection used when triangulating STEP files.
+    //! \param deflection STEP triangulation linear deflection
+    void setStepStlLinearDeflection(Distance deflection);
+
+    //! \brief Sets the linear deflection used when triangulating STEP files from millimeters.
+    //! \param deflection_mm STEP triangulation linear deflection in millimeters
+    void setStepStlLinearDeflection(double deflection_mm);
+
     //! \brief Sets if the window should be maximized
     //! \param isMaximized: whether or not the window is maximized
     void setWindowMaximizedPreference(bool isMaximized);
@@ -412,7 +438,7 @@ class PreferencesManager : public QObject {
     //! \param lag: time to lag in milliseconds
     void setSegmentLag(int lag);
 
-  private:
+   private:
     //! \brief Constructor
     PreferencesManager();
 
@@ -444,6 +470,8 @@ class PreferencesManager : public QObject {
     bool m_hide_travel_preference;
     bool m_hide_support_preference;
     bool m_use_true_widths_preference;
+    bool m_gcode_info_visible_by_default_preference;
+    bool m_optimization_points_visible_by_default_preference;
     GCodePreviewMode m_gcode_preview_mode_preference;
     int m_gcode_preview_vertex_threshold_preference;
     DisabledSettingVisibility m_disabled_setting_visibility_preference;
@@ -469,6 +497,7 @@ class PreferencesManager : public QObject {
     //! \brief Part preferences
     bool m_use_implicit_transforms;
     bool m_always_drop_parts;
+    Distance m_step_stl_linear_deflection;
 
     //! \brief Layer preferences
     int m_layer_lag;
@@ -487,5 +516,5 @@ class PreferencesManager : public QObject {
     //! \brief visualization color's preferences QColors
     std::unordered_map<std::string, QColor> m_visualization_qcolors;
 
-}; // class PreferencesManager
-} // namespace ORNL
+};  // class PreferencesManager
+}  // namespace ORNL

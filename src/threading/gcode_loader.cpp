@@ -1,15 +1,16 @@
 #include "threading/gcode_loader.h"
 
-#include <cmath>
-#include <limits>
-#include <optional>
-#include <tuple>
-
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
 #include <QStringBuilder>
 #include <QTextStream>
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <optional>
+#include <tuple>
+
 #include <qcolor.h>
 #include <qcontainerfwd.h>
 #include <qdatetime.h>
@@ -64,24 +65,18 @@ namespace {
 Distance beadWidthFromRegionComment(const QString& comment, const QString& region_name, Distance fallback_width,
                                     Distance distance_unit) {
     const int region_start = comment.indexOf(region_name);
-    if (region_start < 0) {
-        return fallback_width;
-    }
+    if (region_start < 0) { return fallback_width; }
 
     const int width_start = comment.indexOf('-', region_start + region_name.size());
 
     if (width_start >= 0) {
         const int value_start = width_start + 1;
-        int value_end = comment.indexOf(' ', value_start);
-        if (value_end < 0) {
-            value_end = comment.size();
-        }
+        int value_end         = comment.indexOf(' ', value_start);
+        if (value_end < 0) { value_end = comment.size(); }
 
-        bool ok = false;
+        bool ok                   = false;
         const double parsed_width = comment.mid(value_start, value_end - value_start).toDouble(&ok);
-        if (ok && parsed_width > 0) {
-            return parsed_width * distance_unit;
-        }
+        if (ok && parsed_width > 0) { return parsed_width * distance_unit; }
     }
 
     return fallback_width;
@@ -91,25 +86,82 @@ float beadDisplayWidth(Distance bead_width) {
     return static_cast<float>(bead_width()) * Constants::OpenGL::kObjectToView;
 }
 
-const QString kCylindricalAxisXComment = "AXIS_X=";
-const QString kCylindricalAxisYComment = "AXIS_Y=";
-const QString kWorldApproachTravelComment = "WORLD APPROACH TRAVEL";
+Distance beadWidthSetting(const QString& setting_key, const QSharedPointer<SettingsBase>& sb,
+                          const QHash<QString, double>& file_settings) {
+    const QSharedPointer<SettingsBase> global = GSM->getGlobal();
+    if (sb != nullptr && global != nullptr && sb.data() != global.data() && sb->contains(setting_key)) {
+        return sb->setting<Distance>(setting_key);
+    }
+
+    const auto file_setting = file_settings.constFind(setting_key);
+    if (file_setting != file_settings.constEnd()) { return Distance(file_setting.value()); }
+
+    if (sb != nullptr && sb->contains(setting_key)) { return sb->setting<Distance>(setting_key); }
+
+    return Distance();
+}
+
+Distance beadWidthForComment(const QString& comment, const QSharedPointer<SettingsBase>& sb,
+                             const QHash<QString, double>& file_settings, Distance comment_distance_unit) {
+    if (comment.contains(Constants::RegionTypeStrings::kRadial) ||
+        comment.contains(Constants::RegionTypeStrings::kHelical)) {
+        return beadWidthSetting(PS::Layer::kBeadWidth, sb, file_settings);
+    }
+    if (comment.startsWith(QStringLiteral("AD-") % Constants::RegionTypeStrings::kPerimeter)) {
+        return beadWidthFromRegionComment(comment, Constants::RegionTypeStrings::kPerimeter,
+                                          beadWidthSetting(PS::Perimeter::kBeadWidth, sb, file_settings),
+                                          comment_distance_unit);
+    }
+    if (comment.contains(Constants::RegionTypeStrings::kPerimeter)) {
+        return beadWidthSetting(PS::Perimeter::kBeadWidth, sb, file_settings);
+    }
+    if (comment.startsWith(QStringLiteral("AD-") % Constants::RegionTypeStrings::kInset)) {
+        return beadWidthFromRegionComment(comment, Constants::RegionTypeStrings::kInset,
+                                          beadWidthSetting(PS::Inset::kBeadWidth, sb, file_settings),
+                                          comment_distance_unit);
+    }
+    if (comment.contains(Constants::RegionTypeStrings::kInset)) {
+        return beadWidthSetting(PS::Inset::kBeadWidth, sb, file_settings);
+    }
+    if (comment.contains(Constants::RegionTypeStrings::kSkeleton)) {
+        return beadWidthFromRegionComment(comment, Constants::RegionTypeStrings::kSkeleton,
+                                          beadWidthSetting(PS::Skeleton::kBeadWidth, sb, file_settings),
+                                          comment_distance_unit);
+    }
+    if (comment.contains(Constants::RegionTypeStrings::kSkin)) {
+        return beadWidthSetting(PS::Skin::kBeadWidth, sb, file_settings);
+    }
+    if (comment.contains(Constants::RegionTypeStrings::kInfill)) {
+        return beadWidthSetting(PS::Infill::kBeadWidth, sb, file_settings);
+    }
+    if (comment.contains(Constants::RegionTypeStrings::kRaft)) {
+        return beadWidthSetting(MS::PlatformAdhesion::kRaftBeadWidth, sb, file_settings);
+    }
+    if (comment.contains(Constants::RegionTypeStrings::kBrim)) {
+        return beadWidthSetting(MS::PlatformAdhesion::kBrimBeadWidth, sb, file_settings);
+    }
+    if (comment.contains(Constants::RegionTypeStrings::kSkirt)) {
+        return beadWidthSetting(MS::PlatformAdhesion::kSkirtBeadWidth, sb, file_settings);
+    }
+
+    return beadWidthSetting(PS::Layer::kBeadWidth, sb, file_settings);
+}
+
+const QString kCylindricalAxisXComment            = "AXIS_X=";
+const QString kCylindricalAxisYComment            = "AXIS_Y=";
+const QString kWorldApproachTravelComment         = "WORLD APPROACH TRAVEL";
 constexpr char kArcSpecialtiesCpOptionalParameter = 'C';
 
 bool commentFieldValue(const QString& comment, const QString& field, double& value) {
     const int field_start = comment.indexOf(field, 0, Qt::CaseInsensitive);
-    if (field_start < 0) {
-        return false;
-    }
+    if (field_start < 0) { return false; }
 
     const int value_start = field_start + field.size();
-    int value_end = value_start;
-    while (value_end < comment.size() && !comment[value_end].isSpace()) {
-        ++value_end;
-    }
+    int value_end         = value_start;
+    while (value_end < comment.size() && !comment[value_end].isSpace()) { ++value_end; }
 
     bool ok = false;
-    value = comment.mid(value_start, value_end - value_start).toDouble(&ok);
+    value   = comment.mid(value_start, value_end - value_start).toDouble(&ok);
     return ok;
 }
 
@@ -133,64 +185,43 @@ bool isCylindricalPrintComment(const QString& comment) {
             comment.contains(Constants::RegionTypeStrings::kHelical, Qt::CaseInsensitive)) &&
            !comment.contains(Constants::RegionTypeStrings::kTravel, Qt::CaseInsensitive);
 }
-} // namespace
+}  // namespace
 
 GCodeLoader::GCodeLoader(QString filename, bool alterFile)
     : m_filename(filename), m_adjust_file(alterFile), m_should_cancel(false) {
     m_sb = GSM->getGlobal();
 
-    m_prestart = QStringMatcher(Constants::PathModifierStrings::kPrestart.toUpper());
+    m_prestart        = QStringMatcher(Constants::PathModifierStrings::kPrestart.toUpper());
     m_initial_startup = QStringMatcher(Constants::PathModifierStrings::kInitialStartup.toUpper());
-    m_slowdown = QStringMatcher(Constants::PathModifierStrings::kSlowDown.toUpper());
+    m_slowdown        = QStringMatcher(Constants::PathModifierStrings::kSlowDown.toUpper());
     m_forward_tipwipe = QStringMatcher(Constants::PathModifierStrings::kForwardTipWipe.toUpper());
     m_reverse_tipwipe = QStringMatcher(Constants::PathModifierStrings::kReverseTipWipe.toUpper());
-    m_angled_tipwipe = QStringMatcher(Constants::PathModifierStrings::kAngledTipWipe.toUpper());
-    m_coasting = QStringMatcher(Constants::PathModifierStrings::kCoasting.toUpper());
-    m_spirallift = QStringMatcher(Constants::PathModifierStrings::kSpiralLift.toUpper());
-    m_rampingup = QStringMatcher(Constants::PathModifierStrings::kRampingUp.toUpper());
-    m_rampingdown = QStringMatcher(Constants::PathModifierStrings::kRampingDown.toUpper());
-    m_leadin = QStringMatcher(Constants::PathModifierStrings::kLeadIn.toUpper());
+    m_angled_tipwipe  = QStringMatcher(Constants::PathModifierStrings::kAngledTipWipe.toUpper());
+    m_coasting        = QStringMatcher(Constants::PathModifierStrings::kCoasting.toUpper());
+    m_spirallift      = QStringMatcher(Constants::PathModifierStrings::kSpiralLift.toUpper());
+    m_rampingup       = QStringMatcher(Constants::PathModifierStrings::kRampingUp.toUpper());
+    m_rampingdown     = QStringMatcher(Constants::PathModifierStrings::kRampingDown.toUpper());
+    m_leadin          = QStringMatcher(Constants::PathModifierStrings::kLeadIn.toUpper());
+    m_connection      = QStringMatcher(Constants::PathModifierStrings::kConnection.toUpper());
 
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kPrestart));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kInitialStartup));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kSlowDown));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kTipWipeForward));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kTipWipeReverse));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kTipWipeAngled));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kCoasting));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kSpiralLift));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kRampingUp));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kRampingDown));
-    m_modifier_colors.push_back(PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kLeadIn));
-
-    m_perimeter = QStringMatcher(Constants::RegionTypeStrings::kPerimeter.toUpper());
-    m_radial = QStringMatcher(Constants::RegionTypeStrings::kRadial.toUpper());
-    m_helical = QStringMatcher(Constants::RegionTypeStrings::kHelical.toUpper());
-    m_inset = QStringMatcher(Constants::RegionTypeStrings::kInset.toUpper());
-    m_infill = QStringMatcher(Constants::RegionTypeStrings::kInfill.toUpper());
-    m_skin = QStringMatcher(Constants::RegionTypeStrings::kSkin.toUpper());
-    m_skeleton = QStringMatcher(Constants::RegionTypeStrings::kSkeleton.toUpper());
-    m_support = QStringMatcher(Constants::RegionTypeStrings::kSupport.toUpper());
+    m_perimeter    = QStringMatcher(Constants::RegionTypeStrings::kPerimeter.toUpper());
+    m_radial       = QStringMatcher(Constants::RegionTypeStrings::kRadial.toUpper());
+    m_helical      = QStringMatcher(Constants::RegionTypeStrings::kHelical.toUpper());
+    m_inset        = QStringMatcher(Constants::RegionTypeStrings::kInset.toUpper());
+    m_infill       = QStringMatcher(Constants::RegionTypeStrings::kInfill.toUpper());
+    m_skin         = QStringMatcher(Constants::RegionTypeStrings::kSkin.toUpper());
+    m_skeleton     = QStringMatcher(Constants::RegionTypeStrings::kSkeleton.toUpper());
+    m_support      = QStringMatcher(Constants::RegionTypeStrings::kSupport.toUpper());
     m_support_roof = QStringMatcher(Constants::RegionTypeStrings::kSupportRoof.toUpper());
-    m_travel = QStringMatcher(Constants::RegionTypeStrings::kTravel.toUpper());
-    m_raft = QStringMatcher(Constants::RegionTypeStrings::kRaft.toUpper());
-    m_brim = QStringMatcher(Constants::RegionTypeStrings::kBrim.toUpper());
-    m_skirt = QStringMatcher(Constants::RegionTypeStrings::kSkirt.toUpper());
-    m_laserscan = QStringMatcher(Constants::RegionTypeStrings::kLaserScan.toUpper());
-    m_thermalscan = QStringMatcher(Constants::RegionTypeStrings::kThermalScan.toUpper());
+    m_travel       = QStringMatcher(Constants::RegionTypeStrings::kTravel.toUpper());
+    m_raft         = QStringMatcher(Constants::RegionTypeStrings::kRaft.toUpper());
+    m_brim         = QStringMatcher(Constants::RegionTypeStrings::kBrim.toUpper());
+    m_skirt        = QStringMatcher(Constants::RegionTypeStrings::kSkirt.toUpper());
+    m_laserscan    = QStringMatcher(Constants::RegionTypeStrings::kLaserScan.toUpper());
+    m_thermalscan  = QStringMatcher(Constants::RegionTypeStrings::kThermalScan.toUpper());
 
     m_color_space_conversion = 1.0 / 255.0;
-    m_layer_pattern = QRegularExpression("W*(\\d+)W*");
+    m_layer_pattern          = QRegularExpression("W*(\\d+)W*");
 }
 
 QString GCodeLoader::additionalExportComments() {
@@ -215,16 +246,16 @@ QString GCodeLoader::additionalExportComments() {
                              QString::number(translationMin.z() / 1000000, 'f', 4) % " m" % closingDelim % "\n";
     }
 
-    QString travelTypes = openingDelim % "Travel Types:";
+    QString travelTypes  = openingDelim % "Travel Types:";
     QString travelColors = openingDelim % "Travel Colors:";
     for (const auto& color : PreferencesManager::getInstance()->getVisualizationHexColors()) {
-        travelTypes = travelTypes % " " % QString::fromStdString(color.first);
+        travelTypes  = travelTypes % " " % QString::fromStdString(color.first);
         travelColors = travelColors % " " % QString::fromStdString(color.second).right(6);
     }
-    travelTypes = travelTypes % closingDelim % "\n";
+    travelTypes  = travelTypes % closingDelim % "\n";
     travelColors = travelColors % closingDelim % "\n";
 
-    if (m_selected_meta == GcodeMetaList::TormachMeta) // Tormach can't handle parsing the travel types and colors
+    if (m_selected_meta == GcodeMetaList::TormachMeta)  // Tormach can't handle parsing the travel types and colors
     {
         return partMinTranslation;
     }
@@ -242,9 +273,9 @@ void GCodeLoader::run() {
             QFile inputFile(m_filename);
             if (inputFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 QTextStream in(&inputFile);
-                text = in.readAll();
+                text             = in.readAll();
                 m_original_lines = text.split("\n");
-                m_lines = text.toUpper().split("\n");
+                m_lines          = text.toUpper().split("\n");
                 inputFile.close();
             }
             else {
@@ -263,21 +294,22 @@ void GCodeLoader::run() {
 
             m_parser->parseHeader();
             QHash<QString, double> visualizationSettings = m_parser->parseFooter();
+            m_file_settings                              = visualizationSettings;
             QList<QList<GcodeCommand>> m_motion_commands = m_parser->parseLines();
 
             if (m_parser->getWasModified()) {
-                text = m_original_lines.join("\n");
+                text    = m_original_lines.join("\n");
                 m_lines = text.toUpper().split("\n");
             }
 
-            QList<Time> layer_times = m_parser->getLayerTimes();
+            QList<Time> layer_times          = m_parser->getLayerTimes();
             QList<Time> adjusted_layer_times = m_parser->getAdjustedLayerTimes();
             QList<double> layer_FR_modifiers = m_parser->getLayerFeedRateModifiers();
-            QList<Volume> layer_volumes = m_parser->getLayerVolumes();
+            QList<Volume> layer_volumes      = m_parser->getLayerVolumes();
 
             Volume total_volume;
-            min_time = std::numeric_limits<int>::max();
-            max_time = std::numeric_limits<int>::min();
+            min_time          = std::numeric_limits<int>::max();
+            max_time          = std::numeric_limits<int>::min();
             adjusted_min_time = std::numeric_limits<int>::max();
             adjusted_max_time = std::numeric_limits<int>::min();
 
@@ -287,7 +319,7 @@ void GCodeLoader::run() {
                 min_time = qMin(current, min_time);
                 max_time = qMax(current, max_time);
 
-                temp_time = adjusted_layer_times[i];
+                temp_time         = adjusted_layer_times[i];
                 adjusted_min_time = qMin(temp_time, adjusted_min_time);
                 adjusted_max_time = qMax(temp_time, adjusted_max_time);
 
@@ -318,13 +350,7 @@ void GCodeLoader::run() {
             // forward to build_log_export
             emit forwardInfoToBuildExportWindow(m_filename, m_selected_meta);
 
-            QString keyInfo = "GCode file: " % m_filename % "\n" % "Total Time Estimate: " %
-                              MathUtils::formattedTimeSpan(total_time()) % "\n";
-
-            if (m_adjust_file && total_adjusted_time > 0 && m_sb->setting<int>(MS::Cooling::kForceMinLayerTime)) {
-                keyInfo =
-                    keyInfo % "Total Adjusted Time: " % MathUtils::formattedTimeSpan(total_adjusted_time()) % "\n";
-            }
+            QString keyInfo = "GCode file: " % m_filename % "\n";
 
             double volumeValue = total_volume() / pow<3>(PreferencesManager::getInstance()->getDistanceUnit())();
             double distanceValue =
@@ -333,39 +359,49 @@ void GCodeLoader::run() {
                 (m_parser->getPrintingDistance() / PreferencesManager::getInstance()->getDistanceUnit())();
             double travelDistanceValue =
                 (m_parser->getTravelDistance() / PreferencesManager::getInstance()->getDistanceUnit())();
+            const bool has_adjusted_feedrates =
+                std::any_of(layer_FR_modifiers.cbegin(), layer_FR_modifiers.cend(),
+                            [](double modifier) { return modifier > 0 && modifier != 1.0; });
+            const Time travel_time_estimate =
+                has_adjusted_feedrates ? m_parser->getAdjustedTravelTime() : m_parser->getTravelTime();
             double massValue = (total_mass / PreferencesManager::getInstance()->getMassUnit())();
-            keyInfo = keyInfo % "Volume: " % QString::number(volumeValue) % " " %
-                      PreferencesManager::getInstance()->getDistanceUnit().toString() % "³\n" % "Printing Distance: " %
-                      QString::number(printingDistanceValue) % " " %
+            keyInfo = keyInfo % "Printing Distance: " % QString::number(printingDistanceValue) % " " %
                       PreferencesManager::getInstance()->getDistanceUnit().toString() % "\n" % "Travel Distance: " %
                       QString::number(travelDistanceValue) % " " %
-                      PreferencesManager::getInstance()->getDistanceUnit().toString() % "\n" %
-                      "Total Travel Time Estimate: " % MathUtils::formattedTimeSpan(m_parser->getTravelTime()()) %
-                      "\n" % "Total Distance: " %
+                      PreferencesManager::getInstance()->getDistanceUnit().toString() % "\n" % "Total Distance: " %
                       QString::number(distanceValue) % " " %
-                      PreferencesManager::getInstance()->getDistanceUnit().toString() % "\n" % "Approximate Weight (" %
+                      PreferencesManager::getInstance()->getDistanceUnit().toString() % "\n" % "Volume: " %
+                      QString::number(volumeValue) % " " %
+                      PreferencesManager::getInstance()->getDistanceUnit().toString() % "³\n" % "Approximate Weight (" %
                       toString(m_material) % "): " % QString::number(massValue) % " " %
-                      PreferencesManager::getInstance()->getMassUnit().toString() % "\n";
+                      PreferencesManager::getInstance()->getMassUnit().toString() % "\n" % "Travel Time Estimate: " %
+                      MathUtils::formattedTimeSpan(travel_time_estimate()) % "\n" % "Total Time Estimate: " %
+                      MathUtils::formattedTimeSpan(total_time()) % "\n";
+
+            if (m_adjust_file && total_adjusted_time > 0 && m_sb->setting<int>(MS::Cooling::kForceMinLayerTime)) {
+                keyInfo =
+                    keyInfo % "Total Adjusted Time: " % MathUtils::formattedTimeSpan(total_adjusted_time()) % "\n";
+            }
 
             QTime qt(0, 0);
-            qt = qt.addMSecs(CSM->getSliceTimeElapsed());
+            qt      = qt.addMSecs(CSM->getSliceTimeElapsed());
             keyInfo = keyInfo % "Total Slice Time (excluding gcode writing/parsing): " % qt.toString("hh:mm:ss.zzz");
 
             emit forwardInfoToMainWindow(keyInfo);
 
-            m_x_offset = visualizationSettings[PRS::Dimensions::kXOffset];
-            m_y_offset = visualizationSettings[PRS::Dimensions::kYOffset];
-            const Distance& z_offset = visualizationSettings[PRS::Dimensions::kZOffset];
-            const Distance& z_min = GSM->getGlobal()->setting<Distance>(PRS::Dimensions::kZMin);
-            m_z_offset = (z_min - z_offset)() * Constants::OpenGL::kObjectToView;
-            m_start_pos = QVector3D(m_x_offset * Constants::OpenGL::kObjectToView,
-                                    m_y_offset * Constants::OpenGL::kObjectToView, 0.0f);
-            m_origin = QVector3D(m_x_offset, m_y_offset, 0.0f);
-            m_table_offset = 0.0f;
-            m_prev_table_offset = 0.0f;
+            m_x_offset                             = visualizationSettings[PRS::Dimensions::kXOffset];
+            m_y_offset                             = visualizationSettings[PRS::Dimensions::kYOffset];
+            const Distance& z_offset               = visualizationSettings[PRS::Dimensions::kZOffset];
+            const Distance& z_min                  = GSM->getGlobal()->setting<Distance>(PRS::Dimensions::kZMin);
+            m_z_offset                             = (z_min - z_offset)() * Constants::OpenGL::kObjectToView;
+            m_start_pos                            = QVector3D(m_x_offset * Constants::OpenGL::kObjectToView,
+                                                               m_y_offset * Constants::OpenGL::kObjectToView, 0.0f);
+            m_origin                               = QVector3D(m_x_offset, m_y_offset, 0.0f);
+            m_table_offset                         = 0.0f;
+            m_prev_table_offset                    = 0.0f;
             m_has_arc_specialties_cylindrical_axis = false;
             m_arc_specialties_cylindrical_axis_matches_current_path = false;
-            m_has_previous_arc_specialties_cp = false;
+            m_has_previous_arc_specialties_cp                       = false;
 
             // reserve more memory than the hash will need to guarantee no reallocation
             QHash<QString, QTextCharFormat> fontColors;
@@ -380,7 +416,7 @@ void GCodeLoader::run() {
             // Set layer specific settings. Currently only supports a single part.
             if (CSM->parts().size() == 1) {
                 // Retrieve the settings ranges for the first part
-                const QSharedPointer<Part>& part = CSM->parts().first();
+                const QSharedPointer<Part>& part                   = CSM->parts().first();
                 const QList<QSharedPointer<SettingsRange>>& ranges = part->getSettingsRanges().values();
 
                 // Populate the layer settings for each range
@@ -389,9 +425,7 @@ void GCodeLoader::run() {
                     sb->populate(GSM->getGlobal());
                     sb->populate(range->getSb());
 
-                    for (uint layer = range->low(); layer <= range->high(); layer++) {
-                        layer_settings[layer + 1] = sb;
-                    }
+                    for (uint layer = range->low(); layer <= range->high(); layer++) { layer_settings[layer + 1] = sb; }
                 }
             }
 
@@ -403,9 +437,9 @@ void GCodeLoader::run() {
                 total_commands += layer_commands.size();
             }
 
-            qint64 commands_processed = 0;
+            qint64 commands_processed       = 0;
             int last_visualization_progress = -1;
-            auto emitVisualizationProgress = [this, &last_visualization_progress](int progress) {
+            auto emitVisualizationProgress  = [this, &last_visualization_progress](int progress) {
                 progress = qBound(0, progress, 99);
                 if (progress != last_visualization_progress) {
                     emit updateDialog(StatusUpdateStepType::kVisualization, progress);
@@ -458,9 +492,7 @@ void GCodeLoader::run() {
                             (static_cast<double>(commands_processed) / static_cast<double>(total_commands)) * 100.0));
                     }
 
-                    if (m_should_cancel) {
-                        return;
-                    }
+                    if (m_should_cancel) { return; }
                 }
                 layers.push_back(layer);
                 ++current_layer;
@@ -469,9 +501,7 @@ void GCodeLoader::run() {
                     emitVisualizationProgress(static_cast<int>((double)current_layer / (double)total_layer * 100.0));
                 }
 
-                if (m_should_cancel) {
-                    return;
-                }
+                if (m_should_cancel) { return; }
             }
 
             // emit vector for visualization
@@ -481,23 +511,27 @@ void GCodeLoader::run() {
             // send text and font colors for display, and line numbers for easy editor navigation
             emit gcodeLoadedText(text, fontColors, m_parser->getLayerStartLines());
 
-            QString openingDelim = m_selected_meta.m_comment_starting_delimiter;
-            QString closingDelim = m_selected_meta.m_comment_ending_delimiter;
+            QString openingDelim                = m_selected_meta.m_comment_starting_delimiter;
+            QString closingDelim                = m_selected_meta.m_comment_ending_delimiter;
+            const bool isWolfSyntax             = m_selected_meta.m_syntax_id == GcodeSyntax::kWolf;
+            const QString minimumLayerTimeLabel = isWolfSyntax ? "minimum Layer Time" : "Minimum Layer Time";
+            const QString maximumLayerTimeLabel = isWolfSyntax ? "maximum Layer Time" : "Maximum Layer Time";
             QString additionalHeaderBlock = openingDelim % "Sliced on: " %
                                             QDateTime::currentDateTime().toString("MM/dd/yyyy") % closingDelim % "\n" %
                                             openingDelim % "Expected Weight: " % weightInfo % closingDelim % "\n";
             if (m_adjust_file && total_adjusted_time > 0 && m_sb->setting<int>(MS::Cooling::kForceMinLayerTime)) {
-                additionalHeaderBlock +=
-                    openingDelim % "Expected Build Time: " % MathUtils::formattedTimeSpan(total_adjusted_time()) %
-                    closingDelim % "\n" % openingDelim % "Minimum Layer Time: " %
-                    MathUtils::formattedTimeSpan(adjusted_min_time()) % closingDelim % "\n" % openingDelim %
-                    "Maximum Layer Time: " % MathUtils::formattedTimeSpan(adjusted_max_time()) % closingDelim % "\n";
+                additionalHeaderBlock += openingDelim % "Expected Build Time: " %
+                                         MathUtils::formattedTimeSpan(total_adjusted_time()) % closingDelim % "\n" %
+                                         openingDelim % minimumLayerTimeLabel % ": " %
+                                         MathUtils::formattedTimeSpan(adjusted_min_time()) % closingDelim % "\n" %
+                                         openingDelim % maximumLayerTimeLabel % ": " %
+                                         MathUtils::formattedTimeSpan(adjusted_max_time()) % closingDelim % "\n";
             }
             else {
                 additionalHeaderBlock +=
                     openingDelim % "Expected Build Time: " % MathUtils::formattedTimeSpan(total_time()) % closingDelim %
-                    "\n" % openingDelim % "Minimum Layer Time: " % MathUtils::formattedTimeSpan(min_time()) %
-                    closingDelim % "\n" % openingDelim % "Maximum Layer Time: " %
+                    "\n" % openingDelim % minimumLayerTimeLabel % ": " % MathUtils::formattedTimeSpan(min_time()) %
+                    closingDelim % "\n" % openingDelim % maximumLayerTimeLabel % ": " %
                     MathUtils::formattedTimeSpan(max_time()) % closingDelim % "\n";
             }
             additionalHeaderBlock += openingDelim % "XYZ Translation Data: " % QString::number(m_origin.x()) % ", " %
@@ -511,11 +545,9 @@ void GCodeLoader::run() {
                 if (tempFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
                     QTextStream out(&tempFile);
                     out << additionalHeaderBlock;
-                    for (QString& line : m_original_lines) {
-                        out << line << "\n";
-                    }
+                    for (QString& line : m_original_lines) { out << line << "\n"; }
                     tempFile.close();
-                    bool ret = QFile::remove(m_filename);
+                    bool ret        = QFile::remove(m_filename);
                     QString tempStr = tempFile.fileName();
 
                     ret = QFile::rename(tempFile.fileName(), m_filename);
@@ -531,9 +563,7 @@ void GCodeLoader::run() {
 
 void GCodeLoader::cancelSlice() {
     m_should_cancel = true;
-    if (m_parser.get() != nullptr) {
-        m_parser->cancelSlice();
-    }
+    if (m_parser.get() != nullptr) { m_parser->cancelSlice(); }
 }
 
 void GCodeLoader::forwardDialogUpdate(StatusUpdateStepType type, int percentComplete) {
@@ -543,7 +573,7 @@ void GCodeLoader::forwardDialogUpdate(StatusUpdateStepType type, int percentComp
 // at this moment, parsing the header is simply to find the syntax
 void GCodeLoader::setParser(QStringList& originalLines, QStringList& lines) {
     int m_current_line = 0;
-    bool foundSyntax = false;
+    bool foundSyntax   = false;
     QStringMatcher syntaxIdentifier1("G-CODE SYNTAX");
     QStringMatcher syntaxIdentifier2("GCODE SYNTAX");
     while (m_current_line < m_lines.size()) {
@@ -598,11 +628,12 @@ void GCodeLoader::setParser(QStringList& originalLines, QStringList& lines) {
                 m_parser.reset(new MarlinParser(GcodeMetaList::MarlinMeta, m_adjust_file, originalLines, lines));
                 m_selected_meta = GcodeMetaList::MarlinMeta;
             }
-            else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kMach4).toUpper())) { // Mach4 uses Marlin
+            else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kMach4).toUpper())) {  // Mach4 uses Marlin
                 m_parser.reset(new MarlinParser(GcodeMetaList::MarlinMeta, m_adjust_file, originalLines, lines));
                 m_selected_meta = GcodeMetaList::MarlinMeta;
             }
-            else if (m_lines[m_current_line].contains(toString(GcodeSyntax::kRepRap).toUpper())) { // RepRap uses Marlin
+            else if (m_lines[m_current_line].contains(
+                         toString(GcodeSyntax::kRepRap).toUpper())) {  // RepRap uses Marlin
                 m_parser.reset(new MarlinParser(GcodeMetaList::RepRapMeta, m_adjust_file, originalLines, lines));
                 m_selected_meta = GcodeMetaList::RepRapMeta;
             }
@@ -681,9 +712,7 @@ void GCodeLoader::setParser(QStringList& originalLines, QStringList& lines) {
             foundSyntax = true;
         }
         ++m_current_line;
-        if (foundSyntax) {
-            break;
-        }
+        if (foundSyntax) { break; }
     }
 
     if (!foundSyntax) {
@@ -693,7 +722,9 @@ void GCodeLoader::setParser(QStringList& originalLines, QStringList& lines) {
 }
 
 QColor GCodeLoader::determineFontColor(const QString& comment) {
-
+    if (m_connection.indexIn(comment) != -1) {
+        return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kConnection);
+    }
     if (m_prestart.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kPrestart);
     }
@@ -733,14 +764,24 @@ QColor GCodeLoader::determineFontColor(const QString& comment) {
     if (m_support.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kSupport);
     }
+    if (m_helical.indexIn(comment) != -1) {
+        if (m_perimeter.indexIn(comment) != -1) {
+            return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kHelicalPerimeter);
+        }
+        if (m_inset.indexIn(comment) != -1) {
+            return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kHelicalInset);
+        }
+        if (m_infill.indexIn(comment) != -1) {
+            return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kHelicalInfill);
+        }
+
+        return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kHelical);
+    }
     if (m_perimeter.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kPerimeter);
     }
     if (m_radial.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kRadial);
-    }
-    if (m_helical.indexIn(comment) != -1) {
-        return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kHelical);
     }
     if (m_inset.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kInset);
@@ -775,13 +816,11 @@ QColor GCodeLoader::determineFontColor(const QString& comment) {
 
 QColor GCodeLoader::determineSegmentColor(int command_id, const QString& comment) {
     QColor color = determineFontColor(comment);
-    if (command_id != 2 && command_id != 3) {
-        return color;
-    }
+    if (command_id != 2 && command_id != 3) { return color; }
 
-    if (containsColorPriorityModifier(comment)) {
-        return color;
-    }
+    if (containsColorPriorityModifier(comment)) { return color; }
+
+    if (m_helical.indexIn(comment) != -1) { return color; }
 
     if (m_perimeter.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kPerimeterArc);
@@ -800,18 +839,15 @@ bool GCodeLoader::containsColorPriorityModifier(const QString& comment) const {
            m_reverse_tipwipe.indexIn(comment) != -1 || m_angled_tipwipe.indexIn(comment) != -1 ||
            m_coasting.indexIn(comment) != -1 || m_spirallift.indexIn(comment) != -1 ||
            m_rampingup.indexIn(comment) != -1 || m_rampingdown.indexIn(comment) != -1 ||
-           m_leadin.indexIn(comment) != -1 || comment.contains(Constants::PathModifierStrings::kPerimeterTipWipe);
+           m_leadin.indexIn(comment) != -1 || m_connection.indexIn(comment) != -1 ||
+           comment.contains(Constants::PathModifierStrings::kPerimeterTipWipe);
 }
 
 SegmentDisplayType GCodeLoader::determineSegmentDisplayType(const QString& comment) {
     SegmentDisplayType type = SegmentDisplayType::kNone;
 
-    if (m_travel.indexIn(comment) != -1) {
-        type |= SegmentDisplayType::kTravel;
-    }
-    if (m_support.indexIn(comment) != -1) {
-        type |= SegmentDisplayType::kSupport;
-    }
+    if (m_travel.indexIn(comment) != -1) { type |= SegmentDisplayType::kTravel; }
+    if (m_support.indexIn(comment) != -1) { type |= SegmentDisplayType::kSupport; }
 
     return type == SegmentDisplayType::kNone ? SegmentDisplayType::kLine : type;
 }
@@ -820,47 +856,15 @@ void GCodeLoader::setSegmentDisplayInfo(QSharedPointer<SegmentBase>& segment, Se
                                         const QColor& color, const QString& comment, const QVector3D& start_pos,
                                         const QVector3D& end_pos, const int& line_num, const int& layer_num) {
     // Set the display info of the segment
-    float display_width = 0.0f;
+    float display_width  = 0.0f;
     float display_height = m_sb->setting<float>(PS::Layer::kLayerHeight) * Constants::OpenGL::kObjectToView;
     float display_length = start_pos.distanceToPoint(end_pos);
     float scale =
-        m_modifier_colors.contains(color) ? 1.1f : 1.0f; // Scale modifier segments by 1.1 for better visibility
+        containsColorPriorityModifier(comment) ? 1.1f : 1.0f;  // Scale modifier segments by 1.1 for better visibility
 
     // Set the display width of the segment based on its region type
-    if (comment.contains(Constants::RegionTypeStrings::kRadial) ||
-        comment.contains(Constants::RegionTypeStrings::kHelical)) {
-        display_width = m_sb->setting<float>(PS::Layer::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    }
-    else if (comment.startsWith(QStringLiteral("AD-") % Constants::RegionTypeStrings::kPerimeter)) {
-        display_width = beadDisplayWidth(beadWidthFromRegionComment(comment, Constants::RegionTypeStrings::kPerimeter,
-                                                                    m_sb->setting<Distance>(PS::Perimeter::kBeadWidth),
-                                                                    m_selected_meta.m_distance_unit));
-    }
-    else if (comment.contains(Constants::RegionTypeStrings::kPerimeter)) {
-        display_width = m_sb->setting<float>(PS::Perimeter::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    }
-    else if (comment.startsWith(QStringLiteral("AD-") % Constants::RegionTypeStrings::kInset)) {
-        display_width = beadDisplayWidth(beadWidthFromRegionComment(comment, Constants::RegionTypeStrings::kInset,
-                                                                    m_sb->setting<Distance>(PS::Inset::kBeadWidth),
-                                                                    m_selected_meta.m_distance_unit));
-    }
-    else if (comment.contains("INSET")) {
-        display_width = m_sb->setting<float>(PS::Inset::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    }
-    else if (comment.contains("SKELETON")) {
-        display_width = beadDisplayWidth(beadWidthFromRegionComment(comment, Constants::RegionTypeStrings::kSkeleton,
-                                                                    m_sb->setting<Distance>(PS::Skeleton::kBeadWidth),
-                                                                    m_selected_meta.m_distance_unit));
-    }
-    else if (comment.contains("SKIN")) {
-        display_width = m_sb->setting<float>(PS::Skin::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    }
-    else if (comment.contains("INFILL")) {
-        display_width = m_sb->setting<float>(PS::Infill::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    }
-    else { // Default to layer bead width
-        display_width = m_sb->setting<float>(PS::Layer::kBeadWidth) * Constants::OpenGL::kObjectToView;
-    }
+    display_width =
+        beadDisplayWidth(beadWidthForComment(comment, m_sb, m_file_settings, m_selected_meta.m_distance_unit));
 
     // Set the display info of the segment
     segment->setDisplayInfo(display_width * scale, display_length, display_height * scale, type, color, line_num,
@@ -875,28 +879,20 @@ void GCodeLoader::setSegmentMetaInfo(QSharedPointer<SegmentBase>& segment, const
 
     // Set the start and end position info of the segment
     segment->m_segment_info_meta.start = m_info_start_pos;
-    segment->m_segment_info_meta.end = info_end_pos;
+    segment->m_segment_info_meta.end   = info_end_pos;
 
     // If deposition is active, retain the current speed metadata for the segment.
-    if (!deposition_active && !info_speed_set) {
-        segment->m_segment_info_meta.speed = "";
-    }
-    else {
-        segment->m_segment_info_meta.speed = m_info_speed;
-    }
+    if (!deposition_active && !info_speed_set) { segment->m_segment_info_meta.speed = ""; }
+    else { segment->m_segment_info_meta.speed = m_info_speed; }
 
     // If deposition is active, set the material feed speed metadata.
     if (deposition_active) {
         if (m_info_extruder_speed.isEmpty()) {
             segment->m_segment_info_meta.extruderSpeed = QString().asprintf("%0.4f", extruder_speed) % " rpm";
         }
-        else {
-            segment->m_segment_info_meta.extruderSpeed = m_info_extruder_speed;
-        }
+        else { segment->m_segment_info_meta.extruderSpeed = m_info_extruder_speed; }
     }
-    else {
-        segment->m_segment_info_meta.extruderSpeed = "";
-    }
+    else { segment->m_segment_info_meta.extruderSpeed = ""; }
 
     // Set the length info of the segment
 
@@ -904,26 +900,33 @@ void GCodeLoader::setSegmentMetaInfo(QSharedPointer<SegmentBase>& segment, const
         m_info_start_pos.distanceToPoint(info_end_pos) / PreferencesManager::getInstance()->getDistanceUnit()();
     segment->m_segment_info_meta.length =
         QString().asprintf("%0.2f", length) % " " % PreferencesManager::getInstance()->getDistanceUnitText();
+
+    if (deposition_active) {
+        const Distance width = beadWidthForComment(comment, m_sb, m_file_settings, m_selected_meta.m_distance_unit);
+        segment->m_segment_info_meta.width =
+            QString().asprintf("%0.3f", width.to(PreferencesManager::getInstance()->getDistanceUnit())) % " " %
+            PreferencesManager::getInstance()->getDistanceUnitText();
+    }
+    else { segment->m_segment_info_meta.width = ""; }
 }
 
-QVector<QSharedPointer<SegmentBase>>
-GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& color, int command_id,
-                                   const QMap<char, double>& parameters, bool deposition_active, double extruder_speed,
-                                   bool include_non_deposition_moves, QString comment,
-                                   const QMap<char, double>& optional_parameters) {
+QVector<QSharedPointer<SegmentBase>> GCodeLoader::generateVisualSegment(
+    int line_num, int layer_num, const QColor& color, int command_id, const QMap<char, double>& parameters,
+    bool deposition_active, double extruder_speed, bool include_non_deposition_moves, QString comment,
+    const QMap<char, double>& optional_parameters) {
     // Parameters for drawing and placing each segment in the world correctly
-    QVector3D end_pos = m_start_pos;
-    QVector3D info_end_pos = m_info_start_pos;
-    bool info_speed_set = false;
+    QVector3D end_pos             = m_start_pos;
+    QVector3D info_end_pos        = m_info_start_pos;
+    bool info_speed_set           = false;
     const bool is_arc_specialties = m_selected_meta.m_syntax_id == GcodeSyntax::kArcSpecialties;
-    const bool has_current_cp = optional_parameters.contains(kArcSpecialtiesCpOptionalParameter);
+    const bool has_current_cp     = optional_parameters.contains(kArcSpecialtiesCpOptionalParameter);
     const double current_cp = has_current_cp ? optional_parameters.value(kArcSpecialtiesCpOptionalParameter) : 0.0;
 
     if (parameters.contains('F')) {
         info_speed_set = true;
-        m_info_speed = QString().asprintf("%0.4f", (Velocity(parameters['F']) /
-                                                    PreferencesManager::getInstance()->getVelocityUnit())()) %
-                       " " % PreferencesManager::getInstance()->getVelocityUnitText();
+        m_info_speed   = QString().asprintf("%0.4f", (Velocity(parameters['F']) /
+                                                      PreferencesManager::getInstance()->getVelocityUnit())()) %
+                         " " % PreferencesManager::getInstance()->getVelocityUnitText();
     }
     if (parameters.contains('S')) {
         m_info_extruder_speed = QString().asprintf("%0.4f", (AngularVelocity(parameters['S']) /
@@ -932,14 +935,14 @@ GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& co
     }
     if (parameters.contains('W')) {
         m_prev_table_offset = m_table_offset;
-        m_table_offset = parameters['W'] * Constants::OpenGL::kObjectToView;
+        m_table_offset      = parameters['W'] * Constants::OpenGL::kObjectToView;
 
         // we don't draw segments for commands that are just table shifts, so only update end_pos if XY changes too
         if (parameters.contains('X') || parameters.contains('Y')) {
             end_pos.setZ(m_start_pos.z() + m_prev_table_offset - m_table_offset);
             m_prev_table_offset =
                 parameters['W'] *
-                Constants::OpenGL::kObjectToView; // accounted for the table offset, so no need for prev
+                Constants::OpenGL::kObjectToView;  // accounted for the table offset, so no need for prev
         }
     }
 
@@ -990,8 +993,8 @@ GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& co
     const bool is_world_approach_travel =
         is_arc_specialties && comment.compare(kWorldApproachTravelComment, Qt::CaseInsensitive) == 0;
     if (is_world_approach_travel && parameters.contains('X') && parameters.contains('Y')) {
-        m_arc_specialties_cylindrical_axis = Point(end_pos.x(), end_pos.y(), 0.0);
-        m_has_arc_specialties_cylindrical_axis = true;
+        m_arc_specialties_cylindrical_axis                      = Point(end_pos.x(), end_pos.y(), 0.0);
+        m_has_arc_specialties_cylindrical_axis                  = true;
         m_arc_specialties_cylindrical_axis_matches_current_path = true;
     }
 
@@ -1005,27 +1008,27 @@ GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& co
         QSharedPointer<SegmentBase> segment;
 
         // Builds and draws segments according to their type (Line, Arc, Spline)
-        if (command_id == 2 || command_id == 3) { // G2 clockwise arc & G3 counter-clockwise arc
+        if (command_id == 2 || command_id == 3) {  // G2 clockwise arc & G3 counter-clockwise arc
             // Parse extra params
             Point center;
 
             if (parameters.contains('R') && !parameters.contains('I') && !parameters.contains('J')) {
-                const double radius = parameters['R'] * Constants::OpenGL::kObjectToView;
-                const double abs_radius = qAbs(radius);
-                const double dx = end_pos.x() - m_start_pos.x();
-                const double dy = end_pos.y() - m_start_pos.y();
-                const double chord_length = std::hypot(dx, dy);
-                const double half_chord = chord_length / 2.0;
+                const double radius                = parameters['R'] * Constants::OpenGL::kObjectToView;
+                const double abs_radius            = qAbs(radius);
+                const double dx                    = end_pos.x() - m_start_pos.x();
+                const double dy                    = end_pos.y() - m_start_pos.y();
+                const double chord_length          = std::hypot(dx, dy);
+                const double half_chord            = chord_length / 2.0;
                 const double center_offset_squared = (abs_radius * abs_radius) - (half_chord * half_chord);
 
                 if (chord_length > std::numeric_limits<double>::epsilon() && center_offset_squared >= 0.0) {
                     const double center_offset = qSqrt(center_offset_squared);
-                    const double mid_x = (m_start_pos.x() + end_pos.x()) / 2.0;
-                    const double mid_y = (m_start_pos.y() + end_pos.y()) / 2.0;
+                    const double mid_x         = (m_start_pos.x() + end_pos.x()) / 2.0;
+                    const double mid_y         = (m_start_pos.y() + end_pos.y()) / 2.0;
                     const double left_normal_x = -dy / chord_length;
                     const double left_normal_y = dx / chord_length;
                     const bool use_left_center = (command_id == 3) == (radius >= 0.0);
-                    const double direction = use_left_center ? 1.0 : -1.0;
+                    const double direction     = use_left_center ? 1.0 : -1.0;
 
                     center.x(mid_x + (direction * left_normal_x * center_offset));
                     center.y(mid_y + (direction * left_normal_y * center_offset));
@@ -1041,14 +1044,12 @@ GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& co
                 if (parameters.contains('K')) {
                     center.z(m_start_pos.z() + ((parameters['K']) * Constants::OpenGL::kObjectToView));
                 }
-                else {
-                    center.z(m_start_pos.z());
-                }
+                else { center.z(m_start_pos.z()); }
 
                 segment = QSharedPointer<ArcSegment>::create(m_start_pos, end_pos, center, (command_id == 3));
             }
         }
-        else if (command_id == 5) { // G5 splines
+        else if (command_id == 5) {  // G5 splines
             Point control_a;
             Point control_b;
 
@@ -1062,13 +1063,11 @@ GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& co
                 segment = QSharedPointer<BezierSegment>::create(m_start_pos, control_a, control_b, end_pos);
             }
         }
-        else { // G0, G1, or anything else is drawn as a line
+        else {  // G0, G1, or anything else is drawn as a line
             segment = QSharedPointer<LineSegment>::create(m_start_pos, end_pos);
         }
 
-        if (segment.isNull()) {
-            segment = QSharedPointer<LineSegment>::create(m_start_pos, end_pos);
-        }
+        if (segment.isNull()) { segment = QSharedPointer<LineSegment>::create(m_start_pos, end_pos); }
 
         segment->setDepositionActive(deposition_active);
 
@@ -1084,7 +1083,7 @@ GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& co
                 has_cylindrical_axis = true;
             }
             else if (ArcSegment* arc_segment = dynamic_cast<ArcSegment*>(segment.data())) {
-                cylindrical_axis = arc_segment->center();
+                cylindrical_axis     = arc_segment->center();
                 has_cylindrical_axis = true;
             }
             else if (is_arc_specialties && m_has_previous_arc_specialties_cp && has_current_cp) {
@@ -1094,7 +1093,7 @@ GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& co
                         : std::nullopt;
                 const bool reverse_cp_delta =
                     comment.contains(Constants::RegionTypeStrings::kHelical, Qt::CaseInsensitive) &&
-                    static_cast<HelicalPathHandedness>(m_sb->setting<int>(PS::Slicing::kHelicalPathHandedness)) ==
+                    static_cast<HelicalPathHandedness>(m_sb->setting<int>(PS::Helical::kHelicalPathHandedness)) ==
                         HelicalPathHandedness::kLeftHanded;
                 has_cylindrical_axis = ArcSpecialtiesAxisInference::cylindricalAxisFromCpDelta(
                     m_start_pos, end_pos, m_previous_arc_specialties_cp, current_cp, reverse_cp_delta, reference_axis,
@@ -1102,15 +1101,15 @@ GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& co
             }
             if (!has_cylindrical_axis && is_arc_specialties && m_has_arc_specialties_cylindrical_axis &&
                 m_arc_specialties_cylindrical_axis_matches_current_path) {
-                cylindrical_axis = m_arc_specialties_cylindrical_axis;
+                cylindrical_axis     = m_arc_specialties_cylindrical_axis;
                 has_cylindrical_axis = true;
             }
 
             if (has_cylindrical_axis) {
                 segment->setCylindricalBeadCenter(cylindrical_axis);
                 if (is_arc_specialties) {
-                    m_arc_specialties_cylindrical_axis = cylindrical_axis;
-                    m_has_arc_specialties_cylindrical_axis = true;
+                    m_arc_specialties_cylindrical_axis                      = cylindrical_axis;
+                    m_has_arc_specialties_cylindrical_axis                  = true;
                     m_arc_specialties_cylindrical_axis_matches_current_path = true;
                 }
             }
@@ -1123,13 +1122,13 @@ GCodeLoader::generateVisualSegment(int line_num, int layer_num, const QColor& co
         generated_segments.append(segment);
     }
     // Update our start position for the next command
-    m_start_pos = end_pos;
+    m_start_pos      = end_pos;
     m_info_start_pos = info_end_pos;
     if (is_arc_specialties && has_current_cp) {
-        m_previous_arc_specialties_cp = current_cp;
+        m_previous_arc_specialties_cp     = current_cp;
         m_has_previous_arc_specialties_cp = true;
     }
 
     return generated_segments;
 }
-} // namespace ORNL
+}  // namespace ORNL

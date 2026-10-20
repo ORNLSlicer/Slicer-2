@@ -4,6 +4,7 @@
 #include <QOpenGLFunctions_3_3_Core>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
+
 #include <qevent.h>
 #include <qlist.h>
 #include <qmatrix4x4.h>
@@ -16,6 +17,8 @@
 
 #include "graphics/graphics_object.h"
 #include "graphics/support/camera_manager.h"
+
+class QPainter;
 
 namespace ORNL {
 
@@ -32,7 +35,7 @@ class GCodeObject;
  */
 class BaseView : public QOpenGLWidget, public QOpenGLFunctions_3_3_Core {
     Q_OBJECT
-  public:
+   public:
     //! \brief Initialize printer OpenGL buffers, projection and view matrices, part picker, and shader program
     //! \param parent QWidget that has to be passed to superclass constructor
     BaseView(QWidget* parent = nullptr);
@@ -101,7 +104,7 @@ class BaseView : public QOpenGLWidget, public QOpenGLFunctions_3_3_Core {
     //! \return The camera object.
     QSharedPointer<CameraManager> camera();
 
-  protected:
+   protected:
     /*!
      * \title Object Methods
      * \brief The following functions relate to the addition and remove of objects.
@@ -138,6 +141,12 @@ class BaseView : public QOpenGLWidget, public QOpenGLFunctions_3_3_Core {
     //! \brief Any one-time initialization that needs to be done for a subclass that isn't universal, otherwise
     //!        the initialization could be done in this class
     virtual void initView() = 0;
+
+    //! \brief Draws any 2D overlay content after the OpenGL scene is rendered.
+    virtual void paintOverlay(QPainter& painter);
+
+    //! \brief Returns whether this view has visible 2D overlay content for the current frame.
+    virtual bool hasOverlay() const;
 
     /*!
      * \title Virtual Methods - Mouse
@@ -215,7 +224,7 @@ class BaseView : public QOpenGLWidget, public QOpenGLFunctions_3_3_Core {
     //! \brief Shows camera focus.
     QSharedPointer<AxesObject> m_focus;
 
-  private:
+   private:
     //! \brief OpenGL setup.
     void initializeGL() override;
 
@@ -251,4 +260,4 @@ class BaseView : public QOpenGLWidget, public QOpenGLFunctions_3_3_Core {
     QList<QSharedPointer<GraphicsObject>> m_render_objects;
 };
 
-} // namespace ORNL
+}  // namespace ORNL

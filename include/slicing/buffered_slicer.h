@@ -26,7 +26,7 @@ namespace ORNL {
 //! called, it actually computes the Nth next slice, however returns whatever the front of the buffer is.
 //! \note when the previous or future buffers cannot be filled with valid slices, they are instead filled with nullptr
 class BufferedSlicer {
-  public:
+   public:
     //! \struct SliceMeta
     //! \brief Contains a snapshot of various variables when taking a slice
     struct SliceMeta {
@@ -81,10 +81,31 @@ class BufferedSlicer {
     //! \return the number of slices taken
     int getSliceCount();
 
-  private:
+    //! \brief computes how many slices a mesh will produce without calculating cross-section geometry
+    static int computeSliceCount(
+        const QSharedPointer<MeshBase>& mesh, const QSharedPointer<SettingsBase>& settings,
+        QMap<uint, QSharedPointer<SettingsRange>> ranges = QMap<uint, QSharedPointer<SettingsRange>>(),
+        bool include_build_plate_gap                     = false);
+
+   private:
+    //! \struct CrossSectionData
+    //! \brief Primary mesh cross-section data for a candidate slicing plane.
+    struct CrossSectionData {
+        PolygonList geometry;
+        QVector<Polyline> opt_polylines;
+        QVector3D average_normal;
+        Point shift_amount;
+    };
+
     //! \brief processes a single slice (cross-sections)
     //! \return a cross-section (SliceMeta) object
     QSharedPointer<BufferedSlicer::SliceMeta> processSingleSlice();
+
+    //! \brief cross-sections the primary mesh at a candidate plane
+    CrossSectionData computePrimaryCrossSection(Plane slicing_plane, const QSharedPointer<SettingsBase>& settings);
+
+    //! \brief selects a layer height limited by the configured variable-height surface error target
+    Distance computeCuspLimitedLayerHeight(const QSharedPointer<SettingsBase>& settings) const;
 
     //! \brief computes cross-sections for settings parts and extracts their geometry, aligned to a base shift
     //! \param settings_polygons a vector to fill with settings polygons
@@ -134,4 +155,4 @@ class BufferedSlicer {
     //! \brief list of settings parts being tracked
     QVector<QSharedPointer<Part>> m_settings_parts;
 };
-} // namespace ORNL
+}  // namespace ORNL

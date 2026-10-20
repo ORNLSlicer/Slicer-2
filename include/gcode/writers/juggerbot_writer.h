@@ -17,7 +17,7 @@ namespace ORNL {
  * \brief The gcode writer for the JuggerBot syntax
  */
 class JuggerBotWriter : public WriterBase {
-  public:
+   public:
     //! \brief Constructor
     JuggerBotWriter(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb);
 
@@ -76,10 +76,21 @@ class JuggerBotWriter : public WriterBase {
     //! \brief Writes G-Code for a pause, G4
     QString writeDwell(Time time) override;
 
-  private:
+   private:
     //! \brief Writes G-Code to enable the extruder
     QString writeExtruderOn(RegionType type, int rpm, Distance bead_width, Distance bead_height,
                             const QSharedPointer<SettingsBase>& params = nullptr);
+
+    //! \brief Calculates the bead-area S value for width/height mode.
+    Area beadAreaForCommand(RegionType type, Distance bead_width, Distance bead_height,
+                            const QSharedPointer<SettingsBase>& params = nullptr) const;
+
+    //! \brief Returns the extrusion multiplier for the active region.
+    double extrusionMultiplier(RegionType type, const QSharedPointer<SettingsBase>& params = nullptr) const;
+
+    //! \brief Formats a width/height-mode bead-area S value in the active output distance units.
+    QString beadAreaSValue(Area bead_area) const;
+
     //! \brief Writes G-Code to disable the extruder
     QString writeExtruderOff();
 
@@ -99,5 +110,5 @@ class JuggerBotWriter : public WriterBase {
     AngularVelocity m_current_rpm;
     Area m_current_bead_area;
 
-}; // class JuggerBotWriter
-} // namespace ORNL
+};  // class JuggerBotWriter
+}  // namespace ORNL

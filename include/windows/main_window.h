@@ -12,6 +12,7 @@
 #include <QToolBar>
 #include <QUdpSocket>
 #include <QUndoStack>
+
 #include <qboxlayout.h>
 #include <qcontainerfwd.h>
 #include <qcoreapplication.h>
@@ -42,10 +43,12 @@
 #include "widgets/part_widget/part_widget.h"
 #include "widgets/settings/setting_bar.h"
 #include "windows/about.h"
+#include "windows/changelog.h"
 #include "windows/flowratecalc.h"
 #include "windows/gcode_export.h"
 #include "windows/layer_times_window.h"
 #include "windows/preferences_window.h"
+#include "windows/settings_file_compare.h"
 #include "windows/xtrudecalc.h"
 
 namespace ORNL {
@@ -71,7 +74,7 @@ class MainWindow : public QMainWindow {
     friend class PartTransformUndoCommand;
     friend class SettingValueUndoCommand;
 
-  public:
+   public:
     //! \brief Get the singleton instance of the MainWindow.
     static MainWindow* getInstance();
 
@@ -81,11 +84,11 @@ class MainWindow : public QMainWindow {
     //! \brief Get the instance of the cmd widget to access data.
     CmdWidget* getCmdOut();
 
-  signals:
+   signals:
     //! \brief Signal to indicate check of time is complete (if registry check is insufficient)
     void nistDone();
 
-  public slots:
+   public slots:
     //! \brief Override show event to manipulate bounds on cmd_window
     void showEvent(QShowEvent* event);
 
@@ -133,7 +136,7 @@ class MainWindow : public QMainWindow {
     //! \brief loads a point cloud into a surface mesh object
     void loadPointCloud();
 
-  private slots:
+   private slots:
     //! \brief Start the slicing.
     void doSlice();
 
@@ -245,7 +248,16 @@ class MainWindow : public QMainWindow {
     //! \brief Load a template file from a known path.
     void loadTemplateFile(const QString& filename);
 
-  private:
+    //! \brief Rebuild the recent files submenu from session history.
+    void updateRecentFilesMenu();
+
+    //! \brief Load a project from recent file history.
+    void loadRecentProjectFile(const QString& filename);
+
+    //! \brief Load a model from recent file history.
+    void loadRecentModelFile(const QString& filename);
+
+   private:
     //! \brief Struct to retain action information efficiently.
     struct menu_info {
         //! \brief Display name.
@@ -336,8 +348,8 @@ class MainWindow : public QMainWindow {
     void applyPartTransformSnapshot(QSharedPointer<PartMetaItem> item, const PartTransformSnapshot& snapshot);
 
     //! \brief Takes setting value snapshots for a set of target bases.
-    QVector<SettingValueSnapshot>
-    settingValueSnapshots(const QString& key, const QList<QSharedPointer<SettingsBase>>& settings_bases) const;
+    QVector<SettingValueSnapshot> settingValueSnapshots(
+        const QString& key, const QList<QSharedPointer<SettingsBase>>& settings_bases) const;
 
     //! \brief Applies setting value snapshots as an undo/redo operation.
     void applySettingValueSnapshots(const QVector<SettingValueSnapshot>& snapshots);
@@ -390,13 +402,16 @@ class MainWindow : public QMainWindow {
     GcodeExport* m_export_window;
     FlowrateCalcWindow* m_flowrate_calc_window;
     XtrudeCalcWindow* m_xtrude_calc_window;
+    SettingsFileCompareDialog* m_settings_file_compare_window;
     AboutWindow* m_about_window;
+    ChangelogWindow* m_changelog_window;
 
     //! \brief QActions
     QMap<QString, menu_info> m_actions;
 
     //! \brief QMenus
     QMenu* m_menu_file;
+    QMenu* m_menu_recent_files;
     QMenu* m_menu_edit;
     QMenu* m_menu_view;
     QMenu* m_menu_zoom;
@@ -446,7 +461,7 @@ class MainWindow : public QMainWindow {
     //! \brief Setting panel to menu map
     QHash<QString, QMenu*> m_setting_panel_to_menu_map;
 
-  protected:
+   protected:
     void closeEvent(QCloseEvent* event);
 };
-} // namespace ORNL
+}  // namespace ORNL

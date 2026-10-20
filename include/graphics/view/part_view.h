@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QElapsedTimer>
+
 #include <qhashfunctions.h>
 #include <qlist.h>
 #include <qmap.h>
@@ -16,6 +17,8 @@
 #include "graphics/base_view.h"
 #include "graphics/graphics_object.h"
 #include "part/part.h"
+
+class QPainter;
 
 namespace ORNL {
 // Forward
@@ -40,7 +43,7 @@ class RightClickMenu;
  */
 class PartView : public BaseView {
     Q_OBJECT
-  public:
+   public:
     //! \brief Constructor for the view.
     //! \param sb: Settings to use for the print volume and other affected elements.
     PartView(QSharedPointer<SettingsBase> sb);
@@ -55,7 +58,7 @@ class PartView : public BaseView {
     //! \brief Returns the list of parts that are outside the build volume.
     QList<QSharedPointer<Part>> externalParts();
 
-  public slots:
+   public slots:
     //! \brief Shows or hides part labels.
     void showLabels(bool show);
 
@@ -117,7 +120,7 @@ class PartView : public BaseView {
     //! \brief Moves the camera to its default zoom and orientation.
     virtual void resetCamera() override;
 
-  signals:
+   signals:
     //! \brief Notification of parts that are outside and/or not aligned. Emitted after translations.
     void positioningIssues(QList<QSharedPointer<Part>> opl, QList<QSharedPointer<Part>> fpl);
 
@@ -136,9 +139,15 @@ class PartView : public BaseView {
     //! \brief Emitted when a measurement is committed by choosing the second point.
     void measurementCompleted(QString readout);
 
-  protected:
+   protected:
     //! \brief Initalizes the view with the printer and the associated objects.
     void initView() override;
+
+    //! \brief Draws screen-space labels after the 3D scene is rendered.
+    void paintOverlay(QPainter& painter) override;
+
+    //! \brief Returns whether screen-space labels should be drawn.
+    bool hasOverlay() const override;
 
     //! \brief Handles the following: Alignment selection, translation selection, deselection
     void handleLeftClick(QPointF mouse_ndc_pos) override;
@@ -200,7 +209,7 @@ class PartView : public BaseView {
     //! \brief Finishes an active optimization point drag.
     void finishOptimizationPointDrag(QPointF mouse_ndc_pos);
 
-  private slots:
+   private slots:
     //! \brief Recieves updates from model about selections.
     //! \param pm: The item that was just updated.
     void modelSelectionUpdate(QSharedPointer<PartMetaItem> pm);
@@ -233,7 +242,7 @@ class PartView : public BaseView {
     //!        to broadcast potential issues with the objects.
     void postTransformCheck();
 
-  private:
+   private:
     //! \brief Current view state.
     struct {
         //! \brief World space start of a translation event.
@@ -281,14 +290,8 @@ class PartView : public BaseView {
         //! \brief Rendered line between measurement points.
         QSharedPointer<GraphicsObject> measurement_line;
 
-        //! \brief Rendered measurement label.
-        QSharedPointer<GraphicsObject> measurement_label;
-
         //! \brief Rendered live-preview measurement line.
         QSharedPointer<GraphicsObject> measurement_preview_line;
-
-        //! \brief Rendered live-preview measurement label.
-        QSharedPointer<GraphicsObject> measurement_preview_label;
 
         //! \brief If overhangs are shown.
         bool overhangs_shown = false;
@@ -301,6 +304,9 @@ class PartView : public BaseView {
 
         //! \brief Optimization point currently being dragged.
         QSharedPointer<SeamObject> dragged_seam;
+
+        //! \brief Attractor guide for the optimization point currently being dragged.
+        QSharedPointer<GraphicsObject> dragged_seam_guide;
 
         //! \brief X setting controlled by the dragged optimization point.
         QString dragged_seam_x_setting;
@@ -373,9 +379,6 @@ class PartView : public BaseView {
     //! \brief Creates a rendered line between measurement points.
     QSharedPointer<GraphicsObject> createMeasurementLine(const QVector3D& start, const QVector3D& end);
 
-    //! \brief Creates a billboarded label for the completed measurement.
-    QSharedPointer<GraphicsObject> createMeasurementLabel(const QVector3D& start, const QVector3D& end);
-
     //! \brief Formats a measurement distance for display using user-preferred distance units.
     QString formatMeasurementDistance(double microns, bool ascii_units) const;
 
@@ -433,4 +436,4 @@ class PartView : public BaseView {
     //! \brief Current settings for visualization.
     QSharedPointer<SettingsBase> m_sb;
 };
-} // namespace ORNL
+}  // namespace ORNL

@@ -1,5 +1,5 @@
 <RCC>
     <qresource prefix="/tooltips">
-        <file>profile/spiral_perimeter.png</file>
+        <file>profile/connected_perimeters.png</file>
     </qresource>
 </RCC>

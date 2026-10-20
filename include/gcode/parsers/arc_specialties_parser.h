@@ -13,10 +13,11 @@ namespace ORNL {
  *
  * The visualization path only models XYZ. This parser accepts Arc Specialties `KEY=value` motion fields, validates and
  * strips the orientation-only fields, normalizes X/Y/Z/I/J/K/R/F into the shared parser's single-letter parameter
- * format, and delegates motion estimation and visualization command creation to CommonParser.
+ * format, accepts known schedule-speed feedrate macros, and delegates motion estimation and visualization command
+ * creation to CommonParser.
  */
 class ArcSpecialtiesParser : public CommonParser {
-  public:
+   public:
     /*!
      * @brief Constructs an Arc Specialties gcode parser.
      * @param meta Gcode syntax metadata for units and comments.
@@ -37,7 +38,7 @@ class ArcSpecialtiesParser : public CommonParser {
     //! @brief Registers Arc Specialties command handlers and modal arc-center commands.
     void config() override;
 
-  protected:
+   protected:
     /*!
      * @brief Handles Arc Specialties travel moves after validating and stripping orientation axes.
      * @param params Raw G0/G00 parameters.
@@ -77,7 +78,7 @@ class ArcSpecialtiesParser : public CommonParser {
     //! @brief Marks Arc Specialties welder output as inactive deposition.
     void G83Handler(QVector<QString> params);
 
-  private:
+   private:
     /*!
      * @brief Validates Arc Specialties parameters and returns common-parser-compatible linear parameters.
      * @param params Raw gcode parameters for a motion command.
@@ -98,7 +99,7 @@ class ArcSpecialtiesParser : public CommonParser {
     /*!
      * @brief Checks whether a parameter key is a preview-relevant linear or feedrate field.
      * @param key Parameter key.
-     * @return True for X, Y, Z, or F.
+     * @return True for X, Y, Z, I, J, K, R, or F.
      */
     bool isCommonMotionKey(const QString& key) const;
 
@@ -157,4 +158,4 @@ class ArcSpecialtiesParser : public CommonParser {
     //! @brief Tracks whether G161 absolute-center mode is active while parsing Arc Specialties G-code.
     bool m_use_absolute_arc_centers = false;
 };
-} // namespace ORNL
+}  // namespace ORNL

@@ -4,6 +4,7 @@
 #include <QTreeWidget>
 #include <QVBoxLayout>
 #include <QWidget>
+
 #include <qmap.h>
 #include <qobject.h>
 #include <qsharedpointer.h>
@@ -22,7 +23,7 @@ namespace ORNL {
 class PartControl : public QWidget {
     Q_OBJECT
 
-  public:
+   public:
     //! \brief Constructor
     //! \param parent: the widget this sits on
     explicit PartControl(QWidget* parent = nullptr);
@@ -51,13 +52,14 @@ class PartControl : public QWidget {
     //! \param status if the part is outside the volume
     void setOutsideStatus(const QString& name, bool status);
 
-  private slots:
+   private slots:
     //! \brief Model updates.
     void modelAdditionUpdate(QSharedPointer<PartMetaItem> pm);
     void modelRemovalUpdate(QSharedPointer<PartMetaItem> pm);
     void modelSelectionUpdate(QSharedPointer<PartMetaItem> pm);
     void modelParentingUpdate(QSharedPointer<PartMetaItem> pm);
     void modelVisualUpdate(QSharedPointer<PartMetaItem> pm);
+    void modelNameUpdate(QSharedPointer<PartMetaItem> pm);
 
     //! \brief Handle selection update by the tree view.
     void handleSelectionChange();
@@ -65,7 +67,7 @@ class PartControl : public QWidget {
     //! \brief Handle parenting changes.
     void handleParentingChange();
 
-  private:
+   private:
     //! \brief sets up this widgets sub-widgets
     void setupSubWidgets();
     //! \brief sets up this widget's layout
@@ -87,4 +89,4 @@ class PartControl : public QWidget {
     //! \brief Model
     QSharedPointer<PartMetaModel> m_model;
 };
-} // namespace ORNL
+}  // namespace ORNL

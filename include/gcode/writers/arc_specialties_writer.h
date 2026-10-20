@@ -2,6 +2,7 @@
 
 #include <QPair>
 #include <QVector>
+
 #include <qcontainerfwd.h>
 #include <qhashfunctions.h>
 #include <qsharedpointer.h>
@@ -21,15 +22,17 @@ namespace ORNL {
  *
  * Arc Specialties output keeps generated path coordinates as user-frame endpoints relative to the active work offset,
  * then applies the configured G-Code coordinate frame rotation before output. AP comes from the existing Axis A
- * setting. Planar paths use Axis C as a fixed CP positioner value, while cylindrical paths compute CP from each
+ * setting. Planar paths use Axis C as a fixed CP positioner value, while cylindrical radial paths compute CP from each
  * transformed endpoint's angle around the transformed radial slicing center plus Axis C. Helical paths report CP as the
- * positive angular sweep from the transformed helical start angle plus Axis C. The initial TRAFO-off world approach
- * uses ZR=-90; work-object motion uses XR=180, YR=0, and ZR=-135. When Supports G2/G3 is enabled, print arcs are
- * emitted as G02/G03 with I/J center parameters; cylindrical radial and helical arcs are divided according to Arcs per
- * Revolution.
+ * signed radius-derived start-angle offset plus angular sweep from the transformed helical start point and Axis C.
+ * The user-facing arc-length offset is converted using each generated path's actual radius. Helical tool-frame XR/YR
+ * output also adds one half of the effective start-angle offset for the current radius pass.
+ * The initial TRAFO-off world approach uses ZR=-90; work-object motion uses ZR=-135. When Supports G2/G3 is enabled,
+ * print arcs are emitted as G02/G03 with I/J center parameters; cylindrical radial and helical arcs are divided
+ * according to Arcs per Revolution.
  */
 class ArcSpecialtiesWriter : public WriterBase {
-  public:
+   public:
     /*!
      * @brief Constructs an Arc Specialties writer.
      * @param meta Gcode syntax metadata for output units and comments.
@@ -38,14 +41,16 @@ class ArcSpecialtiesWriter : public WriterBase {
     ArcSpecialtiesWriter(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb);
 
     /*!
-     * @brief Supplies the effective part-local helical boundary policies for the settings header.
-     * @param methods Part name and boundary policy pairs for parts that produced helical paths.
+     * @brief Supplies the effective part-local helical Z clip rounding values for the settings header.
+     *
+     * @param rounding Part name and rounding pairs for parts that produced helical paths.
      */
-    void setHelicalPathBoundaryPolicy(const QVector<QPair<QString, HelicalPathBoundaryPolicy>>& methods);
+    void setHelicalPathZClipRounding(const QVector<QPair<QString, HelicalPathZClipRounding>>& rounding);
 
     /*!
      * @brief Supplies the effective part-local helical handedness values for the settings header.
-     * @param handedness Part name and handedness pairs for parts that produced helical paths.
+     * @param
+     * handedness Part name and handedness pairs for parts that produced helical paths.
      */
     void setHelicalPathHandedness(const QVector<QPair<QString, HelicalPathHandedness>>& handedness);
 
@@ -90,6 +95,8 @@ class ArcSpecialtiesWriter : public WriterBase {
 
     //! @brief Tracks the active path type without emitting path prologue commands.
     QString writeBeforePath(RegionType type) override;
+
+    QString writeBeforePathRegionTransition(RegionType type) override;
 
     /*!
      * @brief Writes a travel move with Arc Specialties coordinates and orientation fields.
@@ -156,7 +163,14 @@ class ArcSpecialtiesWriter : public WriterBase {
      */
     QString writeDwell(Time time) override;
 
-  private:
+   private:
+    //! @brief Arc Specialties tool-frame rotation fields.
+    struct ToolFrameRotation {
+        double xr;
+        double yr;
+        double zr;
+    };
+
     //! \brief Writes G-Code to enable the welder
     QString writeWelderOn();
     /*!
@@ -166,6 +180,25 @@ class ArcSpecialtiesWriter : public WriterBase {
      * @return Welder shutdown block.
      */
     QString writeWelderOff(int mode = 0);
+
+    /*!
+     * @brief Returns the quote-stripped G80 weld schedule file configured for output.
+     * @return Sanitized schedule file path, or an empty string when unset.
+     */
+    QString g80WeldScheduleFile() const;
+
+    /*!
+     * @brief Returns whether print motion feedrates should reference the G80 schedule speed variable.
+     * @return True when a sanitized G80 weld schedule file is configured.
+     */
+    bool usesG80ScheduleSpeedVariable() const;
+
+    /*!
+     * @brief Formats the Arc Specialties motion feedrate field.
+     * @param speed Numeric feedrate used when schedule speed output is inactive.
+     * @return Either a numeric F field or the G80 schedule speed variable field.
+     */
+    QString writeMotionFeedrate(Velocity speed) const;
 
     /*!
      * @brief Writes a single Arc Specialties motion command.
@@ -193,6 +226,35 @@ class ArcSpecialtiesWriter : public WriterBase {
                         const QSharedPointer<SettingsBase>& params, const QString& comment, const Point& cp_reference);
 
     /*!
+     * @brief Starts per-layer Beckhoff block numbering for executable bead-body lines.
+     */
+    void startLayerBlockNumbering();
+
+    /*!
+     * @brief Initializes the per-layer Beckhoff block number counter without activating numbering.
+     */
+    void initializeLayerBlockNumbering();
+
+    /*!
+     * @brief Stops per-layer block numbering for layer transition and shutdown lines.
+     */
+    void stopLayerBlockNumbering();
+
+    /*!
+     * @brief Returns whether Arc Specialties block numbers should be emitted.
+     * @return True when the setting is enabled.
+     */
+    bool shouldEmitBlockNumbers() const;
+
+    /*!
+     * @brief Adds the next per-layer block number to each executable line in a block.
+     * @param block G-Code block to format.
+     * @param force True to number schedule/setup lines before bead-body numbering is active.
+     * @return Block with Beckhoff-style N numbers when enabled and active or forced.
+     */
+    QString writeNumberedBlock(const QString& block, bool force = false);
+
+    /*!
      * @brief Writes the Arc Specialties kinematics and TRAFO setup block once.
      * @return Startup kinematics block, or an empty string after it has already been emitted.
      */
@@ -205,25 +267,46 @@ class ArcSpecialtiesWriter : public WriterBase {
     QString writePendingLayerChange();
 
     /*!
+     * @brief Writes layer-local output held until the first ordered helical print motion chooses OptStopMode.
+     * @return Pending pre-print layer output, or an empty string when none is pending.
+     */
+    QString writePendingLayerPrefix();
+
+    /*!
+     * @brief Writes any helical region schedule deferred until the first ordered print motion.
+     * @return Pending G80 schedule block, or an empty string when none is pending.
+     */
+    QString writePendingRegionSchedule();
+
+    /*!
      * @brief Formats X/Y/Z/XR/YR/ZR/AP/CP coordinate fields for a point.
      * @param destination Point being written.
      * @param params Segment settings containing, for cylindrical paths, radial center metadata.
-     * @param tool_frame_zr ZR orientation value to emit.
+     * @param tool_frame_rotation Tool-frame orientation value to emit.
      * @return Coordinate parameter string.
      */
     QString writeCoordinates(const Point& destination, const QSharedPointer<SettingsBase>& params,
-                             double tool_frame_zr);
+                             const ToolFrameRotation& tool_frame_rotation);
 
     /*!
      * @brief Formats X/Y/Z/XR/YR/ZR/AP/CP coordinate fields with CP computed from a reference point.
      * @param destination Point being written.
      * @param params Segment settings containing, for cylindrical paths, radial center metadata.
-     * @param tool_frame_zr ZR orientation value to emit.
+     * @param tool_frame_rotation Tool-frame orientation value to emit.
      * @param cp_reference Point used to compute the CP orientation field.
      * @return Coordinate parameter string.
      */
-    QString writeCoordinates(const Point& destination, const QSharedPointer<SettingsBase>& params, double tool_frame_zr,
-                             const Point& cp_reference);
+    QString writeCoordinates(const Point& destination, const QSharedPointer<SettingsBase>& params,
+                             const ToolFrameRotation& tool_frame_rotation, const Point& cp_reference);
+
+    /*!
+     * @brief Returns the tool frame for a motion comment and segment settings.
+     * @param comment Motion comment being emitted.
+     * @param params Segment settings used to identify the helical region.
+     * @return Tool-frame rotation for the motion.
+     */
+    ToolFrameRotation toolFrameRotationForMotion(const QString& comment,
+                                                 const QSharedPointer<SettingsBase>& params) const;
 
     /*!
      * @brief Returns the first post-kinematics travel point above the first-layer lower point.
@@ -260,16 +343,17 @@ class ArcSpecialtiesWriter : public WriterBase {
     bool usesAbsoluteArcCenters() const;
 
     /*!
-     * @brief Computes the CP value for the active slicing mode, normalized to [0, 360).
+     * @brief Computes the CP value for the active slicing mode.
      * @param destination Point whose angular position is being written.
      * @param params Segment settings containing, for cylindrical paths, radial center metadata.
-     * @return CP value in degrees.
+     * @return CP value in degrees. Planar and radial values are normalized to [0, 360); helical values are signed and
+     * may exceed one revolution.
      */
     double cpAxisForPoint(const Point& destination, const QSharedPointer<SettingsBase>& params);
 
     /*!
-     * @brief Returns the transformed helical start angle used as the CP sweep reference.
-     * @param params Segment settings containing helical start-angle metadata.
+     * @brief Returns the transformed helical geometry start angle used as the CP sweep reference.
+     * @param params Segment settings. Currently unused because helical X/Y starts at top dead center.
      * @return Start angle in degrees.
      */
     double helicalStartAngle(const QSharedPointer<SettingsBase>& params) const;
@@ -282,15 +366,50 @@ class ArcSpecialtiesWriter : public WriterBase {
 
     /*!
      * @brief Returns the print-move comment for the active slicing mode and path type.
+     * @param params Segment settings used to report parser-facing region metadata.
      * @return Region, radial, or helical comment text.
      */
-    QString printMoveComment() const;
+    QString printMoveComment(const QSharedPointer<SettingsBase>& params) const;
 
     /*!
      * @brief Returns whether the writer is emitting cylindrical radial or helical paths.
      * @return True when Slicing Mode is Cylindrical.
      */
     bool isCylindricalSlicingMode() const;
+
+    /*!
+     * @brief Returns whether the supplied settings describe cylindrical helical output.
+     * @param params Settings to query before falling back to writer settings.
+     * @return True when Slicing Mode is Cylindrical and Cylindrical Path Pattern is Helical.
+     */
+    bool isHelicalPathPattern(const QSharedPointer<SettingsBase>& params) const;
+
+    /*!
+     * @brief Returns whether layer-local output should be held until the helical OptStopMode is known.
+     * @param params Settings used to identify helical output.
+     * @return True when the layer marker is pending and the first helical print motion has not been seen.
+     */
+    bool shouldBufferHelicalLayerPrefix(const QSharedPointer<SettingsBase>& params) const;
+
+    /*!
+     * @brief Formats the Arc Specialties optional stop mode selected by actual helical CP rotation direction.
+     * @param start_point Motion start point after path ordering.
+     * @param end_point Motion end point after path ordering.
+     * @param params Segment settings used to compute CP.
+     * @return OptStopMode assignment for the first helical print move in a layer, or an empty string otherwise.
+     */
+    QString writeHelicalOptStopMode(const Point& start_point, const Point& end_point,
+                                    const QSharedPointer<SettingsBase>& params);
+
+    /*!
+     * @brief Writes the pending layer marker, helical OptStopMode, and held pre-print layer output.
+     * @param start_point Motion start point after path ordering.
+     * @param end_point Motion end point after path ordering.
+     * @param params Segment settings used to compute CP.
+     * @return Pending layer-start output for the first print move.
+     */
+    QString writeHelicalLayerStart(const Point& start_point, const Point& end_point,
+                                   const QSharedPointer<SettingsBase>& params);
 
     //! @brief Tracks whether any travel move has been emitted.
     bool m_first_travel = true;
@@ -307,6 +426,9 @@ class ArcSpecialtiesWriter : public WriterBase {
     //! @brief Layer marker held until the initial world approach and kinematics block are complete.
     QString m_pending_layer_change;
 
+    //! @brief Layer-local output held until the first helical print move determines OptStopMode.
+    QString m_pending_layer_prefix;
+
     //! @brief Active region type used for planar print-move comments.
     RegionType m_region_type = RegionType::kUnknown;
 
@@ -316,10 +438,25 @@ class ArcSpecialtiesWriter : public WriterBase {
     //! @brief Tracks layer number.
     int m_current_layer = 0;
 
-    //! @brief Effective part-local boundary policies reported in helical G-code headers.
-    QVector<QPair<QString, HelicalPathBoundaryPolicy>> m_helical_path_boundary_policy;
+    //! @brief Tracks the next Beckhoff block number for the active layer.
+    int m_next_block_number = 0;
+
+    //! @brief Tracks whether per-layer block numbering has been initialized for this layer.
+    bool m_layer_block_numbering_started = false;
+
+    //! @brief Tracks whether executable lines should currently receive block numbers.
+    bool m_layer_block_numbering_active = false;
+
+    //! @brief Tracks whether the helical rotation-direction mode has been emitted for the active layer.
+    bool m_helical_opt_stop_mode_written = false;
+
+    //! @brief Holds helical G80 schedule output until ordered print motion determines C rotation direction.
+    QString m_pending_region_schedule;
+
+    //! @brief Effective part-local Z clip rounding values reported in helical G-code headers.
+    QVector<QPair<QString, HelicalPathZClipRounding>> m_helical_path_z_clip_rounding;
 
     //! @brief Effective part-local handedness values reported in helical G-code headers.
     QVector<QPair<QString, HelicalPathHandedness>> m_helical_path_handedness;
 };
-} // namespace ORNL
+}  // namespace ORNL

@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QWidget>
+
 #include <qcolor.h>
 #include <qobject.h>
 #include <qtmetamacros.h>
@@ -13,14 +14,17 @@ namespace ORNL {
 class VisualizationColorPicker : public QWidget {
     Q_OBJECT
 
-  public:
+   public:
     //! \brief Constructor
     //! \param name of color / type
     //! \param color as QColor
     //! \param parent
     explicit VisualizationColorPicker(QString name, QColor color, QWidget* parent = nullptr);
 
-  private:
+    //! \brief Reload the displayed color from the preferences manager
+    void refreshFromPreferences();
+
+   private:
     //! \brief Mouse press event
     void mousePressEvent(QMouseEvent*);
 
@@ -50,4 +54,4 @@ class VisualizationColorPicker : public QWidget {
     //! \brief UI display button control for selecting and setting color
     QPushButton* colorSelectorBtn;
 };
-} // namespace ORNL
+}  // namespace ORNL

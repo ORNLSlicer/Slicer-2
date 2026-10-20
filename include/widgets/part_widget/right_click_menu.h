@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QMenu>
+
 #include <qaction.h>
 #include <qlist.h>
 #include <qpoint.h>
@@ -19,7 +20,7 @@ namespace ORNL {
 class RightClickMenu : public QMenu {
     Q_OBJECT
 
-  public:
+   public:
     //! \brief Constructor
     //! \param parent: the widget this sits on
     explicit RightClickMenu(QWidget* parent);
@@ -30,7 +31,7 @@ class RightClickMenu : public QMenu {
     //! \param transparency: part's current transparency
     void show(const QPointF& pos, QList<QSharedPointer<PartMetaItem>> items);
 
-  private:
+   private:
     //! \brief sets up this menu's actions
     void setupActions();
 
@@ -45,17 +46,18 @@ class RightClickMenu : public QMenu {
 
     //! \brief actions to display
     QAction* m_info_action;
-    QAction* m_switch_to_clipper_action;
     QAction* m_switch_to_build_action;
+    QAction* m_switch_to_clipper_action;
     QAction* m_switch_to_setting_action;
+    QAction* m_lock_part_action;
+    QAction* m_set_instances_action;
     QAction* m_reset_transformation_action;
-    QAction* m_reload_part_action;
+    QAction* m_rename_part_action;
     QAction* m_replace_part_action;
+    QAction* m_reload_part_action;
     QAction* m_delete_part_action;
     QAction* m_wireframe_action;
     QAction* m_solidwireframe_action;
-    QAction* m_lock_part_action;
-    QAction* m_set_instances_action;
 
     //! \brief Menu to hold transparency
     QMenu* m_transparency_menu;
@@ -65,4 +67,4 @@ class RightClickMenu : public QMenu {
 
     QList<QSharedPointer<PartMetaItem>> m_selected_items;
 };
-} // namespace ORNL
+}  // namespace ORNL

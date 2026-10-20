@@ -9,7 +9,7 @@ This guide summarizes expectations for code style, formatting, documentation, an
 1. Create a branch using the conventional branch scheme (e.g. `feat/feature-name`).
 2. Implement changes following the style & formatting guides.
 3. Add/adjust Doxygen docs for public APIs.
-4. Run `clang-format` on changed files.
+4. Run `clang-format` or the configured `pre-commit` hook on changed files.
 5. Write commits using Conventional Commits.
 6. Rebase or update from `develop` if needed; resolve conflicts.
 7. Open a pull request with a clear summary and rationale.
@@ -39,8 +39,20 @@ Follow naming, layout, and structural conventions; favor clarity over cleverness
 
 ## [Formatting](docs/contributing/formatting.md)
 
-Use `clang-format` before committing; never hand-adjust whitespace.
+Use `clang-format` or the configured `pre-commit` hook before committing; pre-commit.ci automatically applies formatting fixes to pull requests when needed.
 
 ## [Documentation](docs/contributing/documentation.md)
 
 Document public APIs with Doxygen blocks (purpose, constraints, usage).
+
+## [Cachix Workflow](docs/contributing/cachix.md)
+
+Configure cache access and publish trusted Nix build outputs for reuse by developers and CI.
+
+## [Versioning and Releases](docs/contributing/versioning.md)
+
+Validate product versions and prepare reviewable release bumps with MAJOR capped at 2.
+
+## [Changelog](docs/contributing/changelog.md)
+
+Record notable changes under `Unreleased` and finalize release notes during release review.

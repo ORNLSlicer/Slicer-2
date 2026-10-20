@@ -2,6 +2,7 @@
 
 #include <QTextCharFormat>
 #include <QThread>
+
 #include <qcolor.h>
 #include <qcontainerfwd.h>
 #include <qhash.h>
@@ -29,7 +30,7 @@ namespace ORNL {
  */
 class GCodeLoader : public QThread {
     Q_OBJECT
-  public:
+   public:
     //! \brief Constructor
     //! \param filename: Name of file to load
     //! \param conversion ratio to convert from model space to view space for
@@ -41,7 +42,7 @@ class GCodeLoader : public QThread {
     //! \brief Function that is run when start is called on this thread.
     void run() override;
 
-  signals:
+   signals:
 
     //! \brief signal to view with info for visualization
     //! \param layers: vector of graphics layers for visualization.  Information is
@@ -80,7 +81,7 @@ class GCodeLoader : public QThread {
     //! \param percentComplete: Current completion percentage
     void updateDialog(StatusUpdateStepType type, int percentComplete);
 
-  public slots:
+   public slots:
 
     //! \brief Set cancel flag as received from slice dialog
     void cancelSlice();
@@ -90,7 +91,7 @@ class GCodeLoader : public QThread {
     //! \param percentComplete: Current completion percentage
     void forwardDialogUpdate(StatusUpdateStepType type, int percentComplete);
 
-  private:
+   private:
     //! \brief parse header looking for syntax info and base offset
     //! \param originalLines: Original lines from gcode file
     //! \param lines Uppercase: lines used for ease of parsing/comparison
@@ -156,11 +157,10 @@ class GCodeLoader : public QThread {
     //! \param include_non_deposition_moves: if true, generates visual segments when deposition is inactive
     //! \param optional_parameters: Parameters of gcodecommand for start (x, y, z, w)
     //! \return List of generated visual segments.
-    QVector<QSharedPointer<SegmentBase>>
-    generateVisualSegment(int line_num, int layer_num, const QColor& color, int command_id,
-                          const QMap<char, double>& parameters, bool deposition_active, double extruder_speed,
-                          bool include_non_deposition_moves, const QString comment,
-                          const QMap<char, double>& optional_parameters = QMap<char, double>());
+    QVector<QSharedPointer<SegmentBase>> generateVisualSegment(
+        int line_num, int layer_num, const QColor& color, int command_id, const QMap<char, double>& parameters,
+        bool deposition_active, double extruder_speed, bool include_non_deposition_moves, const QString comment,
+        const QMap<char, double>& optional_parameters = QMap<char, double>());
 
     //! \brief Filename.
     QString m_filename;
@@ -177,14 +177,11 @@ class GCodeLoader : public QThread {
 
     //! \brief matchers for modifier identification for coloring
     QStringMatcher m_prestart, m_initial_startup, m_slowdown, m_forward_tipwipe, m_reverse_tipwipe, m_angled_tipwipe,
-        m_coasting, m_spirallift, m_rampingup, m_rampingdown, m_leadin;
+        m_coasting, m_spirallift, m_rampingup, m_rampingdown, m_leadin, m_connection;
 
     //! \brief matchers for type identification for coloring
     QStringMatcher m_perimeter, m_radial, m_helical, m_inset, m_infill, m_skin, m_skeleton, m_support, m_support_roof,
         m_travel, m_raft, m_brim, m_skirt, m_laserscan, m_thermalscan;
-
-    //! \brief colors for modifiers to adjust display size
-    QVector<QColor> m_modifier_colors;
 
     //! \brief bool to indicate whether gcode should be adjusted for minimal layer time
     bool m_adjust_file;
@@ -243,5 +240,8 @@ class GCodeLoader : public QThread {
 
     //! \brief Current settings for gcode loader
     QSharedPointer<SettingsBase> m_sb;
-}; // class GCodeLoader
-} // namespace ORNL
+
+    //! \brief Settings parsed from the loaded file footer for visualization fallbacks.
+    QHash<QString, double> m_file_settings;
+};  // class GCodeLoader
+}  // namespace ORNL

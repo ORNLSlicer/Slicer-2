@@ -1,6 +1,7 @@
 #include "gcode/writers/wolf_writer.h"
 
 #include <QStringBuilder>
+
 #include <qcontainerfwd.h>
 #include <qhashfunctions.h>
 #include <qnumeric.h>
@@ -19,8 +20,11 @@ namespace ORNL {
 WolfWriter::WolfWriter(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb) : WriterBase(meta, sb) {}
 
 QString WolfWriter::writeSettingsHeader(GcodeSyntax syntax) {
-    QString text = "";
-    text += WriterBase::writeSettingsHeader(syntax);
+    QString text = WriterBase::writeSettingsHeader(syntax);
+    if (syntax == GcodeSyntax::kWolf) {
+        text.replace("Minimum Table Value:", "minimum Table Value:");
+        text.replace("Forced Minimum / Maximum Layer Time:", "Forced minimum / maximum Layer Time:");
+    }
 
     text += m_newline;
     return text;
@@ -28,19 +32,18 @@ QString WolfWriter::writeSettingsHeader(GcodeSyntax syntax) {
 
 QString WolfWriter::writeInitialSetup(Distance minimum_x, Distance minimum_y, Distance maximum_x, Distance maximum_y,
                                       int num_layers) {
-    m_current_z = m_sb->setting<Distance>(PRS::Dimensions::kZOffset);
-    m_current_rpm = 0;
-    m_current_robot = 1;
-    m_machine_type = m_sb->setting<MachineType>(PRS::MachineSetup::kMachineType);
+    m_current_z         = m_sb->setting<Distance>(PRS::Dimensions::kZOffset);
+    m_current_rpm       = 0;
+    m_current_robot     = 1;
+    m_machine_type      = m_sb->setting<MachineType>(PRS::MachineSetup::kMachineType);
     m_deposition_active = false;
-    m_first_travel = true;
-    m_first_print = true;
-    m_layer_start = true;
-    m_min_z = 0.0f;
+    m_first_travel      = true;
+    m_first_print       = true;
+    m_layer_start       = true;
+    m_min_z             = 0.0f;
     QString rv;
 
-    if (m_sb->setting<QString>(PRS::GCode::kStartCode) != "")
-        rv += m_sb->setting<QString>(PRS::GCode::kStartCode);
+    if (m_sb->setting<QString>(PRS::GCode::kStartCode) != "") rv += m_sb->setting<QString>(PRS::GCode::kStartCode);
 
     rv += m_newline;
 
@@ -51,8 +54,8 @@ QString WolfWriter::writeInitialSetup(Distance minimum_x, Distance minimum_y, Di
 
 QString WolfWriter::writeBeforeLayer(float new_min_z, QSharedPointer<SettingsBase> sb) {
     m_spiral_layer = sb->setting<bool>(PS::SpecialModes::kEnableSpiralize);
-    m_layer_start = true;
-    m_bead_count = 0;
+    m_layer_start  = true;
+    m_bead_count   = 0;
     QString rv;
     return rv;
 }
@@ -118,6 +121,33 @@ QString WolfWriter::writeBeforePath(RegionType type) {
     return rv;
 }
 
+QString WolfWriter::writeBeforePathRegionTransition(RegionType type) {
+    m_current_type = type;
+
+    if (type == RegionType::kPerimeter) {
+        m_wolf_path_type = 1;
+        return "M1T2D4F0" % commentLine("PERIMETER START");
+    }
+    if (type == RegionType::kInset) {
+        m_wolf_path_type = 2;
+        return "M2T2D4F0" % commentLine("INSET START");
+    }
+    if (type == RegionType::kSkeleton) {
+        m_wolf_path_type = 8;
+        return "M8T2D4F0" % commentLine("SKELETON START");
+    }
+    if (type == RegionType::kSkin) {
+        m_wolf_path_type = 5;
+        return "M5T2D4F0" % commentLine("SKIN START");
+    }
+    if (type == RegionType::kInfill) {
+        m_wolf_path_type = 5;
+        return "M5T2D4F0" % commentLine("INFILL START");
+    }
+
+    return QString();
+}
+
 QString WolfWriter::writeTravel(Point start_location, Point target_location, TravelLiftType lType,
                                 QSharedPointer<SettingsBase> params) {
     QString rv;
@@ -138,7 +168,7 @@ QString WolfWriter::writeTravel(Point start_location, Point target_location, Tra
     Distance liftDist;
     liftDist = m_sb->setting<Distance>(PS::Travel::kLiftHeight);
 
-    bool travel_lift_required = liftDist > 0; // && !m_first_travel; //do not write a lift on first travel
+    bool travel_lift_required = liftDist > 0 && lType != TravelLiftType::kNoLift;
 
     // Don't lift for short travel moves
     if (start_location.distance(target_location) < m_sb->setting<Distance>(PS::Travel::kMinTravelForLift)) {
@@ -148,7 +178,7 @@ QString WolfWriter::writeTravel(Point start_location, Point target_location, Tra
     // write the lift
     if (travel_lift_required && !m_first_travel &&
         (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly)) {
-        Point lift_destination = new_start_location + travel_lift; // lift destination is above start location
+        Point lift_destination = new_start_location + travel_lift;  // lift destination is above start location
 
         rv += m_G1 % m_f %
               QString::number(m_sb->setting<Velocity>(PRS::MachineSpeed::kZSpeed).to(m_meta.m_velocity_unit)) %
@@ -158,19 +188,15 @@ QString WolfWriter::writeTravel(Point start_location, Point target_location, Tra
 
     // write the travel
     Point travel_destination = target_location;
-    if (m_first_travel)
-        travel_destination.z(qAbs(m_sb->setting<Distance>(PRS::Dimensions::kZOffset)() +
-                                  m_sb->setting<Distance>(PS::Travel::kLiftHeight)() +
-                                  m_sb->setting<Distance>(PS::Layer::kLayerHeight)()));
-    else if (travel_lift_required)
-        travel_destination = travel_destination + travel_lift; // travel destination is above the target point
+    if (travel_lift_required)
+        travel_destination = travel_destination + travel_lift;  // travel destination is above the target point
 
     rv += m_G1 % m_f % QString::number(m_sb->setting<Velocity>(PS::Travel::kSpeed).to(m_meta.m_velocity_unit)) %
           writeCoordinates(travel_destination) % commentSpaceLine("TRAVEL");
     setFeedrate(m_sb->setting<Velocity>(PS::Travel::kSpeed));
 
-    if (m_first_travel)         // if this is the first travel
-        m_first_travel = false; // update for next one
+    if (m_first_travel)          // if this is the first travel
+        m_first_travel = false;  // update for next one
 
     // write the travel lower (undo the lift)
     if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftLowerOnly)) {
@@ -186,12 +212,12 @@ QString WolfWriter::writeTravel(Point start_location, Point target_location, Tra
 QString WolfWriter::writeLine(const Point& start_point, const Point& target_point,
                               const QSharedPointer<SettingsBase> params) {
     // Get the settings
-    Velocity speed = params->setting<Velocity>(SS::kSpeed);
-    int rpm = params->setting<int>(SS::kExtruderSpeed);
-    int material_number = params->setting<int>(SS::kMaterialNumber);
-    RegionType region_type = params->setting<RegionType>(SS::kRegionType);
+    Velocity speed               = params->setting<Velocity>(SS::kSpeed);
+    int rpm                      = params->setting<int>(SS::kExtruderSpeed);
+    int material_number          = params->setting<int>(SS::kMaterialNumber);
+    RegionType region_type       = params->setting<RegionType>(SS::kRegionType);
     PathModifiers path_modifiers = params->setting<PathModifiers>(SS::kPathModifiers);
-    float output_rpm = rpm * m_sb->setting<float>(PRS::MachineSpeed::kGearRatio);
+    float output_rpm             = rpm * m_sb->setting<float>(PRS::MachineSpeed::kGearRatio);
 
     QString rv;
 
@@ -225,10 +251,7 @@ QString WolfWriter::writeLine(const Point& start_point, const Point& target_poin
     rv += writeCoordinates(target_point);
 
     // add comment for gcode parser
-    if (path_modifiers != PathModifiers::kNone)
-        rv += commentSpaceLine(toString(region_type) % m_space % toString(path_modifiers));
-    else
-        rv += commentSpaceLine(toString(region_type));
+    rv += commentSpaceLine(regionComment(region_type, path_modifiers, params));
 
     m_first_print = false;
 
@@ -245,7 +268,7 @@ QString WolfWriter::writeArc(const Point& start_point, const Point& end_point, c
 QString WolfWriter::writeAfterPath(RegionType type) {
     QString rv;
     if (!m_spiral_layer) {
-        rv += writeExtruderOff(0); // update to turn off the extruder
+        rv += writeExtruderOff(0);  // update to turn off the extruder
         if (type == RegionType::kPerimeter) {
             if (!m_sb->setting<QString>(PS::GCode::kPerimeterEnd).isEmpty())
                 rv += m_sb->setting<QString>(PS::GCode::kPerimeterEnd) % m_newline;
@@ -348,9 +371,7 @@ QString WolfWriter::writeExtruderOn(RegionType region_type, int rpm, int extrude
     }
 
     // Write the appropriate dwell time for the region
-    if (dwell_time > 0) {
-        rv += writeDwell(dwell_time);
-    }
+    if (dwell_time > 0) { rv += writeDwell(dwell_time); }
 
     return rv;
 }
@@ -361,9 +382,7 @@ QString WolfWriter::writeExtruderOff(int extruder_number) {
 
     // Retrieve relevant settings
     Time off_delay = m_sb->setting<Time>(MS::Extruder::kOffDelay);
-    if (off_delay > 0) {
-        rv += writeDwell(off_delay);
-    }
+    if (off_delay > 0) { rv += writeDwell(off_delay); }
 
     rv += "M103" % commentSpaceLine("TURN PUMP OFF");
     m_current_rpm = 0;
@@ -384,11 +403,14 @@ QString WolfWriter::writeCoordinates(Point destination) {
 
     Distance target_z = destination.z() + z_offset;
     if (qAbs(target_z - m_last_z) > 10) {
-        rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
+        constexpr double kHalfCoordinateResolution = 0.00005;
+        double output_z                            = Distance(target_z).to(m_meta.m_distance_unit);
+        if (qAbs(output_z) < kHalfCoordinateResolution) output_z = 0.0;
+        rv += m_z % QString::number(output_z, 'f', 4);
         m_current_z = target_z;
-        m_last_z = target_z;
+        m_last_z    = target_z;
     }
 
     return rv;
 }
-} // namespace ORNL
+}  // namespace ORNL

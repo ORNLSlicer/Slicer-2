@@ -3,6 +3,8 @@
 #include <QElapsedTimer>
 #include <QQueue>
 #include <QThread>
+#include <functional>
+
 #include <nlohmann/json_fwd.hpp>
 #include <qdir.h>
 #include <qhashfunctions.h>
@@ -25,7 +27,7 @@ class Part;
  */
 class AbstractSlicingThread : public QObject {
     Q_OBJECT
-  public:
+   public:
     //! \brief Constructor
     AbstractSlicingThread(QString outputLocation, bool skipGcode = false);
 
@@ -47,7 +49,7 @@ class AbstractSlicingThread : public QObject {
     //! \brief Get the time it took to slice
     qint64 getTimeElapsed();
 
-  public slots:
+   public slots:
     //! \brief Main function that starts slice.
     virtual void doSlice() = 0;
 
@@ -56,7 +58,7 @@ class AbstractSlicingThread : public QObject {
     //! \param completedPercentage: The percentage complete of the current step process
     void forwardStatus(StatusUpdateStepType type, int completedPercentage);
 
-  signals:
+   signals:
     //! \brief Signal to the active steps to begin computation.
     void stepStart();
 
@@ -72,7 +74,7 @@ class AbstractSlicingThread : public QObject {
     //! \brief Signal to session manager that slicing is complete
     void sliceComplete();
 
-  protected:
+   protected:
     //! \brief Pure virtual for preprocess step. This is always run first.
     //! \param opt_data optional sensor data
     virtual void preProcess(nlohmann::json opt_data = nlohmann::json()) = 0;
@@ -129,6 +131,9 @@ class AbstractSlicingThread : public QObject {
     //! \brief the syntax in use by this slicer
     GcodeSyntax m_syntax;
 
+    //! \brief Creates a writer with the same startup state as the shared G-code header.
+    std::function<QSharedPointer<WriterBase>()> m_layer_export_setup;
+
     //! \brief Range of steps to compute
     int m_min, m_max;
 
@@ -142,16 +147,16 @@ class AbstractSlicingThread : public QObject {
     QElapsedTimer m_timer;
     qint64 m_elapsed_time = 0;
 
-  protected slots:
+   protected slots:
     //! \brief Upon completion of thread running step object, this slot will clean up the thread.
     //!        If more objects are on the queue, then this will run the thread
     virtual void cleanThread() = 0;
 
-  private:
+   private:
     //! \brief Internal thread.
     QThread m_internal_thread;
 
     //! \brief Cancel flag set by session manager if user clicks on cancel button
     bool m_should_cancel;
 };
-} // namespace ORNL
+}  // namespace ORNL

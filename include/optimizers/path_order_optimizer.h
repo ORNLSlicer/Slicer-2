@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <qcontainerfwd.h>
 #include <qsharedpointer.h>
 #include <qtypes.h>
@@ -8,6 +10,7 @@
 #include "geometry/path.h"
 #include "geometry/point.h"
 #include "geometry/polygon_list.h"
+#include "optimizers/point_order_optimizer.h"
 #include "units/unit.h"
 #include "utilities/enums.h"
 
@@ -27,7 +30,7 @@ class TravelSegment;
  * \list kRandom: links to a random vertex each time
  */
 class PathOrderOptimizer {
-  public:
+   public:
     //! \brief Constructor
     //! \note Layer number is only needed if kConsecutive linking is used
     PathOrderOptimizer(Point& start, uint layer_number, const QSharedPointer<SettingsBase>& sb);
@@ -39,11 +42,17 @@ class PathOrderOptimizer {
     Path linkNextPath(QVector<Path> paths = QVector<Path>());
 
     /*!
-     * @brief Links the next open radial arc using the configured path and point order settings.
-     * @param center Cylinder center used to turn outside-in and inside-out into angular sweep ordering.
+     * @brief Links the next radial path using cylindrical path-order settings.
      * @return Linked radial path with a travel prepended.
      */
-    Path linkNextRadialPath(const Point& center);
+    Path linkNextRadialPath();
+
+    /*!
+     * @brief Links the next open helical fragment from the selected endpoint.
+     * @param starts_from_generated_end Optional output set true when the selected fragment is reversed.
+     * @return Linked helical path with a travel prepended.
+     */
+    Path linkNextHelicalPath(bool* starts_from_generated_end = nullptr);
 
     //! \brief Set paths to evaluate
     //! \param paths: Copy of paths to evaluate
@@ -80,7 +89,7 @@ class PathOrderOptimizer {
     //! \param pt: Seam point
     void setStartPointOverride(Point pt);
 
-  private:
+   private:
     //! \brief Node to hold topological data
     //! \param m_poly: Polygon representing current path. Used for inside/outside comparison.
     //! \param m_path_index: Path index in m_paths that node represents.
@@ -93,8 +102,25 @@ class PathOrderOptimizer {
         TopologicalNode() {}
         TopologicalNode(int index, Polygon poly) {
             m_path_index = index;
-            m_poly = poly;
+            m_poly       = poly;
         }
+    };
+
+    //! \brief Selected radial path and entry point.
+    struct RadialPathSelection {
+        int path_index          = -1;
+        int segment_index       = 0;
+        bool start_from_front   = true;
+        bool rotate_to_segment  = false;
+        bool insert_split_point = false;
+        Point split_point;
+        int insertion_index = 0;
+    };
+
+    //! \brief Selected open path endpoint.
+    struct OpenPathSelection {
+        int path_index        = -1;
+        bool start_from_front = true;
     };
 
     //! \brief Links the POO position to the given path with a travel (used for closed contours)
@@ -110,11 +136,22 @@ class PathOrderOptimizer {
     Path linkNextSkeletonPath();
 
     /*!
-     * @brief Selects an open radial arc and endpoint using radial-compatible path-order semantics.
-     * @param center Cylinder center used for angular ordering.
-     * @return Selected path index and true when the path should start from its front endpoint.
+     * @brief Selects a radial path and safe entry point using cylindrical path-order semantics.
+     * @return Selected path index plus either a closed-path rotation index or open-path endpoint.
      */
-    QPair<int, bool> radialOpenPath(const Point& center);
+    RadialPathSelection radialPathSelection();
+
+    /*!
+     * @brief Selects a helical fragment endpoint using cylindrical path-order settings.
+     * @return Selected path index plus whether to enter from its front endpoint.
+     */
+    OpenPathSelection helicalOpenPath() const;
+
+    /*!
+     * @brief Returns the supported cylindrical path-order setting.
+     * @return Next Closest or Next Farthest.
+     */
+    PathOrderOptimization cylindricalPathOrderOptimization() const;
 
     /*!
      * @brief Returns the query point used by radial path ordering.
@@ -138,21 +175,6 @@ class PathOrderOptimizer {
      */
     Distance nearestOpenEndpointDistance(const Point& query, const Path& path) const;
 
-    /*!
-     * @brief Returns the angular midpoint of an open radial arc about a center.
-     * @param path Open radial arc path.
-     * @param center Cylinder center.
-     * @return Representative midpoint angle in radians.
-     */
-    double radialArcMidpointAngle(const Path& path, const Point& center) const;
-
-    /*!
-     * @brief Normalizes an angular delta to [0, 2*pi).
-     * @param delta Angle delta in radians.
-     * @return Positive equivalent angle delta.
-     */
-    double positiveAngularDelta(double delta) const;
-
     //! \brief Links one line infill path
     //! \return Next path linked via travel
     Path linkNextInfillLines(QVector<Path>& paths);
@@ -175,6 +197,9 @@ class PathOrderOptimizer {
 
     //! \brief Adds a travel segment to the index point and shuffles the paths to be in order
     void addTravel(int index, Path& path);
+
+    //! \brief Adds a travel segment to the selected point and shuffles/splits the path to be in order
+    void addTravel(const PointOrderOptimizer::PointOrderSelection& selection, Path& path);
 
     //! \brief Links to a path using shortest or longest distance
     //! \param shortest: Whether to look for shortest or longest (shortest by default)
@@ -239,6 +264,9 @@ class PathOrderOptimizer {
     //! \brief The layer number we are currently on
     int m_layer_num;
 
+    //! \brief Stable previous-layer seam used while ordering all radial paths in this layer
+    std::optional<Point> m_radial_consecutive_reference;
+
     //! \brief Holds partial/final topological order for level order walk
     QVector<QVector<int>> m_topo_order;
 
@@ -249,4 +277,4 @@ class PathOrderOptimizer {
     //! subsequent path.
     bool m_has_computed_heirarchy;
 };
-} // namespace ORNL
+}  // namespace ORNL

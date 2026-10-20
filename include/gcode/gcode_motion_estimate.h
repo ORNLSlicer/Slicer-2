@@ -6,7 +6,7 @@
 
 namespace ORNL {
 class MotionEstimation {
-  public:
+   public:
     //! \brief Initilizes the neccesary parameters and sets to default values
     static void Init();
 
@@ -20,15 +20,16 @@ class MotionEstimation {
     //! \param layer_volume, accumulated volume estimate for the entire layer
     //! \param use_b, if using B filament axis, time calculation is based on extrusion not X/Y/Z distance
     static Distance calculateTimeAndVolume(int layer, bool isFIncluded, bool isGOCommand, bool deposition_active,
-                                           Time& G1F_time, Time& layer_time, Volume& layer_volume, bool use_b);
+                                           bool infer_bead_height, Time& G1F_time, Time& layer_time,
+                                           Volume& layer_volume, bool use_b);
 
     //! \brief Calculate time and volume contribution for a non-linear path with a known path length.
     static Distance calculatePathTimeAndVolume(Distance path_length, Distance start_direction_x,
                                                Distance start_direction_y, Distance start_direction_z,
                                                Distance end_direction_x, Distance end_direction_y,
                                                Distance end_direction_z, bool isFIncluded, bool isGOCommand,
-                                               bool deposition_active, Time& G1F_time, Time& layer_time,
-                                               Volume& layer_volume);
+                                               bool deposition_active, bool infer_bead_height, Time& G1F_time,
+                                               Time& layer_time, Volume& layer_volume);
 
     //! \brief Set the bead dimensions to use for the next deposited volume estimate.
     //! \param bead_width Total bead width.
@@ -64,6 +65,10 @@ class MotionEstimation {
     static Distance m_nominal_bead_height;
     static Distance m_last_print_z;
     static Distance m_last_print_w;
+    static Distance m_layer_fallback_print_z;
+    static Distance m_layer_fallback_print_w;
+    static bool m_layer_has_fallback_print_anchor;
+    static bool m_layer_has_inferred_print_anchor;
 
     static Distance m_previous_distance;
     static Distance m_total_distance;
@@ -80,7 +85,7 @@ class MotionEstimation {
     static Velocity m_current_speed;
     static Velocity m_incomingV;
 
-  private:
+   private:
     //! \brief Set direction vector from last motion
     //! \param vx Direction vector x component
     //! \param vy Direction vector y component
@@ -126,10 +131,10 @@ class MotionEstimation {
 
     static void setPreviousVelocityVector(Velocity velocity, Distance dx, Distance dy, Distance dz);
 
-    static bool m_previous_vertical; // Z or W move
+    static bool m_previous_vertical;  // Z or W move
 
     // Actual velocty vectors considering acceleration and parabolic blend
     static QVector3D m_previous_vv;
     static QVector3D m_current_vv;
 };
-} // namespace ORNL
+}  // namespace ORNL

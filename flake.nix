@@ -4,6 +4,7 @@
   inputs = {
     # Upstream still publishes this ref as `slicer2`; no `ornlslicer` ref exists yet.
     nixpkgs.url  = gitlab:mdf/nixpkgs/slicer2?host=code.ornl.gov;
+    llvmNixpkgs.url = github:NixOS/nixpkgs/nixos-unstable;
     utils.url    = github:numtide/flake-utils;
     appimage = {
       url = github:ralismark/nix-appimage;
@@ -16,16 +17,23 @@
         inherit system;
         inherit (import ./nix/nixpkgs/config.nix {}) overlays config;
       };
+      llvmToolingPackages =
+        if system == "x86_64-darwin"
+        then pkgs.llvmPackages_18
+        else (import inputs.llvmNixpkgs {
+          inherit system;
+        }).llvmPackages_22;
 
       stdenv = llvm.stdenv;
 
       llvm = rec {
         packages = pkgs.llvmPackages_18;
+        toolingPackages = llvmToolingPackages;
         stdenv   = packages.stdenv;
 
         tooling = rec {
-          lldb = packages.lldb;
-          clang-tools = packages.clang-tools;
+          lldb = toolingPackages.lldb;
+          clang-tools = toolingPackages.clang-tools;
           clang-tools-libcxx = clang-tools.override {
               enableLibcxx = true;
           };
@@ -36,12 +44,25 @@
     inherit config;
 
     lib = rec {
-      fetchVersion = version_file: let
-        inherit (lib.pipe version_file [ builtins.readFile builtins.fromJSON ]) major minor patch suffix;
-        version = "${major}.${minor}.${patch}";
-      in if suffix == "" then version else "${version}+${suffix}";
+      fetchVersion = import ./nix/version.nix;
 
-      mkPackages = { pkgs, stdenv ? pkgs.stdenv }: rec {
+      mkPackages = { pkgs, stdenv ? pkgs.stdenv }: let
+        source = pkgs.lib.fileset.toSource {
+          root = ./.;
+          fileset = pkgs.lib.fileset.unions [
+            ./CHANGELOG.md
+            ./CMakeLists.txt
+            ./cmake
+            ./docs/ornlslicer-user-guide.pdf
+            ./include
+            ./resources
+            ./src
+            ./templates
+            ./tests
+            ./version.json
+          ];
+        };
+      in rec {
         nixpkgs = pkgs;
 
         ornl = rec {
@@ -54,7 +75,7 @@
           };
 
           ornlslicer = pkgs.qt6.callPackage ./nix/ornlslicer {
-            src     = self;
+            src     = source;
             version = (lib.fetchVersion ./version.json);
 
             inherit (libraries) kuba-zip clipper psimpl;
@@ -69,15 +90,41 @@
       windows = (lib.mkPackages { pkgs = pkgs.pkgsCross.mingwW64; });
     };
 
-    packages = rec {
-      default = ornlslicer;
+    packages = {
+      default = legacyPackages.ornl.ornlslicer;
       ornlslicer = legacyPackages.ornl.ornlslicer;
+    } // lib.optionalAttrs (system == "x86_64-linux") {
+      windowsInstaller = pkgs.callPackage ./nix/windows-installer {
+        windowsApplication = legacyPackages.windows.ornl.ornlslicer;
+        installerScript = ./scripts/installer.nsi;
+        licenseFile = ./LICENSE.md;
+        iconFile = ./resources/icons/ornlslicer_logo.ico;
+      };
     };
 
     bundlers = rec {
       default = appimage;
 
-      appimage = inputs.appimage.bundlers.${system}.default;
+      appimage = drv:
+        if system != "x86_64-linux"
+        then builtins.throw "the ORNLSlicer AppImage bundler only supports x86_64-linux"
+        else let
+          appimagePkgs = (import inputs.appimage.inputs.nixpkgs {
+            inherit system;
+          }).pkgsStatic;
+          mkAppImage = inputs.appimage.lib.${system}.mkAppImage.override {
+            mkappimage-apprun = appimagePkgs.callPackage ./nix/appimage { };
+          };
+        in
+          if drv.type == "app"
+          then mkAppImage {
+            program = drv.program;
+          }
+          else if drv.type == "derivation"
+          then mkAppImage {
+            program = pkgs.lib.getExe drv;
+          }
+          else builtins.throw "the ORNLSlicer AppImage bundler only supports apps and derivations";
     };
 
     devShells = rec {
@@ -91,6 +138,7 @@
           pkgs.git
           pkgs.jq
           pkgs.ccache
+          pkgs.pre-commit
 
           pkgs.doxygen
           pkgs.graphviz

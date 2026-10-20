@@ -1,8 +1,5 @@
 #include "widgets/part_widget/right_click_menu.h"
 
-#include <algorithm>
-#include <cmath>
-
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -11,6 +8,9 @@
 #include <QLocale>
 #include <QMessageBox>
 #include <QWidgetAction>
+#include <algorithm>
+#include <cmath>
+
 #include <qaction.h>
 #include <qicon.h>
 #include <qlist.h>
@@ -25,6 +25,7 @@
 #include "managers/preferences_manager.h"
 #include "managers/session_manager.h"
 #include "utilities/constants.h"
+#include "utilities/dialog_utils.h"
 #include "utilities/enums.h"
 #include "widgets/part_widget/model/part_meta_item.h"
 
@@ -46,34 +47,28 @@ QString meshTypeText(MeshType type) {
 }
 
 QString sourceFilePath(QSharedPointer<Part> part) {
-    if (part.isNull())
-        return QString();
+    if (part.isNull()) return QString();
 
-    if (!part->sourceFilePath().isEmpty())
-        return part->sourceFilePath();
+    if (!part->sourceFilePath().isEmpty()) return part->sourceFilePath();
 
-    if (!part->rootMesh().isNull())
-        return part->rootMesh()->path();
+    if (!part->rootMesh().isNull()) return part->rootMesh()->path();
 
     return QString();
 }
 
 QString fileTypeText(const QString& path) {
-    if (path.isEmpty())
-        return "Generated";
+    if (path.isEmpty()) return "Generated";
 
     const QString suffix = QFileInfo(path).suffix().toUpper();
     return suffix.isEmpty() ? "Unknown" : suffix;
 }
 
 int triangleCount(QSharedPointer<Part> part) {
-    if (part.isNull())
-        return 0;
+    if (part.isNull()) return 0;
 
     int count = 0;
     for (auto mesh : part->meshes()) {
-        if (mesh.isNull())
-            continue;
+        if (mesh.isNull()) continue;
 
         count += mesh->originalFaces().size();
     }
@@ -82,22 +77,20 @@ int triangleCount(QSharedPointer<Part> part) {
 }
 
 bool originalMeshDimensions(QSharedPointer<Part> part, Distance3D& dimensions) {
-    if (part.isNull())
-        return false;
+    if (part.isNull()) return false;
 
     bool found_vertex = false;
     QVector3D minimum;
     QVector3D maximum;
 
     for (auto mesh : part->meshes()) {
-        if (mesh.isNull())
-            continue;
+        if (mesh.isNull()) continue;
 
         const QVector<MeshVertex> vertices = mesh->originalVertices();
         for (const MeshVertex& vertex : vertices) {
             if (!found_vertex) {
-                minimum = vertex.location;
-                maximum = vertex.location;
+                minimum      = vertex.location;
+                maximum      = vertex.location;
                 found_vertex = true;
                 continue;
             }
@@ -111,8 +104,7 @@ bool originalMeshDimensions(QSharedPointer<Part> part, Distance3D& dimensions) {
         }
     }
 
-    if (!found_vertex)
-        return false;
+    if (!found_vertex) return false;
 
     dimensions = Distance3D(Distance(maximum.x() - minimum.x()), Distance(maximum.y() - minimum.y()),
                             Distance(maximum.z() - minimum.z()));
@@ -121,16 +113,15 @@ bool originalMeshDimensions(QSharedPointer<Part> part, Distance3D& dimensions) {
 
 QString formatDistance(double microns) {
     const Distance unit = PreferencesManager::getInstance()->getDistanceUnit();
-    return QString("%1 %2")
-        .arg(QString::number(Distance(microns).to(unit), 'f', 3),
-             PreferencesManager::getInstance()->getDistanceUnitText());
+    return QString("%1 %2").arg(QString::number(Distance(microns).to(unit), 'f', 3),
+                                PreferencesManager::getInstance()->getDistanceUnitText());
 }
 
 QString dimensionsText(double x_microns, double y_microns, double z_microns) {
     return QString("X %1, Y %2, Z %3")
         .arg(formatDistance(x_microns), formatDistance(y_microns), formatDistance(z_microns));
 }
-} // namespace
+}  // namespace
 
 RightClickMenu::RightClickMenu(QWidget* parent) : QMenu(("Context menu"), parent) {
     this->setupActions();
@@ -138,27 +129,29 @@ RightClickMenu::RightClickMenu(QWidget* parent) : QMenu(("Context menu"), parent
 }
 
 void RightClickMenu::setupActions() {
-    m_info_action = new QAction("Info", this);
-    m_switch_to_build_action = new QAction("Switch to Build", this);
-    m_switch_to_clipper_action = new QAction("Switch to Clipper", this);
-    m_switch_to_setting_action = new QAction("Switch to Setting", this);
+    m_info_action                 = new QAction("Info", this);
+    m_switch_to_build_action      = new QAction("Switch to Build", this);
+    m_switch_to_clipper_action    = new QAction("Switch to Clipper", this);
+    m_switch_to_setting_action    = new QAction("Switch to Setting", this);
+    m_lock_part_action            = new QAction("Toggle Part Lock(s)", this);
+    m_set_instances_action        = new QAction("Set Number of Instances", this);
     m_reset_transformation_action = new QAction("Reset Transformation", this);
-    m_replace_part_action = new QAction("Replace Part Model", this);
-    m_reload_part_action = new QAction("Reload Part Model(s)", this);
-    m_delete_part_action = new QAction("Delete Part(s)", this);
-    m_lock_part_action = new QAction("Toggle Part Lock(s)", this);
-    m_set_instances_action = new QAction("Set Number of Instances", this);
+    m_rename_part_action          = new QAction("Rename Part", this);
+    m_replace_part_action         = new QAction("Replace Part Model", this);
+    m_reload_part_action          = new QAction("Reload Part Model(s)", this);
+    m_delete_part_action          = new QAction("Delete Part(s)", this);
 
     m_info_action->setIcon(QIcon(":/icons/info.png"));
-    m_switch_to_clipper_action->setIcon(QIcon(":/icons/clip.png"));
     m_switch_to_build_action->setIcon(QIcon(":/icons/print_head.png"));
+    m_switch_to_clipper_action->setIcon(QIcon(":/icons/clip.png"));
     m_switch_to_setting_action->setIcon(QIcon(":/icons/settings_black.png"));
+    m_lock_part_action->setIcon(QIcon(":/icons/lock.png"));
+    m_set_instances_action->setIcon(QIcon(":/icons/copy_black.png"));
     m_reset_transformation_action->setIcon(QIcon(":/icons/restore.png"));
+    m_rename_part_action->setIcon(QIcon(":/icons/rename.png"));
     m_replace_part_action->setIcon(QIcon(":/icons/folder_black.png"));
     m_reload_part_action->setIcon(QIcon(":/icons/file_refresh_black.png"));
     m_delete_part_action->setIcon(QIcon(":/icons/delete_black.png"));
-    m_lock_part_action->setIcon(QIcon(":/icons/lock.png"));
-    m_set_instances_action->setIcon(QIcon(":/icons/copy_black.png"));
 
     this->addAction(m_info_action);
     this->addSeparator();
@@ -169,6 +162,7 @@ void RightClickMenu::setupActions() {
     this->addAction(m_lock_part_action);
     this->addAction(m_set_instances_action);
     this->addAction(m_reset_transformation_action);
+    this->addAction(m_rename_part_action);
     this->addAction(m_replace_part_action);
     this->addAction(m_reload_part_action);
     this->addAction(m_delete_part_action);
@@ -180,7 +174,7 @@ void RightClickMenu::setupActions() {
     this->addMenu(m_transparency_menu);
 
     QWidgetAction* m_widget_action = new QWidgetAction(this);
-    m_transparency_slider = new QSlider(Qt::Orientation::Horizontal);
+    m_transparency_slider          = new QSlider(Qt::Orientation::Horizontal);
     m_transparency_slider->setMinimum(0);
     m_transparency_slider->setMaximum(225);
     m_transparency_slider->setValue(0);
@@ -205,24 +199,20 @@ void RightClickMenu::setupActions() {
 void RightClickMenu::setupEvents() {
     connect(m_info_action, &QAction::triggered, this, &RightClickMenu::showInfoDialog);
 
-    connect(m_switch_to_clipper_action, &QAction::triggered, this, [this]() {
-        m_switch_to_build_action->setDisabled(false);
-        m_switch_to_setting_action->setDisabled(false);
-        m_switch_to_clipper_action->setDisabled(true);
-
-        for (auto item : m_selected_items) {
-            item->setMeshType(MeshType::kClipping);
-        }
-    });
-
     connect(m_switch_to_build_action, &QAction::triggered, this, [this]() {
         m_switch_to_build_action->setDisabled(true);
         m_switch_to_setting_action->setDisabled(false);
         m_switch_to_clipper_action->setDisabled(false);
 
-        for (auto item : m_selected_items) {
-            item->setMeshType(MeshType::kBuild);
-        }
+        for (auto item : m_selected_items) { item->setMeshType(MeshType::kBuild); }
+    });
+
+    connect(m_switch_to_clipper_action, &QAction::triggered, this, [this]() {
+        m_switch_to_build_action->setDisabled(false);
+        m_switch_to_setting_action->setDisabled(false);
+        m_switch_to_clipper_action->setDisabled(true);
+
+        for (auto item : m_selected_items) { item->setMeshType(MeshType::kClipping); }
     });
 
     connect(m_switch_to_setting_action, &QAction::triggered, this, [this]() {
@@ -230,14 +220,37 @@ void RightClickMenu::setupEvents() {
         m_switch_to_setting_action->setDisabled(true);
         m_switch_to_clipper_action->setDisabled(false);
 
-        for (auto item : m_selected_items) {
-            item->setMeshType(MeshType::kSettings);
-        }
+        for (auto item : m_selected_items) { item->setMeshType(MeshType::kSettings); }
+    });
+
+    connect(m_lock_part_action, &QAction::triggered, this, [this]() {
+        for (auto item : m_selected_items) { item->graphicsPart()->setLocked(!item->graphicsPart()->locked()); }
+    });
+
+    connect(m_set_instances_action, &QAction::triggered, this, [this]() {
+        if (m_selected_items.size() != 1) return;
+
+        QSharedPointer<PartMetaItem> item = m_selected_items.first();
+        bool accepted                     = false;
+        const int current_count           = item->instanceCount();
+        const int instance_count =
+            QInputDialog::getInt(this, "Set Number of Instances", "Instances:", current_count, 1, 1000, 1, &accepted);
+
+        if (accepted) item->setInstanceCount(instance_count);
     });
 
     connect(m_reset_transformation_action, &QAction::triggered, this, [this]() {
-        for (auto item : m_selected_items)
-            item->resetTransformation();
+        for (auto item : m_selected_items) item->resetTransformation();
+    });
+
+    connect(m_rename_part_action, &QAction::triggered, this, [this]() {
+        QSharedPointer<PartMetaItem> item = m_selected_items.first();
+        const QString new_name =
+            DialogUtils::promptForName(this, tr("Rename Part"), item->part()->name(), item->part());
+
+        if (new_name.isEmpty() || new_name == item->part()->name()) return;
+
+        item->renamePart(new_name);
     });
 
     connect(m_replace_part_action, &QAction::triggered, this, [this]() {
@@ -245,31 +258,23 @@ void RightClickMenu::setupEvents() {
             QFileDialog::getOpenFileName(nullptr, QObject::tr("Open model file"), CSM->getMostRecentModelLocation(),
                                          QObject::tr("Model File (*.stl *.3mf *.obj *.amf *.step *.stp)"));
 
-        if (filepath.isNull()) {
-            return;
-        }
+        if (filepath.isNull()) { return; }
 
         m_selected_items.first()->replaceInModel(filepath);
     });
 
     connect(m_reload_part_action, &QAction::triggered, this, [this]() {
-        for (auto item : m_selected_items) {
-            item->reloadInModel();
-        }
+        for (auto item : m_selected_items) { item->reloadInModel(); }
     });
 
     connect(m_delete_part_action, &QAction::triggered, this, [this]() {
-        for (auto item : m_selected_items) {
-            item->removeFromModel();
-        }
+        for (auto item : m_selected_items) { item->removeFromModel(); }
 
         m_selected_items.clear();
     });
 
     connect(m_transparency_slider, &QSlider::valueChanged, this, [this](int value) {
-        for (auto item : m_selected_items) {
-            item->setTransparency(255 - value);
-        }
+        for (auto item : m_selected_items) { item->setTransparency(255 - value); }
     });
 
     connect(m_wireframe_action, &QAction::triggered, this, [this]() {
@@ -280,24 +285,7 @@ void RightClickMenu::setupEvents() {
             item->setWireframe(m_wireframe_action->isChecked());
         }
     });
-    connect(m_lock_part_action, &QAction::triggered, this, [this]() {
-        for (auto item : m_selected_items) {
-            item->graphicsPart()->setLocked(!item->graphicsPart()->locked());
-        }
-    });
-    connect(m_set_instances_action, &QAction::triggered, this, [this]() {
-        if (m_selected_items.size() != 1)
-            return;
 
-        QSharedPointer<PartMetaItem> item = m_selected_items.first();
-        bool accepted = false;
-        const int current_count = item->instanceCount();
-        const int instance_count =
-            QInputDialog::getInt(this, "Set Number of Instances", "Instances:", current_count, 1, 1000, 1, &accepted);
-
-        if (accepted)
-            item->setInstanceCount(instance_count);
-    });
     connect(m_solidwireframe_action, &QAction::triggered, this, [this]() {
         for (auto item : m_selected_items) {
             // Solid wireframe and wireframe cannot both be active, uncheck the other
@@ -309,16 +297,14 @@ void RightClickMenu::setupEvents() {
 }
 
 void RightClickMenu::showInfoDialog() {
-    if (m_selected_items.size() != 1)
-        return;
+    if (m_selected_items.size() != 1) return;
 
     QSharedPointer<PartMetaItem> item = m_selected_items.first();
-    if (item.isNull() || item->part().isNull() || item->graphicsPart().isNull())
-        return;
+    if (item.isNull() || item->part().isNull() || item->graphicsPart().isNull()) return;
 
-    QSharedPointer<Part> part = item->part();
+    QSharedPointer<Part> part                = item->part();
     QSharedPointer<PartObject> graphics_part = item->graphicsPart();
-    const QString source_path = sourceFilePath(part);
+    const QString source_path                = sourceFilePath(part);
 
     const QVector3D current_dimensions = graphics_part->maximum() - graphics_part->minimum();
     QStringList lines;
@@ -337,7 +323,8 @@ void RightClickMenu::showInfoDialog() {
                      .arg(dimensionsText(original_dimensions.x(), original_dimensions.y(), original_dimensions.z()));
     }
 
-    lines << QString("Source: %1").arg(source_path.isEmpty() ? "Generated part" : QDir::toNativeSeparators(source_path));
+    lines
+        << QString("Source: %1").arg(source_path.isEmpty() ? "Generated part" : QDir::toNativeSeparators(source_path));
 
     QMessageBox::information(this, "Object Info", lines.join("\n"));
 }
@@ -359,7 +346,7 @@ void RightClickMenu::show(const QPointF& pos, QList<QSharedPointer<PartMetaItem>
 
 void RightClickMenu::disableActions() {
     if (!m_selected_items.empty()) {
-        bool enable_all = false;
+        bool enable_all   = false;
         MeshType all_type = m_selected_items.at(0)->meshType();
         for (auto item : m_selected_items) {
             if (all_type != item->meshType()) {
@@ -394,37 +381,40 @@ void RightClickMenu::disableActions() {
             }
         }
 
+        m_info_action->setDisabled(m_selected_items.size() != 1);
         m_reset_transformation_action->setDisabled(false);
         m_reload_part_action->setDisabled(false);
         m_delete_part_action->setDisabled(false);
         m_transparency_menu->setDisabled(false);
         m_wireframe_action->setDisabled(false);
         m_solidwireframe_action->setDisabled(false);
-        m_info_action->setDisabled(m_selected_items.size() != 1);
 
         if (m_selected_items.size() == 1) {
-            m_replace_part_action->setDisabled(false);
             m_set_instances_action->setDisabled(false);
+            m_rename_part_action->setDisabled(false);
+            m_replace_part_action->setDisabled(false);
         }
         else {
-            m_replace_part_action->setDisabled(true);
             m_set_instances_action->setDisabled(true);
+            m_rename_part_action->setDisabled(true);
+            m_replace_part_action->setDisabled(true);
         }
     }
     else {
         // Disable all part options
-        m_switch_to_clipper_action->setDisabled(true);
+        m_info_action->setDisabled(true);
         m_switch_to_build_action->setDisabled(true);
+        m_switch_to_clipper_action->setDisabled(true);
         m_switch_to_setting_action->setDisabled(true);
+        m_set_instances_action->setDisabled(true);
         m_reset_transformation_action->setDisabled(true);
+        m_rename_part_action->setDisabled(true);
         m_replace_part_action->setDisabled(true);
         m_reload_part_action->setDisabled(true);
         m_delete_part_action->setDisabled(true);
-        m_set_instances_action->setDisabled(true);
-        m_info_action->setDisabled(true);
         m_transparency_menu->setDisabled(true);
         m_wireframe_action->setDisabled(true);
         m_solidwireframe_action->setDisabled(true);
     }
 }
-} // namespace ORNL
+}  // namespace ORNL

@@ -7,19 +7,19 @@ This directory is the canonical documentation source for ORNLSlicer.
 ## Start Here
 
 - [ORNLSlicer User Guide](ornlslicer-user-guide.pdf)
+- [Changelog](../CHANGELOG.md)
 - [Getting Started](wiki/Getting-Started.md)
 - [Cylindrical Slicing](slicing/cylindrical-slicing.md)
 - [Arc Specialties G-code](gcode/arc-specialties.md)
 - [Contributing Guide](../CONTRIBUTING.md)
 - [Legacy Wiki Content](wiki/Home.md)
 
-## Architecture
+## Codebase Architecture
 
-- [Architecture Overview](../ARCHITECTURE.md)
-- [Application Runtime](architecture/application-runtime.md)
-- [Slicing Pipeline](architecture/slicing-pipeline.md)
-- [Settings System](architecture/settings-system.md)
-- [G-code and Visualization](architecture/gcode-and-visualization.md)
+For source-grounded guidance on ORNLSlicer's architecture, runtime flows,
+ownership boundaries, extension points, and validation paths, start with the
+[OpenWiki quickstart](../openwiki/quickstart.md). Source code and tests remain
+authoritative.
 
 ## Contributor Docs
 
@@ -30,6 +30,10 @@ This directory is the canonical documentation source for ORNLSlicer.
 - [Style Guide](contributing/style-guide.md)
 - [Formatting](contributing/formatting.md)
 - [Documentation](contributing/documentation.md)
+- [Linux AppImage Packaging](contributing/linux-appimage.md)
+- [Cachix Workflow](contributing/cachix.md)
+- [Versioning and Releases](contributing/versioning.md)
+- [Maintaining the Changelog](contributing/changelog.md)
 
 ## Migrated Wiki Content
 

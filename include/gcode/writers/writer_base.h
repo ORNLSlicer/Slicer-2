@@ -5,6 +5,8 @@
 #include <QStringBuilder>
 #include <QTextStream>
 #include <QVector3D>
+#include <functional>
+
 #include <qcontainerfwd.h>
 #include <qhashfunctions.h>
 #include <qsharedpointer.h>
@@ -20,7 +22,7 @@ namespace ORNL {
 class PathSegment;
 
 class WriterBase {
-  public:
+   public:
     //! \brief Default Constructor
     WriterBase(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb);
 
@@ -57,8 +59,19 @@ class WriterBase {
     //! \brief Writes G-Code to be executed at the start of each path
     virtual QString writeBeforePath(RegionType type) = 0;
 
+    /**
+     * @brief Updates writer state when a continuous path crosses into a new region.
+     * @param type the new region type
+     * @return any G-Code required for the transition
+     */
+    virtual QString writeBeforePathRegionTransition(RegionType /*type*/) {
+        return QString();
+    }
+
     //! \brief Writes G-Code for travel lift between paths; only used for syntaxes that can't use defined slicing plane
-    virtual QString writeTravelLift(bool lift) { return QString(); }
+    virtual QString writeTravelLift(bool lift) {
+        return QString();
+    }
 
     //! \brief Writes G-Code for traveling between paths
     virtual QString writeTravel(Point start_location, Point target_location, TravelLiftType lType,
@@ -69,7 +82,9 @@ class WriterBase {
                               const QSharedPointer<SettingsBase> params) = 0;
 
     //! \brief Writes G-Code for scan segment
-    virtual QString writeScan(Point target_point, Velocity speed, bool on_off) { return QString(); }
+    virtual QString writeScan(Point target_point, Velocity speed, bool on_off) {
+        return QString();
+    }
 
     //! \brief Writes G-Code for arc segment
     virtual QString writeArc(const Point& start_point, const Point& end_point, const Point& center_point,
@@ -89,7 +104,9 @@ class WriterBase {
     }
 
     //! \brief Writes G-Code to be executed once all scans are complete
-    virtual QString writeAfterAllScans() { return QString(); }
+    virtual QString writeAfterAllScans() {
+        return QString();
+    }
 
     //! \brief Writes G-Code to be executed at the end of each island
     virtual QString writeAfterIsland() = 0;
@@ -102,6 +119,25 @@ class WriterBase {
 
     //! \brief Writes G-Code for shutting down the machine
     virtual QString writeShutdown() = 0;
+
+    //! \brief Generates a standalone layer using this freshly initialized writer.
+    //! \param emit_layer Emits the layer's paths, without setup or shutdown.
+    QString writeStandaloneLayer(uint layer_number, float min_z, const QSharedPointer<SettingsBase>& settings,
+                                 const std::function<QString()>& emit_layer);
+
+    //! \brief Approaches the first standalone print/scan segment when the layer has no leading travel.
+    QString writeStandaloneEntry(const Point& start, const QSharedPointer<SettingsBase>& params);
+
+    //! \brief Emits a travel, making the first standalone travel a complete approach.
+    QString writeLayerTravel(Point start, Point target, TravelLiftType type,
+                             const QSharedPointer<SettingsBase>& params);
+
+    //! \brief Stores an independently generated layer as inert comments for later export.
+    QString writeLayerExportProgram(const QString& program);
+
+    //! \brief Writes shutdown with markers used to terminate individually exported layers.
+    //! Final-position blocks describe the continuous program; standalone layers generate their own shutdown.
+    QString writeShutdownWithLayerMarkers();
 
     //! \brief Writes a list of all settings with the raw value to the footer as comments
     virtual QString writeSettingsFooter();
@@ -131,7 +167,9 @@ class WriterBase {
     Point getCurrentPosition() const;
 
     //! \brief Write purge command
-    virtual QString writePurge(int RPM, int duration, int delay) { return QString(); }
+    virtual QString writePurge(int RPM, int duration, int delay) {
+        return QString();
+    }
 
     //! \brief Writes G-Code for a pause, G4
     virtual QString writeDwell(Time time) = 0;
@@ -142,13 +180,25 @@ class WriterBase {
     //! \brief writes the string param as a comment on its own line
     QString writeCommentLine(QString comment);
 
-  protected:
+   protected:
+    //! \brief Whether this travel must establish the standalone layer's printing height.
+    bool isStandaloneEntryPending() const {
+        return m_standalone_entry_pending;
+    }
+
+    //! \brief Marks moves calculated from the final writer state so layer export does not reuse them.
+    QString finalPositionBlock(const QString& gcode);
+
     //! \brief Writes a comment
     QString comment(const QString& text);
     //! \brief Writes a comment and ends the line
     QString commentLine(const QString& text);
     //! \brief Writes a comment with a preceding space, then ends the line
     QString commentSpaceLine(const QString& text);
+
+    //! \brief Builds the parser-facing region comment, including adapted bead width when present.
+    QString regionComment(RegionType region_type, PathModifiers path_modifiers,
+                          const QSharedPointer<SettingsBase>& params, bool include_skeleton_width = false) const;
 
     //! \brief gets a vector in the direction normal to the plane and of a length = travel lift height
     QVector3D getTravelLift();
@@ -157,15 +207,14 @@ class WriterBase {
     QVector3D getLiftVector(Distance lift_height) const;
 
     //! \brief emits a final lift move for point-based writers when configured
-    template <typename MoveEmitter> QString writeFinalTravelLift(MoveEmitter&& emit_move, const QString& comment) {
+    template <typename MoveEmitter>
+    QString writeFinalTravelLift(MoveEmitter&& emit_move, const QString& comment) {
         const Distance final_lift = m_sb->setting<Distance>(PS::Travel::kFinalLiftDistance);
-        if (final_lift <= 0 || !m_has_current_position)
-            return QString();
+        if (final_lift <= 0 || !m_has_current_position) return QString();
 
         const Point lift_destination = m_current_position + getLiftVector(final_lift);
-        QString rv = emit_move(lift_destination);
-        if (rv.isEmpty())
-            return rv;
+        QString rv                   = emit_move(lift_destination);
+        if (rv.isEmpty()) return rv;
 
         if (comment.isEmpty())
             rv += m_newline;
@@ -173,7 +222,7 @@ class WriterBase {
             rv += commentSpaceLine(comment);
 
         setCurrentPosition(lift_destination);
-        return rv;
+        return finalPositionBlock(rv);
     }
 
     //! \brief Gets the segment-local initial extruder speed, falling back to the global setting.
@@ -224,6 +273,7 @@ class WriterBase {
     //! \brief whether or not the build maximum Z value has been recorded
     bool m_has_build_maximum_z;
 
-  private:
-}; // class WriterBase
-} // namespace ORNL
+   private:
+    bool m_standalone_entry_pending = false;
+};  // class WriterBase
+}  // namespace ORNL

@@ -1,129 +1,282 @@
-#include <cstdlib>
-#include <iostream>
-#include <optional>
-
 #include <QCoreApplication>
 #include <QFile>
 #include <QStringBuilder>
 #include <QTemporaryDir>
+#include <cstdlib>
+#include <optional>
 
 #include "gcode/gcode_settings_importer.h"
+#include "test_utils.h"
 #include "utilities/constants.h"
+#include "utilities/enums.h"
 
 namespace {
+constexpr float kTolerance = 1.0e-3f;
+
 bool writeFile(const QString& path, const QString& text) {
     QFile file(path);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
-        return false;
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) return false;
 
     file.write(text.toUtf8());
     return true;
 }
 
-bool expect(bool condition, const char* message) {
-    if (!condition)
-        std::cerr << message << '\n';
-    return condition;
+bool validatesNonNegativeIntegerSettings() {
+    fifojson master_entry                                  = fifojson::object();
+    master_entry[ORNL::Constants::Settings::Master::kType] = "non_negative_int";
+
+    fifojson normalized;
+    QString error;
+    if (!ORNL::Testing::expect(
+            ORNL::GcodeSettingsImporter::validateValue("non_negative", master_entry, 0, normalized, error),
+            qPrintable(error)))
+        return false;
+    if (!ORNL::Testing::expect(normalized.get<int>() == 0, "Non-negative integer settings should accept zero."))
+        return false;
+
+    normalized = nullptr;
+    error.clear();
+    if (!ORNL::Testing::expect(
+            ORNL::GcodeSettingsImporter::validateValue("non_negative", master_entry, 3, normalized, error),
+            qPrintable(error)))
+        return false;
+    if (!ORNL::Testing::expect(normalized.get<int>() == 3,
+                               "Non-negative integer settings should preserve positive integers."))
+        return false;
+
+    normalized = nullptr;
+    error.clear();
+    if (!ORNL::Testing::expect(
+            !ORNL::GcodeSettingsImporter::validateValue("non_negative", master_entry, -1, normalized, error),
+            "Non-negative integer settings should reject negative values."))
+        return false;
+
+    normalized = nullptr;
+    error.clear();
+    return ORNL::Testing::expect(
+        !ORNL::GcodeSettingsImporter::validateValue("non_negative", master_entry, 1.5, normalized, error),
+        "Non-negative integer settings should reject fractional values.");
 }
-} // namespace
+
+}  // namespace
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
+    if (!validatesNonNegativeIntegerSettings()) return EXIT_FAILURE;
+
     QTemporaryDir temp_dir;
-    if (!expect(temp_dir.isValid(), "Could not create temporary directory."))
+    if (!ORNL::Testing::expect(temp_dir.isValid(), "Could not create temporary directory.")) return EXIT_FAILURE;
+
+    const QString connection_path = temp_dir.filePath("legacy-connections.gcode");
+    const QString connection_gcode =
+        ";Settings Footer\n"
+        ";layer_height 200\n"
+        ";default_width 400\n"
+        ";spiral_perimeter true\n"
+        ";spiral_perimeter_complete_path_before_connecting false\n"
+        ";spiral_perimeter_branch_after_tip_wipe true\n"
+        ";spiral_perimeter_connect_to_insets true\n"
+        ";spiral_inset true\n"
+        ";spiral_inset_complete_path_before_connecting true\n"
+        ";spiral_inset_branch_after_tip_wipe false\n"
+        ";enable_spiral_perimeter true\n";
+    if (!ORNL::Testing::expect(writeFile(connection_path, connection_gcode),
+                               "Could not write legacy connection footer."))
+        return EXIT_FAILURE;
+    const auto connection_result = ORNL::GcodeSettingsImporter::importFile(connection_path, true);
+    if (!ORNL::Testing::expect(connection_result.errors.isEmpty() && connection_result.warnings.isEmpty(),
+                               qPrintable(connection_result.errors.join("\n") + connection_result.warnings.join("\n"))))
+        return EXIT_FAILURE;
+    const auto connection_settings =
+        connection_result.settings_file[ORNL::Constants::SettingFileStrings::kSettings].at(0);
+    if (!ORNL::Testing::expect(
+            connection_settings.at(ORNL::PS::Perimeter::kConnectPerimeters.toStdString()) == true &&
+                connection_settings.at(ORNL::PS::Perimeter::kCompleteLoopBeforeConnecting.toStdString()) == false &&
+                connection_settings.at(ORNL::PS::Perimeter::kConnectAfterTipWipe.toStdString()) == true &&
+                connection_settings.at(ORNL::PS::Perimeter::kConnectToInsets.toStdString()) == true &&
+                connection_settings.at(ORNL::PS::Inset::kConnectInsets.toStdString()) == true &&
+                connection_settings.at(ORNL::PS::Inset::kCompleteLoopBeforeConnecting.toStdString()) == true &&
+                connection_settings.at(ORNL::PS::Inset::kConnectAfterTipWipe.toStdString()) == false &&
+                connection_settings.at(ORNL::MS::SpiralLift::kPerimeterEnable.toStdString()) == true &&
+                !connection_settings.contains("spiral_perimeter") && !connection_settings.contains("spiral_inset"),
+            "Legacy G-code footer connection settings must be renamed without changing their values or spiral lift."))
         return EXIT_FAILURE;
 
     const QString semicolon_path = temp_dir.path() + "/semicolon.gcode";
-    const QString semicolon_gcode = "G1 X0 Y0\n"
-                                    ";Settings Footer\n"
-                                    ";layer_height 200\n"
-                                    ";default_width 400\n";
-    if (!expect(writeFile(semicolon_path, semicolon_gcode), "Could not write semicolon fixture."))
+    const QString semicolon_gcode =
+        "G1 X0 Y0\n"
+        ";Settings Footer\n"
+        ";layer_height 200\n"
+        ";default_width 400\n";
+    if (!ORNL::Testing::expect(writeFile(semicolon_path, semicolon_gcode), "Could not write semicolon fixture."))
         return EXIT_FAILURE;
 
     const ORNL::GcodeSettingsImporter::ImportResult semicolon_result =
         ORNL::GcodeSettingsImporter::importFile(semicolon_path, true);
 
-    if (!expect(semicolon_result.errors.isEmpty(), qPrintable(semicolon_result.errors.join("\n"))))
+    if (!ORNL::Testing::expect(semicolon_result.errors.isEmpty(), qPrintable(semicolon_result.errors.join("\n"))))
         return EXIT_FAILURE;
 
     const auto semicolon_settings =
         semicolon_result.settings_file[ORNL::Constants::SettingFileStrings::kSettings].at(0);
-    if (!expect(semicolon_settings.at(ORNL::PS::Layer::kLayerHeight.toStdString()).get<double>() == 200.0,
-                "Did not import layer height from semicolon footer."))
+    if (!ORNL::Testing::expect(
+            semicolon_settings.at(ORNL::PS::Layer::kLayerHeight.toStdString()).get<double>() == 200.0,
+            "Did not import layer height from semicolon footer."))
         return EXIT_FAILURE;
-    if (!expect(semicolon_settings.at(ORNL::PS::Layer::kBeadWidth.toStdString()).get<double>() == 400.0,
-                "Did not import default width from semicolon footer."))
+    if (!ORNL::Testing::expect(semicolon_settings.at(ORNL::PS::Layer::kBeadWidth.toStdString()).get<double>() == 400.0,
+                               "Did not import default width from semicolon footer."))
         return EXIT_FAILURE;
 
     const QString paren_path = temp_dir.path() + "/paren.nc";
-    const QString paren_gcode = "(Settings Footer)\n"
-                                "(layer_height 300)\n"
-                                "(default_width 500)\n";
-    if (!expect(writeFile(paren_path, paren_gcode), "Could not write parenthesized fixture."))
+    const QString paren_gcode =
+        "(Settings Footer)\n"
+        "(layer_height 300)\n"
+        "(default_width 500)\n";
+    if (!ORNL::Testing::expect(writeFile(paren_path, paren_gcode), "Could not write parenthesized fixture."))
         return EXIT_FAILURE;
 
     const ORNL::GcodeSettingsImporter::ImportResult paren_result =
         ORNL::GcodeSettingsImporter::importFile(paren_path, true);
 
-    if (!expect(paren_result.errors.isEmpty(), qPrintable(paren_result.errors.join("\n"))))
+    if (!ORNL::Testing::expect(paren_result.errors.isEmpty(), qPrintable(paren_result.errors.join("\n"))))
         return EXIT_FAILURE;
 
     const auto paren_settings = paren_result.settings_file[ORNL::Constants::SettingFileStrings::kSettings].at(0);
-    if (!expect(paren_settings.at(ORNL::PS::Layer::kLayerHeight.toStdString()).get<double>() == 300.0,
-                "Did not import layer height from parenthesized footer."))
+    if (!ORNL::Testing::expect(paren_settings.at(ORNL::PS::Layer::kLayerHeight.toStdString()).get<double>() == 300.0,
+                               "Did not import layer height from parenthesized footer."))
         return EXIT_FAILURE;
-    if (!expect(paren_settings.at(ORNL::PS::Layer::kBeadWidth.toStdString()).get<double>() == 500.0,
-                "Did not import default width from parenthesized footer."))
+    if (!ORNL::Testing::expect(paren_settings.at(ORNL::PS::Layer::kBeadWidth.toStdString()).get<double>() == 500.0,
+                               "Did not import default width from parenthesized footer."))
         return EXIT_FAILURE;
 
     const QString legacy_path = temp_dir.path() + "/legacy.gcode";
-    const QString legacy_gcode = ";Settings Footer\n"
-                                 ";layer_height 200\n"
-                                 ";default_width 400\n"
-                                 ";slicer_type 0\n"
-                                 ";slicing_vector_x 0.25\n"
-                                 ";slicing_vector_y 0.5\n"
-                                 ";slicing_vector_z 0.75\n"
-                                 ";image_resolution_x 0.8\n"
-                                 ";image_resolution_y 0.9\n";
-    if (!expect(writeFile(legacy_path, legacy_gcode), "Could not write legacy key fixture."))
+    const QString legacy_gcode =
+        ";Settings Footer\n"
+        ";layer_height 200\n"
+        ";default_width 400\n"
+        ";slicer_type 0\n"
+        ";slicing_vector_x 0.25\n"
+        ";slicing_vector_y 0.5\n"
+        ";slicing_vector_z 0.75\n"
+        ";image_resolution_x 0.8\n"
+        ";image_resolution_y 0.9\n"
+        ";radial_initial_radius 100000\n"
+        ";helical_path_start_angle 1.74532925\n";
+    if (!ORNL::Testing::expect(writeFile(legacy_path, legacy_gcode), "Could not write legacy key fixture."))
         return EXIT_FAILURE;
 
     const ORNL::GcodeSettingsImporter::ImportResult legacy_result =
         ORNL::GcodeSettingsImporter::importFile(legacy_path, true);
 
-    if (!expect(legacy_result.errors.isEmpty(), qPrintable(legacy_result.errors.join("\n"))))
+    if (!ORNL::Testing::expect(legacy_result.errors.isEmpty(), qPrintable(legacy_result.errors.join("\n"))))
         return EXIT_FAILURE;
 
     const auto legacy_settings = legacy_result.settings_file[ORNL::Constants::SettingFileStrings::kSettings].at(0);
-    using Slicing = ORNL::Constants::ProfileSettings::Slicing;
-    if (!expect(legacy_settings.at(Slicing::kSlicingMode.toStdString()).get<int>() == 0,
-                "Did not migrate legacy slicer_type footer key."))
+    if (!ORNL::Testing::expect(legacy_settings.at(ORNL::PS::Slicing::kSlicingMode.toStdString()).get<int>() == 0,
+                               "Did not migrate legacy slicer_type footer key."))
         return EXIT_FAILURE;
-    if (!expect(legacy_settings.at(Slicing::kSlicePlaneNormalX.toStdString()).get<double>() == 0.25,
-                "Did not migrate legacy slicing_vector_x footer key."))
+    if (!ORNL::Testing::expect(
+            legacy_settings.at(ORNL::PS::Slicing::kSlicePlaneNormalX.toStdString()).get<double>() == 0.25,
+            "Did not migrate legacy slicing_vector_x footer key."))
         return EXIT_FAILURE;
-    if (!expect(legacy_settings.at(Slicing::kSlicePlaneNormalY.toStdString()).get<double>() == 0.5,
-                "Did not migrate legacy slicing_vector_y footer key."))
+    if (!ORNL::Testing::expect(
+            legacy_settings.at(ORNL::PS::Slicing::kSlicePlaneNormalY.toStdString()).get<double>() == 0.5,
+            "Did not migrate legacy slicing_vector_y footer key."))
         return EXIT_FAILURE;
-    if (!expect(legacy_settings.at(Slicing::kSlicePlaneNormalZ.toStdString()).get<double>() == 0.75,
-                "Did not migrate legacy slicing_vector_z footer key."))
+    if (!ORNL::Testing::expect(
+            legacy_settings.at(ORNL::PS::Slicing::kSlicePlaneNormalZ.toStdString()).get<double>() == 0.75,
+            "Did not migrate legacy slicing_vector_z footer key."))
         return EXIT_FAILURE;
-    if (!expect(legacy_settings.at(Slicing::kImagePixelSizeX.toStdString()).get<double>() == 0.8,
-                "Did not migrate legacy image_resolution_x footer key."))
+    if (!ORNL::Testing::expect(
+            legacy_settings.at(ORNL::PS::Slicing::kImagePixelSizeX.toStdString()).get<double>() == 0.8,
+            "Did not migrate legacy image_resolution_x footer key."))
         return EXIT_FAILURE;
-    if (!expect(legacy_settings.at(Slicing::kImagePixelSizeY.toStdString()).get<double>() == 0.9,
-                "Did not migrate legacy image_resolution_y footer key."))
+    if (!ORNL::Testing::expect(
+            legacy_settings.at(ORNL::PS::Slicing::kImagePixelSizeY.toStdString()).get<double>() == 0.9,
+            "Did not migrate legacy image_resolution_y footer key."))
         return EXIT_FAILURE;
-    if (!expect(legacy_result.unknown_keys.isEmpty(), "Migrated legacy footer keys were still reported as unknown."))
+    if (!ORNL::Testing::expect(
+            ORNL::Testing::near(
+                legacy_settings.at(ORNL::PS::Helical::kHelicalToolStartArcLengthOffset.toStdString()).get<double>(),
+                100100.0 * (1.74532925 - (90.0 * ORNL::degree)()), kTolerance),
+            "Did not migrate legacy helical_path_start_angle footer key to a first-radius arc length."))
+        return EXIT_FAILURE;
+    if (!ORNL::Testing::expect(legacy_result.unknown_keys.isEmpty(),
+                               "Migrated legacy footer keys were still reported as unknown."))
+        return EXIT_FAILURE;
+
+    const QString v11_path = temp_dir.path() + "/v11.gcode";
+    const QString v11_gcode =
+        ";Settings Footer\n"
+        ";layer_height 200\n"
+        ";default_width 400\n"
+        ";cylinder_inner_radius 100000\n"
+        ";helical_start_angle_offset -0.20943951\n";
+    if (!ORNL::Testing::expect(writeFile(v11_path, v11_gcode), "Could not write v11 key fixture.")) return EXIT_FAILURE;
+
+    const ORNL::GcodeSettingsImporter::ImportResult v11_result =
+        ORNL::GcodeSettingsImporter::importFile(v11_path, true);
+
+    if (!ORNL::Testing::expect(v11_result.errors.isEmpty(), qPrintable(v11_result.errors.join("\n"))))
+        return EXIT_FAILURE;
+
+    const auto v11_settings = v11_result.settings_file[ORNL::Constants::SettingFileStrings::kSettings].at(0);
+    if (!ORNL::Testing::expect(
+            ORNL::Testing::near(
+                v11_settings.at(ORNL::PS::Helical::kHelicalToolStartArcLengthOffset.toStdString()).get<double>(),
+                100100.0 * -0.20943951, kTolerance),
+            "Did not migrate v11 helical_start_angle_offset footer key to a first-radius arc length."))
+        return EXIT_FAILURE;
+    if (!ORNL::Testing::expect(v11_result.unknown_keys.isEmpty(),
+                               "Migrated v11 footer key was still reported as unknown."))
+        return EXIT_FAILURE;
+
+    const QString unconvertible_path = temp_dir.path() + "/unconvertible.gcode";
+    const QString unconvertible_gcode =
+        ";Settings Footer\n"
+        ";layer_height 200\n"
+        ";helical_tool_start_angle_offset -0.20943951\n";
+    if (!ORNL::Testing::expect(writeFile(unconvertible_path, unconvertible_gcode),
+                               "Could not write unconvertible helical offset fixture."))
+        return EXIT_FAILURE;
+
+    const ORNL::GcodeSettingsImporter::ImportResult unconvertible_result =
+        ORNL::GcodeSettingsImporter::importFile(unconvertible_path, true);
+    if (!ORNL::Testing::expect(
+            !unconvertible_result.errors.isEmpty() &&
+                unconvertible_result.errors.join('\n').contains("Cannot migrate a nonzero Helical Tool Start Angle"),
+            "Imported a nonzero legacy helical angle without reference geometry."))
+        return EXIT_FAILURE;
+
+    const QString v12_path = temp_dir.path() + "/v12.gcode";
+    const QString v12_gcode =
+        ";Settings Footer\n"
+        ";layer_height 200\n"
+        ";default_width 400\n"
+        ";variable_for_z true\n";
+    if (!ORNL::Testing::expect(writeFile(v12_path, v12_gcode), "Could not write v12 key fixture.")) return EXIT_FAILURE;
+
+    const ORNL::GcodeSettingsImporter::ImportResult v12_result =
+        ORNL::GcodeSettingsImporter::importFile(v12_path, true);
+
+    if (!ORNL::Testing::expect(v12_result.errors.isEmpty(), qPrintable(v12_result.errors.join("\n"))))
+        return EXIT_FAILURE;
+
+    const auto v12_settings = v12_result.settings_file[ORNL::Constants::SettingFileStrings::kSettings].at(0);
+    if (!ORNL::Testing::expect(v12_settings.at(ORNL::PRS::Dimensions::kUseVariableForZ.toStdString()).get<int>() ==
+                                   static_cast<int>(ORNL::VariableZ::kVar200),
+                               "Did not import v12 boolean variable_for_z true as enum index kVar200."))
+        return EXIT_FAILURE;
+    if (!ORNL::Testing::expect(v12_result.unknown_keys.isEmpty(),
+                               "Migrated v12 footer key was still reported as unknown."))
         return EXIT_FAILURE;
 
     const QString cancel_path = temp_dir.path() + "/cancel.gcode";
-    const QString cancel_gcode = ";Settings Footer\n"
-                                 ";layer_height 200\n";
-    if (!expect(writeFile(cancel_path, cancel_gcode), "Could not write cancel fixture."))
+    const QString cancel_gcode =
+        ";Settings Footer\n"
+        ";layer_height 200\n";
+    if (!ORNL::Testing::expect(writeFile(cancel_path, cancel_gcode), "Could not write cancel fixture."))
         return EXIT_FAILURE;
 
     int prompt_count = 0;
@@ -133,9 +286,10 @@ int main(int argc, char* argv[]) {
             return std::optional<fifojson>();
         });
 
-    if (!expect(!cancel_result.errors.isEmpty(), "Canceling a missing setting prompt did not fail the import."))
+    if (!ORNL::Testing::expect(!cancel_result.errors.isEmpty(),
+                               "Canceling a missing setting prompt did not fail the import."))
         return EXIT_FAILURE;
-    if (!expect(prompt_count == 1, "Canceling a missing setting prompt did not stop further prompts."))
+    if (!ORNL::Testing::expect(prompt_count == 1, "Canceling a missing setting prompt did not stop further prompts."))
         return EXIT_FAILURE;
 
     return EXIT_SUCCESS;

@@ -1,134 +1,137 @@
 #include "managers/settings/settings_version_control.h"
 
+#include <QDateTime>
+#include <QRegularExpression>
 #include <array>
+#include <cmath>
+#include <cstdlib>
+#include <limits>
 #include <list>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
-#include <QDateTime>
-#include <QRegularExpression>
 #include <qhashfunctions.h>
 
 #include "utilities/constants.h"
 #include "utilities/qt_json_conversion.h"
 
 namespace {
-constexpr int kCincinnatiSyntax = 1;
-constexpr int kMarlinSyntax = 10;
-constexpr int kThermwoodSyntax = 16;
-constexpr int kRemovedGcodeSyntax = 28;
-constexpr int kRemovedRadialSyntax = 31;
-constexpr int kArcSpecialtiesSyntax = 31;
-constexpr int kLegacyArcSpecialtiesSyntax = 32;
-constexpr int kPlanarSlicingMode = 0;
-constexpr int kV4ImageSlicingMode = 1;
-constexpr int kLegacyRadialSlicingMode = 2;
-constexpr int kLegacyHelicalSlicingMode = 3;
-constexpr int kV8CylindricalSlicingMode = 2;
-constexpr int kV9CylindricalSlicingMode = 1;
-constexpr int kV9ImageSlicingMode = 2;
-constexpr int kRadialPathType = 0;
-constexpr int kHelicalPathType = 1;
-constexpr int kClipBoundaryHandling = 0;
-constexpr int kV3LegacySlicingMode2 = 2;
-constexpr int kV3ImageSlicingMode = 3;
-constexpr int kAllPerimeterBoundaries = 0;
-const std::string kLegacyHelicalClippingMethod = "helical_clipping_method";
-const QString kLegacySlicingMode = "slicer_type";
-const QString kLegacySlicePlaneNormalX = "slicing_vector_x";
-const QString kLegacySlicePlaneNormalY = "slicing_vector_y";
-const QString kLegacySlicePlaneNormalZ = "slicing_vector_z";
-const QString kLegacyCylinderAxisSource = "radial_axis_mode";
-const QString kLegacyCylinderAxisX = "radial_axis_x";
-const QString kLegacyCylinderAxisY = "radial_axis_y";
-const QString kLegacyCylinderInnerRadius = "radial_initial_radius";
-const QString kLegacyCylindricalPathPattern = "cylindrical_path_type";
-const QString kLegacyRadialPathBoundaryPolicy = "radial_boundary_handling";
-const QString kLegacyHelicalPathBoundaryPolicy = "helical_boundary_handling";
-const QString kLegacyMaxHelicalPathLength = "helical_path_length";
-const QString kLegacyImagePixelSizeX = "image_resolution_x";
-const QString kLegacyImagePixelSizeY = "image_resolution_y";
+constexpr int kCincinnatiSyntax                  = 1;
+constexpr int kMarlinSyntax                      = 10;
+constexpr int kThermwoodSyntax                   = 16;
+constexpr int kRemovedGcodeSyntax                = 28;
+constexpr int kRemovedRadialSyntax               = 31;
+constexpr int kArcSpecialtiesSyntax              = 31;
+constexpr int kLegacyArcSpecialtiesSyntax        = 32;
+constexpr int kPlanarSlicingMode                 = 0;
+constexpr int kV4ImageSlicingMode                = 1;
+constexpr int kLegacyRadialSlicingMode           = 2;
+constexpr int kLegacyHelicalSlicingMode          = 3;
+constexpr int kV8CylindricalSlicingMode          = 2;
+constexpr int kV9CylindricalSlicingMode          = 1;
+constexpr int kV9ImageSlicingMode                = 2;
+constexpr int kRadialPathType                    = 0;
+constexpr int kHelicalPathType                   = 1;
+constexpr int kV3LegacySlicingMode2              = 2;
+constexpr int kV3ImageSlicingMode                = 3;
+constexpr int kAllPerimeterBoundaries            = 0;
+const QString kLegacySlicingMode                 = "slicer_type";
+const QString kLegacySlicePlaneNormalX           = "slicing_vector_x";
+const QString kLegacySlicePlaneNormalY           = "slicing_vector_y";
+const QString kLegacySlicePlaneNormalZ           = "slicing_vector_z";
+const QString kLegacyCylinderAxisSource          = "radial_axis_mode";
+const QString kLegacyCylinderAxisX               = "radial_axis_x";
+const QString kLegacyCylinderAxisY               = "radial_axis_y";
+const QString kLegacyCylinderInnerRadius         = "radial_initial_radius";
+const QString kLegacyCylindricalPathPattern      = "cylindrical_path_type";
+const QString kLegacyRadialPathBoundaryPolicy    = "radial_boundary_handling";
+const QString kLegacyHelicalPathStartAngle       = "helical_path_start_angle";
+const QString kLegacyHelicalStartAngleOffset     = "helical_start_angle_offset";
+const QString kLegacyHelicalToolStartAngleOffset = "helical_tool_start_angle_offset";
+const QString kLegacyImagePixelSizeX             = "image_resolution_x";
+const QString kLegacyImagePixelSizeY             = "image_resolution_y";
 
 constexpr std::array<int, 35> kSyntaxV2ToV3 = {
-    0,                 // Beam
-    1,                 // Cincinnati
-    2,                 // Common
-    3,                 // Dmg Dmu
-    kCincinnatiSyntax, // GKN removed
-    4,                 // Gudel
-    5,                 // Haas Inch
-    6,                 // Haas Metric
-    7,                 // Haas Metric No Comments
-    8,                 // Hurco
-    9,                 // Ingersoll
-    10,                // Marlin
-    11,                // JuggerBot
-    12,                // Mazak
-    13,                // MVP
-    14,                // RomiFanuc
-    kCincinnatiSyntax, // RPBF removed
-    15,                // Siemens
-    kThermwoodSyntax,  // SkyBaam removed; concrete templates now use Thermwood
-    16,                // Thermwood
-    17,                // Wolf
-    18,                // RepRap
-    19,                // Mach4
-    20,                // AeroBasic
-    21,                // Meld
-    22,                // ORNL
-    23,                // Okuma
-    24,                // Tormach
-    25,                // AML3D
-    26,                // KraussMaffei
-    27,                // Sandia
-    28,                // Removed syntax
-    29,                // Meltio
-    30,                // Adamantine
-    31                 // ORNL Metric
+    0,                  // Beam
+    1,                  // Cincinnati
+    2,                  // Common
+    3,                  // Dmg Dmu
+    kCincinnatiSyntax,  // GKN removed
+    4,                  // Gudel
+    5,                  // Haas Inch
+    6,                  // Haas Metric
+    7,                  // Haas Metric No Comments
+    8,                  // Hurco
+    9,                  // Ingersoll
+    10,                 // Marlin
+    11,                 // JuggerBot
+    12,                 // Mazak
+    13,                 // MVP
+    14,                 // RomiFanuc
+    kCincinnatiSyntax,  // RPBF removed
+    15,                 // Siemens
+    kThermwoodSyntax,   // SkyBaam removed; concrete templates now use Thermwood
+    16,                 // Thermwood
+    17,                 // Wolf
+    18,                 // RepRap
+    19,                 // Mach4
+    20,                 // AeroBasic
+    21,                 // Meld
+    22,                 // ORNL
+    23,                 // Okuma
+    24,                 // Tormach
+    25,                 // AML3D
+    26,                 // KraussMaffei
+    27,                 // Sandia
+    28,                 // Removed syntax
+    29,                 // Meltio
+    30,                 // Adamantine
+    31                  // ORNL Metric
 };
 
 constexpr std::array<int, 7> kSlicingModeV2ToV3 = {
-    0,                     // Polymer
-    1,                     // Legacy slicing mode 1
-    2,                     // Legacy slicing mode 2
-    kV3LegacySlicingMode2, // RPBF removed
-    kPlanarSlicingMode,    // Real Time Polymer removed
-    kV3LegacySlicingMode2, // Real Time RPBF removed
-    kV3ImageSlicingMode    // Image
+    0,                      // Polymer
+    1,                      // Legacy slicing mode 1
+    2,                      // Legacy slicing mode 2
+    kV3LegacySlicingMode2,  // RPBF removed
+    kPlanarSlicingMode,     // Real Time Polymer removed
+    kV3LegacySlicingMode2,  // Real Time RPBF removed
+    kV3ImageSlicingMode     // Image
 };
 
 constexpr std::array<int, 4> kSlicingModeV3ToV4 = {
-    kPlanarSlicingMode, // Polymer
-    kPlanarSlicingMode, // Legacy slicing mode 1 removed
-    kPlanarSlicingMode, // Legacy slicing mode 2 removed
-    kV4ImageSlicingMode // Image
+    kPlanarSlicingMode,  // Polymer
+    kPlanarSlicingMode,  // Legacy slicing mode 1 removed
+    kPlanarSlicingMode,  // Legacy slicing mode 2 removed
+    kV4ImageSlicingMode  // Image
 };
 
 constexpr std::array<int, 3> kSlicingModeV8ToV9 = {
-    kPlanarSlicingMode,       // Planar
-    kV9ImageSlicingMode,      // Image moved after Cylindrical
-    kV9CylindricalSlicingMode // Cylindrical moved before Image
+    kPlanarSlicingMode,        // Planar
+    kV9ImageSlicingMode,       // Image moved after Cylindrical
+    kV9CylindricalSlicingMode  // Cylindrical moved before Image
 };
 
 constexpr std::array<int, 7> kSkinPatternV4ToV5 = {
-    0, // Lines
-    1, // Grid
-    2, // Concentric
-    2, // Removed option; use Concentric
-    3, // Triangles
-    4, // Hexagons and Triangles
-    5  // Honeycomb
+    0,  // Lines
+    1,  // Grid
+    2,  // Concentric
+    2,  // Removed option; use Concentric
+    3,  // Triangles
+    4,  // Hexagons and Triangles
+    5   // Honeycomb
 };
 
 constexpr std::array<int, 8> kInfillPatternV4ToV5 = {
-    0, // Lines
-    1, // Grid
-    2, // Concentric
-    2, // Removed option; use Concentric
-    3, // Triangles
-    4, // Hexagons and Triangles
-    5, // Honeycomb
-    6  // Radial Hatch
+    0,  // Lines
+    1,  // Grid
+    2,  // Concentric
+    2,  // Removed option; use Concentric
+    3,  // Triangles
+    4,  // Hexagons and Triangles
+    5,  // Honeycomb
+    6   // Radial Hatch
 };
 
 constexpr std::array<const char*, 47> kRemovedV3Settings = {
@@ -157,12 +160,10 @@ constexpr std::array<const char*, 47> kRemovedV3Settings = {
 
 template <std::size_t N>
 void migrateIndexedSetting(fifojson& settings_group, const QString& setting_key, const std::array<int, N>& mapping) {
-    if (!settings_group.is_object())
-        return;
+    if (!settings_group.is_object()) return;
 
     auto setting = settings_group.find(setting_key.toStdString());
-    if (setting == settings_group.end() || !setting.value().is_number_integer())
-        return;
+    if (setting == settings_group.end() || !setting.value().is_number_integer()) return;
 
     int setting_value = setting.value().get<int>();
     if (setting_value >= 0 && static_cast<std::size_t>(setting_value) < mapping.size())
@@ -170,16 +171,13 @@ void migrateIndexedSetting(fifojson& settings_group, const QString& setting_key,
 }
 
 void removeV2Settings(fifojson& settings_group) {
-    if (!settings_group.is_object())
-        return;
+    if (!settings_group.is_object()) return;
 
-    for (const char* removed_setting : kRemovedV3Settings)
-        settings_group.erase(std::string(removed_setting));
+    for (const char* removed_setting : kRemovedV3Settings) settings_group.erase(std::string(removed_setting));
 }
 
 void addV3Settings(fifojson& settings_group) {
-    if (!settings_group.is_object())
-        return;
+    if (!settings_group.is_object()) return;
 
     const std::string perimeter_boundary_selection =
         ORNL::Constants::ProfileSettings::Perimeter::kBoundarySelection.toStdString();
@@ -188,13 +186,11 @@ void addV3Settings(fifojson& settings_group) {
 }
 
 void migrateRemovedGcodeSyntax(fifojson& settings_group) {
-    if (!settings_group.is_object())
-        return;
+    if (!settings_group.is_object()) return;
 
     const std::string syntax_key = ORNL::Constants::PrinterSettings::MachineSetup::kSyntax.toStdString();
-    auto setting = settings_group.find(syntax_key);
-    if (setting == settings_group.end() || !setting.value().is_number_integer())
-        return;
+    auto setting                 = settings_group.find(syntax_key);
+    if (setting == settings_group.end() || !setting.value().is_number_integer()) return;
 
     const int setting_value = setting.value().get<int>();
     if (setting_value == kRemovedGcodeSyntax)
@@ -204,13 +200,11 @@ void migrateRemovedGcodeSyntax(fifojson& settings_group) {
 }
 
 void migrateRemovedRadialSyntax(fifojson& settings_group) {
-    if (!settings_group.is_object())
-        return;
+    if (!settings_group.is_object()) return;
 
     const std::string syntax_key = ORNL::Constants::PrinterSettings::MachineSetup::kSyntax.toStdString();
-    auto setting = settings_group.find(syntax_key);
-    if (setting == settings_group.end() || !setting.value().is_number_integer())
-        return;
+    auto setting                 = settings_group.find(syntax_key);
+    if (setting == settings_group.end() || !setting.value().is_number_integer()) return;
 
     const int setting_value = setting.value().get<int>();
     if (setting_value == kRemovedRadialSyntax || setting_value == kLegacyArcSpecialtiesSyntax)
@@ -218,68 +212,102 @@ void migrateRemovedRadialSyntax(fifojson& settings_group) {
 }
 
 void renameSettingKey(fifojson& settings_group, const QString& old_key, const QString& new_key) {
-    if (!settings_group.is_object())
-        return;
+    if (!settings_group.is_object()) return;
 
     const std::string old_key_string = old_key.toStdString();
     const std::string new_key_string = new_key.toStdString();
-    auto old_setting = settings_group.find(old_key_string);
-    if (old_setting == settings_group.end())
-        return;
+    auto old_setting                 = settings_group.find(old_key_string);
+    if (old_setting == settings_group.end()) return;
 
     const bool should_insert_new_key = settings_group.find(new_key_string) == settings_group.end();
     fifojson old_value;
-    if (should_insert_new_key)
-        old_value = old_setting.value();
+    if (should_insert_new_key) old_value = old_setting.value();
     settings_group.erase(old_setting);
-    if (should_insert_new_key)
-        settings_group[new_key_string] = old_value;
+    if (should_insert_new_key) settings_group[new_key_string] = old_value;
+}
+
+bool stringFromSettingValue(const fifojson& value, QString& result) {
+    if (value.is_string()) {
+        result = QString::fromStdString(value.get<std::string>());
+        return true;
+    }
+
+    return false;
+}
+
+bool numberFromSettingValue(const fifojson& value, double& result) {
+    if (value.is_number()) {
+        result = value.get<double>();
+        return true;
+    }
+
+    QString str;
+    if (stringFromSettingValue(value, str)) {
+        bool valid = false;
+        result     = str.toDouble(&valid);
+        return valid;
+    }
+
+    return false;
+}
+
+fifojson legacyHelicalPathStartAngleToolOffsetValue(const fifojson& legacy_start_angle) {
+    double absolute_start_angle = 0.0;
+    if (!numberFromSettingValue(legacy_start_angle, absolute_start_angle)) { return legacy_start_angle; }
+
+    if (std::abs(absolute_start_angle) > ORNL::Constants::Limits::Maximums::kMaxAngle()) {
+        absolute_start_angle = (absolute_start_angle * ORNL::degree)();
+    }
+
+    const double tool_start_angle_offset = absolute_start_angle - (90.0 * ORNL::degree)();
+    if (legacy_start_angle.is_string()) { return QString::number(tool_start_angle_offset, 'g', 15).toStdString(); }
+
+    return tool_start_angle_offset;
+}
+
+void renameHelicalStartAngleOffsetToToolOffset(fifojson& settings_group) {
+    renameSettingKey(settings_group, kLegacyHelicalStartAngleOffset, kLegacyHelicalToolStartAngleOffset);
+}
+
+void renameHelicalPathStartAngleToToolOffset(fifojson& settings_group) {
+    if (!settings_group.is_object()) return;
+
+    const std::string old_key_string = kLegacyHelicalPathStartAngle.toStdString();
+    const std::string new_key_string = kLegacyHelicalToolStartAngleOffset.toStdString();
+    auto old_setting                 = settings_group.find(old_key_string);
+    if (old_setting == settings_group.end()) return;
+
+    const bool should_insert_new_key = settings_group.find(new_key_string) == settings_group.end();
+    fifojson offset_value;
+    if (should_insert_new_key) { offset_value = legacyHelicalPathStartAngleToolOffsetValue(old_setting.value()); }
+
+    settings_group.erase(old_setting);
+    if (should_insert_new_key) settings_group[new_key_string] = offset_value;
 }
 
 void migrateCylindricalSlicingSettings(fifojson& settings_group) {
-    if (!settings_group.is_object())
-        return;
+    if (!settings_group.is_object()) return;
 
     const std::string slicing_mode_key = kLegacySlicingMode.toStdString();
     const std::string path_pattern_key = kLegacyCylindricalPathPattern.toStdString();
-    const std::string radial_boundary_key = kLegacyRadialPathBoundaryPolicy.toStdString();
-    const std::string helical_boundary_key = kLegacyHelicalPathBoundaryPolicy.toStdString();
 
-    auto slicing_mode = settings_group.find(slicing_mode_key);
+    auto slicing_mode           = settings_group.find(slicing_mode_key);
     const bool has_slicing_mode = slicing_mode != settings_group.end() && slicing_mode.value().is_number_integer();
-    const int old_slicing_mode = has_slicing_mode ? slicing_mode.value().get<int>() : kPlanarSlicingMode;
+    const int old_slicing_mode  = has_slicing_mode ? slicing_mode.value().get<int>() : kPlanarSlicingMode;
 
     if (old_slicing_mode == kLegacyRadialSlicingMode) {
-        slicing_mode.value() = kV8CylindricalSlicingMode;
+        slicing_mode.value()             = kV8CylindricalSlicingMode;
         settings_group[path_pattern_key] = kRadialPathType;
     }
     else if (old_slicing_mode == kLegacyHelicalSlicingMode) {
-        slicing_mode.value() = kV8CylindricalSlicingMode;
+        slicing_mode.value()             = kV8CylindricalSlicingMode;
         settings_group[path_pattern_key] = kHelicalPathType;
-
-        int helical_boundary = kClipBoundaryHandling;
-        auto radial_boundary = settings_group.find(radial_boundary_key);
-        const bool old_boundary_was_clip = radial_boundary == settings_group.end() ||
-                                           !radial_boundary.value().is_number_integer() ||
-                                           radial_boundary.value().get<int>() == kClipBoundaryHandling;
-        auto legacy_helical_boundary = settings_group.find(kLegacyHelicalClippingMethod);
-        if (old_boundary_was_clip && legacy_helical_boundary != settings_group.end() &&
-            legacy_helical_boundary.value().is_number_integer()) {
-            helical_boundary = legacy_helical_boundary.value().get<int>();
-        }
-        settings_group[helical_boundary_key] = helical_boundary;
     }
-    else if (settings_group.find(path_pattern_key) == settings_group.end()) {
-        auto legacy_helical_boundary = settings_group.find(kLegacyHelicalClippingMethod);
-        if (legacy_helical_boundary != settings_group.end() && legacy_helical_boundary.value().is_number_integer())
-            settings_group[helical_boundary_key] = legacy_helical_boundary.value();
-    }
-
-    settings_group.erase(kLegacyHelicalClippingMethod);
 }
 
 void migrateSlicingSettingKeys(fifojson& settings_group) {
     using Slicing = ORNL::Constants::ProfileSettings::Slicing;
+    using Radial  = ORNL::Constants::ProfileSettings::Radial;
 
     renameSettingKey(settings_group, kLegacySlicingMode, Slicing::kSlicingMode);
     renameSettingKey(settings_group, kLegacySlicePlaneNormalX, Slicing::kSlicePlaneNormalX);
@@ -290,69 +318,175 @@ void migrateSlicingSettingKeys(fifojson& settings_group) {
     renameSettingKey(settings_group, kLegacyCylinderAxisY, Slicing::kCylinderAxisY);
     renameSettingKey(settings_group, kLegacyCylinderInnerRadius, Slicing::kCylinderInnerRadius);
     renameSettingKey(settings_group, kLegacyCylindricalPathPattern, Slicing::kCylindricalPathPattern);
-    renameSettingKey(settings_group, kLegacyRadialPathBoundaryPolicy, Slicing::kRadialPathBoundaryPolicy);
-    renameSettingKey(settings_group, kLegacyHelicalPathBoundaryPolicy, Slicing::kHelicalPathBoundaryPolicy);
-    renameSettingKey(settings_group, kLegacyMaxHelicalPathLength, Slicing::kMaxHelicalPathLength);
+    renameSettingKey(settings_group, kLegacyRadialPathBoundaryPolicy, Radial::kRadialPathBoundaryPolicy);
     renameSettingKey(settings_group, kLegacyImagePixelSizeX, Slicing::kImagePixelSizeX);
     renameSettingKey(settings_group, kLegacyImagePixelSizeY, Slicing::kImagePixelSizeY);
 }
-} // namespace
+
+void migrateHelicalToolStartAngleOffset(fifojson& settings_group) {
+    renameHelicalStartAngleOffsetToToolOffset(settings_group);
+    renameHelicalPathStartAngleToToolOffset(settings_group);
+}
+
+void migrateHelicalToolStartAngleOffsetToArcLength(fifojson& settings_group) {
+    if (!settings_group.is_object()) return;
+
+    const std::string old_key = kLegacyHelicalToolStartAngleOffset.toStdString();
+    const std::string new_key =
+        ORNL::Constants::ProfileSettings::Helical::kHelicalToolStartArcLengthOffset.toStdString();
+    auto old_setting = settings_group.find(old_key);
+    if (old_setting == settings_group.end()) return;
+
+    if (settings_group.contains(new_key)) {
+        settings_group.erase(old_setting);
+        return;
+    }
+
+    double angle_offset = 0.0;
+    if (!numberFromSettingValue(old_setting.value(), angle_offset) || !std::isfinite(angle_offset)) {
+        throw std::invalid_argument("Helical Tool Start Angle Offset is not a finite numeric value.");
+    }
+
+    double arc_length_offset = 0.0;
+    if (std::abs(angle_offset) > std::numeric_limits<double>::epsilon()) {
+        const std::string inner_radius_key =
+            ORNL::Constants::ProfileSettings::Slicing::kCylinderInnerRadius.toStdString();
+        const std::string layer_height_key = ORNL::Constants::ProfileSettings::Layer::kLayerHeight.toStdString();
+        const auto inner_radius_setting    = settings_group.find(inner_radius_key);
+        const auto layer_height_setting    = settings_group.find(layer_height_key);
+        double inner_radius                = 0.0;
+        double layer_height                = 0.0;
+
+        if (inner_radius_setting == settings_group.end() || layer_height_setting == settings_group.end() ||
+            !numberFromSettingValue(inner_radius_setting.value(), inner_radius) ||
+            !numberFromSettingValue(layer_height_setting.value(), layer_height) || !std::isfinite(inner_radius) ||
+            !std::isfinite(layer_height) || inner_radius < 0.0 || layer_height <= 0.0) {
+            throw std::invalid_argument(
+                "Cannot migrate a nonzero Helical Tool Start Angle Offset without a valid Cylinder Inner Radius "
+                "and Layer Height.");
+        }
+
+        const double first_generated_radius = inner_radius + (layer_height / 2.0);
+        if (!std::isfinite(first_generated_radius) ||
+            first_generated_radius <= std::numeric_limits<double>::epsilon()) {
+            throw std::invalid_argument(
+                "Cannot migrate a nonzero Helical Tool Start Angle Offset because the first generated helical "
+                "path radius is zero or invalid.");
+        }
+
+        arc_length_offset = angle_offset * first_generated_radius;
+    }
+
+    const bool preserve_string = old_setting->is_string();
+    settings_group.erase(old_setting);
+    settings_group[new_key] = preserve_string ? fifojson(QString::number(arc_length_offset, 'g', 15).toStdString())
+                                              : fifojson(arc_length_offset);
+}
+
+bool boolFromSettingValue(const fifojson& value, bool& result) {
+    if (value.is_boolean()) {
+        result = value.get<bool>();
+        return true;
+    }
+
+    QString str;
+    if (stringFromSettingValue(value, str)) {
+        if (str == "true") {
+            result = true;
+            return true;
+        }
+        if (str == "false") {
+            result = false;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void migrateBooleanToInt(fifojson& settings_group, const QString& setting_key, int true_value = 1,
+                         int false_value = 0) {
+    if (!settings_group.is_object()) return;
+
+    auto setting = settings_group.find(setting_key.toStdString());
+    if (setting == settings_group.end()) return;
+
+    bool bool_val = false;
+    if (!boolFromSettingValue(setting.value(), bool_val)) return;
+
+    const int target_value = bool_val ? true_value : false_value;
+    if (setting->is_string()) { setting.value() = std::to_string(target_value); }
+    else { setting.value() = target_value; }
+}
+}  // namespace
 
 namespace ORNL {
 void SettingsVersionControl::rollSettingsForward(double& version, fifojson& settings) {
-    if (version < 1)
-        pre_1_0To1_0(version, settings);
-    if (version < 2) // all versions converted to Version 2.0
-        pre_2_0To2_0(version, settings);
-    if (version < 3)
-        pre_3_0To3_0(version, settings);
-    if (version < 4)
-        pre_4_0To4_0(version, settings);
-    if (version < 5)
-        pre_5_0To5_0(version, settings);
-    if (version < 6)
-        pre_6_0To6_0(version, settings);
-    if (version < 7)
-        pre_7_0To7_0(version, settings);
-    if (version < 8)
-        pre_8_0To8_0(version, settings);
-    if (version < 9)
-        pre_9_0To9_0(version, settings);
-    if (version < 10)
-        pre_10_0To10_0(version, settings);
+    if (version < 1) pre_1_0To1_0(version, settings);
+    if (version < 2) pre_2_0To2_0(version, settings);
+    if (version < 3) pre_3_0To3_0(version, settings);
+    if (version < 4) pre_4_0To4_0(version, settings);
+    if (version < 5) pre_5_0To5_0(version, settings);
+    if (version < 6) pre_6_0To6_0(version, settings);
+    if (version < 7) pre_7_0To7_0(version, settings);
+    if (version < 8) pre_8_0To8_0(version, settings);
+    if (version < 9) pre_9_0To9_0(version, settings);
+    if (version < 10) pre_10_0To10_0(version, settings);
+    if (version < 11) pre_11_0To11_0(version, settings);
+    if (version < 12) pre_12_0To12_0(version, settings);
+    if (version < 13) pre_13_0To13_0(version, settings);
+    if (version < 14) pre_14_0To14_0(version, settings);
+    if (version < 15) pre_15_0To15_0(version, settings);
 }
 
 void SettingsVersionControl::formatSettings(double version, fifojson& settings) {
     QString dt = QDateTime::currentDateTime().toString();
     fifojson new_format;
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kCreatedBy] = "ORNLSlicer";
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kCreatedOn] = dt.toStdString();
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kCreatedBy]    = "ORNLSlicer";
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kCreatedOn]    = dt.toStdString();
     new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion] = version;
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLock] = "false";
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = version;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLock]         = "false";
 
     new_format[Constants::SettingFileStrings::kSettings] = settings;
-    settings = new_format;
+    settings                                             = new_format;
+}
+
+void SettingsVersionControl::migrateConnectedContourSettingKeys(fifojson& settings_group) {
+    using Perimeter = Constants::ProfileSettings::Perimeter;
+    using Inset     = Constants::ProfileSettings::Inset;
+    renameSettingKey(settings_group, "spiral_perimeter", Perimeter::kConnectPerimeters);
+    renameSettingKey(settings_group, "spiral_perimeter_complete_path_before_connecting",
+                     Perimeter::kCompleteLoopBeforeConnecting);
+    renameSettingKey(settings_group, "spiral_perimeter_branch_after_tip_wipe", Perimeter::kConnectAfterTipWipe);
+    renameSettingKey(settings_group, "spiral_perimeter_connect_to_insets", Perimeter::kConnectToInsets);
+    renameSettingKey(settings_group, "spiral_inset", Inset::kConnectInsets);
+    renameSettingKey(settings_group, "spiral_inset_complete_path_before_connecting",
+                     Inset::kCompleteLoopBeforeConnecting);
+    renameSettingKey(settings_group, "spiral_inset_branch_after_tip_wipe", Inset::kConnectAfterTipWipe);
 }
 
 void SettingsVersionControl::migrateLegacySettingKeys(fifojson& settings_group) {
+    migrateConnectedContourSettingKeys(settings_group);
     migrateSlicingSettingKeys(settings_group);
+    migrateHelicalToolStartAngleOffset(settings_group);
+    migrateHelicalToolStartAngleOffsetToArcLength(settings_group);
+    migrateBooleanToInt(settings_group, Constants::PrinterSettings::Dimensions::kUseVariableForZ);
 }
 
 void SettingsVersionControl::pre_1_0To1_0(double& version, fifojson& settings) {
     QString dt = QDateTime::currentDateTime().toString();
     fifojson new_format;
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kCreatedBy] = "";
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kCreatedOn] = dt.toStdString();
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kCreatedBy]    = "";
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kCreatedOn]    = dt.toStdString();
     new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion] = 1.0;
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLock] = "false";
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 1.0;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLock]         = "false";
 
     new_format[Constants::SettingFileStrings::kSettings] = settings;
 
     std::list<std::string> keys;
-    for (auto& el : settings.items())
-        keys.push_back(el.key());
+    for (auto& el : settings.items()) keys.push_back(el.key());
 
     for (std::string key : keys) {
         // get iterator to old key; TODO: error handling if key is not present
@@ -367,23 +501,22 @@ void SettingsVersionControl::pre_1_0To1_0(double& version, fifojson& settings) {
 }
 
 void SettingsVersionControl::pre_2_0To2_0(double& version, fifojson& settings) {
-    QString dt = QDateTime::currentDateTime().toString();
+    QString dt          = QDateTime::currentDateTime().toString();
     fifojson new_format = settings;
     new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion] = 2.0;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 2.0;
 
     fifojson settings_array = fifojson::array({});
     fifojson current_index_settings;
-    int index = 0; // Last index denotes suffix
+    int index = 0;  // Last index denotes suffix
     for (auto& el : new_format[Constants::SettingFileStrings::kSettings].items()) {
         QString key_root = QString::fromStdString(el.key());
-        int last_index = key_root.lastIndexOf(QRegularExpression("_\\d+")); // index of suffix
+        int last_index   = key_root.lastIndexOf(QRegularExpression("_\\d+"));  // index of suffix
         if (last_index >= 0) {
-            key_root.chop(key_root.size() - last_index);                               // remove suffix
-            int key_suffix = key_root.right(key_root.size() - last_index - 1).toInt(); // get suffix
+            key_root.chop(key_root.size() - last_index);                                // remove suffix
+            int key_suffix = key_root.right(key_root.size() - last_index - 1).toInt();  // get suffix
             // If suffix matches index, add to json
-            if (key_suffix == index)
-                current_index_settings[key_root.toStdString()] = el.value();
+            if (key_suffix == index) current_index_settings[key_root.toStdString()] = el.value();
             // otherwise increment index and add current json to json array
             else {
                 index++;
@@ -395,22 +528,20 @@ void SettingsVersionControl::pre_2_0To2_0(double& version, fifojson& settings) {
                 current_index_settings[key_root.toStdString()] = el.value();
             }
         }
-        else {
-            current_index_settings[key_root.toStdString()] = el.value();
-        }
+        else { current_index_settings[key_root.toStdString()] = el.value(); }
     }
     settings_array.push_back(current_index_settings);
 
     new_format[Constants::SettingFileStrings::kSettings] = settings_array;
-    version = 2.0;
-    settings = new_format;
+    version                                              = 2.0;
+    settings                                             = new_format;
 }
 
 void SettingsVersionControl::pre_3_0To3_0(double& version, fifojson& settings) {
-    QString dt = QDateTime::currentDateTime().toString();
+    QString dt          = QDateTime::currentDateTime().toString();
     fifojson new_format = settings;
     new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion] = 3.0;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 3.0;
 
     auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
     if (settings_array != new_format.end() && settings_array.value().is_array()) {
@@ -422,15 +553,15 @@ void SettingsVersionControl::pre_3_0To3_0(double& version, fifojson& settings) {
         }
     }
 
-    version = 3.0;
+    version  = 3.0;
     settings = new_format;
 }
 
 void SettingsVersionControl::pre_4_0To4_0(double& version, fifojson& settings) {
-    QString dt = QDateTime::currentDateTime().toString();
+    QString dt          = QDateTime::currentDateTime().toString();
     fifojson new_format = settings;
     new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion] = 4.0;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 4.0;
 
     auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
     if (settings_array != new_format.end() && settings_array.value().is_array()) {
@@ -439,15 +570,15 @@ void SettingsVersionControl::pre_4_0To4_0(double& version, fifojson& settings) {
         }
     }
 
-    version = 4.0;
+    version  = 4.0;
     settings = new_format;
 }
 
 void SettingsVersionControl::pre_5_0To5_0(double& version, fifojson& settings) {
-    QString dt = QDateTime::currentDateTime().toString();
+    QString dt          = QDateTime::currentDateTime().toString();
     fifojson new_format = settings;
     new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion] = 5.0;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 5.0;
 
     auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
     if (settings_array != new_format.end() && settings_array.value().is_array()) {
@@ -457,63 +588,60 @@ void SettingsVersionControl::pre_5_0To5_0(double& version, fifojson& settings) {
         }
     }
 
-    version = 5.0;
+    version  = 5.0;
     settings = new_format;
 }
 
 void SettingsVersionControl::pre_6_0To6_0(double& version, fifojson& settings) {
-    QString dt = QDateTime::currentDateTime().toString();
+    QString dt          = QDateTime::currentDateTime().toString();
     fifojson new_format = settings;
     new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion] = 6.0;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 6.0;
 
     auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
     if (settings_array != new_format.end() && settings_array.value().is_array()) {
-        for (auto& settings_group : settings_array.value())
-            migrateRemovedGcodeSyntax(settings_group);
+        for (auto& settings_group : settings_array.value()) migrateRemovedGcodeSyntax(settings_group);
     }
 
-    version = 6.0;
+    version  = 6.0;
     settings = new_format;
 }
 
 void SettingsVersionControl::pre_7_0To7_0(double& version, fifojson& settings) {
-    QString dt = QDateTime::currentDateTime().toString();
+    QString dt          = QDateTime::currentDateTime().toString();
     fifojson new_format = settings;
     new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion] = 7.0;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 7.0;
 
     auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
     if (settings_array != new_format.end() && settings_array.value().is_array()) {
-        for (auto& settings_group : settings_array.value())
-            migrateRemovedRadialSyntax(settings_group);
+        for (auto& settings_group : settings_array.value()) migrateRemovedRadialSyntax(settings_group);
     }
 
-    version = 7.0;
+    version  = 7.0;
     settings = new_format;
 }
 
 void SettingsVersionControl::pre_8_0To8_0(double& version, fifojson& settings) {
-    QString dt = QDateTime::currentDateTime().toString();
+    QString dt          = QDateTime::currentDateTime().toString();
     fifojson new_format = settings;
     new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion] = 8.0;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 8.0;
 
     auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
     if (settings_array != new_format.end() && settings_array.value().is_array()) {
-        for (auto& settings_group : settings_array.value())
-            migrateCylindricalSlicingSettings(settings_group);
+        for (auto& settings_group : settings_array.value()) migrateCylindricalSlicingSettings(settings_group);
     }
 
-    version = 8.0;
+    version  = 8.0;
     settings = new_format;
 }
 
 void SettingsVersionControl::pre_9_0To9_0(double& version, fifojson& settings) {
-    QString dt = QDateTime::currentDateTime().toString();
+    QString dt          = QDateTime::currentDateTime().toString();
     fifojson new_format = settings;
     new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion] = 9.0;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 9.0;
 
     auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
     if (settings_array != new_format.end() && settings_array.value().is_array()) {
@@ -521,23 +649,101 @@ void SettingsVersionControl::pre_9_0To9_0(double& version, fifojson& settings) {
             migrateIndexedSetting(settings_group, kLegacySlicingMode, kSlicingModeV8ToV9);
     }
 
-    version = 9.0;
+    version  = 9.0;
     settings = new_format;
 }
 
 void SettingsVersionControl::pre_10_0To10_0(double& version, fifojson& settings) {
-    QString dt = QDateTime::currentDateTime().toString();
+    QString dt          = QDateTime::currentDateTime().toString();
     fifojson new_format = settings;
     new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
-    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion] = 10.0;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 10.0;
+
+    auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
+    if (settings_array != new_format.end() && settings_array.value().is_array()) {
+        for (auto& settings_group : settings_array.value()) migrateSlicingSettingKeys(settings_group);
+    }
+
+    version  = 10.0;
+    settings = new_format;
+}
+
+void SettingsVersionControl::pre_11_0To11_0(double& version, fifojson& settings) {
+    QString dt          = QDateTime::currentDateTime().toString();
+    fifojson new_format = settings;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 11.0;
+
+    auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
+    if (settings_array != new_format.end() && settings_array.value().is_array()) {
+        for (auto& settings_group : settings_array.value()) migrateHelicalToolStartAngleOffset(settings_group);
+    }
+
+    version  = 11.0;
+    settings = new_format;
+}
+
+void SettingsVersionControl::pre_12_0To12_0(double& version, fifojson& settings) {
+    QString dt          = QDateTime::currentDateTime().toString();
+    fifojson new_format = settings;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 12.0;
+
+    auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
+    if (settings_array != new_format.end() && settings_array.value().is_array()) {
+        for (auto& settings_group : settings_array.value()) migrateHelicalToolStartAngleOffset(settings_group);
+    }
+
+    version  = 12.0;
+    settings = new_format;
+}
+
+void SettingsVersionControl::pre_13_0To13_0(double& version, fifojson& settings) {
+    QString dt          = QDateTime::currentDateTime().toString();
+    fifojson new_format = settings;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 13.0;
 
     auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
     if (settings_array != new_format.end() && settings_array.value().is_array()) {
         for (auto& settings_group : settings_array.value())
-            migrateSlicingSettingKeys(settings_group);
+            migrateBooleanToInt(settings_group, Constants::PrinterSettings::Dimensions::kUseVariableForZ);
     }
 
-    version = 10.0;
+    version  = 13.0;
     settings = new_format;
 }
-} // namespace ORNL
+
+void SettingsVersionControl::pre_14_0To14_0(double& version, fifojson& settings) {
+    QString dt          = QDateTime::currentDateTime().toString();
+    fifojson new_format = settings;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 14.0;
+
+    auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
+    if (settings_array != new_format.end() && settings_array.value().is_array()) {
+        for (auto& settings_group : settings_array.value()) {
+            migrateHelicalToolStartAngleOffset(settings_group);
+            migrateHelicalToolStartAngleOffsetToArcLength(settings_group);
+        }
+    }
+
+    version  = 14.0;
+    settings = new_format;
+}
+
+void SettingsVersionControl::pre_15_0To15_0(double& version, fifojson& settings) {
+    QString dt          = QDateTime::currentDateTime().toString();
+    fifojson new_format = settings;
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kLastModified] = dt.toStdString();
+    new_format[Constants::SettingFileStrings::kHeader][Constants::SettingFileStrings::kVersion]      = 15.0;
+
+    auto settings_array = new_format.find(Constants::SettingFileStrings::kSettings);
+    if (settings_array != new_format.end() && settings_array.value().is_array()) {
+        for (auto& settings_group : settings_array.value()) { migrateConnectedContourSettingKeys(settings_group); }
+    }
+
+    version  = 15.0;
+    settings = new_format;
+}
+}  // namespace ORNL

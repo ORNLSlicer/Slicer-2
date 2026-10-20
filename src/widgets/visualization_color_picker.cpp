@@ -13,15 +13,15 @@
 namespace ORNL {
 
 VisualizationColorPicker::VisualizationColorPicker(QString name, QColor color, QWidget* parent) : QWidget {parent} {
-    this->name = name;
+    this->name  = name;
     this->color = color;
 
     QGridLayout* color_tab_layout = new QGridLayout(this);
     color_tab_layout->setVerticalSpacing(0);
 
-    colorTypeLbl = new QLabel(name);
-    sampleTextLbl = new QLabel("(This is how it looks!!!)");
-    colorResetBtn = new QPushButton();
+    colorTypeLbl     = new QLabel(name);
+    sampleTextLbl    = new QLabel("(This is how it looks!!!)");
+    colorResetBtn    = new QPushButton();
     colorSelectorBtn = new QPushButton();
 
     colorResetBtn->setMaximumWidth(80);
@@ -48,11 +48,21 @@ VisualizationColorPicker::VisualizationColorPicker(QString name, QColor color, Q
     updateDisplay();
 }
 
-void VisualizationColorPicker::mousePressEvent(QMouseEvent*) { selectSetColor(); }
+void VisualizationColorPicker::refreshFromPreferences() {
+    VisualizationColors colorEnum;
+    if (!VisualizationColorFromName(name, colorEnum)) return;
+
+    color = PreferencesManager::getInstance()->getVisualizationColor(colorEnum);
+    updateDisplay();
+}
+
+void VisualizationColorPicker::mousePressEvent(QMouseEvent*) {
+    selectSetColor();
+}
 
 void ORNL::VisualizationColorPicker::selectSetColor() {
     QColorDialog dlg(this->color);
-    dlg.setWindowTitle("Select Visualization Color (" + name + ")");
+    dlg.setWindowTitle("Select Visualization Color (" + colorTypeLbl->text() + ")");
     if (dlg.exec()) {
         auto newColor = dlg.selectedColor();
         if (newColor.isValid() && newColor != this->color) {
@@ -70,4 +80,4 @@ void VisualizationColorPicker::updateDisplay() {
 
     colorResetBtn->setEnabled(!PreferencesManager::getInstance()->isDefaultVisualizationColor(name));
 }
-} // namespace ORNL
+}  // namespace ORNL

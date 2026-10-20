@@ -16,7 +16,7 @@ namespace ORNL {
  * \brief The gcode writer for the Cincinnati Inc. syntax
  */
 class CincinnatiWriter : public WriterBase {
-  public:
+   public:
     //! \brief Constructor
     CincinnatiWriter(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb);
 
@@ -41,6 +41,8 @@ class CincinnatiWriter : public WriterBase {
 
     //! \brief Writes G-Code to be executed at the start of each path
     QString writeBeforePath(RegionType type) override;
+
+    QString writeBeforePathRegionTransition(RegionType type) override;
 
     //! \brief Writes G-Code for traveling between paths
     QString writeTravel(Point start_location, Point target_location, TravelLiftType lType,
@@ -84,7 +86,7 @@ class CincinnatiWriter : public WriterBase {
     //! \brief Writes G-Code for a pause, G4
     QString writeDwell(Time time) override;
 
-  private:
+   private:
     //! \brief Writes G-Code to enable the tamper
     QString writeTamperOn();
     //! \brief Writes G-Code to disable the tamper
@@ -106,6 +108,9 @@ class CincinnatiWriter : public WriterBase {
     //! \param destination the target point
     //! \return a gcode string that contains the correct move
     QString getZWValue(const Point& destination);
+
+    //! \brief returns the variable name string based on the variable Z setting
+    QString zVariableString() const;
 
     //! \brief State variables
     AngularVelocity m_current_rpm;
@@ -133,5 +138,5 @@ class CincinnatiWriter : public WriterBase {
     QString m_M10, m_M11, m_M64, m_M65;
     int m_material_number;
 
-}; // class CincinnatiWriter
-} // namespace ORNL
+};  // class CincinnatiWriter
+}  // namespace ORNL

@@ -1,28 +1,81 @@
+#include <QCoreApplication>
+#include <QRegularExpression>
+#include <QStringList>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
 
-#include <QCoreApplication>
-#include <QStringList>
-
 #include "gcode/gcode_meta.h"
 #include "gcode/parsers/common_parser.h"
+#include "managers/settings/settings_manager.h"
+#include "test_utils.h"
 #include "units/unit.h"
+#include "utilities/constants.h"
 
 namespace {
-bool expect(bool condition, const char* message) {
-    if (!condition)
-        std::cerr << message << '\n';
-    return condition;
-}
+constexpr float kTolerance = 1.0e-6f;
 
 QStringList upperLines(const QStringList& lines) {
     QStringList upper_lines;
-    for (const QString& line : lines) {
-        upper_lines.append(line.toUpper());
-    }
+    for (const QString& line : lines) { upper_lines.append(line.toUpper()); }
 
     return upper_lines;
+}
+
+bool lineFeedrate(const QString& line, double& feedrate) {
+    static const QRegularExpression feedrate_token("(^|\\s)F([-+]?\\d*\\.?\\d+(?:[Ee][-+]?\\d+)?)",
+                                                   QRegularExpression::CaseInsensitiveOption);
+
+    const QRegularExpressionMatch match = feedrate_token.match(line);
+    if (!match.hasMatch()) return false;
+
+    bool converted = false;
+    feedrate       = match.captured(2).toDouble(&converted);
+    return converted;
+}
+
+void configureLayerTimeSettings() {
+    auto global_settings = ORNL::GSM->getGlobal();
+    global_settings->setSetting(ORNL::MS::Cooling::kForceMinLayerTime, true);
+    global_settings->setSetting(ORNL::MS::Cooling::kForceMinLayerTimeMethod,
+                                static_cast<int>(ORNL::ForceMinimumLayerTime::kSlow_Feedrate));
+    global_settings->setSetting(ORNL::MS::Cooling::kMinLayerTime, 5.0);
+    global_settings->setSetting(ORNL::MS::Cooling::kMaxLayerTime, 0.0);
+    global_settings->setSetting(ORNL::MS::Cooling::kExtruderScaleFactor, 1.0);
+    global_settings->setSetting(ORNL::MS::Filament::kFilamentBAxis, false);
+    global_settings->setSetting(ORNL::MS::Startup::kDisableFeedrateScaling, false);
+    global_settings->setSetting(ORNL::MS::Slowdown::kDisableFeedrateScaling, false);
+    global_settings->setSetting(ORNL::MS::TipWipe::kDisableFeedrateScaling, false);
+    global_settings->setSetting(ORNL::MS::SpiralLift::kDisableFeedrateScaling, false);
+    global_settings->setSetting(ORNL::PS::Travel::kDisableFeedrateScaling, false);
+    global_settings->setSetting(ORNL::PRS::MachineSpeed::kMinXYSpeed, 0.0);
+    global_settings->setSetting(ORNL::PRS::MachineSpeed::kMaxXYSpeed, 1000000.0);
+    global_settings->setSetting(ORNL::PS::Layer::kBeadWidth, 0.4);
+    global_settings->setSetting(ORNL::PS::Layer::kLayerHeight, 0.2);
+}
+
+void configureVolumeSettings() {
+    auto global_settings = ORNL::GSM->getGlobal();
+    global_settings->setSetting(ORNL::MS::Cooling::kForceMinLayerTime, false);
+    global_settings->setSetting(ORNL::MS::Filament::kFilamentBAxis, false);
+    global_settings->setSetting(ORNL::PRS::MachineSpeed::kMaxXYSpeed, 1000000.0 * ORNL::in / ORNL::minute);
+    global_settings->setSetting(ORNL::PRS::MachineSpeed::kZSpeed, 1000000.0 * ORNL::in / ORNL::minute);
+    global_settings->setSetting(ORNL::PRS::MachineSpeed::kWTableSpeed, 1000000.0 * ORNL::in / ORNL::minute);
+    global_settings->setSetting(ORNL::PS::Layer::kBeadWidth, 0.75 * ORNL::in);
+    global_settings->setSetting(ORNL::PS::Perimeter::kBeadWidth, 0.75 * ORNL::in);
+    global_settings->setSetting(ORNL::PS::Layer::kLayerHeight, 0.2 * ORNL::in);
+}
+
+ORNL::Volume parsedVolume(QStringList original_lines) {
+    QStringList upper_lines = upperLines(original_lines);
+    ORNL::CommonParser parser(ORNL::GcodeMetaList::CincinnatiMeta, false, original_lines, upper_lines);
+
+    parser.parseLines();
+
+    ORNL::Volume total_volume = 0.0;
+    for (const ORNL::Volume& layer_volume : parser.getLayerVolumes()) { total_volume += layer_volume; }
+
+    return total_volume;
 }
 
 bool accumulatesTravelTimeForNonDepositionMove() {
@@ -46,25 +99,218 @@ bool accumulatesTravelTimeForTravelCommentAfterDepositionMove() {
 
     try {
         const QList<QList<ORNL::GcodeCommand>> commands = parser.parseLines();
-        return commands.size() == 1 && commands.first().size() == 2 &&
-               commands.first().first().getDepositionActive() && !commands.first().last().getDepositionActive() &&
-               parser.getPrintingDistance() > 0.0 * ORNL::mm && parser.getTravelDistance() > 0.0 * ORNL::mm &&
-               parser.getTravelTime() > 0.0 * ORNL::s;
+        return commands.size() == 1 && commands.first().size() == 2 && commands.first().first().getDepositionActive() &&
+               !commands.first().last().getDepositionActive() && parser.getPrintingDistance() > 0.0 * ORNL::mm &&
+               parser.getTravelDistance() > 0.0 * ORNL::mm && parser.getTravelTime() > 0.0 * ORNL::s;
     } catch (const std::exception& ex) {
         std::cerr << ex.what() << '\n';
         return false;
     }
 }
-} // namespace
+
+bool keepsTravelFeedrateWhenTravelScalingDisabled() {
+    configureLayerTimeSettings();
+
+    QStringList original_lines {
+        ";BEGINNING LAYER: 1",
+        "G1 F60 X1 ;TRAVEL",
+        "G1 F60 X2 E1 ;PERIMETER",
+        ";Settings Footer",
+        ";disable_travel_feedrate_scaling true",
+    };
+    QStringList upper_lines = upperLines(original_lines);
+    ORNL::CommonParser parser(ORNL::GcodeMetaList::MarlinMeta, true, original_lines, upper_lines);
+
+    try {
+        parser.parseFooter();
+        parser.parseLines();
+
+        double travel_feedrate            = 0.0;
+        double print_feedrate             = 0.0;
+        const QList<double> modifiers     = parser.getLayerFeedRateModifiers();
+        const double travel_time          = parser.getTravelTime()();
+        const double adjusted_travel_time = parser.getAdjustedTravelTime()();
+
+        return parser.getWasModified() && modifiers.size() > 1 && modifiers[1] > 0.0 && modifiers[1] < 1.0 &&
+               lineFeedrate(original_lines[1], travel_feedrate) && lineFeedrate(original_lines[2], print_feedrate) &&
+               ORNL::Testing::near(travel_feedrate, 60.0, kTolerance) && print_feedrate > 0.0 &&
+               print_feedrate < 60.0 && ORNL::Testing::near(adjusted_travel_time, travel_time, kTolerance);
+    } catch (const std::exception& ex) {
+        std::cerr << ex.what() << '\n';
+        return false;
+    }
+}
+
+bool adjustsTravelTimeWhenTravelFeedrateIsScaled() {
+    configureLayerTimeSettings();
+
+    QStringList original_lines {
+        ";BEGINNING LAYER: 1",
+        "G1 F60 X1 ;TRAVEL",
+        "G1 F60 X2 E1 ;PERIMETER",
+        ";Settings Footer",
+        ";disable_travel_feedrate_scaling false",
+    };
+    QStringList upper_lines = upperLines(original_lines);
+    ORNL::CommonParser parser(ORNL::GcodeMetaList::MarlinMeta, true, original_lines, upper_lines);
+
+    try {
+        parser.parseFooter();
+        parser.parseLines();
+
+        double travel_feedrate        = 0.0;
+        const QList<double> modifiers = parser.getLayerFeedRateModifiers();
+
+        return parser.getWasModified() && modifiers.size() > 1 && modifiers[1] > 0.0 && modifiers[1] < 1.0 &&
+               lineFeedrate(original_lines[1], travel_feedrate) && travel_feedrate > 0.0 && travel_feedrate < 60.0 &&
+               parser.getAdjustedTravelTime()() > parser.getTravelTime()();
+    } catch (const std::exception& ex) {
+        std::cerr << ex.what() << '\n';
+        return false;
+    }
+}
+
+bool ignoresTipWipeZWhenInferringBeadHeight() {
+    configureVolumeSettings();
+
+    const QStringList lines_with_tip_wipe {
+        "M3 S45",
+        "G1 F60 X10 (PERIMETER)",
+        "G1 X11 Z0.06 (PERIMETER FORWARD TIP WIPE)",
+        "M5",
+        "G0 X11 Z0 (TRAVEL)",
+        "M3 S45",
+        "G1 X21 (PERIMETER)",
+        "M5",
+    };
+    const QStringList nominal_lines {
+        "M3 S45", "G1 F60 X10 (PERIMETER)", "M5", "G0 X11 Z0 (TRAVEL)", "M3 S45", "G1 X21 (PERIMETER)", "M5",
+    };
+
+    try {
+        const ORNL::Volume volume_with_tip_wipe = parsedVolume(lines_with_tip_wipe);
+        const ORNL::Volume nominal_volume       = parsedVolume(nominal_lines);
+        const ORNL::Distance bead_width         = 0.75 * ORNL::in;
+        const ORNL::Distance bead_height        = 0.2 * ORNL::in;
+        const ORNL::Area bead_area =
+            ((bead_width - bead_height) * bead_height) + (M_PI * bead_height * bead_height / 4.0);
+
+        const double expected_extra_volume = (bead_area * (1.0 * ORNL::in))();
+        const double observed_extra_volume = (volume_with_tip_wipe - nominal_volume)();
+
+        return std::abs(observed_extra_volume - expected_extra_volume) < expected_extra_volume * 0.02;
+    } catch (const std::exception& ex) {
+        std::cerr << ex.what() << '\n';
+        return false;
+    }
+}
+
+bool keepsModifierOnlyLayerFromInflatingNextLayerHeight() {
+    configureVolumeSettings();
+
+    const QStringList modifier_only_layer_lines {
+        "(BEGINNING LAYER: 1)",
+        "M3 S45",
+        "G1 F60 X10 Z0 (PERIMETER)",
+        "M5",
+        "(BEGINNING LAYER: 2)",
+        "M3 S45",
+        "G1 X11 Z0.2 (PERIMETER INITIAL STARTUP)",
+        "M5",
+        "(BEGINNING LAYER: 3)",
+        "M3 S45",
+        "G1 X21 Z0.4 (PERIMETER)",
+        "M5",
+    };
+    const QStringList nominal_layer_lines {
+        "(BEGINNING LAYER: 1)",    "M3 S45", "G1 F60 X10 Z0 (PERIMETER)", "M5",     "(BEGINNING LAYER: 2)",    "M3 S45",
+        "G1 X11 Z0.2 (PERIMETER)", "M5",     "(BEGINNING LAYER: 3)",      "M3 S45", "G1 X21 Z0.4 (PERIMETER)", "M5",
+    };
+
+    try {
+        const ORNL::Volume modifier_only_layer_volume = parsedVolume(modifier_only_layer_lines);
+        const ORNL::Volume nominal_layer_volume       = parsedVolume(nominal_layer_lines);
+
+        return std::abs((modifier_only_layer_volume - nominal_layer_volume)()) < nominal_layer_volume() * 0.02;
+    } catch (const std::exception& ex) {
+        std::cerr << ex.what() << '\n';
+        return false;
+    }
+}
+
+bool keepsModifierOnlyTipWipeFromAnchoringNextLayerHeight() {
+    configureVolumeSettings();
+
+    const QStringList lines_with_tip_wipe {
+        "(BEGINNING LAYER: 1)",
+        "M3 S45",
+        "G1 F60 X10 Z0 (PERIMETER)",
+        "M5",
+        "(BEGINNING LAYER: 2)",
+        "M3 S45",
+        "G1 X11 Z0.2 (PERIMETER INITIAL STARTUP)",
+        "G1 X12 Z0.26 (PERIMETER FORWARD TIP WIPE)",
+        "M5",
+        "(BEGINNING LAYER: 3)",
+        "G0 X11 Z0.2 (TRAVEL)",
+        "M3 S45",
+        "G1 X21 Z0.4 (PERIMETER)",
+        "M5",
+    };
+    const QStringList nominal_lines {
+        "(BEGINNING LAYER: 1)",
+        "M3 S45",
+        "G1 F60 X10 Z0 (PERIMETER)",
+        "M5",
+        "(BEGINNING LAYER: 2)",
+        "M3 S45",
+        "G1 X11 Z0.2 (PERIMETER INITIAL STARTUP)",
+        "M5",
+        "(BEGINNING LAYER: 3)",
+        "G0 X11 Z0.2 (TRAVEL)",
+        "M3 S45",
+        "G1 X21 Z0.4 (PERIMETER)",
+        "M5",
+    };
+
+    try {
+        const ORNL::Volume volume_with_tip_wipe = parsedVolume(lines_with_tip_wipe);
+        const ORNL::Volume nominal_volume       = parsedVolume(nominal_lines);
+        const ORNL::Distance bead_width         = 0.75 * ORNL::in;
+        const ORNL::Distance bead_height        = 0.2 * ORNL::in;
+        const ORNL::Area bead_area =
+            ((bead_width - bead_height) * bead_height) + (M_PI * bead_height * bead_height / 4.0);
+
+        const double expected_extra_volume = (bead_area * (1.0 * ORNL::in))();
+        const double observed_extra_volume = (volume_with_tip_wipe - nominal_volume)();
+
+        return std::abs(observed_extra_volume - expected_extra_volume) < expected_extra_volume * 0.02;
+    } catch (const std::exception& ex) {
+        std::cerr << ex.what() << '\n';
+        return false;
+    }
+}
+}  // namespace
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
     bool passed = true;
-    passed &= expect(accumulatesTravelTimeForNonDepositionMove(),
-                     "Common parser did not accumulate travel time for a travel move.");
-    passed &= expect(accumulatesTravelTimeForTravelCommentAfterDepositionMove(),
-                     "Common parser did not accumulate travel time for a travel comment after deposition.");
+    passed &= ORNL::Testing::expect(accumulatesTravelTimeForNonDepositionMove(),
+                                    "Common parser did not accumulate travel time for a travel move.");
+    passed &=
+        ORNL::Testing::expect(accumulatesTravelTimeForTravelCommentAfterDepositionMove(),
+                              "Common parser did not accumulate travel time for a travel comment after deposition.");
+    passed &= ORNL::Testing::expect(keepsTravelFeedrateWhenTravelScalingDisabled(),
+                                    "Common parser scaled a travel move when travel feedrate scaling was disabled.");
+    passed &= ORNL::Testing::expect(adjustsTravelTimeWhenTravelFeedrateIsScaled(),
+                                    "Common parser did not adjust travel time when travel feedrate was scaled.");
+    passed &= ORNL::Testing::expect(ignoresTipWipeZWhenInferringBeadHeight(),
+                                    "Common parser let tip-wipe Z motion change inferred bead height.");
+    passed &= ORNL::Testing::expect(keepsModifierOnlyLayerFromInflatingNextLayerHeight(),
+                                    "Common parser let a modifier-only layer inflate the next inferred bead height.");
+    passed &= ORNL::Testing::expect(keepsModifierOnlyTipWipeFromAnchoringNextLayerHeight(),
+                                    "Common parser let a modifier-only tip wipe anchor the next inferred bead height.");
 
     return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -3,6 +3,7 @@
 #include <GL/gl.h>
 
 #include <QColor>
+
 #include <qhashfunctions.h>
 #include <qset.h>
 #include <qsharedpointer.h>
@@ -19,7 +20,6 @@ class Part;
 class ArrowObject;
 class AxesObject;
 class PlaneObject;
-class TextObject;
 
 /*!
  * \brief Displays a part in an OpenGL view.
@@ -30,7 +30,7 @@ class TextObject;
  * mesh types, and transparency.
  */
 class PartObject : public GraphicsObject {
-  public:
+   public:
     //! \brief Constructor.
     //! \param view: View to render object to.
     //! \param p: Part to extract geometry from.
@@ -62,8 +62,6 @@ class PartObject : public GraphicsObject {
 
     //! \brief Gets the arrow object.
     QSharedPointer<ArrowObject> arrow();
-    //! \brief Gets the label object.
-    QSharedPointer<TextObject> label();
     //! \brief Gets the axes object.
     QSharedPointer<AxesObject> axes();
     //! \brief Gets the plane object.
@@ -85,7 +83,7 @@ class PartObject : public GraphicsObject {
     //! \brief Gets the mesh part pointer.
     QSharedPointer<Part> part();
 
-  protected:
+   protected:
     void draw() override;
     //! \brief Updates the overhang coloring. Called after rotations/translations.
     void overhangUpdate();
@@ -101,7 +99,7 @@ class PartObject : public GraphicsObject {
     //! \brief Paints a color while taking transparency/overhangs into account.
     void paint(QColor color) override;
 
-  private:
+   private:
     //! \brief Sorts triangle vertex, normal, and color buffers from back to front for transparent rendering.
     //!
     //! Transparent triangle blending is order-dependent. Sorting by view-space depth before drawing reduces dark
@@ -121,7 +119,6 @@ class PartObject : public GraphicsObject {
 
     //! \brief Sub-objects.
     QSharedPointer<ArrowObject> m_arrow_object;
-    QSharedPointer<TextObject> m_label_object;
     QSharedPointer<AxesObject> m_axes_object;
     QSharedPointer<PlaneObject> m_plane_object;
     QSharedPointer<GraphicsObject> m_slicing_cylinder_object;
@@ -134,4 +131,4 @@ class PartObject : public GraphicsObject {
     //! \brief If overhang angles are shown or not.
     bool m_overhang_shown = false;
 };
-} // Namespace ORNL
+}  // Namespace ORNL

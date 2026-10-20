@@ -1,11 +1,14 @@
 #include "gcode/writers/writer_base.h"
 
-#include <CGAL/property_map.h>
 #include <QStringBuilder>
+
+#include <CGAL/property_map.h>
 #include <qsharedpointer.h>
 #include <qtypes.h>
 #include <qvectornd.h>
 
+#include "configs/settings_base.h"
+#include "gcode/gcode_layer_export.h"
 #include "gcode/gcode_meta.h"
 #include "geometry/point.h"
 #include "managers/settings/settings_manager.h"
@@ -17,39 +20,39 @@
 
 namespace ORNL {
 WriterBase::WriterBase(GcodeMeta meta, const QSharedPointer<SettingsBase>& sb) : m_sb(sb) {
-    m_meta = meta;
-    m_newline = '\n';
-    m_empty_step_comment = "INTENTIONALLY BLANK - NO PATHING PRODUCED USING CURRENT SETTINGS";
-    m_space = ' ';
-    m_x = " X";
-    m_y = " Y";
-    m_z = " Z";
-    m_w = " W";
-    m_e = " E";
-    m_f = " F";
-    m_s = " S";
-    m_p = " P";
-    m_i = " I";
-    m_j = " J";
-    m_k = " K";
-    m_r = " R";
-    m_l = " L";
-    m_q = " Q";
-    m_a = " A";
-    m_b = " B";
-    m_G0 = "G0";
-    m_G1 = "G1";
-    m_G2 = "G2";
-    m_G3 = "G3";
-    m_G4 = "G4";
-    m_G5 = "G5";
-    m_M3 = "M3";
-    m_M5 = "M5";
-    m_start_point = Point(0, 0, 0);
-    m_current_position = Point(0, 0, 0);
+    m_meta                 = meta;
+    m_newline              = '\n';
+    m_empty_step_comment   = "INTENTIONALLY BLANK - NO PATHING PRODUCED USING CURRENT SETTINGS";
+    m_space                = ' ';
+    m_x                    = " X";
+    m_y                    = " Y";
+    m_z                    = " Z";
+    m_w                    = " W";
+    m_e                    = " E";
+    m_f                    = " F";
+    m_s                    = " S";
+    m_p                    = " P";
+    m_i                    = " I";
+    m_j                    = " J";
+    m_k                    = " K";
+    m_r                    = " R";
+    m_l                    = " L";
+    m_q                    = " Q";
+    m_a                    = " A";
+    m_b                    = " B";
+    m_G0                   = "G0";
+    m_G1                   = "G1";
+    m_G2                   = "G2";
+    m_G3                   = "G3";
+    m_G4                   = "G4";
+    m_G5                   = "G5";
+    m_M3                   = "M3";
+    m_M5                   = "M5";
+    m_start_point          = Point(0, 0, 0);
+    m_current_position     = Point(0, 0, 0);
     m_has_current_position = false;
-    m_build_maximum_z = Distance(0.0);
-    m_has_build_maximum_z = false;
+    m_build_maximum_z      = Distance(0.0);
+    m_has_build_maximum_z  = false;
 
     m_deposition_active = false;
 }
@@ -67,7 +70,82 @@ QString WriterBase::commentSpaceLine(const QString& text) {
                    m_newline);
 }
 
-QVector3D WriterBase::getTravelLift() { return getLiftVector(m_sb->setting<Distance>(PS::Travel::kLiftHeight)); }
+QString WriterBase::writeStandaloneLayer(uint layer_number, float min_z, const QSharedPointer<SettingsBase>& settings,
+                                         const std::function<QString()>& emit_layer) {
+    m_standalone_entry_pending = true;
+    QString result             = writeLayerChange(layer_number);
+    result += writeBeforeLayer(min_z, settings);
+    result += emit_layer();
+    m_standalone_entry_pending = false;
+    result += writeAfterLayer();
+    result += writeAfterPart();
+    result += writeShutdown();
+    if (!result.endsWith(m_newline)) { result += m_newline; }
+    return result;
+}
+
+QString WriterBase::writeStandaloneEntry(const Point& start, const QSharedPointer<SettingsBase>& params) {
+    if (!m_standalone_entry_pending) { return {}; }
+    const QString entry = writeLayerTravel(start, start, TravelLiftType::kBoth, params);
+    if (!entry.isEmpty()) { setCurrentPosition(start); }
+    return entry;
+}
+
+QString WriterBase::writeLayerTravel(Point start, Point target, TravelLiftType type,
+                                     const QSharedPointer<SettingsBase>& params) {
+    const QString result =
+        writeTravel(start, target, m_standalone_entry_pending ? TravelLiftType::kBoth : type, params);
+    m_standalone_entry_pending = false;
+    return result;
+}
+
+QString WriterBase::writeLayerExportProgram(const QString& program) {
+    return layerExportProgram(program, m_meta);
+}
+
+QString WriterBase::writeShutdownWithLayerMarkers() {
+    QString shutdown = writeShutdown();
+    if (!shutdown.isEmpty() && !shutdown.endsWith(m_newline)) { shutdown += m_newline; }
+    return commentLine(kLayerShutdownBegin) + shutdown + commentLine(kLayerShutdownEnd);
+}
+
+QString WriterBase::finalPositionBlock(const QString& gcode) {
+    if (gcode.isEmpty()) { return {}; }
+    return commentLine(kFinalPositionBegin) + gcode + (gcode.endsWith(m_newline) ? QString() : QString(m_newline)) +
+           commentLine(kFinalPositionEnd);
+}
+
+QString WriterBase::regionComment(RegionType region_type, PathModifiers path_modifiers,
+                                  const QSharedPointer<SettingsBase>& params, bool include_skeleton_width) const {
+    const bool is_connection =
+        params != nullptr && params->contains(SS::kIsConnection) && params->setting<bool>(SS::kIsConnection);
+    const RegionType comment_region = is_connection && params->contains(SS::kConnectionRegion)
+                                          ? params->setting<RegionType>(SS::kConnectionRegion)
+                                          : region_type;
+    QString comment                 = toString(comment_region);
+    const bool has_width            = params != nullptr && params->contains(SS::kWidth);
+    const bool has_adapted          = params != nullptr && params->contains(SS::kAdapted);
+
+    if (has_width && has_adapted && params->setting<bool>(SS::kAdapted)) {
+        comment = QStringLiteral("AD-") % comment % QStringLiteral("-") %
+                  QString::number(params->setting<Distance>(SS::kWidth).to(m_meta.m_distance_unit));
+    }
+    else if (include_skeleton_width && has_width && region_type == RegionType::kSkeleton) {
+        comment +=
+            QStringLiteral("-") % QString::number(params->setting<Distance>(SS::kWidth).to(m_meta.m_distance_unit));
+    }
+
+    if (path_modifiers != PathModifiers::kNone) { comment += m_space % toString(path_modifiers); }
+    if (is_connection && path_modifiers != PathModifiers::kConnection) {
+        comment += m_space % Constants::PathModifierStrings::kConnection;
+    }
+
+    return comment;
+}
+
+QVector3D WriterBase::getTravelLift() {
+    return getLiftVector(m_sb->setting<Distance>(PS::Travel::kLiftHeight));
+}
 
 QVector3D WriterBase::getLiftVector(Distance lift_height) const {
     // Retrieve the slicing plane normal
@@ -83,13 +161,17 @@ QVector3D WriterBase::getLiftVector(Distance lift_height) const {
 }
 
 void WriterBase::setCurrentPosition(const Point& point) {
-    m_current_position = point;
+    m_current_position     = point;
     m_has_current_position = true;
 }
 
-bool WriterBase::hasCurrentPosition() const { return m_has_current_position; }
+bool WriterBase::hasCurrentPosition() const {
+    return m_has_current_position;
+}
 
-Point WriterBase::getCurrentPosition() const { return m_current_position; }
+Point WriterBase::getCurrentPosition() const {
+    return m_current_position;
+}
 
 int WriterBase::getInitialExtruderSpeed(const QSharedPointer<SettingsBase>& params) const {
     if (params != nullptr && params->contains(MS::Extruder::kInitialSpeed)) {
@@ -159,7 +241,7 @@ QString WriterBase::writeSettingsHeader(GcodeSyntax syntax) {
         text += commentLine(
             QString("Nozzle Diameter: %0in").arg(m_sb->setting<Distance>(PS::Layer::kNozzleDiameter).to(in)));
     }
-    if (m_sb->setting<int>(PRS::MachineSetup::kMachineType) == 1) // If filament machine type
+    if (m_sb->setting<int>(PRS::MachineSetup::kMachineType) == 1)  // If filament machine type
     {
         text += commentLine(
             QString("Filament Diameter: %0mm").arg(m_sb->setting<Distance>(MS::Filament::kDiameter).to(mm)));
@@ -191,8 +273,7 @@ QString WriterBase::writeSettingsHeader(GcodeSyntax syntax) {
 
     if (m_sb->setting<int>(PS::SpecialModes::kEnableSpiralize)) {
         text += commentLine(QString("Spiralize is turned ON"));
-        if (m_sb->setting<int>(PS::SpecialModes::kSmoothing))
-            text += commentLine("Smoothing is turned ON");
+        if (m_sb->setting<int>(PS::SpecialModes::kSmoothing)) text += commentLine("Smoothing is turned ON");
         if (m_sb->setting<int>(PS::SpecialModes::kEnableOversize)) {
             text += commentLine(QString("Oversize part by: %0in")
                                     .arg(m_sb->setting<Distance>(PS::SpecialModes::kOversizeDistance).to(in)));
@@ -273,8 +354,7 @@ QString WriterBase::writeSettingsHeader(GcodeSyntax syntax) {
                                     .arg(m_sb->setting<Distance>(PS::SpecialModes::kOversizeDistance).to(in)));
         }
     }
-    if (syntax == GcodeSyntax::kIngersoll)
-        text += commentLine("---END HEADER");
+    if (syntax == GcodeSyntax::kIngersoll) text += commentLine("---END HEADER");
 
     text += m_newline;
     return text;
@@ -287,8 +367,7 @@ QString WriterBase::writeLayerChange(uint layer_number) {
 QString WriterBase::writeSettingsFooter() {
     QString rv;
     const fifojson& settings = m_sb->json();
-    if (!settings.is_array() || settings.empty() || !settings.front().is_object())
-        return rv;
+    if (!settings.is_array() || settings.empty() || !settings.front().is_object()) return rv;
 
     if (m_sb->setting<int>(Constants::PrinterSettings::GCode::kEnableSettingsFooter)) {
         rv += m_newline % commentLine("Settings Footer");
@@ -301,21 +380,33 @@ QString WriterBase::writeSettingsFooter() {
     return rv;
 }
 
-QString WriterBase::writeEmptyStep() { return commentLine(m_empty_step_comment); }
+QString WriterBase::writeEmptyStep() {
+    return commentLine(m_empty_step_comment);
+}
 
-QString WriterBase::writeCommentLine(QString comment) { return "\n" + commentLine(comment); }
+QString WriterBase::writeCommentLine(QString comment) {
+    return "\n" + commentLine(comment);
+}
 
-void WriterBase::setFeedrate(Velocity feedrate) { m_feedrate = feedrate; }
+void WriterBase::setFeedrate(Velocity feedrate) {
+    m_feedrate = feedrate;
+}
 
-Velocity WriterBase::getFeedrate() const { return m_feedrate; }
+Velocity WriterBase::getFeedrate() const {
+    return m_feedrate;
+}
 
 void WriterBase::setBuildMaximumZ(Distance maximum_z) {
-    m_build_maximum_z = maximum_z;
+    m_build_maximum_z     = maximum_z;
     m_has_build_maximum_z = true;
 }
 
-bool WriterBase::hasBuildMaximumZ() const { return m_has_build_maximum_z; }
+bool WriterBase::hasBuildMaximumZ() const {
+    return m_has_build_maximum_z;
+}
 
-Distance WriterBase::getBuildMaximumZ() const { return m_build_maximum_z; }
+Distance WriterBase::getBuildMaximumZ() const {
+    return m_build_maximum_z;
+}
 
-} // namespace ORNL
+}  // namespace ORNL

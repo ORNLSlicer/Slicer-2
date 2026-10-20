@@ -1,6 +1,7 @@
 #include "gcode/writers/juggerbot_writer.h"
 
 #include <QStringBuilder>
+
 #include <qcontainerfwd.h>
 #include <qnumeric.h>
 #include <qsharedpointer.h>
@@ -19,15 +20,15 @@ JuggerBotWriter::JuggerBotWriter(GcodeMeta meta, const QSharedPointer<SettingsBa
 
 QString JuggerBotWriter::writeInitialSetup(Distance minimum_x, Distance minimum_y, Distance maximum_x,
                                            Distance maximum_y, int num_layers) {
-    m_current_z = m_sb->setting<Distance>(PRS::Dimensions::kZOffset);
-    m_current_rpm = 0;
+    m_current_z         = m_sb->setting<Distance>(PRS::Dimensions::kZOffset);
+    m_current_rpm       = 0;
     m_current_bead_area = 0;
     m_deposition_active = false;
-    m_material_number = -1;
-    m_first_print = true;
-    m_first_travel = true;
-    m_layer_start = true;
-    m_min_z = 0.0f;
+    m_material_number   = -1;
+    m_first_print       = true;
+    m_first_travel      = true;
+    m_layer_start       = true;
+    m_min_z             = 0.0f;
     QString rv;
     if (m_sb->setting<int>(PRS::GCode::kEnableStartupCode)) {
         rv += "G29" % commentSpaceLine("ENABLE BED COMPENSATION");
@@ -53,8 +54,7 @@ QString JuggerBotWriter::writeInitialSetup(Distance minimum_x, Distance minimum_
         m_start_point = Point(minimum_x, minimum_y, 0);
     }
 
-    if (m_sb->setting<QString>(PRS::GCode::kStartCode) != "")
-        rv += m_sb->setting<QString>(PRS::GCode::kStartCode);
+    if (m_sb->setting<QString>(PRS::GCode::kStartCode) != "") rv += m_sb->setting<QString>(PRS::GCode::kStartCode);
 
     rv += m_newline;
 
@@ -65,7 +65,7 @@ QString JuggerBotWriter::writeInitialSetup(Distance minimum_x, Distance minimum_
 
 QString JuggerBotWriter::writeBeforeLayer(float new_min_z, QSharedPointer<SettingsBase> sb) {
     m_spiral_layer = sb->setting<bool>(PS::SpecialModes::kEnableSpiralize);
-    m_layer_start = true;
+    m_layer_start  = true;
     QString rv;
     return rv;
 }
@@ -130,10 +130,10 @@ QString JuggerBotWriter::writeTravel(Point start_location, Point target_location
     }
     else if (travel_distance < m_sb->setting<Distance>(PS::Travel::kMinTravelLength)) {
         RegionType region_type = params->setting<RegionType>(SS::kRegionType);
-        int rpm = params->contains(SS::kExtruderSpeed) ? params->setting<int>(SS::kExtruderSpeed)
-                                                       : m_sb->setting<int>(PS::Perimeter::kExtruderSpeed);
-        Distance width = params->contains(SS::kWidth) ? params->setting<Distance>(SS::kWidth)
-                                                      : m_sb->setting<Distance>(PS::Perimeter::kBeadWidth);
+        int rpm         = params->contains(SS::kExtruderSpeed) ? params->setting<int>(SS::kExtruderSpeed)
+                                                               : m_sb->setting<int>(PS::Perimeter::kExtruderSpeed);
+        Distance width  = params->contains(SS::kWidth) ? params->setting<Distance>(SS::kWidth)
+                                                       : m_sb->setting<Distance>(PS::Perimeter::kBeadWidth);
         Distance height = params->contains(SS::kHeight) ? params->setting<Distance>(SS::kHeight)
                                                         : m_sb->setting<Distance>(PS::Layer::kLayerHeight);
         rv += writeExtruderOn(region_type == RegionType::kUnknown ? RegionType::kPerimeter : region_type, rpm, width,
@@ -150,7 +150,7 @@ QString JuggerBotWriter::writeTravel(Point start_location, Point target_location
 
     Distance liftDist = m_sb->setting<Distance>(PS::Travel::kLiftHeight);
 
-    bool travel_lift_required = liftDist > 0; // && !m_first_travel; //do not write a lift on first travel
+    bool travel_lift_required = liftDist > 0;  // && !m_first_travel; //do not write a lift on first travel
 
     // Don't lift for short travel moves
     if (start_location.distance(target_location) < m_sb->setting<Distance>(PS::Travel::kMinTravelForLift)) {
@@ -163,7 +163,7 @@ QString JuggerBotWriter::writeTravel(Point start_location, Point target_location
 
     // write the lift
     if (travel_lift_required && (lType == TravelLiftType::kBoth || lType == TravelLiftType::kLiftUpOnly)) {
-        Point lift_destination = new_start_location + travel_lift; // lift destination is above start location
+        Point lift_destination = new_start_location + travel_lift;  // lift destination is above start location
         rv += m_G1 % " F" %
               QString::number(m_sb->setting<Velocity>(PRS::MachineSpeed::kZSpeed).to(m_meta.m_velocity_unit)) %
               writeCoordinates(lift_destination) % commentSpaceLine("TRAVEL LIFT Z");
@@ -173,7 +173,7 @@ QString JuggerBotWriter::writeTravel(Point start_location, Point target_location
     // write the travel
     Point travel_destination = target_location;
     if (travel_lift_required)
-        travel_destination = travel_destination + travel_lift; // travel destination is above the target point
+        travel_destination = travel_destination + travel_lift;  // travel destination is above the target point
 
     rv += m_G1 % " F" % QString::number(speed.to(m_meta.m_velocity_unit)) % writeCoordinates(travel_destination) %
           commentSpaceLine("TRAVEL");
@@ -187,24 +187,23 @@ QString JuggerBotWriter::writeTravel(Point start_location, Point target_location
         setFeedrate(m_sb->setting<Velocity>(PRS::MachineSpeed::kZSpeed));
     }
 
-    if (m_first_travel)         // if this is the first travel
-        m_first_travel = false; // update for next one
+    if (m_first_travel)          // if this is the first travel
+        m_first_travel = false;  // update for next one
 
     return rv;
 }
 
 QString JuggerBotWriter::writeLine(const Point& start_point, const Point& target_point,
                                    const QSharedPointer<SettingsBase> params) {
-    Velocity speed = params->setting<Velocity>(SS::kSpeed);
-    int rpm = params->setting<int>(SS::kExtruderSpeed);
-    int material_number = params->setting<int>(SS::kMaterialNumber);
-    RegionType region_type = params->setting<RegionType>(SS::kRegionType);
+    Velocity speed               = params->setting<Velocity>(SS::kSpeed);
+    int rpm                      = params->setting<int>(SS::kExtruderSpeed);
+    int material_number          = params->setting<int>(SS::kMaterialNumber);
+    RegionType region_type       = params->setting<RegionType>(SS::kRegionType);
     PathModifiers path_modifiers = params->setting<PathModifiers>(SS::kPathModifiers);
-    float output_rpm = rpm * m_sb->setting<float>(PRS::MachineSpeed::kGearRatio);
-    Distance width = params->setting<Distance>(SS::kWidth);
-    Distance height = params->setting<Distance>(SS::kHeight);
-    Area bead_area = (width - height) * height +
-                     (pi() * (height / 2) * (height / 2)); // Rectangle with two half circles used as cross-section
+    float output_rpm             = rpm * m_sb->setting<float>(PRS::MachineSpeed::kGearRatio);
+    Distance width               = params->setting<Distance>(SS::kWidth);
+    Distance height              = params->setting<Distance>(SS::kHeight);
+    Area bead_area               = beadAreaForCommand(region_type, width, height, params);
 
     QString rv;
 
@@ -217,7 +216,7 @@ QString JuggerBotWriter::writeLine(const Point& start_point, const Point& target
     // determine if writeExtruderOn is necessary
     bool requiresWriteExtruderOn = !m_deposition_active;
 
-    if (requiresWriteExtruderOn && rpm > 0) // && !m_sb->setting<bool>(PS::SpecialModes::kEnableWidthHeight))
+    if (requiresWriteExtruderOn && rpm > 0)  // && !m_sb->setting<bool>(PS::SpecialModes::kEnableWidthHeight))
     {
         rv += writeExtruderOn(region_type, rpm, width, height, params);
         // m_current_rpm = rpm;
@@ -228,18 +227,12 @@ QString JuggerBotWriter::writeLine(const Point& start_point, const Point& target
         rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("UPDATE EXTRUDER RPM");
         m_current_rpm = rpm;
     }
-    else if (rpm != m_current_rpm && rpm == 0) // && !m_sb->setting<bool>(PS::SpecialModes::kEnableWidthHeight))
+    else if (rpm != m_current_rpm && rpm == 0)  // && !m_sb->setting<bool>(PS::SpecialModes::kEnableWidthHeight))
     {
         rv += writeExtruderOff();
     }
     else if (m_current_bead_area != bead_area && m_sb->setting<bool>(PS::SpecialModes::kEnableWidthHeight) && rpm > 0) {
-        rv +=
-            m_M3 % m_s %
-            QString::number((Distance(width).to(m_meta.m_distance_unit) - Distance(height).to(m_meta.m_distance_unit)) *
-                                Distance(height).to(m_meta.m_distance_unit) +
-                            (pi() * (Distance(height).to(m_meta.m_distance_unit) / 2) *
-                             (Distance(height).to(m_meta.m_distance_unit) / 2))) %
-            commentSpaceLine("UPDATE BEAD AREA");
+        rv += m_M3 % m_s % beadAreaSValue(bead_area) % commentSpaceLine("UPDATE BEAD AREA");
         m_current_bead_area = bead_area;
     }
 
@@ -255,10 +248,7 @@ QString JuggerBotWriter::writeLine(const Point& start_point, const Point& target
     rv += writeCoordinates(target_point);
 
     // add comment for gcode parser
-    if (path_modifiers != PathModifiers::kNone)
-        rv += commentSpaceLine(toString(region_type) % m_space % toString(path_modifiers));
-    else
-        rv += commentSpaceLine(toString(region_type));
+    rv += commentSpaceLine(regionComment(region_type, path_modifiers, params));
 
     m_first_print = false;
 
@@ -269,13 +259,13 @@ QString JuggerBotWriter::writeArc(const Point& start_point, const Point& end_poi
                                   const Angle& angle, const bool& ccw, const QSharedPointer<SettingsBase> params) {
     QString rv;
 
-    Velocity speed = params->setting<Velocity>(SS::kSpeed);
-    int rpm = params->setting<int>(SS::kExtruderSpeed);
+    Velocity speed      = params->setting<Velocity>(SS::kSpeed);
+    int rpm             = params->setting<int>(SS::kExtruderSpeed);
     int material_number = params->setting<int>(SS::kMaterialNumber);
-    auto region_type = params->setting<RegionType>(SS::kRegionType);
+    auto region_type    = params->setting<RegionType>(SS::kRegionType);
     auto path_modifiers = params->setting<PathModifiers>(SS::kPathModifiers);
-    Distance width = params->setting<Distance>(SS::kWidth);
-    Distance height = params->setting<Distance>(SS::kHeight);
+    Distance width      = params->setting<Distance>(SS::kWidth);
+    Distance height     = params->setting<Distance>(SS::kHeight);
 
     // Update the material number if necessary
     if (material_number != m_material_number && m_sb->setting<int>(MS::MultiMaterial::kEnable)) {
@@ -286,8 +276,15 @@ QString JuggerBotWriter::writeArc(const Point& start_point, const Point& end_poi
     // determine if writeExtruderOn is necessary
     bool requiresWriteExtruderOn = !m_deposition_active;
 
-    if (requiresWriteExtruderOn && rpm > 0) {
-        rv += writeExtruderOn(region_type, rpm, width, height, params);
+    if (requiresWriteExtruderOn && rpm > 0) { rv += writeExtruderOn(region_type, rpm, width, height, params); }
+
+    Area bead_area = beadAreaForCommand(region_type, width, height, params);
+    if (!requiresWriteExtruderOn && m_sb->setting<bool>(PS::SpecialModes::kEnableWidthHeight)) {
+        if (rpm > 0 && m_current_bead_area != bead_area) {
+            rv += m_M3 % m_s % beadAreaSValue(bead_area) % commentSpaceLine("UPDATE BEAD AREA");
+            m_current_bead_area = bead_area;
+        }
+        else if (rpm == 0) { rv += writeExtruderOff(); }
     }
 
     rv += ((ccw) ? m_G3 : m_G2);
@@ -296,7 +293,7 @@ QString JuggerBotWriter::writeArc(const Point& start_point, const Point& end_poi
         setFeedrate(speed);
         rv += m_f % QString::number(speed.to(m_meta.m_velocity_unit));
     }
-    if (rpm != m_current_rpm) {
+    if (rpm != m_current_rpm && !m_sb->setting<bool>(PS::SpecialModes::kEnableWidthHeight)) {
         rv += m_s % QString::number(rpm);
         m_current_rpm = rpm;
     }
@@ -314,14 +311,11 @@ QString JuggerBotWriter::writeArc(const Point& start_point, const Point& end_poi
     if (qAbs(target_z - m_last_z) > 10) {
         rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
         m_current_z = target_z;
-        m_last_z = target_z;
+        m_last_z    = target_z;
     }
 
     // Add comment for gcode parser
-    if (path_modifiers != PathModifiers::kNone)
-        rv += commentSpaceLine(toString(region_type) % m_space % toString(path_modifiers));
-    else
-        rv += commentSpaceLine(toString(region_type));
+    rv += commentSpaceLine(regionComment(region_type, path_modifiers, params));
 
     return rv;
 }
@@ -397,7 +391,9 @@ QString JuggerBotWriter::writeShutdown() {
     return rv;
 }
 
-QString JuggerBotWriter::writePurge(int RPM, int duration, int delay) { return {}; }
+QString JuggerBotWriter::writePurge(int RPM, int duration, int delay) {
+    return {};
+}
 
 QString JuggerBotWriter::writeDwell(Time time) {
     if (time > 0)
@@ -406,12 +402,42 @@ QString JuggerBotWriter::writeDwell(Time time) {
         return {};
 }
 
+Area JuggerBotWriter::beadAreaForCommand(RegionType type, Distance width, Distance height,
+                                         const QSharedPointer<SettingsBase>& params) const {
+    Area area = (width - height) * height +
+                (pi() * (height / 2) * (height / 2));  // Rectangle with two half circles used as cross-section
+    area *= extrusionMultiplier(type, params);
+    return area;
+}
+
+double JuggerBotWriter::extrusionMultiplier(RegionType type, const QSharedPointer<SettingsBase>& params) const {
+    QString multiplier_key;
+
+    if (type == RegionType::kInset)
+        multiplier_key = PS::Inset::kExtrusionMultiplier;
+    else if (type == RegionType::kSkeleton)
+        multiplier_key = PS::Skeleton::kExtrusionMultiplier;
+    else if (type == RegionType::kSkin)
+        multiplier_key = PS::Skin::kExtrusionMultiplier;
+    else if (type == RegionType::kInfill)
+        multiplier_key = PS::Infill::kExtrusionMultiplier;
+    else
+        multiplier_key = PS::Perimeter::kExtrusionMultiplier;
+
+    if (params != nullptr && params->contains(multiplier_key)) { return params->setting<double>(multiplier_key); }
+
+    return m_sb->setting<double>(multiplier_key);
+}
+
+QString JuggerBotWriter::beadAreaSValue(Area bead_area) const {
+    return QString::number(bead_area.to(m_meta.m_distance_unit * m_meta.m_distance_unit));
+}
+
 QString JuggerBotWriter::writeExtruderOn(RegionType type, int rpm, Distance width, Distance height,
                                          const QSharedPointer<SettingsBase>& params) {
     m_deposition_active = true;
     QString rv;
-    Area bead_area = (width - height) * height +
-                     (pi() * (height / 2) * (height / 2)); // Rectangle with two half circles used as cross-section
+    Area bead_area  = beadAreaForCommand(type, width, height, params);
     int initial_rpm = getInitialExtruderSpeed(params);
 
     if (!m_sb->setting<bool>(PS::SpecialModes::kEnableWidthHeight)) {
@@ -473,15 +499,10 @@ QString JuggerBotWriter::writeExtruderOn(RegionType type, int rpm, Distance widt
         // rv += m_M3 % m_s % QString::number(output_rpm) % commentSpaceLine("UPDATE EXTRUDER RPM");
     }
     else {
-        rv +=
-            m_M3 % m_s %
-            QString::number((Distance(width).to(m_meta.m_distance_unit) - Distance(height).to(m_meta.m_distance_unit)) *
-                                Distance(height).to(m_meta.m_distance_unit) +
-                            (pi() * (Distance(height).to(m_meta.m_distance_unit) / 2) *
-                             (Distance(height).to(m_meta.m_distance_unit) / 2)));
+        rv += m_M3 % m_s % beadAreaSValue(bead_area);
         rv += commentSpaceLine("SET BEAD AREA");
         m_current_bead_area = bead_area;
-        m_current_rpm = rpm;
+        m_current_rpm       = rpm;
     }
 
     return rv;
@@ -497,7 +518,7 @@ QString JuggerBotWriter::writeExtruderOff() {
     }
     rv += m_M5 % commentSpaceLine("TURN EXTRUDER OFF");
 
-    m_current_rpm = 0;
+    m_current_rpm       = 0;
     m_current_bead_area = 0;
 
     return rv;
@@ -517,9 +538,9 @@ QString JuggerBotWriter::writeCoordinates(Point destination) {
     if (qAbs(target_z - m_last_z) > 10) {
         rv += m_z % QString::number(Distance(target_z).to(m_meta.m_distance_unit), 'f', 4);
         m_current_z = target_z;
-        m_last_z = target_z;
+        m_last_z    = target_z;
     }
     return rv;
 }
 
-} // namespace ORNL
+}  // namespace ORNL

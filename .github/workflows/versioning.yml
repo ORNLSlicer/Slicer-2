@@ -1,0 +1,45 @@
+name: Version validation
+
+on:
+  pull_request:
+    branches: [develop, main]
+  workflow_call:
+    inputs:
+      base:
+        type: string
+        default: ''
+      release_tag:
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - name: Test version rules and build readers
+        run: python3 tests/version_tests.py
+      - name: Validate version and transition
+        env:
+          BASE: ${{ inputs.base || github.event.pull_request.base.sha || '' }}
+          RELEASE_TAG: ${{ inputs.release_tag || '' }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ -n "$BASE" && "$BASE" != "0000000000000000000000000000000000000000" ]]; then
+            if ! git cat-file -e "${BASE}^{commit}"; then
+              git fetch --no-tags origin "$BASE"
+            fi
+            args+=(--base "$BASE")
+          fi
+          if [[ -n "$RELEASE_TAG" ]]; then
+            args+=(--release-tag "$RELEASE_TAG")
+          fi
+          python3 scripts/version.py validate "${args[@]}"

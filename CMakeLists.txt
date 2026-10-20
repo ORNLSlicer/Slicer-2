@@ -240,6 +240,17 @@ if(ORNLSLICER_BUILD_TESTS)
     target_link_libraries(${PROJECT_NAME}_mesh_repair_tests PRIVATE ${PROJECT_NAME}_obj)
     add_test(NAME mesh_repair_tests COMMAND ${PROJECT_NAME}_mesh_repair_tests)
 
+    add_executable(${PROJECT_NAME}_variable_layer_height_tests tests/variable_layer_height_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_variable_layer_height_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_variable_layer_height_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME variable_layer_height_tests COMMAND ${PROJECT_NAME}_variable_layer_height_tests)
+
     add_executable(${PROJECT_NAME}_point_order_optimizer_tests tests/point_order_optimizer_tests.cpp)
     target_include_directories(
         ${PROJECT_NAME}_point_order_optimizer_tests
@@ -273,6 +284,17 @@ if(ORNLSLICER_BUILD_TESTS)
     target_link_libraries(${PROJECT_NAME}_optimizer_empty_input_tests PRIVATE ${PROJECT_NAME}_obj)
     add_test(NAME optimizer_empty_input_tests COMMAND ${PROJECT_NAME}_optimizer_empty_input_tests)
 
+    add_executable(${PROJECT_NAME}_global_layer_tests tests/global_layer_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_global_layer_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_global_layer_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME global_layer_tests COMMAND ${PROJECT_NAME}_global_layer_tests)
+
     add_executable(${PROJECT_NAME}_gcode_settings_importer_tests tests/gcode_settings_importer_tests.cpp)
     target_include_directories(
         ${PROJECT_NAME}_gcode_settings_importer_tests
@@ -283,6 +305,84 @@ if(ORNLSLICER_BUILD_TESTS)
     )
     target_link_libraries(${PROJECT_NAME}_gcode_settings_importer_tests PRIVATE ${PROJECT_NAME}_obj)
     add_test(NAME gcode_settings_importer_tests COMMAND ${PROJECT_NAME}_gcode_settings_importer_tests)
+
+    add_executable(${PROJECT_NAME}_settings_file_comparator_tests tests/settings_file_comparator_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_settings_file_comparator_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_settings_file_comparator_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME settings_file_comparator_tests COMMAND ${PROJECT_NAME}_settings_file_comparator_tests)
+
+    add_executable(${PROJECT_NAME}_settings_version_control_tests tests/settings_version_control_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_settings_version_control_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_settings_version_control_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME settings_version_control_tests COMMAND ${PROJECT_NAME}_settings_version_control_tests)
+
+    add_executable(${PROJECT_NAME}_settings_manager_tests tests/settings_manager_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_settings_manager_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_settings_manager_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME settings_manager_tests COMMAND ${PROJECT_NAME}_settings_manager_tests)
+
+    add_executable(${PROJECT_NAME}_visualization_colors_tests tests/visualization_colors_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_visualization_colors_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_visualization_colors_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME visualization_colors_tests COMMAND ${PROJECT_NAME}_visualization_colors_tests)
+
+    add_executable(${PROJECT_NAME}_gcode_shading_tests tests/gcode_shading_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_gcode_shading_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_gcode_shading_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME gcode_shading_tests COMMAND ${PROJECT_NAME}_gcode_shading_tests)
+    set_tests_properties(gcode_shading_tests PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_executable(${PROJECT_NAME}_preferences_import_tests tests/preferences_import_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_preferences_import_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_preferences_import_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME preferences_import_tests COMMAND ${PROJECT_NAME}_preferences_import_tests)
+
+    add_executable(${PROJECT_NAME}_helical_region_profile_tests tests/helical_region_profile_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_helical_region_profile_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_helical_region_profile_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME helical_region_profile_tests COMMAND ${PROJECT_NAME}_helical_region_profile_tests)
 
     add_executable(${PROJECT_NAME}_common_parser_tests tests/common_parser_tests.cpp)
     target_include_directories(
@@ -306,6 +406,28 @@ if(ORNLSLICER_BUILD_TESTS)
     target_link_libraries(${PROJECT_NAME}_arc_specialties_parser_tests PRIVATE ${PROJECT_NAME}_obj)
     add_test(NAME arc_specialties_parser_tests COMMAND ${PROJECT_NAME}_arc_specialties_parser_tests)
 
+    add_executable(${PROJECT_NAME}_juggerbot_writer_tests tests/juggerbot_writer_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_juggerbot_writer_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_juggerbot_writer_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME juggerbot_writer_tests COMMAND ${PROJECT_NAME}_juggerbot_writer_tests)
+
+    add_executable(${PROJECT_NAME}_waam_layer_z_tests tests/waam_layer_z_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_waam_layer_z_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_waam_layer_z_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME waam_layer_z_tests COMMAND ${PROJECT_NAME}_waam_layer_z_tests)
+
     add_executable(${PROJECT_NAME}_as_printed_model_exporter_tests tests/as_printed_model_exporter_tests.cpp)
     target_include_directories(
         ${PROJECT_NAME}_as_printed_model_exporter_tests
@@ -316,6 +438,17 @@ if(ORNLSLICER_BUILD_TESTS)
     )
     target_link_libraries(${PROJECT_NAME}_as_printed_model_exporter_tests PRIVATE ${PROJECT_NAME}_obj)
     add_test(NAME as_printed_model_exporter_tests COMMAND ${PROJECT_NAME}_as_printed_model_exporter_tests)
+
+    add_executable(${PROJECT_NAME}_gcode_layer_export_tests tests/gcode_layer_export_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_gcode_layer_export_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_gcode_layer_export_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME gcode_layer_export_tests COMMAND ${PROJECT_NAME}_gcode_layer_export_tests)
 
     add_executable(${PROJECT_NAME}_session_manager_tests tests/session_manager_tests.cpp)
     target_include_directories(
@@ -328,6 +461,39 @@ if(ORNLSLICER_BUILD_TESTS)
     target_link_libraries(${PROJECT_NAME}_session_manager_tests PRIVATE ${PROJECT_NAME}_obj)
     add_test(NAME session_manager_tests COMMAND ${PROJECT_NAME}_session_manager_tests)
 
+    add_executable(${PROJECT_NAME}_preferences_manager_tests tests/preferences_manager_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_preferences_manager_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_preferences_manager_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME preferences_manager_tests COMMAND ${PROJECT_NAME}_preferences_manager_tests)
+
+    add_executable(${PROJECT_NAME}_main_toolbar_tests tests/main_toolbar_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_main_toolbar_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_main_toolbar_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME main_toolbar_tests COMMAND ${PROJECT_NAME}_main_toolbar_tests)
+
+    add_executable(${PROJECT_NAME}_changelog_tests tests/changelog_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_changelog_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_changelog_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME changelog_tests COMMAND ${PROJECT_NAME}_changelog_tests)
+
     add_executable(${PROJECT_NAME}_path_modifier_tests tests/path_modifier_tests.cpp)
     target_include_directories(
         ${PROJECT_NAME}_path_modifier_tests
@@ -339,16 +505,38 @@ if(ORNLSLICER_BUILD_TESTS)
     target_link_libraries(${PROJECT_NAME}_path_modifier_tests PRIVATE ${PROJECT_NAME}_obj)
     add_test(NAME path_modifier_tests COMMAND ${PROJECT_NAME}_path_modifier_tests)
 
-    add_executable(${PROJECT_NAME}_spiral_path_tests tests/spiral_path_tests.cpp)
+    add_executable(${PROJECT_NAME}_contour_connection_tests tests/contour_connection_tests.cpp)
     target_include_directories(
-        ${PROJECT_NAME}_spiral_path_tests
+        ${PROJECT_NAME}_contour_connection_tests
         PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}/include
             ${CMAKE_CURRENT_BINARY_DIR}/generated/include
             ${ORNLSLICER_INCLUDE_DIRS}
     )
-    target_link_libraries(${PROJECT_NAME}_spiral_path_tests PRIVATE ${PROJECT_NAME}_obj)
-    add_test(NAME spiral_path_tests COMMAND ${PROJECT_NAME}_spiral_path_tests)
+    target_link_libraries(${PROJECT_NAME}_contour_connection_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME contour_connection_tests COMMAND ${PROJECT_NAME}_contour_connection_tests)
+
+    add_executable(${PROJECT_NAME}_contour_connection_branch_tests tests/contour_connection_branch_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_contour_connection_branch_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_contour_connection_branch_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME contour_connection_branch_tests COMMAND ${PROJECT_NAME}_contour_connection_branch_tests)
+
+    add_executable(${PROJECT_NAME}_helical_clip_rounding_tests tests/helical_clip_rounding_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_helical_clip_rounding_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_helical_clip_rounding_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME helical_clip_rounding_tests COMMAND ${PROJECT_NAME}_helical_clip_rounding_tests)
 
     set(ORNLSLICER_NEW_IMPACT_PROJECT "/home/rhc/develop/new-impact.s2p" CACHE FILEPATH
         "Optional local project used for the new-impact planar slicing regression test.")
