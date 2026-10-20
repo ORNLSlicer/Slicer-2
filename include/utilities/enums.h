@@ -993,6 +993,8 @@ inline QString toString(StatusUpdateStepType statusType) {
         case StatusUpdateStepType::kVisualization:
             return "Visualization:";
     }
+
+    return QString();
 }
 
 enum class QuaternionOrder { kXYZ = 0, kZYX = 1 };
