@@ -183,9 +183,6 @@ class GCodeLoader : public QThread {
     QStringMatcher m_perimeter, m_radial, m_helical, m_inset, m_infill, m_skin, m_skeleton, m_support, m_support_roof,
         m_travel, m_raft, m_brim, m_skirt, m_laserscan, m_thermalscan;
 
-    //! \brief colors for modifiers to adjust display size
-    QVector<QColor> m_modifier_colors;
-
     //! \brief bool to indicate whether gcode should be adjusted for minimal layer time
     bool m_adjust_file;
 

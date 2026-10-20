@@ -19,7 +19,8 @@ VisualizationColorPicker::VisualizationColorPicker(QString name, QColor color, Q
     QGridLayout* color_tab_layout = new QGridLayout(this);
     color_tab_layout->setVerticalSpacing(0);
 
-    colorTypeLbl     = new QLabel(name);
+    // Keep the persisted preference key so existing connection colors survive the label change.
+    colorTypeLbl     = new QLabel(name == "SpiralConnection" ? "Connection" : name);
     sampleTextLbl    = new QLabel("(This is how it looks!!!)");
     colorResetBtn    = new QPushButton();
     colorSelectorBtn = new QPushButton();
@@ -62,7 +63,7 @@ void VisualizationColorPicker::mousePressEvent(QMouseEvent*) {
 
 void ORNL::VisualizationColorPicker::selectSetColor() {
     QColorDialog dlg(this->color);
-    dlg.setWindowTitle("Select Visualization Color (" + name + ")");
+    dlg.setWindowTitle("Select Visualization Color (" + colorTypeLbl->text() + ")");
     if (dlg.exec()) {
         auto newColor = dlg.selectedColor();
         if (newColor.isValid() && newColor != this->color) {

@@ -35,6 +35,8 @@
 namespace {
 class RegionTrackingWriter final : public ORNL::WriterBase {
    public:
+    using ORNL::WriterBase::regionComment;
+
     explicit RegionTrackingWriter(const QSharedPointer<ORNL::SettingsBase>& settings)
         : WriterBase(ORNL::GcodeMetaList::ORNLMeta, settings) {}
 
@@ -675,6 +677,50 @@ bool verifyInsetGeometrySegmentsUseInsetSettings(const QVector<ORNL::Path>& path
     return passed;
 }
 
+bool verifyConnectionComments(const QVector<ORNL::Path>& paths, const QSharedPointer<ORNL::SettingsBase>& settings,
+                              bool expect_perimeter, bool expect_inset, bool expect_cross_region,
+                              const char* case_name) {
+    RegionTrackingWriter writer(settings);
+    bool found_perimeter    = false;
+    bool found_inset        = false;
+    bool found_cross_region = false;
+    bool passed             = true;
+    QStringList connection_comments;
+    for (const auto& path : paths) {
+        for (const auto& segment : path) {
+            if (dynamic_cast<ORNL::TravelSegment*>(segment.data()) != nullptr) { continue; }
+            const auto sb       = segment->getSb();
+            const auto modifier = sb->setting<ORNL::PathModifiers>(ORNL::SS::kPathModifiers);
+            const bool connection =
+                modifier == ORNL::PathModifiers::kSpiralConnection ||
+                (sb->contains(ORNL::SS::kIsConnection) && sb->setting<bool>(ORNL::SS::kIsConnection));
+            if (!connection) { continue; }
+            const auto region     = sb->setting<ORNL::RegionType>(ORNL::SS::kRegionType);
+            const QString comment = writer.regionComment(region, modifier, sb);
+            connection_comments.append(comment);
+            passed &= expect(comment.endsWith(" CONNECTION") && !comment.contains("SPIRAL CONNECTION"),
+                             "Generated connections should use the common CONNECTION comment suffix.");
+            found_perimeter |= comment.startsWith("PERIMETER");
+            found_inset |= comment.startsWith("INSET");
+            if (sb->contains(ORNL::SS::kConnectionRegion) && region == ORNL::RegionType::kPerimeter) {
+                found_cross_region = true;
+                passed &= expect(
+                    comment.startsWith("INSET"),
+                    "Perimeter-to-inset connectors should name the destination without changing process settings.");
+            }
+        }
+    }
+    passed &= expect(!expect_perimeter || found_perimeter, "Expected a PERIMETER CONNECTION comment.");
+    passed &= expect(!expect_inset || found_inset, "Expected an INSET CONNECTION comment.");
+    passed &= expect(!expect_cross_region || found_cross_region,
+                     "Expected a perimeter-to-inset connection with an inset comment and perimeter process settings.");
+    if (!passed) {
+        std::cerr << case_name << " observed connection comments: " << connection_comments.join(", ").toStdString()
+                  << '\n';
+    }
+    return passed;
+}
+
 void configureConnectedInsets(const QSharedPointer<ORNL::SettingsBase>& settings) {
     settings->setSetting(ORNL::PS::Perimeter::kEnable, true);
     settings->setSetting(ORNL::PS::Perimeter::kCount, 2);
@@ -736,6 +782,16 @@ int main() {
     perimeter.optimize(0, perimeter_location, should_next_path_be_ccw);
     passed &= verifyContinuousBranch(perimeter.getPaths(), "Completed perimeter", ORNL::Distance(8.5));
     passed &= verifyLoopsCompleteBeforeWipe(perimeter.getPaths(), "Completed perimeter");
+    auto ordinary_perimeter_settings = QSharedPointer<ORNL::SettingsBase>::create(*perimeter_settings);
+    ordinary_perimeter_settings->setSetting(ORNL::PS::Perimeter::kBranchAfterTipWipe, false);
+    ordinary_perimeter_settings->setSetting(ORNL::MS::TipWipe::kPerimeterEnable, false);
+    ORNL::Perimeter ordinary_perimeter(ordinary_perimeter_settings, 0, {}, geometry);
+    ordinary_perimeter.setGeometry(geometry);
+    ordinary_perimeter.compute(0);
+    ORNL::Point ordinary_location(-10.0f, -10.0f, 0.0f);
+    ordinary_perimeter.optimize(0, ordinary_location, should_next_path_be_ccw);
+    passed &= verifyConnectionComments(ordinary_perimeter.getPaths(), ordinary_perimeter_settings, true, false, false,
+                                       "Standalone perimeter");
 
     QSharedPointer<ORNL::SettingsBase> inset_settings = defaultSettings();
     inset_settings->setSetting(ORNL::PS::Inset::kCount, 5);
@@ -756,6 +812,16 @@ int main() {
     ORNL::Point inset_location(-10.0f, -10.0f, 0.0f);
     inset.optimize(0, inset_location, should_next_path_be_ccw);
     passed &= verifyContinuousBranch(inset.getPaths(), "Inset", ORNL::Distance(8.5));
+    auto ordinary_inset_settings = QSharedPointer<ORNL::SettingsBase>::create(*inset_settings);
+    ordinary_inset_settings->setSetting(ORNL::PS::Inset::kBranchAfterTipWipe, false);
+    ordinary_inset_settings->setSetting(ORNL::MS::TipWipe::kInsetEnable, false);
+    ORNL::Inset ordinary_inset(ordinary_inset_settings, 0, {});
+    ordinary_inset.setGeometry(geometry);
+    ordinary_inset.compute(0);
+    ORNL::Point ordinary_inset_location(-10.0f, -10.0f, 0.0f);
+    ordinary_inset.optimize(0, ordinary_inset_location, should_next_path_be_ccw);
+    passed &= verifyConnectionComments(ordinary_inset.getPaths(), ordinary_inset_settings, false, true, false,
+                                       "Standalone inset");
 
     inset_settings->setSetting(ORNL::PS::Inset::kCompletePathBeforeConnecting, true);
     inset_settings->setSetting(ORNL::PS::Inset::kMinSegmentLength, ORNL::Distance(1.0));
@@ -947,6 +1013,8 @@ int main() {
     passed &= expect(!cleaned_boundary_perimeter.isNull() && !cleaned_boundary_inset.isNull(),
                      "Short-connector regression should create perimeter and inset regions.");
     if (!cleaned_boundary_perimeter.isNull() && !cleaned_boundary_inset.isNull()) {
+        passed &= verifyConnectionComments(cleaned_boundary_perimeter->getPaths(), cleaned_boundary_settings, true,
+                                           true, true, "Short connections");
         passed &= verifyConnectedRegionBoundary(cleaned_boundary_perimeter->getPaths(), ORNL::Distance(10.0),
                                                 "Short-connector regression");
         passed &= verifyInsetGeometrySegmentsUseInsetSettings(cleaned_boundary_perimeter->getPaths(),
@@ -985,6 +1053,31 @@ int main() {
                          "Localized connected inset geometry should be emitted by the perimeter.");
         passed &= expect(localized_width_inset->getPaths().isEmpty(),
                          "Localized connected insets should not be emitted twice.");
+        // Curved contours may remain separate when no connector meets the distance bound.
+        // Check every actual inter-loop edge rather than requiring a perimeter bridge in this fixture.
+        QVector<ORNL::Polyline> localized_loops = localized_width_perimeter->getComputedGeometry();
+        const int perimeter_loop_count          = localized_loops.size();
+        localized_loops += localized_width_inset->getComputedGeometry();
+        RegionTrackingWriter localized_writer(localized_width_settings);
+        for (const auto& path : localized_width_perimeter->getPaths()) {
+            for (const auto& segment : path) {
+                if (!segment->isPrintingSegment()) { continue; }
+                const int start_loop = geometryIndexForPoint(segment->start(), localized_loops, 1.0e-4);
+                const int end_loop   = geometryIndexForPoint(segment->end(), localized_loops, 1.0e-4);
+                if (start_loop < 0 || end_loop < 0 || start_loop == end_loop) { continue; }
+                passed &= expect(segment->getSb()->contains(ORNL::SS::kIsConnection) &&
+                                     segment->getSb()->setting<bool>(ORNL::SS::kIsConnection),
+                                 "Every localized edge between different loops must be marked as a connection.");
+                const auto sb = segment->getSb();
+                const QString comment =
+                    localized_writer.regionComment(sb->setting<ORNL::RegionType>(ORNL::SS::kRegionType),
+                                                   sb->setting<ORNL::PathModifiers>(ORNL::SS::kPathModifiers), sb);
+                passed &= expect(comment.startsWith(end_loop < perimeter_loop_count ? "PERIMETER" : "INSET"),
+                                 "Every localized connection comment must identify its destination loop's region.");
+            }
+        }
+        passed &= verifyConnectionComments(localized_width_perimeter->getPaths(), localized_width_settings, false, true,
+                                           true, "Localized connections");
         passed &= insetPrintingSegmentsUseWidth(localized_width_perimeter->getPaths(), localized_inset_width,
                                                 "Localized connected inset");
     }

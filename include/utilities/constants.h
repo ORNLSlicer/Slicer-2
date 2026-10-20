@@ -1051,6 +1051,8 @@ class Constants {
         static const QString kWaitTime;
         static const QString kRegionType;
         static const QString kPathModifiers;
+        static const QString kIsConnection;
+        static const QString kConnectionRegion;
         static const QString kMaterialNumber;
         static const QString kRecipe;
         static const QString kESP;

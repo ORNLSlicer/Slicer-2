@@ -13,6 +13,7 @@
 #include <qvectornd.h>
 
 #include "configs/settings_base.h"
+#include "geometry/connection.h"
 #include "geometry/path.h"
 #include "geometry/point.h"
 #include "geometry/segment_base.h"
@@ -443,6 +444,7 @@ void PathModifierGenerator::GenerateInitialStartup(Path& path, Distance startDis
 
             copyInitialExtruderSpeed(segment->getSb(), path[currentIndex]->getSb());
             copyAdaptedWidthFlag(segment->getSb(), path[currentIndex]->getSb());
+            Connection::copySettings(segment->getSb(), path[currentIndex]->getSb());
             segment->getSb()->setSetting(SS::kWidth, path[currentIndex]->getSb()->setting<Distance>(SS::kWidth));
             segment->getSb()->setSetting(SS::kHeight, path[currentIndex]->getSb()->setting<Distance>(SS::kHeight));
             segment->getSb()->setSetting(SS::kSpeed, startSpeed);
@@ -512,6 +514,7 @@ void PathModifierGenerator::GenerateInitialStartupWithRampUp(Path& path, Distanc
 
             copyInitialExtruderSpeed(segment->getSb(), path[currentIndex]->getSb());
             copyAdaptedWidthFlag(segment->getSb(), path[currentIndex]->getSb());
+            Connection::copySettings(segment->getSb(), path[currentIndex]->getSb());
             segment->getSb()->setSetting(SS::kWidth, path[currentIndex]->getSb()->setting<Distance>(SS::kWidth));
             segment->getSb()->setSetting(SS::kHeight, path[currentIndex]->getSb()->setting<Distance>(SS::kHeight));
             segment->getSb()->setSetting(SS::kSpeed, startSpeed);
@@ -571,6 +574,7 @@ void PathModifierGenerator::GenerateInitialStartupWithRampUp(Path& path, Distanc
 
                 copyInitialExtruderSpeed(segment->getSb(), path[currentIndex]->getSb());
                 copyAdaptedWidthFlag(segment->getSb(), path[currentIndex]->getSb());
+                Connection::copySettings(segment->getSb(), path[currentIndex]->getSb());
                 segment->getSb()->setSetting(SS::kWidth, path[currentIndex]->getSb()->setting<Distance>(SS::kWidth));
                 segment->getSb()->setSetting(SS::kHeight, path[currentIndex]->getSb()->setting<Distance>(SS::kHeight));
                 segment->getSb()->setSetting(SS::kSpeed, currentSpeed);
@@ -653,6 +657,7 @@ void PathModifierGenerator::GenerateSlowdown(Path& path, Distance slowDownDistan
 
             copyInitialExtruderSpeed(segment->getSb(), path[currentIndex]->getSb());
             copyAdaptedWidthFlag(segment->getSb(), path[currentIndex]->getSb());
+            Connection::copySettings(segment->getSb(), path[currentIndex]->getSb());
             segment->getSb()->setSetting(SS::kWidth, path[currentIndex]->getSb()->setting<Distance>(SS::kWidth));
             segment->getSb()->setSetting(SS::kHeight, path[currentIndex]->getSb()->setting<Distance>(SS::kHeight));
             segment->getSb()->setSetting(SS::kSpeed, slowDownSpeed);
@@ -706,6 +711,7 @@ void PathModifierGenerator::GenerateSlowdown(Path& path, Distance slowDownDistan
 
             copyInitialExtruderSpeed(segment->getSb(), path[currentIndex]->getSb());
             copyAdaptedWidthFlag(segment->getSb(), path[currentIndex]->getSb());
+            Connection::copySettings(segment->getSb(), path[currentIndex]->getSb());
             segment->getSb()->setSetting(SS::kWidth, path[currentIndex]->getSb()->setting<Distance>(SS::kWidth));
             segment->getSb()->setSetting(SS::kHeight, path[currentIndex]->getSb()->setting<Distance>(SS::kHeight));
             segment->getSb()->setSetting(SS::kSpeed, slowDownSpeed);
@@ -860,6 +866,9 @@ void PathModifierGenerator::GenerateSharpCornerExtension(Path& path, QSharedPoin
                 continue;
             }
 
+            for (const auto& replacement : insertionsAfter[previousIndex]) {
+                Connection::copySettings(replacement->getSb(), path[connectorIndex]->getSb());
+            }
             skipSegment[connectorIndex] = true;
             modifiedPath                = true;
         }
@@ -1154,6 +1163,7 @@ void PathModifierGenerator::GenerateRamp(Path& path, bool& segmentSplitted, int 
             QSharedPointer<LineSegment> newSegment = QSharedPointer<LineSegment>::create(newP, endP);
             copyInitialExtruderSpeed(newSegment->getSb(), segment->getSb());
             copyAdaptedWidthFlag(newSegment->getSb(), segment->getSb());
+            Connection::copySettings(newSegment->getSb(), segment->getSb());
             newSegment->getSb()->setSetting(SS::kWidth, segment->getSb()->setting<Distance>(SS::kWidth));
             newSegment->getSb()->setSetting(SS::kHeight, segment->getSb()->setting<Distance>(SS::kHeight));
             newSegment->getSb()->setSetting(SS::kAccel, segment->getSb()->setting<Acceleration>(SS::kAccel));

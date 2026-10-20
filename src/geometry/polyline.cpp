@@ -13,6 +13,7 @@
 #include <qtypes.h>
 #include <qvectornd.h>
 
+#include "geometry/connection.h"
 #include "geometry/mesh/advanced/mesh_types.h"
 #include "geometry/polygon.h"
 #include "geometry/polygon_list.h"
@@ -128,6 +129,14 @@ Polyline Polyline::removeShortSegments(Distance min_segment_length, bool closed)
     auto pointAfter  = [](int index, int point_count) { return (index + 1) % point_count; };
     auto pointBefore = [](int index, int point_count) { return (index + point_count - 1) % point_count; };
 
+    auto connectionBoundary = [&](int index) {
+        return Connection::startsAt(cleaned[index]) ||
+               ((closed || index > 0) && Connection::startsAt(cleaned[pointBefore(index, cleaned.size())]));
+    };
+    auto canRemovePoint = [&](int index) {
+        return (closed || (index > 0 && index + 1 < cleaned.size())) && !connectionBoundary(index);
+    };
+
     auto replacementLength = [&](int remove_index) {
         const int point_count = cleaned.size();
         return cleaned[pointBefore(remove_index, point_count)].distance(cleaned[pointAfter(remove_index, point_count)]);
@@ -155,6 +164,12 @@ Polyline Polyline::removeShortSegments(Distance min_segment_length, bool closed)
                 remove_index = remove_segment_start_length <= remove_segment_end_length ? segment_index : next_index;
             }
 
+            if (!canRemovePoint(remove_index)) {
+                const int alternate = remove_index == segment_index ? next_index : segment_index;
+                if (!canRemovePoint(alternate)) { continue; }
+                remove_index = alternate;
+            }
+
             cleaned.removeAt(remove_index);
             removed_point = true;
             break;
@@ -166,7 +181,10 @@ Polyline Polyline::removeShortSegments(Distance min_segment_length, bool closed)
     const int segment_count = closed ? cleaned.size() : cleaned.size() - 1;
     for (int segment_index = 0; segment_index < segment_count; ++segment_index) {
         const int next_index = pointAfter(segment_index, cleaned.size());
-        if (cleaned[segment_index].distance(cleaned[next_index]) < min_segment_length) { return Polyline(); }
+        if (cleaned[segment_index].distance(cleaned[next_index]) < min_segment_length &&
+            !connectionBoundary(segment_index) && !connectionBoundary(next_index)) {
+            return Polyline();
+        }
     }
 
     if (repeats_start) { cleaned.push_back(cleaned.first()); }

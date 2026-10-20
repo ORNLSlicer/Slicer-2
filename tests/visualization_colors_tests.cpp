@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "geometry/segments/line.h"
 #include "managers/preferences_manager.h"
 #define private public
 #include "threading/gcode_loader.h"
@@ -216,5 +217,29 @@ int main() {
     passed &= ORNL::Testing::expect(loader.determineSegmentColor(2, QStringLiteral("PERIMETER SPIRAL CONNECTION")) ==
                                         configuredColor(ORNL::VisualizationColors::kSpiralConnection),
                                     "Expected spiral connection arcs to keep the connection color.");
+    const QColor custom_connection(17, 37, 57);
+    ORNL::PreferencesManager::getInstance()->setVisualizationColor("SpiralConnection", custom_connection);
+    ORNL::PreferencesManager::getInstance()->setVisualizationColor("Perimeter", custom_connection);
+    for (const QString& comment :
+         {QStringLiteral("PERIMETER CONNECTION"), QStringLiteral("INSET CONNECTION"),
+          QStringLiteral("INSET INITIAL STARTUP CONNECTION"), QStringLiteral("PERIMETER SLOW DOWN CONNECTION"),
+          QStringLiteral("PERIMETER SPIRAL CONNECTION")}) {
+        passed &= ORNL::Testing::expect(loader.determineFontColor(comment) == custom_connection &&
+                                            loader.determineSegmentColor(2, comment) == custom_connection,
+                                        "Connections must use their configurable color, including arcs and overlaps.");
+    }
+    loader.m_sb->setSetting(ORNL::PS::Perimeter::kBeadWidth, ORNL::Distance(10));
+    loader.m_sb->setSetting(ORNL::PS::Layer::kLayerHeight, ORNL::Distance(2));
+    QSharedPointer<ORNL::SegmentBase> regular = QSharedPointer<ORNL::LineSegment>::create(ORNL::Point(), ORNL::Point());
+    QSharedPointer<ORNL::SegmentBase> connection =
+        QSharedPointer<ORNL::LineSegment>::create(ORNL::Point(), ORNL::Point());
+    loader.setSegmentDisplayInfo(regular, ORNL::SegmentDisplayType::kLine, custom_connection, "PERIMETER", QVector3D(),
+                                 QVector3D(1, 0, 0), 1, 0);
+    loader.setSegmentDisplayInfo(connection, ORNL::SegmentDisplayType::kLine, custom_connection, "PERIMETER CONNECTION",
+                                 QVector3D(), QVector3D(1, 0, 0), 2, 0);
+    passed &=
+        ORNL::Testing::expect(ORNL::Testing::near(connection->displayWidth(), regular->displayWidth() * 1.1) &&
+                                  ORNL::Testing::near(connection->displayHeight(), regular->displayHeight() * 1.1),
+                              "Connection enlargement must follow the comment even when a region shares its color.");
     return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 }
