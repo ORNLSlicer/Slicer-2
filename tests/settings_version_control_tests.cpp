@@ -1,7 +1,9 @@
 #include <QCoreApplication>
+#include <array>
 #include <cstdlib>
 #include <stdexcept>
 
+#include "configs/settings_base.h"
 #include "managers/settings/settings_version_control.h"
 #include "test_utils.h"
 #include "utilities/constants.h"
@@ -9,10 +11,75 @@
 
 namespace {
 constexpr float kTolerance = 1.0e-3f;
+
+bool connectedContourSettingsMigrate() {
+    struct SettingRename {
+        const char* legacy_key;
+        QString current_key;
+        bool value;
+    };
+    const std::array<SettingRename, 7> renames {{
+        {"spiral_perimeter", ORNL::PS::Perimeter::kConnectPerimeters, true},
+        {"spiral_perimeter_complete_path_before_connecting", ORNL::PS::Perimeter::kCompleteLoopBeforeConnecting, false},
+        {"spiral_perimeter_branch_after_tip_wipe", ORNL::PS::Perimeter::kConnectAfterTipWipe, true},
+        {"spiral_perimeter_connect_to_insets", ORNL::PS::Perimeter::kConnectToInsets, true},
+        {"spiral_inset", ORNL::PS::Inset::kConnectInsets, true},
+        {"spiral_inset_complete_path_before_connecting", ORNL::PS::Inset::kCompleteLoopBeforeConnecting, true},
+        {"spiral_inset_branch_after_tip_wipe", ORNL::PS::Inset::kConnectAfterTipWipe, false},
+    }};
+    fifojson legacy = fifojson::object({{"enable_spiral_perimeter", true}, {"unrelated_setting", 42}});
+    for (const auto& rename : renames) { legacy[rename.legacy_key] = rename.value; }
+    fifojson collision                                               = legacy;
+    collision[ORNL::PS::Perimeter::kConnectPerimeters.toStdString()] = false;
+
+    fifojson document;
+    document[ORNL::Constants::SettingFileStrings::kHeader][ORNL::Constants::SettingFileStrings::kVersion] = 14.0;
+    document[ORNL::Constants::SettingFileStrings::kSettings] = fifojson::array({legacy, collision});
+    double version                                           = 14.0;
+    ORNL::SettingsVersionControl::rollSettingsForward(version, document);
+    bool passed = ORNL::Testing::expect(
+        version == 15.0 &&
+            document[ORNL::Constants::SettingFileStrings::kHeader][ORNL::Constants::SettingFileStrings::kVersion] ==
+                15.0,
+        "Connected contour migration should update both version fields.");
+    for (const auto& group : document[ORNL::Constants::SettingFileStrings::kSettings]) {
+        for (const auto& rename : renames) {
+            passed &= ORNL::Testing::expect(
+                !group.contains(rename.legacy_key) && group.contains(rename.current_key.toStdString()),
+                "Legacy contour keys should be replaced in every group.");
+        }
+        passed &=
+            ORNL::Testing::expect(group.at("enable_spiral_perimeter") == true && group.at("unrelated_setting") == 42,
+                                  "Contour migration must preserve spiral lift and unrelated settings.");
+    }
+    const auto& migrated = document[ORNL::Constants::SettingFileStrings::kSettings][0];
+    for (const auto& rename : renames) {
+        passed &= ORNL::Testing::expect(migrated.at(rename.current_key.toStdString()) == rename.value,
+                                        "Contour migration must retain both enabled and disabled values.");
+    }
+    passed &= ORNL::Testing::expect(document[ORNL::Constants::SettingFileStrings::kSettings][1].at(
+                                        ORNL::PS::Perimeter::kConnectPerimeters.toStdString()) == false,
+                                    "Current settings must take precedence when legacy keys coexist.");
+    const fifojson before_repeat = document;
+    ORNL::SettingsVersionControl::rollSettingsForward(version, document);
+    passed &= ORNL::Testing::expect(document == before_repeat, "Settings migration should be idempotent.");
+
+    ORNL::SettingsBase local_settings;
+    local_settings.json(fifojson::array({legacy}));
+    passed &= ORNL::Testing::expect(local_settings.json()[0] == migrated,
+                                    "Unversioned part and layer-range settings must use the same contour migration.");
+    local_settings.setSetting(ORNL::PS::Perimeter::kConnectPerimeters, false);
+    local_settings.populate(fifojson::array({legacy}));
+    passed &= ORNL::Testing::expect(local_settings.setting<bool>(ORNL::PS::Perimeter::kConnectPerimeters),
+                                    "Legacy overrides must be renamed before merging onto current defaults.");
+    return passed;
 }
+}  // namespace
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
+
+    if (!connectedContourSettingsMigrate()) return EXIT_FAILURE;
 
     const std::string inner_radius_key = ORNL::PS::Slicing::kCylinderInnerRadius.toStdString();
     const std::string layer_height_key = ORNL::PS::Layer::kLayerHeight.toStdString();
@@ -99,7 +166,7 @@ int main(int argc, char* argv[]) {
                                "Migrated a nonzero helical angle without reference geometry."))
         return EXIT_FAILURE;
 
-    const double expected_version = 14.0;
+    const double expected_version = 15.0;
     if (!ORNL::Testing::expect(v10_version == expected_version && v11_version == expected_version &&
                                    v12_version == expected_version && v13_version == expected_version,
                                "Did not roll setting files forward."))

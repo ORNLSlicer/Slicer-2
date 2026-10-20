@@ -72,5 +72,37 @@ int main() {
         preferences_manager->getVisualizationColor(ORNL::VisualizationColors::kTravel) == imported_travel_color,
         "The imported visualization color was not applied.");
 
+    const QColor legacy_connection_color("#125a7b");
+    fifojson legacy_preferences = preferences_manager->json();
+    legacy_preferences["visualization_colors"].erase("Connection");
+    legacy_preferences["visualization_colors"]["SpiralConnection"] = legacy_connection_color.name().toStdString();
+    // This fixture has already completed palette migration, as existing users may have.
+    passed &= ORNL::Testing::expect(writePreferences(preferences_path, legacy_preferences),
+                                    "Could not write legacy connection color fixture.");
+    preferences_manager->importPreferences(preferences_path);
+    passed &= ORNL::Testing::expect(
+        preferences_manager->getVisualizationColor(ORNL::VisualizationColors::kConnection) == legacy_connection_color,
+        "Legacy connection colors must survive the rename even after palette migration.");
+    const auto migrated_colors = preferences_manager->json()["visualization_colors"];
+    passed &=
+        ORNL::Testing::expect(!migrated_colors.contains("SpiralConnection") &&
+                                  migrated_colors.at("Connection") == legacy_connection_color.name().toStdString(),
+                              "Preferences should export only the current connection color name.");
+
+    const QColor current_connection_color("#abcdef");
+    legacy_preferences["visualization_colors"]["Connection"] = current_connection_color.name().toStdString();
+    passed &= ORNL::Testing::expect(writePreferences(preferences_path, legacy_preferences),
+                                    "Could not write mixed connection color fixture.");
+    preferences_manager->importPreferences(preferences_path);
+    passed &= ORNL::Testing::expect(
+        preferences_manager->getVisualizationColor(ORNL::VisualizationColors::kConnection) == current_connection_color,
+        "The current connection color must win when both names are present.");
+    preferences_manager->exportPreferences(preferences_path);
+    preferences_manager->setVisualizationColor("Connection", Qt::black);
+    preferences_manager->importPreferences(preferences_path);
+    passed &= ORNL::Testing::expect(
+        preferences_manager->getVisualizationColor(ORNL::VisualizationColors::kConnection) == current_connection_color,
+        "Migrated connection colors should round-trip through preferences files.");
+
     return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 }

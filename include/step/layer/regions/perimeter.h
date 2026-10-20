@@ -47,7 +47,7 @@ class Perimeter : public RegionBase {
     //! \return the computed geometry
     QVector<Polyline> getComputedGeometry();
 
-    //! \brief Sets inset geometry that should be connected onto spiral perimeter output.
+    //! \brief Sets inset geometry that should be joined to connected perimeter output.
     //! \param geometry: computed inset closed-loop paths
     //! \param widths: bead widths associated with the inset paths
     void setConnectedInsetGeometry(const QVector<Polyline>& geometry, const QVector<Distance>& widths);
@@ -175,7 +175,7 @@ class Perimeter : public RegionBase {
     //! \brief Holds the bead width associated with each computed contour in m_computed_geometry
     QVector<Distance> m_computed_widths;
 
-    //! \brief Holds computed inset geometry to connect after spiral perimeters.
+    //! \brief Holds computed inset geometry to join after the connected perimeter loops.
     QVector<Polyline> m_connected_inset_geometry;
 
     //! \brief Holds the bead width associated with each connected inset contour.

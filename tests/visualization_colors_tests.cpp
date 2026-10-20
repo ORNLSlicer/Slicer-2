@@ -59,7 +59,7 @@ const std::vector<ExpectedVisualizationColor>& expectedVisualizationColors() {
         {ORNL::VisualizationColors::kHelicalPerimeter, "HelicalPerimeter", QColor(0, 0, 255, 255)},
         {ORNL::VisualizationColors::kHelicalInset, "HelicalInset", QColor(0, 204, 255, 255)},
         {ORNL::VisualizationColors::kHelicalInfill, "HelicalInfill", QColor(0, 255, 0, 255)},
-        {ORNL::VisualizationColors::kSpiralConnection, "SpiralConnection", QColor(0, 250, 154, 255)},
+        {ORNL::VisualizationColors::kConnection, "Connection", QColor(0, 250, 154, 255)},
     };
 
     return expected;
@@ -196,11 +196,11 @@ int main() {
                                         configuredColor(ORNL::VisualizationColors::kSupport),
                                     "Expected support comments to keep precedence over helical region colors.");
     passed &= ORNL::Testing::expect(loader.determineFontColor(QStringLiteral("PERIMETER SPIRAL CONNECTION")) ==
-                                        configuredColor(ORNL::VisualizationColors::kSpiralConnection),
-                                    "Expected perimeter spiral connections to use the connection color.");
+                                        configuredColor(ORNL::VisualizationColors::kConnection),
+                                    "Expected legacy perimeter connections to use the connection color.");
     passed &= ORNL::Testing::expect(loader.determineFontColor(QStringLiteral("INSET SPIRAL CONNECTION")) ==
-                                        configuredColor(ORNL::VisualizationColors::kSpiralConnection),
-                                    "Expected inset spiral connections to use the connection color.");
+                                        configuredColor(ORNL::VisualizationColors::kConnection),
+                                    "Expected legacy inset connections to use the connection color.");
     passed &= ORNL::Testing::expect(loader.determineSegmentColor(2, QStringLiteral("HELICAL PERIMETER")) ==
                                         configuredColor(ORNL::VisualizationColors::kHelicalPerimeter),
                                     "Expected helical perimeter arcs to keep the helical perimeter color.");
@@ -215,10 +215,10 @@ int main() {
                                     "Expected planar inset arcs to keep the inset arc color.");
 
     passed &= ORNL::Testing::expect(loader.determineSegmentColor(2, QStringLiteral("PERIMETER SPIRAL CONNECTION")) ==
-                                        configuredColor(ORNL::VisualizationColors::kSpiralConnection),
-                                    "Expected spiral connection arcs to keep the connection color.");
+                                        configuredColor(ORNL::VisualizationColors::kConnection),
+                                    "Expected legacy connection arcs to keep the connection color.");
     const QColor custom_connection(17, 37, 57);
-    ORNL::PreferencesManager::getInstance()->setVisualizationColor("SpiralConnection", custom_connection);
+    ORNL::PreferencesManager::getInstance()->setVisualizationColor("Connection", custom_connection);
     ORNL::PreferencesManager::getInstance()->setVisualizationColor("Perimeter", custom_connection);
     for (const QString& comment :
          {QStringLiteral("PERIMETER CONNECTION"), QStringLiteral("INSET CONNECTION"),

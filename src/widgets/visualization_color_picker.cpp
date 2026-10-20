@@ -19,8 +19,7 @@ VisualizationColorPicker::VisualizationColorPicker(QString name, QColor color, Q
     QGridLayout* color_tab_layout = new QGridLayout(this);
     color_tab_layout->setVerticalSpacing(0);
 
-    // Keep the persisted preference key so existing connection colors survive the label change.
-    colorTypeLbl     = new QLabel(name == "SpiralConnection" ? "Connection" : name);
+    colorTypeLbl     = new QLabel(name);
     sampleTextLbl    = new QLabel("(This is how it looks!!!)");
     colorResetBtn    = new QPushButton();
     colorSelectorBtn = new QPushButton();

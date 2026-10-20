@@ -111,23 +111,23 @@ void PolymerIsland::optimize(int layerNumber, Point& currentLocation,
         connected_inset_widths   = connected_inset->getComputedWidths();
     }
 
-    const bool adjacent_spiral_perimeter_and_inset = !connected_perimeter.isNull() && !connected_inset.isNull() &&
-                                                     connected_perimeter->getIndex() + 1 == connected_inset->getIndex();
-    const bool connect_spiral_perimeter_to_inset =
+    const bool adjacent_perimeter_and_inset = !connected_perimeter.isNull() && !connected_inset.isNull() &&
+                                              connected_perimeter->getIndex() + 1 == connected_inset->getIndex();
+    const bool connect_perimeter_to_inset =
         !connected_perimeter.isNull() && !connected_inset.isNull() && !connected_inset_geometry.isEmpty() &&
-        adjacent_spiral_perimeter_and_inset && m_sb->setting<bool>(PS::Perimeter::kEnableSpiralPerimeter) &&
-        m_sb->setting<bool>(PS::Perimeter::kConnectToInsets) && m_sb->setting<bool>(PS::Inset::kEnableSpiralInset) &&
+        adjacent_perimeter_and_inset && m_sb->setting<bool>(PS::Perimeter::kConnectPerimeters) &&
+        m_sb->setting<bool>(PS::Perimeter::kConnectToInsets) && m_sb->setting<bool>(PS::Inset::kConnectInsets) &&
         connectedInsetMaterialsCompatible(m_sb, m_settings_polygons, m_geometry);
 
     if (!connected_perimeter.isNull()) {
-        if (connect_spiral_perimeter_to_inset) {
+        if (connect_perimeter_to_inset) {
             connected_perimeter->setConnectedInsetGeometry(connected_inset_geometry, connected_inset_widths);
         }
         else { connected_perimeter->setConnectedInsetGeometry({}, {}); }
     }
 
     for (QSharedPointer<RegionBase> r : m_regions) {
-        if (connect_spiral_perimeter_to_inset && r.data() == connected_inset.data() &&
+        if (connect_perimeter_to_inset && r.data() == connected_inset.data() &&
             connected_perimeter->connectedInsetGeometryConsumed()) {
             connected_inset->getPaths().clear();
             continue;
