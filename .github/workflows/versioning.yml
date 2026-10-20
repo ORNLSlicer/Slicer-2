@@ -2,7 +2,7 @@ name: Version validation
 
 on:
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
   workflow_call:
     inputs:
       base:

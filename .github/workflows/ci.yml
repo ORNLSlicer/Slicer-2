@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'release' }}
 jobs:
   version:
     uses: ./.github/workflows/versioning.yml
@@ -102,6 +102,7 @@ jobs:
         with:
           name: ${{ env.artifact }}
           path: ${{ env.artifact }}
+          if-no-files-found: error
 
   windows:
     needs: version
@@ -155,13 +156,39 @@ jobs:
           cachix push ornl-slicer "$package_path" "$installer_path"
           cachix pin ornl-slicer "ornlslicer-${RELEASE_TAG}-windows" "$package_path" --keep-forever
           cachix pin ornl-slicer "ornlslicer-${RELEASE_TAG}-windows-installer" "$installer_path" --keep-forever
+      - name: Archive Portable Build
+        run: zip -r "${package_artifact}.zip" "${out_link}/"
       - name: Upload Portable Artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.package_artifact }}
-          path: ${{ env.out_link }}
+          path: ${{ env.package_artifact }}.zip
+          if-no-files-found: error
       - name: Upload Installer Artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.install_artifact }}
           path: ${{ env.install_artifact }}
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'release' && github.event.action == 'published'
+    needs: [check, linux, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Download Release Artifacts
+        run: gh run download "$GITHUB_RUN_ID" --dir release-assets
+      - name: Attach Release Downloads
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            release-assets/*/*.appimage \
+            release-assets/*/*.exe \
+            release-assets/*/*.zip \
+            --clobber
