@@ -103,10 +103,14 @@ Nix readers without compiling the application or downloading its dependencies.
    branch. It never force-pushes or replaces an existing branch. Review an existing
    PR instead of repeating preparation; close/delete an abandoned branch before
    recreating it.
-3. Review and merge the PR after CI passes. Create `v<full-version>` on the release
+3. Finalize [`CHANGELOG.md`](../../CHANGELOG.md) on the release PR's branch using
+   the selected version, release date, highlights, and compatibility notes; follow
+   [Maintaining the Changelog](changelog.md). This is a manual step after the
+   workflow's version-only commit. Review and merge the PR after CI passes.
+   Create `v<full-version>` on the release
    commit or release-branch merge containing it, then publish the GitHub release.
    Tag validation runs before Nix builds/cache publication. Copy compatibility
-   notes from the PR into the release notes.
+   notes and the finalized changelog section into the release notes.
 
 The workflow files must be present on the repository's default branch before
 GitHub permits dispatch. Repository Actions settings must allow GitHub Actions

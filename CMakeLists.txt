@@ -483,6 +483,17 @@ if(ORNLSLICER_BUILD_TESTS)
     target_link_libraries(${PROJECT_NAME}_main_toolbar_tests PRIVATE ${PROJECT_NAME}_obj)
     add_test(NAME main_toolbar_tests COMMAND ${PROJECT_NAME}_main_toolbar_tests)
 
+    add_executable(${PROJECT_NAME}_changelog_tests tests/changelog_tests.cpp)
+    target_include_directories(
+        ${PROJECT_NAME}_changelog_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/include
+            ${ORNLSLICER_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}_changelog_tests PRIVATE ${PROJECT_NAME}_obj)
+    add_test(NAME changelog_tests COMMAND ${PROJECT_NAME}_changelog_tests)
+
     add_executable(${PROJECT_NAME}_path_modifier_tests tests/path_modifier_tests.cpp)
     target_include_directories(
         ${PROJECT_NAME}_path_modifier_tests
