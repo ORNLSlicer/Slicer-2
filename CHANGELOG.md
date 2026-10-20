@@ -7,6 +7,18 @@ Release versions follow the project's
 
 ## Unreleased
 
+---
+
+## 2.2.0 - 2026-10-20
+
+### Release highlights
+
+- Added connected perimeter and inset contours, with connection segments distinguished in G-code preview.
+- Added standalone individual-layer G-code export for supported printers.
+- Expanded cylindrical and helical slicing with regional profiles, tool-frame rotations, clipping, and path ordering.
+- Added variable layer heights driven by surface error and minimum layer height.
+- Added settings-file comparison and an offline **Help > Changelog** viewer.
+
 ### Added
 
 - Added an offline changelog window under **Help > Changelog** and a shared change history for release notes ([#309](https://github.com/ORNLSlicer/ORNLSlicer/issues/309)).
@@ -30,7 +42,7 @@ Release versions follow the project's
 
 ### Fixed
 
-- Fixed release promotion validation for PRs into `main` and automatic attachment of Linux and Windows downloads after release checks pass.
+- Fixed release promotion validation for PRs into `main` and automatic attachment of Linux and Windows downloads after release checks pass ([#338](https://github.com/ORNLSlicer/ORNLSlicer/pull/338)).
 - Fixed toolbar commands becoming inaccessible on scaled displays ([#314](https://github.com/ORNLSlicer/ORNLSlicer/pull/314)).
 - Fixed Wolf settings headers failing to reload in RGCodeTools ([#316](https://github.com/ORNLSlicer/ORNLSlicer/pull/316)).
 - Fixed Wire Arc paths using incorrect deposition-surface Z coordinates ([#293](https://github.com/ORNLSlicer/ORNLSlicer/pull/293)).
@@ -43,4 +55,4 @@ Release versions follow the project's
 ### Breaking changes
 
 - Removed the former maximum helical path length controls. Configure regional revolutions, stepovers, and helical Z clipping instead ([#274](https://github.com/ORNLSlicer/ORNLSlicer/pull/274)).
-- Changed the helical tool start offset to a distance. Update integrations that write the former angular setting; existing versioned settings are migrated on import ([#317](https://github.com/ORNLSlicer/ORNLSlicer/pull/317)).
+- Changed the helical tool start offset from an angle to a signed physical distance, which stays constant as path radius changes. Existing versioned settings migrate on import using the first generated radius. Integrations that generate settings must use `helical_tool_start_arc_length_offset` and supply a distance; do not reuse angular values as distances ([#317](https://github.com/ORNLSlicer/ORNLSlicer/pull/317)).
