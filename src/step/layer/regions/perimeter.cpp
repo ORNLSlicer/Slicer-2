@@ -773,7 +773,10 @@ void Perimeter::optimize(int layerNumber, Point& current_location, bool& shouldN
                     if (inset_group.size() < 3) { continue; }
 
                     Polyline connected_group;
-                    if (should_append_to_tip_path) { connected_group.push_back(previous_end); }
+                    if (should_append_to_tip_path) {
+                        connected_group.push_back(previous_end);
+                        Connection::markStart(connected_group.back());
+                    }
                     connected_group += inset_group;
 
                     Path inset_path =
@@ -791,7 +794,11 @@ void Perimeter::optimize(int layerNumber, Point& current_location, bool& shouldN
                     if (!should_append_to_tip_path) { generateInsetStartup(inset_path, m_sb); }
 
                     if (should_append_to_tip_path) {
-                        inset_path.front()->getSb()->setSetting(SS::kPathModifiers, PathModifiers::kSpiralConnection);
+                        if (inset_path.front()->getSb()->setting<PathModifiers>(SS::kPathModifiers) ==
+                            PathModifiers::kNone) {
+                            inset_path.front()->getSb()->setSetting(SS::kPathModifiers,
+                                                                    PathModifiers::kSpiralConnection);
+                        }
                         path.append(inset_path);
                         previous_end              = path.back()->end();
                         should_append_to_tip_path = false;
@@ -1243,6 +1250,7 @@ Path Perimeter::createPath(Polyline line, Distance min_segment_length, bool clos
 
             LSegmentPtr segment = LSegmentPtr::create(start, end);
             populateSegmentSettings(segment->getSb(), m_sb, bead_width, isAdaptedWidth(bead_width, m_sb));
+            populateConnectionSettings(segment->getSb(), start, end);
             path.append(segment);
         }
         return path;
@@ -1599,10 +1607,22 @@ Path Perimeter::createPathWithLocalizedSettings(const Polyline& line, bool close
             LSegmentPtr segment       = LSegmentPtr::create(p0, p1);
             const Distance bead_width = beadWidthForSegment(p0, p1, parent_sb);
             populateSegmentSettings(segment->getSb(), parent_sb, bead_width, isAdaptedWidth(bead_width, parent_sb));
+            populateConnectionSettings(segment->getSb(), start, end);
             path.append(segment);
         }
     }
     return path;
+}
+
+void Perimeter::populateConnectionSettings(const QSharedPointer<SettingsBase>& segment_sb, const Point& start,
+                                           const Point& end) const {
+    if (!Connection::startsAt(start)) { return; }
+
+    segment_sb->setSetting(SS::kIsConnection, true);
+    const double tolerance = std::max(m_sb->setting<Distance>(PS::Inset::kBeadWidth)() * 1.0e-3, 1.0e-6);
+    if (connectedInsetGeometryIndex(end, tolerance) >= 0) {
+        segment_sb->setSetting(SS::kConnectionRegion, RegionType::kInset);
+    }
 }
 
 void Perimeter::populateSegmentSettings(QSharedPointer<SettingsBase> segment_sb,

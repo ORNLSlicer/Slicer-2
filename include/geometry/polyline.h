@@ -97,6 +97,7 @@ class Polyline : public QVector<Point> {
 
     /*!
      * \brief Collapses segments shorter than \p min_segment_length.
+     * \note Annotated loop-connection endpoints are retained, including short segments at those boundaries.
      *
      * \param min_segment_length Minimum allowed segment length. A value less than or equal to zero leaves the polyline
      * unchanged.

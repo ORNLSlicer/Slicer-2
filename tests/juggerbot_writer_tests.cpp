@@ -76,12 +76,31 @@ bool turnsExtruderOffBeforeZeroRpmWidthHeightArc() {
 
     return zero_rpm_arc.startsWith("M5 ;TURN EXTRUDER OFF\nG2") && !zero_rpm_arc.contains("M3");
 }
+
+bool annotatesConnectionLinesAndArcs() {
+    auto settings = writerSettings(1.0);
+    ORNL::JuggerBotWriter writer(ORNL::GcodeMetaList::MarlinMeta, settings);
+    writer.writeInitialSetup(0.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm, 0.0 * ORNL::mm, 1);
+    auto params = segmentSettings(120, ORNL::PathModifiers::kInitialStartup);
+    params->setSetting(ORNL::SS::kIsConnection, true);
+    params->setSetting(ORNL::SS::kConnectionRegion, ORNL::RegionType::kInset);
+    const ORNL::Point start(0.0 * ORNL::mm, 0.0 * ORNL::mm);
+    const ORNL::Point end(1.0 * ORNL::mm, 0.0 * ORNL::mm);
+    const ORNL::Point center(0.5 * ORNL::mm, 0.0 * ORNL::mm);
+    const QString line = writer.writeLine(start, end, params);
+    const QString arc  = writer.writeArc(start, end, center, 180.0 * ORNL::degree, false, params);
+    return line.contains("INSET INITIAL STARTUP CONNECTION") && arc.contains("INSET INITIAL STARTUP CONNECTION") &&
+           params->setting<ORNL::RegionType>(ORNL::SS::kRegionType) == ORNL::RegionType::kPerimeter;
+}
 }  // namespace
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
     bool passed = true;
+    passed &= ORNL::Testing::expect(
+        annotatesConnectionLinesAndArcs(),
+        "Connection line/arc comments must retain overlapping modifiers and name the destination.");
     passed &=
         ORNL::Testing::expect(appliesExtrusionMultiplierToWidthHeightArcBeadArea(),
                               "JuggerBot writer did not apply extrusion multiplier to width/height arc bead area.");

@@ -226,7 +226,7 @@ const QString Constants::PathModifierStrings::kRampingDown      = "RAMPING DOWN"
 const QString Constants::PathModifierStrings::kLeadIn           = "LEAD IN";
 const QString Constants::PathModifierStrings::kFlyingStart      = "FLYING START";
 const QString Constants::PathModifierStrings::kPerimeterTipWipe = "PERIMETER TIP WIPE";
-const QString Constants::PathModifierStrings::kSpiralConnection = "SPIRAL CONNECTION";
+const QString Constants::PathModifierStrings::kSpiralConnection = "CONNECTION";
 
 //================================================================================
 // Printer Settings
@@ -1015,6 +1015,8 @@ const QString Constants::SegmentSettings::kExtruderSpeed               = "extrud
 const QString Constants::SegmentSettings::kWaitTime                    = "wait_time";
 const QString Constants::SegmentSettings::kRegionType                  = "region_type";
 const QString Constants::SegmentSettings::kPathModifiers               = "path_modifiers";
+const QString Constants::SegmentSettings::kIsConnection                = "is_connection";
+const QString Constants::SegmentSettings::kConnectionRegion            = "connection_region";
 const QString Constants::SegmentSettings::kMaterialNumber              = "material_number";
 const QString Constants::SegmentSettings::kRecipe                      = "recipe_index";
 const QString Constants::SegmentSettings::kESP                         = "esp";

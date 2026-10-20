@@ -7,6 +7,7 @@
 
 #include <qcontainerfwd.h>
 
+#include "geometry/connection.h"
 #include "geometry/point.h"
 #include "geometry/polyline.h"
 #include "units/unit.h"
@@ -847,6 +848,7 @@ inline QVector<Polyline> linkClosedPolylineGroups(const QVector<Polyline>& order
 
             if (detail::canConnectLoops(current_loop, prepared_next_loop, connector_start, stop_distance)) {
                 if (spiral.back() != connector_start) { spiral += connector_start; }
+                if (spiral.back() != prepared_next_loop.loop.front()) { Connection::markStart(spiral.back()); }
                 current_loop = prepared_next_loop;
             }
             else {
@@ -943,6 +945,8 @@ inline Polyline linkClosedPolylines(const QVector<Polyline>& ordered_loops, cons
 
             if (spiral.back() != connector_start) { spiral += connector_start; }
 
+            if (spiral.back() != next_loop.loop.front()) { Connection::markStart(spiral.back()); }
+
             current_loop = next_loop;
         }
         else {
@@ -975,6 +979,8 @@ inline Polyline linkClosedPolylines(const QVector<Polyline>& ordered_loops, Dist
                 detail::prepareConnector(loop, next_loop, final_stop_distance, complete_before_connecting);
 
             if (spiral.back() != connector_start) { spiral += connector_start; }
+
+            if (spiral.back() != next_loop.front()) { Connection::markStart(spiral.back()); }
 
             loops[loop_index + 1] = next_loop;
         }

@@ -117,9 +117,14 @@ QString WriterBase::finalPositionBlock(const QString& gcode) {
 
 QString WriterBase::regionComment(RegionType region_type, PathModifiers path_modifiers,
                                   const QSharedPointer<SettingsBase>& params, bool include_skeleton_width) const {
-    QString comment        = toString(region_type);
-    const bool has_width   = params != nullptr && params->contains(SS::kWidth);
-    const bool has_adapted = params != nullptr && params->contains(SS::kAdapted);
+    const bool is_connection =
+        params != nullptr && params->contains(SS::kIsConnection) && params->setting<bool>(SS::kIsConnection);
+    const RegionType comment_region = is_connection && params->contains(SS::kConnectionRegion)
+                                          ? params->setting<RegionType>(SS::kConnectionRegion)
+                                          : region_type;
+    QString comment                 = toString(comment_region);
+    const bool has_width            = params != nullptr && params->contains(SS::kWidth);
+    const bool has_adapted          = params != nullptr && params->contains(SS::kAdapted);
 
     if (has_width && has_adapted && params->setting<bool>(SS::kAdapted)) {
         comment = QStringLiteral("AD-") % comment % QStringLiteral("-") %
@@ -131,6 +136,9 @@ QString WriterBase::regionComment(RegionType region_type, PathModifiers path_mod
     }
 
     if (path_modifiers != PathModifiers::kNone) { comment += m_space % toString(path_modifiers); }
+    if (is_connection && path_modifiers != PathModifiers::kSpiralConnection) {
+        comment += m_space % Constants::PathModifierStrings::kSpiralConnection;
+    }
 
     return comment;
 }

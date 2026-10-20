@@ -105,6 +105,29 @@ int main() {
     passed &= ORNL::Testing::expect(adjacent_groups.size() == 1,
                                     "Expected adjacent nested loops to remain in one spiral group.");
 
+    // Connection annotations must survive cleanup without leaking back into source loops.
+    int connections = 0;
+    for (const auto& group : adjacent_groups) {
+        const auto cleaned = group.removeShortSegments(ORNL::Distance(2.0), false);
+        for (int i = 0; i + 1 < group.size(); ++i) {
+            if (!ORNL::Connection::startsAt(group[i])) { continue; }
+            ++connections;
+            bool retained = false;
+            for (int j = 0; j + 1 < cleaned.size(); ++j) {
+                retained |= ORNL::Connection::startsAt(cleaned[j]) && cleaned[j].distance(group[i])() < 1.0e-6 &&
+                            cleaned[j + 1].distance(group[i + 1])() < 1.0e-6;
+            }
+            passed &= ORNL::Testing::expect(retained, "Expected exact short connection endpoints after cleanup.");
+        }
+    }
+    passed &= ORNL::Testing::expect(connections == 1, "Expected only the bridge between loops to be annotated.");
+    for (const auto& loop : adjacent_loops) {
+        for (const auto& point : loop) {
+            passed &= ORNL::Testing::expect(!ORNL::Connection::startsAt(point),
+                                            "Connection tags must not mutate source loop points.");
+        }
+    }
+
     QVector<ORNL::Polyline> complete_adjacent_groups =
         ORNL::SpiralPath::linkClosedPolylineGroups(adjacent_loops, bead_width, true);
 

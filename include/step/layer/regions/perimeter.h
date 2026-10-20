@@ -115,6 +115,10 @@ class Perimeter : public RegionBase {
      */
     Path createPathWithLocalizedSettings(const Polyline& line, bool closed);
 
+    //! \brief Marks a connector and identifies its destination without changing its print settings.
+    void populateConnectionSettings(const QSharedPointer<SettingsBase>& segment_sb, const Point& start,
+                                    const Point& end) const;
+
     /**
      * @brief Populates the segment settings with the passed settings base.
      * @param[in,out] segment_sb: The segment settings base to populate.

@@ -204,30 +204,6 @@ GCodeLoader::GCodeLoader(QString filename, bool alterFile)
     m_leadin            = QStringMatcher(Constants::PathModifierStrings::kLeadIn.toUpper());
     m_spiral_connection = QStringMatcher(Constants::PathModifierStrings::kSpiralConnection.toUpper());
 
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kPrestart));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kInitialStartup));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kSlowDown));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kTipWipeForward));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kTipWipeReverse));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kTipWipeAngled));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kCoasting));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kSpiralLift));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kRampingUp));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kRampingDown));
-    m_modifier_colors.push_back(PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kLeadIn));
-    m_modifier_colors.push_back(
-        PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kSpiralConnection));
-
     m_perimeter    = QStringMatcher(Constants::RegionTypeStrings::kPerimeter.toUpper());
     m_radial       = QStringMatcher(Constants::RegionTypeStrings::kRadial.toUpper());
     m_helical      = QStringMatcher(Constants::RegionTypeStrings::kHelical.toUpper());
@@ -746,6 +722,9 @@ void GCodeLoader::setParser(QStringList& originalLines, QStringList& lines) {
 }
 
 QColor GCodeLoader::determineFontColor(const QString& comment) {
+    if (m_spiral_connection.indexIn(comment) != -1) {
+        return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kSpiralConnection);
+    }
     if (m_prestart.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kPrestart);
     }
@@ -778,9 +757,6 @@ QColor GCodeLoader::determineFontColor(const QString& comment) {
     }
     if (m_leadin.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kLeadIn);
-    }
-    if (m_spiral_connection.indexIn(comment) != -1) {
-        return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kSpiralConnection);
     }
     if (m_travel.indexIn(comment) != -1) {
         return PreferencesManager::getInstance()->getVisualizationColor(VisualizationColors::kTravel);
@@ -884,7 +860,7 @@ void GCodeLoader::setSegmentDisplayInfo(QSharedPointer<SegmentBase>& segment, Se
     float display_height = m_sb->setting<float>(PS::Layer::kLayerHeight) * Constants::OpenGL::kObjectToView;
     float display_length = start_pos.distanceToPoint(end_pos);
     float scale =
-        m_modifier_colors.contains(color) ? 1.1f : 1.0f;  // Scale modifier segments by 1.1 for better visibility
+        containsColorPriorityModifier(comment) ? 1.1f : 1.0f;  // Scale modifier segments by 1.1 for better visibility
 
     // Set the display width of the segment based on its region type
     display_width =

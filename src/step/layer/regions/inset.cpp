@@ -723,6 +723,7 @@ Path Inset::createPath(Polyline line, bool closed) {
 
             LSegmentPtr segment = LSegmentPtr::create(start, end);
             populateSegmentSettings(segment->getSb(), m_sb, bead_width, isAdaptedWidth(bead_width, m_sb));
+            if (Connection::startsAt(start)) { segment->getSb()->setSetting(SS::kIsConnection, true); }
             path.append(segment);
         }
         return path;
@@ -870,6 +871,7 @@ Path Inset::createPathWithLocalizedSettings(const Polyline& line, bool closed) {
             LSegmentPtr segment       = LSegmentPtr::create(p0, p1);
             const Distance bead_width = beadWidthForSegment(p0, p1, parent_sb);
             populateSegmentSettings(segment->getSb(), parent_sb, bead_width, isAdaptedWidth(bead_width, parent_sb));
+            if (Connection::startsAt(start)) { segment->getSb()->setSetting(SS::kIsConnection, true); }
             path.append(segment);
         }
     }
