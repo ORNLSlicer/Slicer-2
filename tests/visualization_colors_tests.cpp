@@ -59,7 +59,7 @@ const std::vector<ExpectedVisualizationColor>& expectedVisualizationColors() {
         {ORNL::VisualizationColors::kHelicalPerimeter, "HelicalPerimeter", QColor(0, 0, 255, 255)},
         {ORNL::VisualizationColors::kHelicalInset, "HelicalInset", QColor(0, 204, 255, 255)},
         {ORNL::VisualizationColors::kHelicalInfill, "HelicalInfill", QColor(0, 255, 0, 255)},
-        {ORNL::VisualizationColors::kSpiralConnection, "SpiralConnection", QColor(255, 215, 0, 255)},
+        {ORNL::VisualizationColors::kSpiralConnection, "SpiralConnection", QColor(0, 250, 154, 255)},
     };
 
     return expected;
