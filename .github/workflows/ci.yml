@@ -2,6 +2,7 @@
 name: Nix CI
 on:
   push:
+  pull_request:
   workflow_dispatch:
   release:
     types:
@@ -15,6 +16,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'release' }}
 jobs:
   version:
+    # Same-repository PR branches already run CI on push.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     uses: ./.github/workflows/versioning.yml
     with:
       base: ${{ github.event.before || '' }}
