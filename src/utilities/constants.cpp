@@ -315,6 +315,7 @@ const QString Constants::PrinterSettings::GCode::kEnableWaitForUser    = "enable
 const QString Constants::PrinterSettings::GCode::kEnableBoundingBox    = "enable_bounding_box";
 const QString Constants::PrinterSettings::GCode::kEnableSettingsFooter = "enable_settings_footer";
 const QString Constants::PrinterSettings::GCode::kLayerTimeComments    = "enable_layer_time_comments";
+const QString Constants::PrinterSettings::GCode::kStartingLayerNumber  = "starting_layer_number";
 const QString Constants::PrinterSettings::GCode::kArcSpecialtiesG2G3OptionalStop =
     "arc_specialties_g2_g3_optional_stop";
 const QString Constants::PrinterSettings::GCode::kArcSpecialtiesG80WeldScheduleFile =

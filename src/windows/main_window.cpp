@@ -956,6 +956,7 @@ void MainWindow::setupEvents() {
         switchViews(1);
     });
     connect(CSM.get(), &SessionManager::forwardStatusUpdate, this, &MainWindow::updateStatus);
+    connect(CSM.get(), &SessionManager::sliceFailed, this, [this]() { m_slice_dialog.reset(); });
     connect(CSM.get(), &SessionManager::sessionSaved, this, [this](QString path) {
         QMessageBox::information(this, "Save Project", "Project has been successfully saved to " + path);
     });

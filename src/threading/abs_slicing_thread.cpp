@@ -8,6 +8,7 @@
 #include <exception>
 #include <limits>
 #include <memory>
+#include <stdexcept>
 
 #include <qdebug.h>
 #include <qfiledevice.h>
@@ -319,6 +320,20 @@ void AbstractSlicingThread::forwardStatus(StatusUpdateStepType type, int complet
     emit statusUpdate(type, completedPercentage);
 }
 
+bool AbstractSlicingThread::writeGCodeFile() {
+    try {
+        writeGCodeSetup();
+        writeGCode();
+        writeGCodeShutdown();
+        return true;
+    } catch (const std::invalid_argument& error) {
+        m_temp_gcode_output_file.resize(0);
+        m_temp_gcode_output_file.close();
+        emit sliceFailed(QString::fromUtf8(error.what()));
+        return false;
+    }
+}
+
 void AbstractSlicingThread::writeGCodeSetup() {
     QTextStream stream(&m_temp_gcode_output_file);
 
@@ -408,13 +423,13 @@ void AbstractSlicingThread::writeLayerTimeComments() {
         }
 
         const int layer_time_offset = adjusted_layer_times.size() > layer_marker_count ? 1 : 0;
+        int generated_layer_index   = 0;
         for (int line_index = 0; line_index < annotated_lines.size(); ++line_index) {
             const QRegularExpressionMatch match = layer_marker.match(annotated_lines[line_index]);
             if (!match.hasMatch()) { continue; }
 
-            bool converted             = false;
-            const int layer_time_index = match.captured(1).toInt(&converted) - 1 + layer_time_offset;
-            if (!converted || layer_time_index < 0 || layer_time_index >= adjusted_layer_times.size()) { continue; }
+            const int layer_time_index = generated_layer_index++ + layer_time_offset;
+            if (layer_time_index >= adjusted_layer_times.size()) { continue; }
 
             annotated_lines.insert(line_index + 1, layerTimeComment(meta, adjusted_layer_times[layer_time_index]));
             ++line_index;

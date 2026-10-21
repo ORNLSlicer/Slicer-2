@@ -439,7 +439,7 @@ class ArcSpecialtiesWriter : public WriterBase {
     int m_current_layer = 0;
 
     //! @brief Tracks the next Beckhoff block number for the active layer.
-    int m_next_block_number = 0;
+    qint64 m_next_block_number = 0;
 
     //! @brief Tracks whether per-layer block numbering has been initialized for this layer.
     bool m_layer_block_numbering_started = false;

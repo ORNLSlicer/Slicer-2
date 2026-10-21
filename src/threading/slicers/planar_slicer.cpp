@@ -927,6 +927,7 @@ void PlanarSlicer::postProcess(nlohmann::json opt_data) {
 }
 
 void PlanarSlicer::writeGCode() {
+    if (!m_global_layers.isEmpty()) { WriterBase::layerNumber(GSM->getGlobal(), m_global_layers.size() - 1); }
     QTextStream stream(&m_temp_gcode_output_file);
 
     // for updating status window

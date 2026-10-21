@@ -277,6 +277,9 @@ class SessionManager : public QObject {
     //! \brief Signal that slicing has complete.  Forward to main window to start visualization and adjust layer times.
     void forwardSliceComplete(QString filepath, bool alterFile);
 
+    //! \brief Signal that slicing failed and no G-Code should be imported or exported.
+    void sliceFailed(QString message);
+
     //! \brief Signal that slicing thread has started writing the GCode file.
     void forwardStatusUpdate(QString status);
 

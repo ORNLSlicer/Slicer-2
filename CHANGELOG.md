@@ -7,6 +7,10 @@ Release versions follow the project's
 
 ## Unreleased
 
+### Added
+
+- Added a Starting Layer Number setting under Printer > G-Code for continuation builds, with consistent layer, bead, block, and individual-layer export numbering ([#347](https://github.com/ORNLSlicer/ORNLSlicer/issues/347)).
+
 ### Fixed
 
 - Fixed regular CI not running for pull requests from fork branches, including Linux and Windows builds and Linux and macOS flake checks.

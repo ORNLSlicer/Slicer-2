@@ -95,9 +95,7 @@ void TraditionalAST::doSlice() {
         if (!m_skip_gcode) {
             // Gcode output
             Diagnostics::logLine(QStringLiteral("Slicing G-code generation starting"));
-            this->writeGCodeSetup();
-            this->writeGCode();
-            this->writeGCodeShutdown();
+            if (!this->writeGCodeFile()) { return; }
             Diagnostics::logLine(QStringLiteral("Slicing G-code generation complete"));
         }
         if (this->shouldCancel()) return;
@@ -150,9 +148,7 @@ void TraditionalAST::cleanThread() {
                 if (!m_skip_gcode) {
                     // Gcode output
                     Diagnostics::logLine(QStringLiteral("Slicing G-code generation starting"));
-                    this->writeGCodeSetup();
-                    this->writeGCode();
-                    this->writeGCodeShutdown();
+                    if (!this->writeGCodeFile()) { return; }
                     Diagnostics::logLine(QStringLiteral("Slicing G-code generation complete"));
                 }
                 if (this->shouldCancel()) return;
