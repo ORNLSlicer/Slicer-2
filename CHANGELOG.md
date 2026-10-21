@@ -10,6 +10,7 @@ Release versions follow the project's
 ### Fixed
 
 - Fixed regular CI not running for pull requests from fork branches, including Linux and Windows builds and Linux and macOS flake checks.
+- Fixed STEP assemblies of touching solids, and solids with internal voids, importing as open meshes; vertices are now welded per shell ([#341](https://github.com/ORNLSlicer/ORNLSlicer/issues/341)).
 
 ---
 
