@@ -71,6 +71,9 @@ class AbstractSlicingThread : public QObject {
     //! \param status Status text to show to the user.
     void statusMessage(QString status);
 
+    //! \brief Reports a G-Code generation failure without importing or exporting a partial file.
+    void sliceFailed(QString message);
+
     //! \brief Signal to session manager that slicing is complete
     void sliceComplete();
 
@@ -82,6 +85,9 @@ class AbstractSlicingThread : public QObject {
     //! \brief Pure virtual for postprocess step. This is always run just before gcode generation.
     //! \param opt_data optional sensor data
     virtual void postProcess(nlohmann::json opt_data = nlohmann::json()) = 0;
+
+    //! \brief Generates a complete G-Code file, reporting invalid layer numbering as a slice failure.
+    bool writeGCodeFile();
 
     //! \brief Function that writes setup block of gcode.  For now, all formats have
     //! the same block style.

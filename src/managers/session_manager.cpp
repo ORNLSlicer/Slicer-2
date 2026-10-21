@@ -4,6 +4,7 @@
 #include <QCoreApplication>
 #include <QStandardPaths>
 #include <cstdlib>
+#include <stdexcept>
 #include <string>
 
 #include <qcontainerfwd.h>
@@ -573,6 +574,14 @@ bool SessionManager::isBuildMode() {
 }
 
 bool SessionManager::doSlice() {
+    try {
+        WriterBase::layerNumber(GSM->getGlobal(), 0);
+    } catch (const std::invalid_argument& error) {
+        const QString message = QString::fromUtf8(error.what());
+        Diagnostics::logLine(message);
+        emit forwardStatusUpdate(message);
+        return false;
+    }
     const GcodeSyntax syntax = GSM->getGlobal()->setting<GcodeSyntax>(PRS::MachineSetup::kSyntax);
     const SlicingMode type   = static_cast<SlicingMode>(GSM->getGlobal()->setting<int>(PS::Slicing::kSlicingMode));
     if (type == SlicingMode::kCylindrical && !supportsCylindricalSlicing(syntax)) {
@@ -682,6 +691,8 @@ bool SessionManager::changeSlicer(SlicingMode type) {
     connect(m_ast.get(), &AbstractSlicingThread::statusUpdate, this, &SessionManager::forwardDialogUpdate);
     connect(m_ast.get(), &AbstractSlicingThread::statusMessage, this, &SessionManager::forwardStatusUpdate);
     connect(m_ast.get(), &AbstractSlicingThread::sliceComplete, this, &SessionManager::sliceComplete);
+    connect(m_ast.get(), &AbstractSlicingThread::sliceFailed, this, &SessionManager::sliceFailed);
+    connect(m_ast.get(), &AbstractSlicingThread::sliceFailed, this, &SessionManager::forwardStatusUpdate);
     return true;
 }
 

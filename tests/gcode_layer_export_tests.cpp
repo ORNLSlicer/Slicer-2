@@ -152,6 +152,35 @@ int main(int argc, char* argv[]) {
         expect(layers.last().text.endsWith(";settings footer\n"), "Expected the final settings footer to survive.");
     }
 
+    settings->setSetting(ORNL::PRS::GCode::kStartingLayerNumber, 120);
+    const QString numbered_marlin = program<ORNL::MarlinWriter>(ORNL::GcodeMetaList::MarlinMeta, settings);
+    const QString numbered_arc = program<ORNL::ArcSpecialtiesWriter>(ORNL::GcodeMetaList::ArcSpecialtiesMeta, settings);
+    for (const auto& source : {numbered_marlin, numbered_arc}) {
+        layers = ORNL::splitGcodeIntoLayers(source, ";", &error);
+        expect(error.isEmpty() && layers.size() == 3, "Expected renumbered standalone layers to decode.");
+        for (int i = 0; i < layers.size(); ++i) {
+            expect(layers[i].number == 120 + i && layers[i].text.contains(QString("BEGINNING LAYER: %1").arg(120 + i)),
+                   "Expected standalone programs and exported layer numbers to agree.");
+            if (source == numbered_arc) {
+                expect(layers[i].text.contains(QString("BEGINNING BEAD: %1.1").arg(120 + i)),
+                       "Expected standalone Arc Specialties bead references to match their layer.");
+            }
+        }
+    }
+    QString normalized = withoutMetadata(numbered_marlin);
+    for (int i = 0; i < 3; ++i) {
+        normalized.replace(QString("BEGINNING LAYER: %1").arg(120 + i), QString("BEGINNING LAYER: %1").arg(1 + i));
+    }
+    expect(normalized == withoutMetadata(marlin_source),
+           "Renumbering must preserve all other motion and setup commands.");
+    QTemporaryDir numbered_directory;
+    ORNL::GCodeLayerSaver numbered_saver(numbered_directory.path(), "part", numbered_marlin, ";", ".gcode");
+    numbered_saver.run();
+    expect(QFile::exists(numbered_directory.filePath("part_layer_120.gcode")) &&
+               QFile::exists(numbered_directory.filePath("part_layer_122.gcode")),
+           "Expected individual-layer filenames to use configured numbering.");
+    settings->remove(ORNL::PRS::GCode::kStartingLayerNumber);
+
     const QString cincinnati_source = program<ORNL::CincinnatiWriter>(ORNL::GcodeMetaList::CincinnatiMeta, settings);
     expect(withoutMetadata(cincinnati_source) ==
                program<ORNL::CincinnatiWriter>(ORNL::GcodeMetaList::CincinnatiMeta, settings, true, false, false),

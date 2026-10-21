@@ -168,7 +168,7 @@ void ArcSpecialtiesWriter::startLayerBlockNumbering() {
 
 void ArcSpecialtiesWriter::initializeLayerBlockNumbering() {
     if (!m_layer_block_numbering_started) {
-        m_next_block_number             = std::max(1, m_current_layer) * 10000;
+        m_next_block_number             = static_cast<qint64>(std::max(1, m_current_layer)) * 10000;
         m_layer_block_numbering_started = true;
     }
 }
@@ -452,7 +452,7 @@ QString ArcSpecialtiesWriter::writeInitialSetup(Distance minimum_x, Distance min
     m_startup_kinematics_written       = false;
     m_pending_layer_change.clear();
     m_current_bead                  = 0;
-    m_current_layer                 = 0;
+    m_current_layer                 = layerNumber(m_sb, 0) - 1;
     m_next_block_number             = 0;
     m_layer_block_numbering_started = false;
     m_layer_block_numbering_active  = false;
@@ -506,6 +506,7 @@ QString ArcSpecialtiesWriter::writeInitialSetup(Distance minimum_x, Distance min
 
 QString ArcSpecialtiesWriter::writeLayerChange(uint layer_number) {
     const QString layer_change = WriterBase::writeLayerChange(layer_number);
+    m_current_layer            = layerNumber(m_sb, layer_number) - 1;
     if (!m_startup_kinematics_written || isHelicalPathPattern()) {
         m_pending_layer_change += layer_change;
         return QString();
@@ -519,7 +520,7 @@ QString ArcSpecialtiesWriter::writeBeforeLayer(float min_z, QSharedPointer<Setti
     m_layer_start  = true;
     m_current_bead = 1;
     m_current_layer++;
-    m_next_block_number             = std::max(1, m_current_layer) * 10000;
+    m_next_block_number             = static_cast<qint64>(std::max(1, m_current_layer)) * 10000;
     m_layer_block_numbering_started = false;
     m_layer_block_numbering_active  = false;
     m_helical_opt_stop_mode_written = false;

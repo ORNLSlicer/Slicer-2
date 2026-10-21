@@ -36,6 +36,9 @@ class WriterBase {
     virtual QString writeInitialSetup(Distance minimum_x, Distance minimum_y, Distance maximum_x, Distance maximum_y,
                                       int num_layers) = 0;
 
+    //! \brief Maps a zero-based generated layer index to its G-Code number; rejects invalid settings or overflow.
+    static int layerNumber(const QSharedPointer<SettingsBase>& settings, uint layer_index);
+
     //! \brief Writes comment to announce layer change
     virtual QString writeLayerChange(uint layer_number);
 

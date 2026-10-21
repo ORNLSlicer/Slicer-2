@@ -439,16 +439,7 @@ void CylindricalSlicer::doSlice() {
     if (this->shouldCancel()) { return; }
 
     if (!m_skip_gcode) {
-        this->writeGCodeSetup();
-        if (m_has_generated_path_max_z) {
-            Distance build_maximum_z = m_generated_path_max_z;
-            if (m_base->hasBuildMaximumZ() && m_base->getBuildMaximumZ() > build_maximum_z) {
-                build_maximum_z = m_base->getBuildMaximumZ();
-            }
-            m_base->setBuildMaximumZ(build_maximum_z);
-        }
-        this->writeGCode();
-        this->writeGCodeShutdown();
+        if (!this->writeGCodeFile()) { return; }
     }
 
     if (this->shouldCancel()) { return; }
@@ -908,6 +899,15 @@ void CylindricalSlicer::postProcess(nlohmann::json opt_data) {
 }
 
 void CylindricalSlicer::writeGCode() {
+    if (m_has_generated_path_max_z) {
+        Distance build_maximum_z = m_generated_path_max_z;
+        if (m_base->hasBuildMaximumZ() && m_base->getBuildMaximumZ() > build_maximum_z) {
+            build_maximum_z = m_base->getBuildMaximumZ();
+        }
+        m_base->setBuildMaximumZ(build_maximum_z);
+    }
+    if (!m_cylindrical_layers.isEmpty()) { WriterBase::layerNumber(GSM->getGlobal(), m_cylindrical_layers.size() - 1); }
+
     QTextStream stream(&m_temp_gcode_output_file);
 
     const double num_layers = std::max(1.0, static_cast<double>(m_cylindrical_layers.size()));

@@ -36,6 +36,10 @@ void MainControl::continueStartup() {
 
     connect(CSM.get(), &SessionManager::partAdded, this, &MainControl::loadComplete);
     connect(CSM.get(), &SessionManager::forwardSliceComplete, this, &MainControl::sliceComplete);
+    connect(CSM.get(), &SessionManager::sliceFailed, this, [this](const QString& message) {
+        std::cerr << message.toStdString() << std::endl;
+        emit finished();
+    });
     connect(CSM.get(), &SessionManager::updateDialog, this, &MainControl::displayProgress);
 }
 
