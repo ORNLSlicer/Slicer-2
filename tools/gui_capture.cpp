@@ -364,15 +364,16 @@ void capturePrimitiveShapesGrid(MainWindow* window, const std::function<void(con
     sbox->setType(MeshType::kSettings);
     CSM->addPart(sbox, "Settings_Box", MeshType::kSettings);
 
-    auto meta     = partWidget->getPartMeta();
-    auto baseItem = meta->lookupByPointer(CSM->parts().value("Rectangular_Prism"));
+    auto meta        = partWidget->getPartMeta();
+    auto baseItem    = meta->lookupByPointer(CSM->parts().value("Rectangular_Prism"));
     QVector3D origin = baseItem->translation();
 
     auto place = [&](const QString& name, float dx_mm, float dy_mm, MeshType mt = MeshType::kBuild) {
         auto item = meta->lookupByPointer(CSM->parts().value(name));
         if (item) {
             item->setMeshType(mt);
-            item->setTranslation(origin + QVector3D(dx_mm * mm(), dy_mm * mm(), 0.0f) * Constants::OpenGL::kObjectToView);
+            item->setTranslation(origin +
+                                 QVector3D(dx_mm * mm(), dy_mm * mm(), 0.0f) * Constants::OpenGL::kObjectToView);
         }
     };
 
@@ -452,9 +453,8 @@ void captureSupportDemo(MainWindow* window, const std::function<void(const QStri
     auto overhangItem = meta->lookupByPointer(CSM->parts().value("Overhang_Cap"));
 
     if (pillarItem && overhangItem) {
-        overhangItem->setTranslation(
-            pillarItem->translation() +
-            QVector3D(0.0f, 0.0f, 300.0 * mm()) * Constants::OpenGL::kObjectToView);
+        overhangItem->setTranslation(pillarItem->translation() +
+                                     QVector3D(0.0f, 0.0f, 300.0 * mm()) * Constants::OpenGL::kObjectToView);
     }
 
     auto globalSb = GSM->getGlobal();
