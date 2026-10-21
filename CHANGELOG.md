@@ -7,6 +7,8 @@ Release versions follow the project's
 
 ## Unreleased
 
+- Added external beads only STL export and external bead only view in gcode view.
+
 ---
 
 ## 2.2.0 - 2026-10-20
