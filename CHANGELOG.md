@@ -7,6 +7,10 @@ Release versions follow the project's
 
 ## Unreleased
 
+### Fixed
+
+- Fixed regular CI not running for pull requests from fork branches, including Linux and Windows builds and Linux and macOS flake checks.
+
 ---
 
 ## 2.2.0 - 2026-10-20
