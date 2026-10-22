@@ -986,6 +986,8 @@ void MainWindow::setupEvents() {
             &PartWidget::setLayerSettingsRanges);
     connect(m_layerbar, &LayerBar::layerSettingsRangeAvailabilityChanged, m_main_toolbar,
             &MainToolbar::setLayerSettingsRangeAbility);
+    connect(m_layerbar, &LayerBar::layerSettingsRangeAvailabilityChanged, m_settingbar,
+            &SettingBar::refreshOverrideIndicators);
 
     // Part widget connection
     connect(m_part_widget, &PartWidget::selected, this,
@@ -1727,6 +1729,8 @@ SessionLoader* MainWindow::loadASession(const QString& filename) {
     m_part_widget->clear();
     SessionLoader* loader = CSM->loadSession(true, filename);
     if (loader != nullptr) connect(loader, &SessionLoader::loadSucceeded, this, &MainWindow::updateSavedProjectState);
+    if (loader != nullptr)
+        connect(loader, &SessionLoader::loadSucceeded, m_settingbar, &SettingBar::refreshOverrideIndicators);
     return loader;
 }
 

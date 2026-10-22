@@ -5,6 +5,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QObject>
+#include <QSet>
 #include <QToolButton>
 #include <QWidget>
 #include <functional>
@@ -129,6 +130,9 @@ class SettingRowBase {
 
     //! \brief Set callback used to notify before this row writes a new value.
     void setValueChangeCallback(ValueChangeCallback callback);
+
+    //! \brief Marks global rows whose keys have differing part or layer values.
+    void setOverriddenKeys(const QSet<QString>& part_keys, const QSet<QString>& layer_keys);
 
    protected:
     //! \brief Function to handle value changes for each widget type
@@ -324,6 +328,12 @@ class SettingRowBase {
 
     //! \brief Button used to remove selected local overrides.
     QScopedPointer<QToolButton> m_reset_button;
+
+    //! \brief Passive indicators for global values overridden by part or layer settings.
+    QScopedPointer<QLabel> m_part_override_indicator;
+    QScopedPointer<QLabel> m_layer_override_indicator;
+    bool m_part_overridden  = false;
+    bool m_layer_overridden = false;
 
     //! \brief Editor widgets that must follow row visibility and enabled state.
     QList<QWidget*> m_row_widgets;

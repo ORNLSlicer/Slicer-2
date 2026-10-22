@@ -56,6 +56,24 @@ SettingRowBase::SettingRowBase(QWidget* parent, QSharedPointer<SettingsBase> sb,
                      [this]() { resetLocalOverrides(); });
     layout->addWidget(m_reset_button.get(), index, 3);
 
+    m_part_override_indicator.reset(new QLabel(parent));
+    m_part_override_indicator->setObjectName("part_override_indicator_" + m_key);
+    m_part_override_indicator->setPixmap(QIcon(":/icons/cube_black.png").pixmap(16, 16));
+    m_part_override_indicator->setFixedSize(20, 20);
+    m_part_override_indicator->setAlignment(Qt::AlignCenter);
+    m_part_override_indicator->setToolTip("Overridden by part settings.");
+    m_part_override_indicator->hide();
+    layout->addWidget(m_part_override_indicator.get(), index, 3);
+
+    m_layer_override_indicator.reset(new QLabel(parent));
+    m_layer_override_indicator->setObjectName("layer_override_indicator_" + m_key);
+    m_layer_override_indicator->setPixmap(QIcon(":/icons/color_layers.png").pixmap(16, 16));
+    m_layer_override_indicator->setFixedSize(20, 20);
+    m_layer_override_indicator->setAlignment(Qt::AlignCenter);
+    m_layer_override_indicator->setToolTip("Overridden by layer settings.");
+    m_layer_override_indicator->hide();
+    layout->addWidget(m_layer_override_indicator.get(), index, 4);
+
     layout->setContentsMargins(0, 0, 20, 0);
 }
 
@@ -245,6 +263,16 @@ void SettingRowBase::setValueChangeCallback(ValueChangeCallback callback) {
     m_value_change_callback = callback;
 }
 
+void SettingRowBase::setOverriddenKeys(const QSet<QString>& part_keys, const QSet<QString>& layer_keys) {
+    m_part_overridden  = false;
+    m_layer_overridden = false;
+    for (const QString& key : m_local_override_keys) {
+        m_part_overridden  = m_part_overridden || part_keys.contains(key);
+        m_layer_overridden = m_layer_overridden || layer_keys.contains(key);
+    }
+    updateResetButton();
+}
+
 void SettingRowBase::notifyValueAboutToChange(const QString& key) {
     if (m_value_change_callback) { m_value_change_callback(key, m_settings_bases); }
 }
@@ -306,6 +334,11 @@ void SettingRowBase::updateResetButton() {
     const bool should_show = rowWidgetsVisible() && hasLocalOverride();
     m_reset_button->setVisible(should_show);
     m_reset_button->setEnabled(should_show && rowWidgetsEnabled());
+    const bool show_global = rowWidgetsVisible() && m_settings_bases.isEmpty();
+    m_part_override_indicator->setVisible(show_global && m_part_overridden);
+    m_part_override_indicator->setEnabled(rowWidgetsEnabled());
+    m_layer_override_indicator->setVisible(show_global && m_layer_overridden);
+    m_layer_override_indicator->setEnabled(rowWidgetsEnabled());
 }
 
 void SettingRowBase::resetLocalOverrides() {
