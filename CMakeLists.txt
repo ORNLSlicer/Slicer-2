@@ -16,6 +16,9 @@ project(
 
 include(CTest)
 
+include(validate_resources)
+ValidateResources("${CMAKE_CURRENT_SOURCE_DIR}/resources")
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -143,6 +146,13 @@ file(GLOB_RECURSE RESOURCES CONFIGURE_DEPENDS "resources/**.qrc")
 list(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
 add_library(${PROJECT_NAME}_obj OBJECT)
+add_custom_target(validate_resources
+    COMMAND ${CMAKE_COMMAND} "-DRESOURCE_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/resources"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/validate_resources.cmake"
+    COMMENT "Checking bundled resources for unresolved Git LFS pointers"
+    VERBATIM
+)
+add_dependencies(${PROJECT_NAME}_obj validate_resources)
 target_include_directories(
     ${PROJECT_NAME}_obj
     PRIVATE
@@ -229,6 +239,11 @@ endif()
 option(ORNLSLICER_BUILD_TESTS "Build ORNLSlicer test executables" ${BUILD_TESTING})
 if(ORNLSLICER_BUILD_TESTS)
     enable_testing()
+    add_test(NAME resource_validation_tests
+        COMMAND ${CMAKE_COMMAND}
+            "-DVALIDATOR=${CMAKE_CURRENT_SOURCE_DIR}/cmake/validate_resources.cmake"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/resource_validation_tests.cmake"
+    )
     add_executable(${PROJECT_NAME}_mesh_repair_tests tests/mesh_repair_tests.cpp)
     target_include_directories(
         ${PROJECT_NAME}_mesh_repair_tests

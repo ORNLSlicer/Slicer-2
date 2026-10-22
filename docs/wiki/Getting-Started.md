@@ -108,6 +108,18 @@ Authenticate with GitHub securely using SSH keys:
 
    🔧 [Troubleshooting SSH Connection Issues](Troubleshooting.md#connection-issues)
 
+3. **Download the Git LFS assets before configuring or building**, including in a new worktree:
+   ```bash
+   cd ORNLSlicer
+   git lfs pull
+   ```
+   If the objects are already cached locally, `git lfs checkout` restores them
+   without downloading. A checkout made with LFS smudging disabled contains text
+   pointers in place of images. Embedding those pointers makes toolbar icons and
+   setting arrows disappear and can push the Slice command into toolbar overflow.
+   Configuration and builds reject unresolved bundled resources; after restoring
+   the assets, configure and rebuild to regenerate the Qt resources.
+
 
 ## 7. Install Nix
 
