@@ -11,8 +11,13 @@ Release versions follow the project's
 
 - Added a Starting Layer Number setting under Printer > G-Code for continuation builds, with consistent layer, bead, block, and individual-layer export numbering ([#347](https://github.com/ORNLSlicer/ORNLSlicer/issues/347)).
 
+### Changed
+
+- Changed individual-layer export to a disabled-by-default setting under Experimental > File Output. Enable Individual Layer Export before slicing to prepare separate layer files; reopened G-code must be re-sliced to export individual layers.
+
 ### Fixed
 
+- Fixed generated G-code containing embedded standalone layer programs and export-only markers, including when individual-layer export is enabled.
 - Fixed incomplete Git LFS checkouts silently building with missing GUI icons, setting arrows, and Slice toolbar access by rejecting unresolved bundled resources with recovery instructions ([#351](https://github.com/ORNLSlicer/ORNLSlicer/issues/351)).
 - Fixed regular CI not running for pull requests from fork branches, including Linux and Windows builds and Linux and macOS flake checks.
 - Fixed STEP assemblies of touching solids, and solids with internal voids, importing as open meshes; vertices are now welded per shell ([#341](https://github.com/ORNLSlicer/ORNLSlicer/issues/341)).
