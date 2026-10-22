@@ -924,6 +924,8 @@ const QString Constants::ExperimentalSettings::Ramping::kTrajectoryAngleExtruder
     "trajectory_angle_extruder_speed_up";
 
 // File Output
+const QString Constants::ExperimentalSettings::FileOutput::kIndividualLayerOutput = "individual_layer_output";
+
 const QString Constants::ExperimentalSettings::FileOutput::kMeldCompanionOutput = "additional_meld_output";
 const QString Constants::ExperimentalSettings::FileOutput::kMeldDiscrete        = "meld_discrete_feed_commands";
 const QString Constants::ExperimentalSettings::FileOutput::kTormachOutput       = "tormach_file_output";

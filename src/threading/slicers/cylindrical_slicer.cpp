@@ -919,12 +919,8 @@ void CylindricalSlicer::writeGCode() {
         layer->setDirtyBit(false);
         stream << m_base->writeAfterLayer();
 
-        if (m_syntax != GcodeSyntax::kAdamantine) {
-            auto layer_writer        = m_layer_export_setup();
-            const QString standalone = layer_writer->writeStandaloneLayer(
-                layer_number, layer->getMinZ(), layer->getSb(), [&]() { return layer->writeGCode(layer_writer); });
-            stream << m_base->writeLayerExportProgram(standalone);
-        }
+        prepareLayerExport(layer_number, layer->getMinZ(), layer->getSb(),
+                           [&](const QSharedPointer<WriterBase>& writer) { return layer->writeGCode(writer); });
 
         emit statusUpdate(StatusUpdateStepType::kGcodeGeneraton, (layer_number + 1) / num_layers * 100);
         ++layer_number;

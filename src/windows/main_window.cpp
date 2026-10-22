@@ -1477,8 +1477,11 @@ void MainWindow::importGCodeHelper(QString filepath, bool alterFile) {
 
     connect(loader, &GCodeLoader::forwardInfoToLayerTimeWindow, m_layertimebar,
             &LayerTimesWindow::updateTimeInformation);
+    const QVector<GcodeLayer> layer_programs = alterFile ? CSM->layerPrograms() : QVector<GcodeLayer>();
     connect(loader, &GCodeLoader::forwardInfoToBuildExportWindow, m_export_window,
-            &GcodeExport::updateOutputInformation);
+            [this, layer_programs](QString filename, GcodeMeta meta) {
+                m_export_window->updateOutputInformation(filename, meta, layer_programs);
+            });
     connect(loader, &GCodeLoader::gcodeLoadedVisualization, m_export_window,
             &GcodeExport::updateVisualizationInformation);
 
