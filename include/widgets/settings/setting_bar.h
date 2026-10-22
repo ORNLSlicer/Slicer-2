@@ -150,6 +150,9 @@ class SettingBar : public QWidget {
     //! \brief Reloads a restored setting row and forwards normal modified-setting notifications.
     void restoreSettingValue(QString setting_key);
 
+    //! \brief Refreshes indicators for global values overridden by part or layer settings.
+    void refreshOverrideIndicators();
+
     //! \brief Starts a paired setting edit driven by a view interaction.
     void beginPairedGlobalSettingChange(QString first_key, QString second_key);
 

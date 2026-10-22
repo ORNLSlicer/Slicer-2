@@ -231,7 +231,38 @@ void SettingBar::settingsBasesSelected(QPair<QString, QList<QSharedPointer<Setti
 
     refreshDependencyVisibility();
     this->blockSignals(false);
+    refreshOverrideIndicators();
     emitSelectedVisualizationSettings();
+}
+
+void SettingBar::refreshOverrideIndicators() {
+    if (m_suppress_dynamic_dependency_refresh) return;
+
+    QSet<QString> part_keys;
+    QSet<QString> layer_keys;
+    const auto global            = GSM->getGlobal();
+    const fifojson& master       = GSM->getMaster()->json();
+    const auto collect_overrides = [&](const QSharedPointer<SettingsBase>& settings, QSet<QString>& overridden_keys) {
+        if (settings->json().empty()) return;
+        for (const auto& entry : settings->json().at(0).items()) {
+            const QString key = QString::fromStdString(entry.key());
+            if (global->contains(key)) {
+                if (entry.value() != global->setting<fifojson>(key)) overridden_keys.insert(key);
+            }
+            else if (master.contains(entry.key()) &&
+                     entry.value() != master.at(entry.key()).at(Constants::Settings::Master::kDefault)) {
+                overridden_keys.insert(key);
+            }
+        }
+    };
+
+    for (const auto& part : CSM->parts()) {
+        collect_overrides(part->getSb(), part_keys);
+        for (const auto& range : part->getSettingsRanges()) collect_overrides(range->getSb(), layer_keys);
+    }
+    for (SettingPane* pane : m_panes)
+        for (SettingTab* tab : pane->getTabs())
+            for (const auto& row : tab->getRows()) row->setOverriddenKeys(part_keys, layer_keys);
 }
 
 void SettingBar::closeAll() {
@@ -340,6 +371,7 @@ void SettingBar::displayNewSetting(QStringList settingCategories, QString settin
         }
     }
     enableDependRows();
+    refreshOverrideIndicators();
     emitSelectedVisualizationSettings();
 }
 
@@ -627,6 +659,11 @@ void SettingBar::setupGlobalSettings() {
 }
 
 void SettingBar::setupEvents() {
+    connect(this, &SettingBar::settingModified, this, &SettingBar::refreshOverrideIndicators);
+    connect(this, &SettingBar::settingsBaseChanged, this, &SettingBar::refreshOverrideIndicators);
+    connect(CSM.get(), &SessionManager::partAdded, this, &SettingBar::refreshOverrideIndicators, Qt::QueuedConnection);
+    connect(CSM.get(), &SessionManager::partRemoved, this, &SettingBar::refreshOverrideIndicators);
+    connect(CSM.get(), &SessionManager::partsCleared, this, &SettingBar::refreshOverrideIndicators);
     connect(m_filter_bar, &QLineEdit::textChanged, this, &SettingBar::filter);
     connect(m_tab_widget, &QTabWidget::currentChanged, this, &SettingBar::updateDisplayedLists);
     connect(m_combo_box, QOverload<const QString&>::of(&QComboBox::currentTextChanged), this,
@@ -635,6 +672,7 @@ void SettingBar::setupEvents() {
             &SettingBar::reloadRowsForUnitChange);
     connect(PreferencesManager::getInstance().get(), &PreferencesManager::disabledSettingVisibilityChanged, this,
             &SettingBar::enableDependRows);
+    refreshOverrideIndicators();
 }
 
 // this function iterates through each tab of each pane, and make those rows enabled/disabled
