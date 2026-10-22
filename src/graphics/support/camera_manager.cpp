@@ -114,6 +114,39 @@ void CameraManager::panAbsolute(QVector3D pos) {
     updateViewMatrix();
 }
 
+void CameraManager::setPan(const QVector3D pos) {
+    this->panAbsolute(pos);
+}
+
+void CameraManager::translate(const QVector3D delta) {
+    m_pan += delta;
+    updateViewMatrix();
+}
+
+void CameraManager::translateAbsolute(const QVector3D pos) {
+    this->panAbsolute(pos);
+}
+
+void CameraManager::translateByScreenDelta(const QVector2D delta) {
+    QVector3D right = QVector3D(m_view(0, 0), m_view(0, 1), m_view(0, 2));
+    QVector3D up    = QVector3D(m_view(1, 0), m_view(1, 1), m_view(1, 2));
+
+    right.setZ(0);
+    up.setZ(0);
+    right.normalize();
+    up.normalize();
+
+    float translation_speed = 20.0f * (m_zoom / m_default_zoom);
+    QVector3D translation   = (-translation_speed * delta.x() * right) - (translation_speed * delta.y() * up);
+
+    m_pan += translation;
+    updateViewMatrix();
+}
+
+void CameraManager::translateByScreenDelta(const QPointF delta) {
+    this->translateByScreenDelta(QVector2D(delta.x(), delta.y()));
+}
+
 QVector3D CameraManager::getPan() {
     return m_pan;
 }

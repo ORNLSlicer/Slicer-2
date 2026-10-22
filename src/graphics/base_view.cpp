@@ -395,6 +395,12 @@ void BaseView::translateCamera(QVector3D v, bool absolute) {
     }
 }
 
+void BaseView::translateCameraByScreenDelta(const QVector2D screen_delta) {
+    m_camera->translateByScreenDelta(screen_delta);
+    m_focus->translateAbsolute(m_camera->getPan());
+    this->update();
+}
+
 void BaseView::rotateCamera(QVector2D screen_delta) {
     m_camera->rotateByScreenDelta(screen_delta);
 }

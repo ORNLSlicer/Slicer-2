@@ -63,6 +63,26 @@ class CameraManager {
     //! \param pos the position of pan
     void panAbsolute(QVector3D pos);
 
+    //! \brief Sets the camera pan target position in world space
+    //! \param pos the position of pan
+    void setPan(const QVector3D pos);
+
+    //! \brief Translates the camera target/pan by a world-space delta
+    //! \param delta Relative displacement in world coordinates
+    void translate(const QVector3D delta);
+
+    //! \brief Sets the absolute camera target/pan position in world space
+    //! \param pos The absolute world-space target position
+    void translateAbsolute(const QVector3D pos);
+
+    //! \brief Translates the camera from a normalized screen-space input delta
+    //! \param delta Horizontal and vertical screen-space delta
+    void translateByScreenDelta(const QVector2D delta);
+
+    //! \brief Translates the camera from a normalized screen-space input delta
+    //! \param delta Horizontal and vertical screen-space delta
+    void translateByScreenDelta(const QPointF delta);
+
     //! \brief gets the current pan
     //! \return the pan
     QVector3D getPan();

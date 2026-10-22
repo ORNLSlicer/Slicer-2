@@ -537,6 +537,11 @@ void GCodeView::translateCamera(QVector3D v, bool absolute) {
     updateSegmentInfoViewMatrix();
 }
 
+void GCodeView::translateCameraByScreenDelta(const QVector2D screen_delta) {
+    this->BaseView::translateCameraByScreenDelta(screen_delta);
+    updateSegmentInfoViewMatrix();
+}
+
 void GCodeView::rotateCamera(QVector2D screen_delta) {
     if (!m_state.ortho) this->BaseView::rotateCamera(screen_delta);
 }
@@ -662,7 +667,7 @@ void GCodeView::showSeams(bool show) {
 }
 
 void GCodeView::updateOptimizationSettings(QSharedPointer<SettingsBase> sb) {
-    m_printer->updateFromSettings(sb);
+    if (!m_printer.isNull()) { m_printer->updateFromSettings(sb); }
 
     this->update();
 }
