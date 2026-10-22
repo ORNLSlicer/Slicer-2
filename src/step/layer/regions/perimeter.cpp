@@ -663,15 +663,20 @@ void Perimeter::optimize(int layerNumber, Point& current_location, bool& shouldN
                                                  bool& contour_orientation) {
                 if (!connect_to_insets) { return; }
 
+                const PathOrderOptimization inset_path_order = optionalPathOrderOptimization(
+                    m_sb->setting<int>(PS::Optimizations::kInsetPathOrder),
+                    static_cast<PathOrderOptimization>(m_sb->setting<int>(PS::Optimizations::kPathOrder)));
                 PolylineOrderOptimizer inset_poo(connection_query_location, layerNumber);
                 configureOptimizer(inset_poo, PointOrderOptimization::kNextClosest);
+                if (inset_path_order == PathOrderOptimization::kCustomPoint) {
+                    inset_poo.setStartOverride(customPathOrderPoint());
+                }
                 QVector<Polyline> inset_geometry = m_connected_inset_geometry;
                 if (static_cast<PrintDirection>(m_sb->setting<int>(PS::Ordering::kInsetReverseDirection)) !=
                     PrintDirection::kReverse_off) {
                     for (Polyline& line : inset_geometry) { line = line.reverse(); }
                 }
-                inset_poo.setGeometryToEvaluate(inset_geometry, RegionType::kInset,
-                                                PathOrderOptimization::kNextClosest);
+                inset_poo.setGeometryToEvaluate(inset_geometry, RegionType::kInset, inset_path_order);
 
                 const Distance inset_min_path_length = m_sb->setting<Distance>(PS::Inset::kMinPathLength);
                 const Distance inset_nominal_width   = m_sb->setting<Distance>(PS::Inset::kBeadWidth);

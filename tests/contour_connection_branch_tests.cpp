@@ -737,12 +737,78 @@ void configureConnectedInsets(const QSharedPointer<ORNL::SettingsBase>& settings
     settings->setSetting(ORNL::MS::TipWipe::kInsetDistance, ORNL::Distance(2.0));
     settings->setSetting(ORNL::MS::TipWipe::kInsetDirection, static_cast<int>(ORNL::TipWipeDirection::kForward));
 }
+
+bool verifyConnectedInsetOrder(bool after_wipe, bool adaptive, ORNL::PathOrderOptimization global_order,
+                               int inset_override, const QVector<int>& expected) {
+    auto settings = defaultSettings();
+    configureConnectedInsets(settings);
+    settings->setSetting(ORNL::PS::Inset::kCount, 3);
+    settings->setSetting(ORNL::PS::Inset::kAdaptive, adaptive);
+    settings->setSetting(ORNL::PS::Inset::kAdaptiveMinWidth, ORNL::Distance(5.0));
+    settings->setSetting(ORNL::PS::Inset::kAdaptiveMaxWidth, ORNL::Distance(5.0));
+    settings->setSetting(ORNL::PS::Optimizations::kPathOrder, static_cast<int>(global_order));
+    settings->setSetting(ORNL::PS::Optimizations::kPerimeterPathOrder, 1);  // Next Closest, independent of inset order.
+    settings->setSetting(ORNL::PS::Optimizations::kInsetPathOrder, inset_override);
+    settings->setSetting(ORNL::PS::Optimizations::kCustomPathXLocation, ORNL::Distance(0.0));
+    settings->setSetting(ORNL::PS::Optimizations::kCustomPathYLocation, ORNL::Distance(0.0));
+    settings->setSetting(ORNL::PS::Perimeter::kConnectAfterTipWipe, after_wipe);
+    settings->setSetting(ORNL::MS::TipWipe::kPerimeterEnable, after_wipe);
+    settings->setSetting(ORNL::MS::TipWipe::kPerimeterDistance, ORNL::Distance(2.0));
+    settings->setSetting(ORNL::MS::TipWipe::kPerimeterDirection, static_cast<int>(ORNL::TipWipeDirection::kForward));
+
+    ORNL::PolymerIsland island(squareGeometry(), settings, {});
+    island.compute(0);
+    island.reorderRegions();
+    ORNL::Point location(-110.0, -110.0, 0.0);
+    QVector<QSharedPointer<ORNL::RegionBase>> previous_regions;
+    island.optimize(0, location, previous_regions);
+    auto perimeter      = island.getRegion(ORNL::RegionType::kPerimeter).dynamicCast<ORNL::Perimeter>();
+    auto inset          = island.getRegion(ORNL::RegionType::kInset).dynamicCast<ORNL::Inset>();
+    const auto geometry = inset->getComputedGeometry();
+    QVector<int> observed;
+    for (const auto& path : perimeter->getPaths()) {
+        for (const auto& segment : path) {
+            if (!segment->isPrintingSegment() ||
+                segment->getSb()->setting<ORNL::RegionType>(ORNL::SS::kRegionType) != ORNL::RegionType::kInset) {
+                continue;
+            }
+            const int start = geometryIndexForPoint(segment->start(), geometry, 1.0e-4);
+            const int end   = geometryIndexForPoint(segment->end(), geometry, 1.0e-4);
+            if (start >= 0 && start == end && (observed.isEmpty() || observed.back() != start)) {
+                observed.push_back(start);
+            }
+        }
+    }
+    const bool passed = expect(geometry.size() == 3 && observed == expected,
+                               "Connected inset emission must honor global path order and inset overrides.");
+    if (!passed) {
+        std::cerr << "global=" << static_cast<int>(global_order) << " inset_override=" << inset_override
+                  << " after_wipe=" << after_wipe << " adaptive=" << adaptive << " observed:";
+        for (int index : observed) { std::cerr << ' ' << index; }
+        std::cerr << '\n';
+    }
+    return passed;
+}
 }  // namespace
 
 int main() {
     Q_INIT_RESOURCE(configs);
 
-    bool passed                      = true;
+    bool passed = true;
+    for (const bool after_wipe : {false, true}) {
+        for (const bool adaptive : {false, true}) {
+            passed &=
+                verifyConnectedInsetOrder(after_wipe, adaptive, ORNL::PathOrderOptimization::kInsideOut, 0, {2, 1, 0});
+            passed &=
+                verifyConnectedInsetOrder(after_wipe, adaptive, ORNL::PathOrderOptimization::kOutsideIn, 0, {0, 1, 2});
+            passed &=
+                verifyConnectedInsetOrder(after_wipe, adaptive, ORNL::PathOrderOptimization::kOutsideIn, 5, {2, 1, 0});
+            passed &=
+                verifyConnectedInsetOrder(after_wipe, adaptive, ORNL::PathOrderOptimization::kInsideOut, 4, {0, 1, 2});
+            passed &= verifyConnectedInsetOrder(after_wipe, adaptive, ORNL::PathOrderOptimization::kNextClosest, 6,
+                                                {2, 1, 0});
+        }
+    }
     const ORNL::PolygonList geometry = circularGeometry();
 
     QSharedPointer<ORNL::SettingsBase> perimeter_settings = defaultSettings();
