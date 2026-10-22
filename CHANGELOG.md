@@ -13,6 +13,7 @@ Release versions follow the project's
 
 ### Fixed
 
+- Fixed incomplete Git LFS checkouts silently building with missing GUI icons, setting arrows, and Slice toolbar access by rejecting unresolved bundled resources with recovery instructions ([#351](https://github.com/ORNLSlicer/ORNLSlicer/issues/351)).
 - Fixed regular CI not running for pull requests from fork branches, including Linux and Windows builds and Linux and macOS flake checks.
 - Fixed STEP assemblies of touching solids, and solids with internal voids, importing as open meshes; vertices are now welded per shell ([#341](https://github.com/ORNLSlicer/ORNLSlicer/issues/341)).
 

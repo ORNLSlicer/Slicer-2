@@ -1,6 +1,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QByteArray>
+#include <QImage>
 #include <QList>
 #include <QMenu>
 #include <QToolButton>
@@ -20,6 +21,14 @@ int main(int argc, char* argv[]) {
     Q_INIT_RESOURCE(icons);
     Q_INIT_RESOURCE(styles);
 
+    bool passed = true;
+    for (const char* resource :
+         {":/icons/file_black.png", ":/icons/translate_black.png", ":/styles/qdarkstyle/rc/up_arrow.png",
+          ":/styles/qdarkstyle/rc/down_arrow.png", ":/styles/qdarkstyle/rc/right_arrow.png"}) {
+        passed &= ORNL::Testing::expect(!QImage(QString::fromUtf8(resource)).isNull(),
+                                        QString("Bundled GUI image must decode: %1").arg(resource).toStdString());
+    }
+
     QWidget startup_parent;
     startup_parent.resize(ORNL::Constants::UI::MainWindow::kViewWidgetSize);
 
@@ -27,8 +36,6 @@ int main(int argc, char* argv[]) {
     startup_toolbar.resize(startup_parent.size());
     startup_parent.show();
     app.processEvents();
-
-    bool passed = true;
 
     for (QAction* action : startup_toolbar.actions()) {
         if (action->isSeparator()) continue;
