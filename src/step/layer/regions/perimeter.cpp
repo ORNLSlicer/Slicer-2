@@ -785,7 +785,7 @@ void Perimeter::optimize(int layerNumber, Point& current_location, bool& shouldN
 
                     Path inset_path =
                         createPath(connected_group, m_sb->setting<Distance>(PS::Inset::kMinSegmentLength), false);
-                    inset_path.setCCW(ccw);
+                    inset_path.setCCW(ordered_insets.front().orientation());
                     if (inset_path.size() == 0) { continue; }
 
                     applyConnectedInsetSettings(inset_path);

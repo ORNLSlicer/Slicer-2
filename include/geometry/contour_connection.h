@@ -653,7 +653,7 @@ inline bool angleForwardBranchConnection(const Polyline& line, Polyline& next_lo
 }
 
 /*!
- * \brief Rotates a receiving loop to a safe, preferably 45-degree seam from an already-emitted forward wipe.
+ * \brief Rotates or reverses a receiving loop to a local, preferably 45-degree seam from a forward wipe.
  * \return Whether the receiving loop is nested, forward of the wipe, and within the supplied connection distance.
  */
 inline bool prepareForwardBranchConnection(const Polyline& current_loop, Polyline& next_loop, const Point& branch_start,
@@ -684,6 +684,10 @@ inline bool prepareForwardBranchConnection(const Polyline& current_loop, Polylin
     double best_length    = std::numeric_limits<double>::max();
     double best_dot_error = std::numeric_limits<double>::max();
 
+    Polyline fallback;
+    double fallback_length    = std::numeric_limits<double>::max();
+    double fallback_dot_error = std::numeric_limits<double>::max();
+
     auto considerSeam = [&](int segment_index, const Point& seam) {
         const Point& segment_start = next_loop[segment_index];
         const Point& segment_end   = next_loop[(segment_index + 1) % next_loop.size()];
@@ -704,22 +708,32 @@ inline bool prepareForwardBranchConnection(const Polyline& current_loop, Polylin
             return;
         }
 
-        double approach_x = candidate[1].x() - candidate.front().x();
-        double approach_y = candidate[1].y() - candidate.front().y();
-        if (!detail::normalize2D(approach_x, approach_y)) { return; }
+        // Receiving contours may reverse winding to avoid turning back at the handoff.
+        for (const bool reverse : {false, true}) {
+            Polyline oriented = reverse ? detail::reversePreservingStart(candidate) : candidate;
+            double approach_x = oriented[1].x() - oriented.front().x();
+            double approach_y = oriented[1].y() - oriented.front().y();
+            if (!detail::normalize2D(approach_x, approach_y)) { continue; }
 
-        const double forward_dot  = ((direction_x * branch_x) + (direction_y * branch_y)) / branch_length;
-        const double approach_dot = ((approach_x * branch_x) + (approach_y * branch_y)) / branch_length;
-        if (forward_dot <= minimum_forward_dot) { return; }
+            const double forward_dot  = ((direction_x * branch_x) + (direction_y * branch_y)) / branch_length;
+            const double approach_dot = ((approach_x * branch_x) + (approach_y * branch_y)) / branch_length;
+            if (forward_dot <= minimum_forward_dot || approach_dot < -minimum_forward_dot) { continue; }
 
-        const double dot_error =
-            std::max(std::abs(forward_dot - target_forward_dot), std::abs(approach_dot - target_forward_dot));
-        if (dot_error <= angled_dot_tolerance &&
-            (dot_error < best_dot_error ||
-             (std::abs(dot_error - best_dot_error) <= minimum_forward_dot && branch_length < best_length))) {
-            best_candidate = candidate;
-            best_length    = branch_length;
-            best_dot_error = dot_error;
+            const double dot_error =
+                std::max(std::abs(forward_dot - target_forward_dot), std::abs(approach_dot - target_forward_dot));
+            if (dot_error <= angled_dot_tolerance &&
+                (dot_error < best_dot_error ||
+                 (std::abs(dot_error - best_dot_error) <= minimum_forward_dot && branch_length < best_length))) {
+                best_candidate = oriented;
+                best_length    = branch_length;
+                best_dot_error = dot_error;
+            }
+            if (branch_length < fallback_length ||
+                (std::abs(branch_length - fallback_length) <= minimum_forward_dot && dot_error < fallback_dot_error)) {
+                fallback           = oriented;
+                fallback_length    = branch_length;
+                fallback_dot_error = dot_error;
+            }
         }
     };
 
@@ -737,23 +751,19 @@ inline bool prepareForwardBranchConnection(const Polyline& current_loop, Polylin
         }
     }
 
-    if (!best_candidate.isEmpty()) {
-        next_loop = best_candidate;
-        return true;
+    // A local edge point can connect even when its vertices are too far away or neither entry is exactly 45 degrees.
+    if (best_candidate.isEmpty()) {
+        for (int i = 0, end = next_loop.size(); i < end; ++i) {
+            considerSeam(i, next_loop[i]);
+            considerSeam(i,
+                         MathUtils::nearestPointOnSegment(next_loop[i], next_loop[(i + 1) % end], branch_start).first);
+        }
     }
 
-    Polyline fallback = next_loop;
-    detail::rotateToClosestForwardExistingPoint(fallback, branch_start, direction_start, branch_start);
-    const double branch_x      = fallback.front().x() - branch_start.x();
-    const double branch_y      = fallback.front().y() - branch_start.y();
-    const double branch_length = std::hypot(branch_x, branch_y);
-    const double forward_dot   = (direction_x * branch_x) + (direction_y * branch_y);
-    if (forward_dot <= minimum_forward_dot || branch_length < min_segment_length_value ||
-        branch_length > max_length + minimum_forward_dot) {
-        return false;
-    }
+    if (best_candidate.isEmpty()) { best_candidate = fallback; }
+    if (best_candidate.isEmpty()) { return false; }
 
-    next_loop = fallback;
+    next_loop = best_candidate;
     return true;
 }
 

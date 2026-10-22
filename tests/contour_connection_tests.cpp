@@ -367,5 +367,59 @@ int main() {
                                         ORNL::Point(4.0, 0.0, 0.0), ORNL::Distance(3.0), ORNL::Distance(2.0)),
                                     "Expected a direct branch shorter than the cleanup threshold to be rejected.");
 
+    for (const bool reverse_inset : {false, true}) {
+        ORNL::Polyline receiving_loop = square(1.0, 1.0, 9.0, 9.0);
+        if (reverse_inset) { receiving_loop = receiving_loop.reverse(); }
+        const ORNL::Polyline source_loop = square(0.0, 0.0, 10.0, 10.0);
+        const bool connected             = ORNL::ContourConnection::prepareForwardBranchConnection(
+            source_loop, receiving_loop, ORNL::Point(2.0, 0.0, 0.0), ORNL::Point(1.0, 0.0, 0.0), ORNL::Distance(3.0));
+        passed &= ORNL::Testing::expect(connected, "Expected a handoff to try both receiving-loop windings.");
+        if (connected) {
+            passed &= expectPoint(receiving_loop.front(), 3.0, 1.0,
+                                  "Expected the handoff to prefer a forward 45-degree bridge.");
+            passed &= ORNL::Testing::expect(receiving_loop[1].x() > receiving_loop.front().x(),
+                                            "Expected the receiving contour to continue forward after the bridge.");
+        }
+    }
+
+    // The first layer of connected_contours.s2p leaves the perimeter at the tab's bottom corner.
+    // Keep the local edges from that slice; distant vertices only close these nested loops.
+    const ORNL::Polyline tab_perimeter {ORNL::Point(26.963, -249.377, 0.0), ORNL::Point(50.0, -240.0, 0.0),
+                                        ORNL::Point(60.0, -200.0, 0.0), ORNL::Point(-60.0, -200.0, 0.0),
+                                        ORNL::Point(-27.042, -249.370, 0.0)};
+    const ORNL::Polyline tab_inset {ORNL::Point(26.579, -244.877, 0.0), ORNL::Point(-26.652, -244.870, 0.0),
+                                    ORNL::Point(-50.0, -210.0, 0.0), ORNL::Point(50.0, -210.0, 0.0),
+                                    ORNL::Point(36.837, -243.107, 0.0)};
+    for (const double wipe_distance : {0.0, 1.2}) {
+        const ORNL::Point branch_start(26.963 + wipe_distance, -249.377, 0.0);
+        ORNL::Polyline receiving_loop = tab_inset;
+        const bool connected          = ORNL::ContourConnection::prepareForwardBranchConnection(
+            tab_perimeter, receiving_loop, branch_start, ORNL::Point(-27.042, -249.370, 0.0), ORNL::Distance(9.0));
+        passed &= ORNL::Testing::expect(connected, "Expected the tab perimeter endpoint to connect to the inset edge.");
+        if (connected) {
+            passed &= ORNL::Testing::expect(receiving_loop.orientation() != tab_inset.orientation(),
+                                            "Expected the inset to reverse winding for the perimeter handoff.");
+            passed &= ORNL::Testing::expect(receiving_loop.size() == tab_inset.size() + 1,
+                                            "Expected an edge-interior seam when existing vertices cannot connect.");
+            passed &= ORNL::Testing::expect(receiving_loop.front().distance(branch_start) <= ORNL::Distance(9.0),
+                                            "Expected the tab bridge to retain the connection-distance bound.");
+            const ORNL::Point bridge   = receiving_loop.front() - branch_start;
+            const ORNL::Point approach = receiving_loop[1] - receiving_loop.front();
+            passed &= ORNL::Testing::expect(bridge.x() > 0.0 && ORNL::Point::dot(bridge, approach) > 0.0,
+                                            "Expected the tab bridge and receiving contour to continue forward.");
+        }
+    }
+
+    for (ORNL::Polyline receiving_loop :
+         {square(120.0, 0.0, 130.0, 10.0), square(1.0, 1.0, 9.0, 9.0), square(20.0, 20.0, 80.0, 80.0)}) {
+        const ORNL::Polyline original = receiving_loop;
+        passed &= ORNL::Testing::expect(!ORNL::ContourConnection::prepareForwardBranchConnection(
+                                            square(0.0, 0.0, 100.0, 100.0), receiving_loop, ORNL::Point(10.0, 0.0, 0.0),
+                                            ORNL::Point(9.0, 0.0, 0.0), ORNL::Distance(3.0)),
+                                        "Expected unrelated, backward, or overlength handoffs to remain rejected.");
+        passed &= ORNL::Testing::expect(receiving_loop == original,
+                                        "Expected rejected handoffs to preserve the receiving contour.");
+    }
+
     return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 }

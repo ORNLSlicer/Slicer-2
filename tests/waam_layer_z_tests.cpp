@@ -107,6 +107,38 @@ bool wireArcUsesSurfaceReferencedSequence() {
            ORNL::Testing::near(ORNL::Distance(third_layer->start().z()).to(ORNL::mm), 5.6);
 }
 
+bool forwardWipeSurvivesReorientation(bool crosses_build_plate) {
+    const auto settings = layerSettings(ORNL::MachineType::kWire_Arc, ORNL::Distance(2800.0001329928637));
+    const ORNL::Point print_end(10000.0, 0.0, 0.0);
+    const ORNL::Point wipe_end =
+        crosses_build_plate ? ORNL::Point(10000.0, 5000.0, 0.0) : ORNL::Point(11200.0, 0.0, 0.0);
+    ORNL::Path path;
+    for (const auto& endpoints : {qMakePair(ORNL::Point(0.0, 0.0, 0.0), print_end), qMakePair(print_end, wipe_end),
+                                  qMakePair(wipe_end, ORNL::Point(14500.0, 4500.0, 0.0))}) {
+        auto segment = QSharedPointer<ORNL::LineSegment>::create(endpoints.first, endpoints.second);
+        segment->getSb()->setSetting(ORNL::SS::kPathModifiers, path.size() == 1   ? ORNL::PathModifiers::kForwardTipWipe
+                                                               : path.size() == 2 ? ORNL::PathModifiers::kConnection
+                                                                                  : ORNL::PathModifiers::kNone);
+        path.append(segment);
+    }
+    const auto region = QSharedPointer<TestRegion>::create(settings);
+    region->addPath(path);
+    const auto island = QSharedPointer<TestIsland>::create(settings);
+    island->addRegion(region);
+    const QVector3D normal =
+        crosses_build_plate ? QVector3D(0.0f, 1.0f, 1.0f).normalized() : QVector3D(0.0f, 0.0f, 1.0f);
+    const ORNL::Point center = ORNL::Point::fromQVector3D(normal * 1400.0f);
+    ORNL::Layer layer(0, settings);
+    layer.addIsland(ORNL::IslandType::kPolymer, island);
+    layer.setOrientation(ORNL::Plane(center, normal), center);
+    layer.reorient();
+
+    const ORNL::Path& result = region->getPaths().front();
+    if (crosses_build_plate) { return result[1]->end().z() > 1000.0 && result[1]->end().y() < -1000.0; }
+    return ORNL::Testing::near(result[1]->end().x(), 11200.0) &&
+           result[1]->end().distance(result[2]->start())() < 1.0e-4;
+}
+
 bool nonWireArcKeepsTopOfLayerReference() {
     const QSharedPointer<ORNL::LineSegment> segment =
         reorientedLine(ORNL::MachineType::kPellet, 2.8 * ORNL::mm,
@@ -259,6 +291,10 @@ int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
     bool passed = true;
+    passed &= ORNL::Testing::expect(forwardWipeSurvivesReorientation(false),
+                                    "First-layer roundoff must not reverse a forward wipe or detach its connection.");
+    passed &= ORNL::Testing::expect(forwardWipeSurvivesReorientation(true),
+                                    "A forward wipe that genuinely crosses the build plate must still redirect.");
     passed &= ORNL::Testing::expect(wireArcUsesSurfaceReferencedSequence(),
                                     "Wire Arc layers did not follow the expected 0.0, 2.8, 5.6 mm surface sequence.");
     passed &= ORNL::Testing::expect(nonWireArcKeepsTopOfLayerReference(),

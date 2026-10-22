@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <limits>
 
+#include <CGAL/squared_distance_3.h>
 #include <qcontainerfwd.h>
 #include <qhash.h>
 #include <qhashfunctions.h>
@@ -44,7 +45,11 @@ bool isClearanceModifier(PathModifiers modifiers) {
 }
 
 bool isBelowBuildPlate(const Point& point, const MeshTypes::Plane_3& build_plate) {
-    return build_plate.oriented_side(point.toCartesian3D()) == CGAL::ON_NEGATIVE_SIDE;
+    // Point coordinates are floats; surface-reference subtraction can leave a sub-nanometer negative Z residual.
+    constexpr double kBuildPlateTolerance = 1.0e-3;  // microns (one nanometer)
+    const auto position                   = point.toCartesian3D();
+    return build_plate.oriented_side(position) == CGAL::ON_NEGATIVE_SIDE &&
+           CGAL::squared_distance(position, build_plate) > kBuildPlateTolerance * kBuildPlateTolerance;
 }
 
 bool lineIntersectsBuildPlate(const Point& start, const Point& end, const MeshTypes::Plane_3& build_plate) {
