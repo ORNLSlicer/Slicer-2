@@ -18,6 +18,7 @@
 #include <qtmetamacros.h>
 #include <qtypes.h>
 
+#include "gcode/gcode_layer_export.h"
 #include "geometry/mesh/mesh_base.h"
 #include "part/part.h"
 #include "utilities/enums.h"
@@ -213,6 +214,9 @@ class SessionManager : public QObject {
 
     //! \brief Signals the internal slicing thread has complete computation.
     bool sliceComplete();
+
+    //! \brief Standalone layer programs from the completed slice.
+    QVector<GcodeLayer> layerPrograms() const;
 
     //! \brief Returns the time elapsed for the current slice.
     qint64 getSliceTimeElapsed();

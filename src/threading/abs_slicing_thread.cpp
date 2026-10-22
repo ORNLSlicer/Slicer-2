@@ -282,6 +282,7 @@ QSharedPointer<WriterBase> makeWriter(GcodeSyntax syntax, const QSharedPointer<S
 }  // namespace
 
 void AbstractSlicingThread::setGcodeOutput(QString output) {
+    m_layer_programs.clear();
     m_syntax = GSM->getGlobal()->setting<GcodeSyntax>(PRS::MachineSetup::kSyntax);
     m_base   = makeWriter(m_syntax, GSM->getGlobal());
 
@@ -302,6 +303,7 @@ bool AbstractSlicingThread::shouldCancel() {
     if (m_should_cancel) {
         m_should_cancel = false;
         m_temp_gcode_output_file.close();
+        m_layer_programs.clear();
         return true;
     }
 
@@ -321,6 +323,7 @@ void AbstractSlicingThread::forwardStatus(StatusUpdateStepType type, int complet
 }
 
 bool AbstractSlicingThread::writeGCodeFile() {
+    m_layer_programs.clear();
     try {
         writeGCodeSetup();
         writeGCode();
@@ -329,13 +332,17 @@ bool AbstractSlicingThread::writeGCodeFile() {
     } catch (const std::invalid_argument& error) {
         m_temp_gcode_output_file.resize(0);
         m_temp_gcode_output_file.close();
+        m_layer_programs.clear();
         emit sliceFailed(QString::fromUtf8(error.what()));
         return false;
     }
 }
 
 void AbstractSlicingThread::writeGCodeSetup() {
-    QTextStream stream(&m_temp_gcode_output_file);
+    m_generate_individual_layers =
+        m_syntax != GcodeSyntax::kAdamantine && GSM->getGlobal()->setting<bool>(ES::FileOutput::kIndividualLayerOutput);
+    m_layer_export_header.clear();
+    QTextStream stream(&m_layer_export_header);
 
     float minimum_x(std::numeric_limits<float>::max()), minimum_y(std::numeric_limits<float>::max()),
         maximum_x(std::numeric_limits<float>::min()), maximum_y(std::numeric_limits<float>::min()),
@@ -361,7 +368,9 @@ void AbstractSlicingThread::writeGCodeSetup() {
     stream << m_base->writeInitialSetup(Distance(minimum_x), Distance(minimum_y), Distance(maximum_x),
                                         Distance(maximum_y), m_max_steps);
 
-    if (m_syntax != GcodeSyntax::kAdamantine) { stream << m_base->writeCommentLine(kLayerHeaderEnd); }
+    stream.flush();
+    QTextStream output(&m_temp_gcode_output_file);
+    output << m_layer_export_header;
 
     // Reproduce the state established by the shared header, without inheriting any earlier layer.
     m_layer_export_setup = [=, this]() {
@@ -373,11 +382,25 @@ void AbstractSlicingThread::writeGCodeSetup() {
     };
 }
 
+void AbstractSlicingThread::prepareLayerExport(
+    uint layer_number, float min_z, const QSharedPointer<SettingsBase>& settings,
+    const std::function<QString(const QSharedPointer<WriterBase>&)>& emit_layer) {
+    if (!m_generate_individual_layers) { return; }
+    auto writer = m_layer_export_setup();
+    const QString standalone =
+        writer->writeStandaloneLayer(layer_number, min_z, settings, [&]() { return emit_layer(writer); });
+    m_layer_programs.push_back({WriterBase::layerNumber(settings, layer_number), m_layer_export_header + standalone});
+}
+
 void AbstractSlicingThread::writeGCodeShutdown() {
     {
         QTextStream stream(&m_temp_gcode_output_file);
-        stream << m_base->writeShutdownWithLayerMarkers();
-        if (m_syntax != GcodeSyntax::kMVP) stream << m_base->writeSettingsFooter();
+        stream << m_base->writeShutdown();
+        if (m_syntax != GcodeSyntax::kMVP) {
+            const QString footer = m_base->writeSettingsFooter();
+            stream << footer;
+            if (!m_layer_programs.isEmpty()) { m_layer_programs.last().text += footer; }
+        }
         stream.flush();
     }
     writeLayerTimeComments();

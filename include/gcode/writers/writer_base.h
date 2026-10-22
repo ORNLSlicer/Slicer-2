@@ -135,13 +135,6 @@ class WriterBase {
     QString writeLayerTravel(Point start, Point target, TravelLiftType type,
                              const QSharedPointer<SettingsBase>& params);
 
-    //! \brief Stores an independently generated layer as inert comments for later export.
-    QString writeLayerExportProgram(const QString& program);
-
-    //! \brief Writes shutdown with markers used to terminate individually exported layers.
-    //! Final-position blocks describe the continuous program; standalone layers generate their own shutdown.
-    QString writeShutdownWithLayerMarkers();
-
     //! \brief Writes a list of all settings with the raw value to the footer as comments
     virtual QString writeSettingsFooter();
 
@@ -189,9 +182,6 @@ class WriterBase {
         return m_standalone_entry_pending;
     }
 
-    //! \brief Marks moves calculated from the final writer state so layer export does not reuse them.
-    QString finalPositionBlock(const QString& gcode);
-
     //! \brief Writes a comment
     QString comment(const QString& text);
     //! \brief Writes a comment and ends the line
@@ -225,7 +215,7 @@ class WriterBase {
             rv += commentSpaceLine(comment);
 
         setCurrentPosition(lift_destination);
-        return finalPositionBlock(rv);
+        return rv;
     }
 
     //! \brief Gets the segment-local initial extruder speed, falling back to the global setting.

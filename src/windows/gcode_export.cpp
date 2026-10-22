@@ -91,9 +91,8 @@ GcodeExport::GcodeExport(QWidget* parent) : m_has_gcode_visualization(false) {
     m_as_printed_model_checkbox->setEnabled(false);
     m_as_printed_centerline_checkbox = new QCheckBox("Use Centerline Geometry for As-Printed STL");
     m_as_printed_centerline_checkbox->setEnabled(false);
-    m_project_file_checkbox      = new QCheckBox("Save Project file");
-    m_bundle_files_checkbox      = new QCheckBox("Create subdirectory to bundle files");
-    m_individual_layers_checkbox = new QCheckBox("Save each layer as an individual G-Code file");
+    m_project_file_checkbox = new QCheckBox("Save Project file");
+    m_bundle_files_checkbox = new QCheckBox("Create subdirectory to bundle files");
     connect(m_as_printed_model_checkbox, &QCheckBox::toggled, [this](bool) { updateAsPrintedModelOptionState(); });
 
     optionsGrid->addWidget(m_gcode_file_checkbox);
@@ -102,7 +101,10 @@ GcodeExport::GcodeExport(QWidget* parent) : m_has_gcode_visualization(false) {
     optionsGrid->addWidget(m_as_printed_centerline_checkbox);
     optionsGrid->addWidget(m_project_file_checkbox);
     optionsGrid->addWidget(m_bundle_files_checkbox);
-    optionsGrid->addWidget(m_individual_layers_checkbox);
+    m_layer_export_status =
+        new QLabel("Individual layers: enable Individual Layer Export before slicing to save separate files.");
+    m_layer_export_status->setWordWrap(true);
+    optionsGrid->addWidget(m_layer_export_status);
     optionsBox->setLayout(optionsGrid);
 
     m_layout->addWidget(optionsBox);
@@ -121,10 +123,15 @@ void GcodeExport::setDefaultName(QString name) {
     m_default_name = removeModelFileExtension(name);
 }
 
-void GcodeExport::updateOutputInformation(QString tempLocation, GcodeMeta meta) {
+void GcodeExport::updateOutputInformation(QString tempLocation, GcodeMeta meta, QVector<GcodeLayer> layers) {
     m_location         = tempLocation;
     m_most_recent_meta = meta;
     clearVisualizationInformation();
+    m_layer_programs = std::move(layers);
+    m_layer_export_status->setText(
+        m_layer_programs.isEmpty()
+            ? "Individual layers: enable Individual Layer Export before slicing to save separate files."
+            : "Individual layers: separate G-Code files will be saved.");
 }
 
 void GcodeExport::updateVisualizationInformation(QVector<QVector<QSharedPointer<SegmentBase>>> gcode) {
@@ -134,6 +141,9 @@ void GcodeExport::updateVisualizationInformation(QVector<QVector<QSharedPointer<
 }
 
 void GcodeExport::clearVisualizationInformation() {
+    m_layer_programs.clear();
+    m_layer_export_status->setText(
+        "Individual layers: enable Individual Layer Export before slicing to save separate files.");
     m_gcode.clear();
     m_has_gcode_visualization = false;
     updateAsPrintedModelOptionState();
@@ -149,7 +159,6 @@ void GcodeExport::closeEvent(QCloseEvent* event) {
     updateAsPrintedModelOptionState();
     m_project_file_checkbox->setChecked(false);
     m_bundle_files_checkbox->setChecked(false);
-    m_individual_layers_checkbox->setChecked(false);
 }
 
 void GcodeExport::updateAsPrintedModelOptionState() {
@@ -203,7 +212,7 @@ void GcodeExport::exportGcode() {
             gcodeFileName = filepath % '/' % partName % "_scan_path" % m_most_recent_meta.m_file_suffix;
         }
         else { gcodeFileName = filepath % '/' % partName % m_most_recent_meta.m_file_suffix; }
-        if (!m_individual_layers_checkbox->isChecked() && QFile::exists(gcodeFileName)) QFile::remove(gcodeFileName);
+        if (m_layer_programs.isEmpty() && QFile::exists(gcodeFileName)) QFile::remove(gcodeFileName);
 
         QString projectFileName = filepath % '/' % partName % ".s2p";
 
@@ -249,10 +258,11 @@ void GcodeExport::exportGcode() {
         }
 
         // Add header information to the gcode file
-        text.prepend(m_most_recent_meta.m_comment_starting_delimiter % "Sliced by: " % m_operator_input->text() %
-                     m_most_recent_meta.m_comment_ending_delimiter % "\n" %
-                     m_most_recent_meta.m_comment_starting_delimiter % "Slicing notes: " % description %
-                     m_most_recent_meta.m_comment_ending_delimiter % "\n");
+        const QString export_header = m_most_recent_meta.m_comment_starting_delimiter % "Sliced by: " %
+                                      m_operator_input->text() % m_most_recent_meta.m_comment_ending_delimiter % "\n" %
+                                      m_most_recent_meta.m_comment_starting_delimiter % "Slicing notes: " %
+                                      description % m_most_recent_meta.m_comment_ending_delimiter % "\n";
+        text.prepend(export_header);
 
         if (m_auxiliary_file_checkbox->isChecked()) {
             if (CSM->sensorFilesGenerated()) {
@@ -339,11 +349,7 @@ void GcodeExport::exportGcode() {
             }
         }
 
-        if (m_individual_layers_checkbox->isChecked()) {
-            if (m_most_recent_meta == GcodeMetaList::AdamantineMeta) {
-                QMessageBox::warning(this, "Layer Export", "Individual-layer export is not supported for Adamantine.");
-                return;
-            }
+        if (!m_layer_programs.isEmpty()) {
             QStringList existingLayerFiles;
             const QStringList candidateFileNames = QDir(filepath).entryList(QDir::Files | QDir::NoDotAndDotDot);
             for (const QString& candidateFileName : candidateFileNames) {
@@ -360,9 +366,15 @@ void GcodeExport::exportGcode() {
                 if (reply != QMessageBox::Yes) { return; }
             }
 
+            auto layers = m_layer_programs;
+            for (auto& layer : layers) {
+                layer.text.prepend(export_header);
+                if (m_auxiliary_file_checkbox->isChecked() && CSM->sensorFilesGenerated()) {
+                    layer.text.replace("#TEMPFILENAME#", partName + "-");
+                }
+            }
             GCodeLayerSaver* saver =
-                new GCodeLayerSaver(filepath, partName, text, m_most_recent_meta.m_comment_starting_delimiter,
-                                    m_most_recent_meta.m_file_suffix);
+                new GCodeLayerSaver(filepath, partName, std::move(layers), m_most_recent_meta.m_file_suffix);
             connect(saver, &GCodeLayerSaver::finished, saver, &GCodeLayerSaver::deleteLater);
             connect(saver, &GCodeLayerSaver::completed, this, [this, filepath, partName](const QString& error) {
                 if (!error.isEmpty()) {

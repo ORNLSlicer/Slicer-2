@@ -11,7 +11,6 @@
 #include <qvectornd.h>
 
 #include "configs/settings_base.h"
-#include "gcode/gcode_layer_export.h"
 #include "gcode/gcode_meta.h"
 #include "geometry/point.h"
 #include "managers/settings/settings_manager.h"
@@ -100,22 +99,6 @@ QString WriterBase::writeLayerTravel(Point start, Point target, TravelLiftType t
         writeTravel(start, target, m_standalone_entry_pending ? TravelLiftType::kBoth : type, params);
     m_standalone_entry_pending = false;
     return result;
-}
-
-QString WriterBase::writeLayerExportProgram(const QString& program) {
-    return layerExportProgram(program, m_meta);
-}
-
-QString WriterBase::writeShutdownWithLayerMarkers() {
-    QString shutdown = writeShutdown();
-    if (!shutdown.isEmpty() && !shutdown.endsWith(m_newline)) { shutdown += m_newline; }
-    return commentLine(kLayerShutdownBegin) + shutdown + commentLine(kLayerShutdownEnd);
-}
-
-QString WriterBase::finalPositionBlock(const QString& gcode) {
-    if (gcode.isEmpty()) { return {}; }
-    return commentLine(kFinalPositionBegin) + gcode + (gcode.endsWith(m_newline) ? QString() : QString(m_newline)) +
-           commentLine(kFinalPositionEnd);
 }
 
 QString WriterBase::regionComment(RegionType region_type, PathModifiers path_modifiers,

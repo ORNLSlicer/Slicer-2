@@ -942,6 +942,7 @@ class Constants {
 
         class FileOutput {
            public:
+            static const QString kIndividualLayerOutput;
             static const QString kMeldCompanionOutput;
             static const QString kMeldDiscrete;
             static const QString kTormachOutput;
