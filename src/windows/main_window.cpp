@@ -1726,11 +1726,16 @@ void MainWindow::loadSession() {
 }
 
 SessionLoader* MainWindow::loadASession(const QString& filename) {
+    m_settingbar->setOverrideIndicatorsSuspended(true);
     m_part_widget->clear();
     SessionLoader* loader = CSM->loadSession(true, filename);
-    if (loader != nullptr) connect(loader, &SessionLoader::loadSucceeded, this, &MainWindow::updateSavedProjectState);
-    if (loader != nullptr)
-        connect(loader, &SessionLoader::loadSucceeded, m_settingbar, &SettingBar::refreshOverrideIndicators);
+    if (loader != nullptr) {
+        connect(loader, &SessionLoader::loadSucceeded, this, &MainWindow::updateSavedProjectState);
+        connect(loader, &SessionLoader::finished, m_settingbar,
+                [this] { m_settingbar->setOverrideIndicatorsSuspended(false); });
+        if (loader->isFinished()) m_settingbar->setOverrideIndicatorsSuspended(false);
+    }
+    else { m_settingbar->setOverrideIndicatorsSuspended(false); }
     return loader;
 }
 

@@ -153,6 +153,9 @@ class SettingBar : public QWidget {
     //! \brief Refreshes indicators for global values overridden by part or layer settings.
     void refreshOverrideIndicators();
 
+    //! \brief Defers indicator scans while the session loader modifies parts and settings.
+    void setOverrideIndicatorsSuspended(bool suspended);
+
     //! \brief Starts a paired setting edit driven by a view interaction.
     void beginPairedGlobalSettingChange(QString first_key, QString second_key);
 
@@ -294,5 +297,8 @@ class SettingBar : public QWidget {
 
     //! \brief Defers full dynamic warning refreshes while rows are reloaded in bulk.
     bool m_suppress_dynamic_dependency_refresh = false;
+
+    //! \brief Prevents indicator scans while project data is being loaded on a worker thread.
+    bool m_override_indicators_suspended = false;
 };
 }  // Namespace ORNL
