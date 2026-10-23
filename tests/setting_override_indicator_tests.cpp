@@ -1,6 +1,8 @@
 #include <QApplication>
 #include <QLabel>
+#include <QSemaphore>
 #include <QStandardPaths>
+#include <QThread>
 #include <cstdlib>
 
 #include "managers/session_manager.h"
@@ -43,8 +45,32 @@ int main(int argc, char* argv[]) {
     auto part = QSharedPointer<ORNL::Part>::create();
     part->setName("override-test");
     part->getSb()->setSetting(key, 300.0);
-    ORNL::CSM->addPart(part);
+    bar.setOverrideIndicatorsSuspended(true);
+    QSemaphore part_added;
+    QSemaphore continue_loading;
+    auto* loader = QThread::create([&] {
+        ORNL::CSM->addPart(part);
+        part_added.release();
+        continue_loading.acquire();
+        part->createSettingsRange(1, 2);
+        part->getSettingsRange(1, 2)->getSb()->setSetting(key, 400.0);
+    });
+    QObject::connect(loader, &QThread::finished, &bar, [&bar] { bar.setOverrideIndicatorsSuspended(false); });
+    loader->start();
+    part_added.acquire();
     app.processEvents();
+    expect(indicator->isHidden() && layer_indicator->isHidden(),
+           "Queued part additions must not refresh indicators while project loading is suspended.");
+    bar.refreshOverrideIndicators();
+    expect(indicator->isHidden(), "Direct refreshes must also defer scans while project loading is suspended.");
+    continue_loading.release();
+    loader->wait();
+    app.processEvents();
+    delete loader;
+    expect(indicator->isVisible() && layer_indicator->isVisible(),
+           "Finishing project loading must refresh indicators using the final part and layer settings.");
+    part->removeSettingsRange(1, 2);
+    bar.refreshOverrideIndicators();
     expect(indicator->isVisible(), "Adding a part with a different value must mark the global setting.");
     expect(layer_indicator->isHidden(), "Part-only overrides must not show the layer indicator.");
     expect(!indicator->pixmap().isNull() && indicator->toolTip() == "Overridden by part settings.",

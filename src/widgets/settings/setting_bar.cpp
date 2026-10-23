@@ -236,7 +236,7 @@ void SettingBar::settingsBasesSelected(QPair<QString, QList<QSharedPointer<Setti
 }
 
 void SettingBar::refreshOverrideIndicators() {
-    if (m_suppress_dynamic_dependency_refresh) return;
+    if (m_suppress_dynamic_dependency_refresh || m_override_indicators_suspended) return;
 
     QSet<QString> part_keys;
     QSet<QString> layer_keys;
@@ -263,6 +263,11 @@ void SettingBar::refreshOverrideIndicators() {
     for (SettingPane* pane : m_panes)
         for (SettingTab* tab : pane->getTabs())
             for (const auto& row : tab->getRows()) row->setOverriddenKeys(part_keys, layer_keys);
+}
+
+void SettingBar::setOverrideIndicatorsSuspended(bool suspended) {
+    m_override_indicators_suspended = suspended;
+    if (!suspended) refreshOverrideIndicators();
 }
 
 void SettingBar::closeAll() {
