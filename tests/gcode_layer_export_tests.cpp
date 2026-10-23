@@ -19,11 +19,13 @@
 #include "geometry/segments/arc.h"
 #include "geometry/segments/line.h"
 #include "geometry/segments/travel.h"
+#include "managers/session_manager.h"
 #include "managers/settings/settings_manager.h"
 #include "threading/abs_slicing_thread.h"
 #include "threading/gcode_layer_saver.h"
 #include "utilities/constants.h"
 #include "windows/gcode_export.h"
+#include "windows/main_window.h"
 
 namespace {
 QSharedPointer<ORNL::SettingsBase> writerSettings() {
@@ -396,6 +398,31 @@ int main(int argc, char* argv[]) {
     if (argc > 1) {
         expect(export_dialog.grab().save(QString(argv[1]) + "/layer-export-disabled.png"),
                "Could not capture the disabled layer export dialog.");
+    }
+
+    ORNL::CSM->setMostRecentSettingFolderLocation(slice_directory.path());
+    ORNL::CSM->setMostRecentLayerBarSettingFolderLocation(slice_directory.path());
+    auto* main_window              = ORNL::MainWindow::getInstance();
+    ORNL::GcodeExport* main_export = nullptr;
+    for (QWidget* widget : QApplication::topLevelWidgets()) {
+        auto* candidate = qobject_cast<ORNL::GcodeExport*>(widget);
+        if (candidate && candidate != &export_dialog) { main_export = candidate; }
+    }
+    expect(main_export != nullptr, "Expected the main window's export dialog.");
+    if (main_export) {
+        main_export->updateOutputInformation(slice_path, ORNL::GcodeMetaList::MarlinMeta, prepared);
+        QLabel* main_layer_status = nullptr;
+        for (QLabel* label : main_export->findChildren<QLabel*>()) {
+            if (label->text().startsWith("Individual layers:")) { main_layer_status = label; }
+        }
+        expect(main_layer_status && main_layer_status->text().contains("will be saved"),
+               "Expected the previous slice's prepared programs to be available before a new slice.");
+        // No build parts: doSlice returns without importing another G-code file, like a cancelled or failed slice.
+        expect(!ORNL::CSM->isBuildMode(), "Expected no build parts in the slice-start regression test.");
+        expect(QMetaObject::invokeMethod(main_window, "doSlice", Qt::DirectConnection),
+               "Could not invoke the main window's slice-start path.");
+        expect(main_layer_status && main_layer_status->text().contains("before slicing"),
+               "Starting a new slice must invalidate the export snapshot even without a subsequent G-code import.");
     }
 
     expect(ORNL::isGcodeLayerFileName("part_layer_12.gcode", "part", ".gcode"), "Expected a generated name.");
