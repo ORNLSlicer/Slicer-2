@@ -1379,6 +1379,7 @@ void MainWindow::doSlice() {
     m_gcode_widget->clear();
     m_gcodebar->clear();
     m_layertimebar->clear();
+    m_export_window->clearVisualizationInformation();
 
     if (!CSM->isBuildMode()) return;
 
